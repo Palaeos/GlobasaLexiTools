@@ -18,3 +18,8 @@ This repository contains various Python scripts that automate various Globasa re
 ### TODO
 - Add Esperanto support in `MenalariWordNetAligner.py` via OMWN [Esperanto IDs](https://github.com/omwn/omw-data/blob/main/wns/wikt/wn-wikt-epo.tab). Due to Esperato being less prone to polysemy, CILIs could be considered automatiocally applicable if attested by Esperanto.
 - Complete `Wordnet based translation extender.py`. The main challenge here is to collect the translations for each word sense and then assemble them into the wordlist format with `;` separation.
+
+## Needed Data
+
+- [Globasa Wordlist TSV](https://cdn.globasa.net/api2/word-list.tsv)
+- Wiktionary Translation Dump
