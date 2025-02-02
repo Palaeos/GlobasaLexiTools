@@ -22,4 +22,4 @@ This repository contains various Python scripts that automate various Globasa re
 ## Needed Data
 
 - [Globasa Wordlist TSV](https://cdn.globasa.net/api2/word-list.tsv)
-- Wiktionary translation dump made with the [Yawipa Parser](https://github.com/wswu/yawipa)
+- Wiktionary translation dump made with the [Yawipa Parser](https://github.com/wswu/yawipa). Originally using premade [dumps](https://cs.jhu.edu/~winston/yawipa-data.html) (Dead link)
