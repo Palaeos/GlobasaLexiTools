@@ -16,5 +16,5 @@ This repository contains various Python scripts that automate various Globasa re
 - [`Wordnet based translation extender.py`](Wordnet%20based%20translation%20extender.py) (WIP) - is intended to look up a list of Globasa words with corresponding CILIs and then query the synonym sets for some languages to query translations for the word. (analog of [`Wordnet based translation extender.py`](Wordnet%20based%20translation%20extender.py) for wordnets)
 
 ### TODO
-- Add Esperanto support in `MenalariWordNetAligner.py` via OMWN [Esperanto IDs](https://github.com/omwn/omw-data/blob/main/wns/wikt/wn-wikt-epo.tab)
-- Complete `Wordnet based translation extender.py`
+- Add Esperanto support in `MenalariWordNetAligner.py` via OMWN [Esperanto IDs](https://github.com/omwn/omw-data/blob/main/wns/wikt/wn-wikt-epo.tab). Due to Esperato being less prone to polysemy, CILIs could be considered automatiocally applicable if attested by Esperanto.
+- Complete `Wordnet based translation extender.py`. The main challenge here is to collect the translations for each word sense and then assemble them into the wordlist format with `;` separation.
