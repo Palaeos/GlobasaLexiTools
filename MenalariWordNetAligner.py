@@ -1,15 +1,12 @@
 import os
-import sys
-import pandas as pd
 import csv
 import re
 import wn
 import itertools
-from wn.similarity import path, lch
 from wn.taxonomy import lowest_common_hypernyms, common_hypernyms
 
 PoSDict = {"n": ['n'], "f": ['v'], "f.sah": ['v'], "b": ['n', 'v'], "t": ['a', 'r'],
-           "s": ['a'], "p jm": ['r'], "jm": ['t'], "m": ['r'],  "su n": ['n'], "su t": ['a'],
+           "s": ['a'], "p jm": ['a', 'r'], "jm": ['t'], "m": ['r'],  "su n": ['n'], "su t": ['a'],
            "num": ['n'], "p": ['r']}
 # 'i53558' for artifact, 'i35547' for abstract entities, 'i69080' for social group,  "i69527" for language, "i75492" for animal cries/noises
 # 'i68061' for beliefs ' i81450' for systems, 'i69080' for attitudes, 'i35610' for action, 'i81084' for form of government,
@@ -261,16 +258,16 @@ with open("./" + menalari_name, newline='') as menalari_file, open('GLB_ENG_Word
                 started = True
             else:
                 continue
-        englishGlosses = re.sub("\(_.*?_\)", "", row[5]).strip().split("; ")
-        processedSpanishLine = re.sub("\(_.*?_\)", "", row[8]).strip()
+        englishGlosses = re.sub("\(_.*?_\)", "", row[6]).strip().split("; ")
+        processedSpanishLine = re.sub("\(_.*?_\)", "", row[9]).strip()
         processedSpanishLine = re.sub('\(-a,\s+-e\)', '', processedSpanishLine)
         processedSpanishLine = re.sub('\(-a,\s+-que\)', '', processedSpanishLine)
         processedSpanishLine = re.sub('\(-as,\s+-es\)', '', processedSpanishLine)
         processedSpanishLine = re.sub('\(&\)', '', processedSpanishLine)
         spanishGlosses = processedSpanishLine.split("; ")
 
-        esperantoGlosses = re.sub("\(_.*?_\)", "", row[7]).strip().split("; ")
-        PoSs = row[2].split("; ")
+        esperantoGlosses = re.sub("\(_.*?_\)", "", row[8]).strip().split("; ")
+        PoSs = row[3].split("; ")
         PoSlist = []
         PoSinDict = True
         for part in PoSs:
