@@ -1,6 +1,7 @@
 import os
 import csv
 import re
+import pandas as pd
 import wn
 import itertools
 from wn.taxonomy import lowest_common_hypernyms, common_hypernyms
@@ -34,6 +35,8 @@ TagDictHypernym = {('hewan', 'n'): ['i35563'], ('piu', 'n'): ['i43203'], ('basa'
 TagDictInstance_of = {('daygeo', 'n'): ['i85253'], ('dexa', 'n'): ['i81888']}
 
 senseKeyPath = "./GLB_ENG_WordnetSynsets.tsv"
+
+epoTable = pd.read_csv('./wn-wikt-epo.tab', sep='\t', header=0)
 
 def retrieveMarking(senseKeyPath, globasaWord, ILI):
     if os.path.exists(senseKeyPath):
@@ -143,7 +146,7 @@ def getThreshold(length, thresholdFunction):
 
 en = wn.Wordnet('oewn:2023')
 es = wn.Wordnet('omw-es:1.4')
-
+enOMW = wn.Wordnet('omw-en:1.4')
 menalari_name = "word-list.csv"
 
 def checkWordSynset(globasa_word, PoS_index, synset):
@@ -199,7 +202,7 @@ def setBasedQuery(englishQuery, spanishQuery, PoS ):
 
     yield applicable_synsets, total_synsets
 
-def scoreBasedQuery(englishQuery, spanishQuery, PoS):
+def scoreBasedQuery(englishQuery, spanishQuery, esperantoQuery, PoS):
     applicable_synsets = set()
     total_synsets = set()
     for engWord in englishQuery:
@@ -209,7 +212,14 @@ def scoreBasedQuery(englishQuery, spanishQuery, PoS):
             engSynsets.update(set(en.synsets(engWord, pos='s')))
         for synset in engSynsets:
             applicable = False
+            CILI = synset.ili.id
             synsetSpa = synset.translate(lexicon='omw-es:1.4')
+            OMWSynset = enOMW.synsets(ili=CILI)[0].id.removeprefix("omw-en-")
+            filtered_rows = epoTable.loc[epoTable['# Wiktionary'] == OMWSynset]
+            epoCandidate = ""
+            if not filtered_rows.empty:
+                if filtered_rows.iloc[0,2] == esperantoQuery[0]:
+                    applicable = True
             englishLemmas = set(synset.lemmas())
             """synsetAntonyms = synset.relations('antonym')
             for antonym in synsetAntonyms:
@@ -294,11 +304,13 @@ with open("./" + menalari_name, newline='') as menalari_file, open('GLB_ENG_Word
                     continue
 
                 #p = [gloss[0].split(", "), gloss[1].split(", "), gloss[2].split(", ")]
-                englishQuery, spanishQuery = gloss[0].split(", "), gloss[1].split(", ")
+                englishQuery, spanishQuery, esperantoQuery = gloss[0].split(", "), gloss[1].split(", "), gloss[2].split(", ")
                 for index in range(len(englishQuery)):
                     englishQuery[index] = englishQuery[index].strip()
                 for index in range(len(spanishQuery)):
                     spanishQuery[index] = spanishQuery[index].strip(' .')
+                for index in range(len(esperantoQuery)):
+                    esperantoQuery[index] = esperantoQuery[index].strip()
                 applicable = False
                 for word in englishQuery:
                     synsets = set(en.synsets(word.strip(), pos=PoSlist[i]))
@@ -312,7 +324,7 @@ with open("./" + menalari_name, newline='') as menalari_file, open('GLB_ENG_Word
                         synsets.update(set(es.synsets(word.strip(), pos='s')))
                     if not es.synsets(word.strip(), pos=PoSlist[i]):
                         spanishQuery.remove(word)
-                for applicableParts, totalParts in scoreBasedQuery(englishQuery, spanishQuery, PoS=PoSlist[i]):
+                for applicableParts, totalParts in scoreBasedQuery(englishQuery, spanishQuery, esperantoQuery, PoS=PoSlist[i]):
                 #for applicableParts, totalParts in setBasedQuery(englishQuery, spanishQuery, PoS=PoSlist[i]):
 
                     applicable_synsets[i], total_synsets[i] = applicableParts, totalParts
@@ -331,27 +343,43 @@ with open("./" + menalari_name, newline='') as menalari_file, open('GLB_ENG_Word
                     other_synsets[i] -= retrieval[0]
                 for synset in applicable_synsets[i]:
                     status = retrieveMarking(senseKeyPath, row[0], str(synset.ili.id))
+                    english_Glosses = set(englishQuery)
+                    officialEnglishGlosses = set(synset.lemmas()).intersection(english_Glosses)
+                    unofficialEnglishGlosses = set(synset.lemmas()).difference(english_Glosses)
                     if status:
                         output = [row[0], str(synset.ili.id), PoSlist[i], str(synset.ili.definition()), status[0], status[1],
-                                  str(", ".join(synset.lemmas()))]
+                                  str(", ".join(officialEnglishGlosses)), str(", ".join(unofficialEnglishGlosses))]
                     else:
                         output = [row[0], str(synset.ili.id), PoSlist[i], str(synset.ili.definition()), 's', ' ',
-                              str(", ".join(synset.lemmas()))]
+                                  str(", ".join(officialEnglishGlosses)), str(", ".join(unofficialEnglishGlosses))]
 
                     if es.synsets(ili=synset.ili.id):
-                        output += [str(", ".join((es.synsets(ili=synset.ili.id))[0].lemmas()))]
+                        spanish_Glosses = set(gloss[1].split(", "))
+                        officialSpanishGlosses = set((es.synsets(ili=synset.ili.id))[0].lemmas()).intersection(spanish_Glosses)
+                        unofficialSpanishGlosses = set((es.synsets(ili=synset.ili.id))[0].lemmas()).difference(spanish_Glosses)
+                        output += [str(", ".join(officialSpanishGlosses)), str(", ".join(unofficialSpanishGlosses))]
                     writer.writerow(output)
                     print("\t".join(output))
                 for synset in other_synsets[i]:
                     status = retrieveMarking(senseKeyPath, row[0], str(synset.ili.id))
+                    english_Glosses = set(gloss[0].split(", "))
+                    officialEnglishGlosses = set(synset.lemmas()).intersection(english_Glosses)
+                    unofficialEnglishGlosses = set(synset.lemmas()).difference(english_Glosses)
                     if status:
                         output = [row[0], str(synset.ili.id), PoSlist[i], str(synset.ili.definition()), status[0],
                                   status[1],
-                                  str(", ".join(synset.lemmas()))]
+                                  str(" "), str(", ".join(synset.lemmas()))]
                     else:
-                        output = [row[0], str(synset.ili.id), PoSlist[i], str(synset.ili.definition()), ' ', ' ', str(", ".join(synset.lemmas()))]
+                        output = [row[0], str(synset.ili.id), PoSlist[i], str(synset.ili.definition()), ' ', ' ',
+                                  str(" "), str(", ".join(synset.lemmas()))]
+
                     if es.synsets(ili=synset.ili.id):
-                        output += [str(", ".join((es.synsets(ili=synset.ili.id))[0].lemmas()))]
+                        spanish_Glosses = set(gloss[1].split(", "))
+                        officialSpanishGlosses = set((es.synsets(ili=synset.ili.id))[0].lemmas()).intersection(
+                            spanish_Glosses)
+                        unofficialSpanishGlosses = set((es.synsets(ili=synset.ili.id))[0].lemmas()).difference(
+                            spanish_Glosses)
+                        output += [str(", ".join(officialSpanishGlosses)), str(", ".join(unofficialSpanishGlosses))]
                     writer.writerow(output)
                     print("\t".join(output))
 
