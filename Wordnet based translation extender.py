@@ -17,7 +17,8 @@ languages = ['deu', 'nld', 'fra', 'rus', 'ara', 'cmn', 'jpn']
 
 # languages = ['ang', 'enm']
 
-wordnets = [wn.Wordnet('odenet:1.4'), wn.Wordnet('omw-nl:1.4')]
+wordnets = {'deu': wn.Wordnet('odenet:1.4'), 'nld': wn.Wordnet('omw-nl:1.4'), 'fra': wn.Wordnet('omw-fr:1.4')}
+#languageNames = {'deu': wn.Wordnet('odenet:1.4'), 'nld': 'Dutch', 'fra': 'French', 'rus': 'Russian', 'cmn': 'Mandarin', 'jpn': 'Japanese'}
 
 boolS = ['', 's']
 
@@ -32,18 +33,13 @@ with open("./iso-639-3.tab", 'r', newline='', encoding='utf-8') as infile:
     for sense_row in reader:
         languageNames.setdefault(sense_row[0], sense_row[6])
 
-# languageNames = {'deu': 'German', 'nld': 'Dutch', 'fra': 'French', 'rus': 'Russian', 'cmn': 'Mandarin', 'jpn': 'Japanese',                 'jpn': 'Japanese'}
+# languageNames = {'deu': 'German', 'nld': 'Dutch', 'fra': 'French', 'rus': 'Russian', 'cmn': 'Mandarin', 'jpn': 'Japanese'}
 
 PoSDict = {"n": ['Noun'], "f": ['Verb'], "f.sah": ['Verb'], "b": ['Noun', 'Verb'], "t": ['Adjective', 'Adverb'],
            "s": ['Adjective'], "p jm": ['Adverb'],
            "m": ['Adverb'], "lfik": ['Prefix'], "xfik": ['Suffix'], "b xfik": ['Suffix'], "t xfik": ['Suffix'],
            "su n": ['Proper noun'], "su t": ['Adjective'], "il": ['Interjection'], "l": ['Conjunction'],
            "num": ['Number'], "p": ['Preposition'], "pn": ['Pronoun'], "d": ['Determiner']}
-
-# This excludes senses
-#blacklistDict = {("alokrasi", "revolution"): ["turning of an object around an axis",  "traversal of one body through an orbit around another body"]}
-
-#whitelistDict = {("alokrasi", "revolution"): ["political upheaval", "removal and replacement of a government"]}
 
 maxInt = sys.maxsize
 
@@ -56,55 +52,6 @@ while True:
         break
     except OverflowError:
         maxInt = int(maxInt / 10)
-
-import itertools
-
-import pandas as pd
-
-
-def getstuff(filename, english_word, query_sense, PoS):
-    with open(filename, "rt") as csvfile:
-        datareader = csv.reader(csvfile, delimiter='\t')
-        # yield next(datareader)  # yield the header row
-        count = 0
-        match = False
-        langDict = {}
-        for lang in languages:
-            langDict[lang] = set()
-        sense = ""
-        wordEng = ""
-        wkPoS = ""
-        englishMatched = False
-        for row in datareader:
-            old_sense = sense
-            sense = row[4]
-            previous_wordEng = wordEng
-            wordEng = row[1]
-            previous_wkPoS = wkPoS
-            wkPoS = row[2]
-            if sense != old_sense or previous_wordEng != wordEng or previous_wkPoS != wkPoS:
-                if englishMatched and match:
-                    yieldOutput = [[english_word], [PoS], [old_sense]]
-                    for lang in languages:
-                        yieldOutput += [langDict[lang]]
-                    yield yieldOutput
-                match = False
-                englishMatched = False
-                for lang in languages:
-                    langDict[lang] = set()
-
-            if re.sub('/translations$', '', row[1]) == english_word and row[2] == PoS:
-                englishMatched = True
-                count += 1
-                if row[5] in languages:
-                    langDict[row[5]].add(row[6])
-
-                if query_sense == sense:
-                    match = True
-
-            elif count >= 1:
-                # done when having read a consecutive series of rows
-                return
 
 
 
@@ -122,32 +69,20 @@ def entryToString(entry):
 
 # morpho = input("Duabasali or morfoli? / Bilingual or morphological?\n")
 
-# Example usage
-wiktionary_dump_path = './tr_sorted'
-
-if not os.path.isdir("./Wiktionary_dump/"):
-    print("Downloading the Wiktionary dump")
-    wget.download("https://www.cs.jhu.edu/~winston/yawipa-data/tr", 'tr')
-    split_tsv_by_second_column('tr')
 
 menalari_name = "word-list.csv"
 if not os.path.exists("./word-list.csv"):
     print("Downloading the Globasa word-list")
     wget.download("https://cdn.globasa.net/api2/word-list.csv", menalari_name)
 
-#sensesPath = "./GLB_ENG_Wiktionary_Senses.tsv"
-sensesPath = "./GLB_ENG_WiktionarySenses.tsv"
-if not os.path.exists(sensesPath):
-    print("Fe lutuf, funsyon \" Wiktionary translation expander.py\" xorfe hinto. Xafe hinto, am rinamegi explasi cel \"./GLB_ENG_Wiktionary_Senses.tsv\" ")
-
 startPrefix = input("Lexi ingay na xoru har keto fe xoru? / What should the word begin with at the start?\nAm sol presyon 'enter' na xoru xorfe xoru. / Just hit enter to start from the beginning.\n")
 
-
+sensesPath = "./GLB_ENG_WordnetSynsets.tsv"
 with open("./" + menalari_name, newline='') as menalari_file, open('menalariExtensions.tsv', 'w', newline='') as menaExp:
     menaWriter = csv.writer(menaExp, delimiter='\t', lineterminator='\n')
 
 
-    menaWriter.writerow(['Globasa'] + ['Parts of Speech'] + ['English by Sense'] + [languageNames[lang] for lang in languages])
+    menaWriter.writerow(['Globasa'] + ['Parts of Speech'] + ['English by Sense'] + [languageNames[lang] for lang in wordnets])
 
     outputGlosses = [[set()] for lang in languages]
     PoSs = []
@@ -184,22 +119,23 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariExte
                     globasaMatch = True
                 if globasaMatch:
                     if sense_row[0] != globasaWord and match:
-                        engSenseOutput = '; '.join([', '.join(
-                            [word + " [" + "|".join(engSenseDictPart[word]) + "]" for word in engSenseDictPart.keys()]) for
+                        CILI_output = '; '.join([', '.join(
+                            engSenseDictPart)
+                            for
                             engSenseDictPart in engSenseDict])
-                        output += ["; ".join(PoSs)] + [engSenseOutput] + [
+                        output += ["; ".join(PoSs)] + [CILI_output] + [
                             "; ".join([", ".join(entry) for entry in outputGloss]) for outputGloss in outputGlosses]
                     elif sense_row[0] == globasaWord and PoS != sense_row[2]:
                         PoSs += [sense_row[2]]
                         for i in range(len(outputGlosses)):
                             outputGlosses[i] += [set()]
-                        engSenseDict += [{}]
+                        engSenseDict += [set()]
                     if len(sense_row) < 6:
                         continue
                     if sense_row[0] != globasaWord:
                         outputGlosses = [[set()] for wordnet in wordnets]
                         PoSs = [sense_row[2]]
-                        engSenseDict = [{}]
+                        engSenseDict = [set()]
 
                     if sense_row[0] != globasa_query:
                         globasaMatch = False
@@ -214,77 +150,13 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariExte
 
                     if sense_row[4] == 's' and sense_row[5] == 'v':
                         match = True
-
-                        for i, wordnet in enumerate(wordnets):
-                            for synset in wordnet.synsets(ili=ILI):
+                        engSenseDict[-1] |= set([ILI])
+                        for i, lang in enumerate(wordnets):
+                            for synset in wordnets[lang].synsets(ili=ILI):
                                 outputGlosses[i][-1] |= set(synset.lemmas())
-                        """for query_row in getstuff(path, englishWord, sense, PoS):
-                            if query_row[0][0] in engSenseDict:
-                                engSenseDict[-1][query_row[0][0]] |= set(query_row[2])
-                            else:
-                                engSenseDict[-1].setdefault(query_row[0][0], set(query_row[2]))
-                            for i, translations in enumerate(query_row[3:]):
-                                outputGlosses[i][-1] |= translations"""
 
         print(output)
         menaWriter.writerow(output)
-        """
-        if not started:
-            if row[0].startswith(startPrefix):
-                started = True
-            else:
-                continue
-        englishGlosses = re.sub("\(_.*?_\)", "", row[5]).strip().split("; ")
-        spanishGlosses = re.sub("\(_.*?_\)", "", row[8]).strip().split("; ")
-        esperantoGlosses = re.sub("\(_.*?_\)", "", row[7]).strip().split("; ")
-        PoSs = row[2].split("; ")
-        PoSlist = []
-        PoSinDict = True
-        for part in PoSs:
-            PoSKey = None
-            if part.startswith("b."):
-                PoSKey = "b"
-            else:
-                PoSKey = part
-            if PoSKey in PoSDict:
-                PoSlist += PoSDict[PoSKey]
-            else:
-                PoSinDict = False
-        outputGlosses = [[set() for j in range(len(PoSlist))] for i in range(len(languages))]
-
-        if PoSinDict:
-            output = None
-            for i, gloss in enumerate(zip(englishGlosses, spanishGlosses, esperantoGlosses)):
-                p = [gloss[0].split(", "), gloss[1].split(", "), gloss[2].split(", ")]
-                engSenseDict = {}
-
-                for query_row in getdata(wiktionary_dump_path, row[0], p, PoSlist[i]):
-                    # print(query_row)
-                    line = ""
-                    if query_row[0][0] in engSenseDict:
-                        engSenseDict[query_row[0][0]] |= set(query_row[2])
-                    else:
-                        engSenseDict.setdefault(query_row[0][0], set(query_row[2]))
-
-                    for j, entry in enumerate(query_row):
-                        if j >= 6 and query_row[3] == 's':
-                            outputGlosses[j - 4][i] |= entry
-
-                    output = [row[0]] + [", ".join(entry) for entry in query_row]
-
-                    print("\t".join(output))
-                    writer.writerow(output)
-
-            engSenseOutput = ', '.join(
-                [word + " [" + "|".join(engSenseDict[word]) + "]" for word in engSenseDict.keys()])
-
-            menaWriter.writerow([row[0]] + [engSenseOutput] + [entryToString(entry) for entry in outputGlosses])
-            # ["[" + '|'.join(outputGlosses[0]) ]
-        else:
-            print(row[0])
-            menaWriter.writerow([row[0]])
-    """
-
 
     output = [globasaWord] + ["; ".join(PoSs)] + ["; ".join([", ".join(entry) for entry in outputGloss]) for outputGloss
                                                   in outputGlosses]
