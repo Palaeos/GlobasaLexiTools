@@ -71,12 +71,20 @@ with open("./" + ranking_name, newline='') as ranking_file:
     glosses = ""
     for i in range(min(len(englishGlosses), len(PoSlist))):
       glosses += "**" + PoSlist[i] + "**" + ": " + englishGlosses[i] + "  \n   \n"
-
+    tags = str(selected_rows['Tags']).replace(" ", "_").split(",_")
     print(str(row[0]) + " " + markdown.markdown(glosses))
-    my_note = genanki.Note(
-      model=my_model,
-      fields=[row[0], markdown.markdown(glosses)]
-    )
+    my_note = None
+    if tags == ["nan"]:
+      my_note = genanki.Note(
+        model=my_model,
+        fields=[row[0], markdown.markdown(glosses)]
+      )
+    else:
+      my_note = genanki.Note(
+        model=my_model,
+        fields=[row[0], markdown.markdown(glosses)],
+        tags=tags
+      )
     my_deck.add_note(my_note)
 
 genanki.Package(my_deck).write_to_file('GlobasaContent.apkg')
