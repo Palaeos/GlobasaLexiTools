@@ -3,6 +3,8 @@
 This repository contains various Python scripts that automate various Globasa related tasks.
 
 - [`dictionaryPreprocess.py`](dictionaryPreprocess.py) - Scrapes the Globasa wordlist to either generate monolingual or bilingual dictionary entries for Apertium
+## Anki
+- [`AnkiMaker.py`](AnkiMaker.py) - takes in a frequency sorted wordlist and [the official wordlist](https://cdn.globasa.net/api2/word-list.csv) to generate an Anki deck for content words
 ## Wiktionary
 - [`WiktionaryPreprocess.py`](WiktionaryPreprocess.py) - Takes an English Wiktionary dump and breaks it up into different subfiles based on the first two characters of the English word to accelerate searches
 - [`Wiktionary senseKey preprocess.py`](Wiktionary%20senseKey%20preprocess.py) - Scrapes the English Wiktionary dump and adds senses from the translation of a given English word if the Spanish gloss is found as a translation for that word. A table of English word - part of speech - sense tuples is the output for further manual vetting
