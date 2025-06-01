@@ -208,7 +208,6 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariExte
 
                     first = False
                     globasaWord = sense_row[0]
-                    ILI = sense_row[1]
 
                     if sense_row[4] == 's' and sense_row[5] == 'v':
                         match = True
