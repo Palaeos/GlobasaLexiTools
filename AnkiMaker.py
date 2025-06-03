@@ -42,17 +42,18 @@ ranking_name = "Doxo_word_frequency.csv"
 df = pd.read_csv(menalari_name, index_col=0)
 
 with open("./" + ranking_name, newline='') as ranking_file:
-  rankingReader = csv.reader(ranking_file, delimiter=',', quotechar='"')
+  rankingReader = csv.reader(ranking_file, delimiter='\t', quotechar="'")
   next(rankingReader, None)
 
   for row in rankingReader:
-    if not row[0] in df.index:
+    if not row[0] in df.index or str(row[0]).lower() == "devtest":
       continue
     selected_rows = df.loc[row[0]]
-    englishGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationEng']).strip().split("; ")
+    englishText = str(selected_rows['TranslationEng'])
+    englishGlosses = re.sub("\(_.*?_\)", "", englishText).strip().split("; ")
     #spanishGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationSpa']).strip().split("; ")
     #esperantoGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationEpo']).strip().split("; ")
-    PoSs = selected_rows['WordClass'].split("; ")
+    PoSs = str(selected_rows['WordClass']).split("; ")
     PoSlist = []
     PoSinDict = True
     for part in PoSs:
@@ -72,17 +73,37 @@ with open("./" + ranking_name, newline='') as ranking_file:
     for i in range(min(len(englishGlosses), len(PoSlist))):
       glosses += "**" + PoSlist[i] + "**" + ": " + englishGlosses[i] + "  \n   \n"
     tags = str(selected_rows['Tags']).replace(" ", "_").split(",_")
-    print(str(row[0]) + " " + markdown.markdown(glosses))
+
     my_note = None
+    front_side = ""
+    if len(row) > 1 and row[1] == row[1]:
+      front_side = str(row[1])
+    else:
+      front_side = str(row[0])
+    print(markdown.markdown(front_side) + " " + markdown.markdown(glosses))
+    # Recognition
     if tags == ["nan"]:
       my_note = genanki.Note(
         model=my_model,
-        fields=[row[0], markdown.markdown(glosses)]
+        fields=[markdown.markdown(front_side), markdown.markdown(glosses)]
       )
     else:
       my_note = genanki.Note(
         model=my_model,
-        fields=[row[0], markdown.markdown(glosses)],
+        fields=[markdown.markdown(front_side), markdown.markdown(glosses)],
+        tags=tags
+      )
+    my_deck.add_note(my_note)
+    # Production
+    if tags == ["nan"]:
+      my_note = genanki.Note(
+        model=my_model,
+        fields=[markdown.markdown(glosses), row[0]]
+      )
+    else:
+      my_note = genanki.Note(
+        model=my_model,
+        fields=[markdown.markdown(glosses), row[0]],
         tags=tags
       )
     my_deck.add_note(my_note)
