@@ -73,7 +73,8 @@ with open("./" + ranking_name, newline='') as ranking_file:
     for i in range(min(len(englishGlosses), len(PoSlist))):
       glosses += "**" + PoSlist[i] + "**" + ": " + englishGlosses[i] + "  \n   \n"
     tags = str(selected_rows['Tags']).replace(" ", "_").split(",_")
-
+    if len(row) > 2 and row[2] == row[2]:
+      tags += [str(row[2]).replace(" ", "_")]
     my_note = None
     front_side = ""
     if len(row) > 1 and row[1] == row[1]:

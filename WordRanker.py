@@ -110,7 +110,7 @@ with open(ranking_name, 'w', newline='') as ranking:
                     wordList += [word]
                     output = word + "\t'" + example + ".'\t" + text_name.removesuffix(".txt")
                     print(output)
-                    ranking.write(output + " \n")
+                    ranking.write(output + "\n")
                 else:
                     wordList += [word]
                     print(word)
