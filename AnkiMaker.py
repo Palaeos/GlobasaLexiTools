@@ -6,8 +6,10 @@ import string
 import genanki
 import pandas as pd
 
+
+
 PoSDict = {"n": ['Noun'], "f": ['Verb'], "f.sah": ['Verb'], "b": ['Noun', 'Verb'], "t": ['Adjective', 'Verbal Adverb'],
-           "s": ['Adjective'], "p jm": ['Adjective', 'Verbal Adverb'],
+           "s": ['Adjective'], "p jm": ['Prepositional Phrase'],
            "m": ['Adverb'], "lfik": ['Prefix'], "xfik": ['Suffix'], "b xfik": ['Suffix'], "t xfik": ['Suffix'],
            "su n": ['Proper noun'], "su t": ['Adjective'], "il": ['Interjection'], "l": ['Conjunction'],
            "num": ['Number'], "p": ['Preposition'], "pn": ['Pronoun'], "d": ['Determiner']}
@@ -40,6 +42,7 @@ menalari_name = "word-list.csv"
 ranking_name = "Doxo_word_frequency.csv"
 
 df = pd.read_csv(menalari_name, index_col=0)
+imgf = pd.read_csv("menalariImages_edited.csv", index_col=0, sep="\t")
 
 with open("./" + ranking_name, newline='') as ranking_file:
   rankingReader = csv.reader(ranking_file, delimiter='\t', quotechar="'")
@@ -50,7 +53,7 @@ with open("./" + ranking_name, newline='') as ranking_file:
       continue
     selected_rows = df.loc[row[0]]
     englishText = str(selected_rows['TranslationEng'])
-    englishGlosses = re.sub("\(_.*?_\)", "", englishText).strip().split("; ")
+    englishGlosses = englishText.strip().split("; ")
     #spanishGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationSpa']).strip().split("; ")
     #esperantoGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationEpo']).strip().split("; ")
     PoSs = str(selected_rows['WordClass']).split("; ")
@@ -72,7 +75,9 @@ with open("./" + ranking_name, newline='') as ranking_file:
     glosses = ""
     for i in range(min(len(englishGlosses), len(PoSlist))):
       glosses += "**" + PoSlist[i] + "**" + ": " + englishGlosses[i] + "  \n   \n"
-    tags = str(selected_rows['Tags']).replace(" ", "_").split(",_")
+    tags = []
+    if selected_rows['Tags'] == selected_rows['Tags']:
+      tags += str(selected_rows['Tags']).replace(" ", "_").split(",_")
     if len(row) > 2 and row[2] == row[2]:
       tags += [str(row[2]).replace(" ", "_")]
     my_note = None
@@ -83,28 +88,45 @@ with open("./" + ranking_name, newline='') as ranking_file:
       front_side = str(row[0])
     print(markdown.markdown(front_side) + " " + markdown.markdown(glosses))
     # Recognition
-    if tags == ["nan"]:
+    backside = None
+    if imgf.DirectURL[row[0]] == imgf.DirectURL[row[0]]:
+      backside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
+    else:
+      if len(row) > 1 and row[1] == row[1]:
+        backside ='<table class="tg"><thead> <tr><td class="tg-0lax">' + markdown.markdown(str(row[1])) + '</td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(
+          glosses) + '</details></tr></thead></table>'
+      else:
+        backside = markdown.markdown(glosses)
+    print(backside)
+    if not tags:
       my_note = genanki.Note(
         model=my_model,
-        fields=[markdown.markdown(front_side), markdown.markdown(glosses)]
+        fields=[str(row[0]), backside]
       )
     else:
       my_note = genanki.Note(
         model=my_model,
-        fields=[markdown.markdown(front_side), markdown.markdown(glosses)],
+        fields=[str(row[0]), backside],
         tags=tags
       )
     my_deck.add_note(my_note)
     # Production
+    frontside = None
+    if imgf.DirectURL[row[0]] == imgf.DirectURL[row[0]]:
+      frontside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
+    else:
+      frontside = markdown.markdown(glosses)
+    if len(row) > 1 and row[1] == row[1]:
+      frontside += markdown.markdown(re.sub("\*\*.*?\*\*", "[...]", str(row[1])))
     if tags == ["nan"]:
       my_note = genanki.Note(
         model=my_model,
-        fields=[markdown.markdown(glosses), row[0]]
+        fields=[frontside, row[0]]
       )
     else:
       my_note = genanki.Note(
         model=my_model,
-        fields=[markdown.markdown(glosses), row[0]],
+        fields=[frontside, row[0]],
         tags=tags
       )
     my_deck.add_note(my_note)
