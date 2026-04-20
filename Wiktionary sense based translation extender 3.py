@@ -1,12 +1,10 @@
 import os
-import pickle
 import sys
 import csv
 import re
 import json
 import shutil
 from datetime import datetime
-from typing import NamedTuple
 from collections import defaultdict
 
 from openpyxl import Workbook, load_workbook
@@ -14,27 +12,7 @@ from openpyxl.utils import get_column_letter
 
 from Lexilista_parser import (parseWordEntry, GlossPoS, ParsedGloss,
                                ParsedWordEntry, _expand_gloss_context)
-
-
-# Required for pickle deserialization of Wiktionary translation data
-class Translation(NamedTuple):
-    word: str
-    romanization: str
-    tags: str
-
-
-# Required for pickle deserialization of Wiktionary sense data
-class Example(NamedTuple):
-    text: str
-    english: str
-    type: str
-
-
-class Sense(NamedTuple):
-    glosses: tuple
-    raw_glosses: tuple
-    tags: tuple
-    examples: tuple
+from wiktionary_db import WiktionaryDB, Translation, Example, Sense
 
 
 # ---------------------------------------------------------------------------
@@ -263,59 +241,10 @@ if not loaded:
     print(f"No existing senses file found, starting fresh")
 
 # ---------------------------------------------------------------------------
-# Pickle cache
+# LMDB database
 # ---------------------------------------------------------------------------
 
-pickle_cache = {}
-
-
-def load_pickle(english_word):
-    """Load the pickled Wiktionary translation dict for a word's prefix."""
-    if len(english_word) >= 2:
-        prefix = english_word[:2].upper()
-        if "/" in prefix or "\\" in prefix:
-            prefix = "single_char"
-    else:
-        prefix = "single_char"
-
-    if prefix in pickle_cache:
-        return pickle_cache[prefix]
-
-    path = f"./WiktionaryPickled/{prefix}.pkl"
-    if not os.path.exists(path):
-        pickle_cache[prefix] = {}
-        return {}
-
-    with open(path, 'rb') as f:
-        data = pickle.load(f)
-    pickle_cache[prefix] = data
-    return data
-
-
-sense_pickle_cache = {}
-
-
-def load_sense_pickle(english_word):
-    """Load the pickled Wiktionary sense dict for a word's prefix."""
-    if len(english_word) >= 2:
-        prefix = english_word[:2].upper()
-        if "/" in prefix or "\\" in prefix:
-            prefix = "single_char"
-    else:
-        prefix = "single_char"
-
-    if prefix in sense_pickle_cache:
-        return sense_pickle_cache[prefix]
-
-    path = f"./WiktionaryPickled/senses/{prefix}.pkl"
-    if not os.path.exists(path):
-        sense_pickle_cache[prefix] = {}
-        return {}
-
-    with open(path, 'rb') as f:
-        data = pickle.load(f)
-    sense_pickle_cache[prefix] = data
-    return data
+db = WiktionaryDB(readonly=True)
 
 
 # ---------------------------------------------------------------------------
@@ -695,21 +624,16 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                     ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
                     continue
 
-                pickle_data = load_pickle(eng_word)
-                sense_data = load_sense_pickle(eng_word)
-                if not pickle_data:
-                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
-                    continue
-
                 found_any = False
                 for pos_key in pos_keys:
-                    if (eng_word, pos_key) not in pickle_data:
+                    trans_entry = db.get_translations(eng_word, pos_key)
+                    if trans_entry is None:
                         continue
                     found_any = True
 
-                    sense_list = sense_data.get((eng_word, pos_key), [])
+                    sense_list = db.get_senses(eng_word, pos_key) or []
 
-                    for sense, lang_translations in pickle_data[(eng_word, pos_key)].items():
+                    for sense, lang_translations in trans_entry.items():
                         # Match translation sense to definition
                         matched_sense = match_sense_to_definition(sense, sense_list)
                         definition, ex1, ex2, ex3 = extract_definition_and_examples(matched_sense)
@@ -780,4 +704,5 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         menaWriter.writerow(ext_row)
 
 wb_out.save(outputPath)
+db.close()
 print(f"Saved senses to {outputPath}")
