@@ -4,6 +4,8 @@ import sys
 import csv
 import re
 import json
+import shutil
+from datetime import datetime
 from typing import NamedTuple
 from collections import defaultdict
 
@@ -16,6 +18,20 @@ class Translation(NamedTuple):
     word: str
     romanization: str
     tags: str
+
+
+# Required for pickle deserialization of Wiktionary sense data
+class Example(NamedTuple):
+    text: str
+    english: str
+    type: str
+
+
+class Sense(NamedTuple):
+    glosses: tuple
+    raw_glosses: tuple
+    tags: tuple
+    examples: tuple
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +202,112 @@ def load_pickle(english_word):
     return data
 
 
+sense_pickle_cache = {}
+
+
+def load_sense_pickle(english_word):
+    """Load the pickled Wiktionary sense dict for a word's prefix."""
+    if len(english_word) >= 2:
+        prefix = english_word[:2].upper()
+        if "/" in prefix or "\\" in prefix:
+            prefix = "single_char"
+    else:
+        prefix = "single_char"
+
+    if prefix in sense_pickle_cache:
+        return sense_pickle_cache[prefix]
+
+    path = f"./WiktionaryPickled/senses/{prefix}.pkl"
+    if not os.path.exists(path):
+        sense_pickle_cache[prefix] = {}
+        return {}
+
+    with open(path, 'rb') as f:
+        data = pickle.load(f)
+    sense_pickle_cache[prefix] = data
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Sense matching
+# ---------------------------------------------------------------------------
+
+_STOPWORDS = frozenset(
+    'a an the of or and in for to is are was were be been being '
+    'by with at on from as it its that this which who whom whose'.split()
+)
+
+
+def _content_words(text):
+    """Extract lowercased content words, stripping possessives and stopwords."""
+    words = set()
+    for w in re.findall(r"[a-zA-Z']+", text.lower()):
+        w = w.rstrip("'s") if w.endswith("'s") else w
+        if w and w not in _STOPWORDS:
+            words.add(w)
+    return words
+
+
+def match_sense_to_definition(sense_key, sense_list):
+    """Match a translation sense key to a Sense object from the definitions.
+
+    3-tier strategy:
+      Tier 1: sense_key is a substring of a gloss (case-insensitive)
+      Tier 2: sense_key is a substring of a raw_gloss
+      Tier 3: content-word overlap scoring (threshold >= 0.5)
+    """
+    sk_lower = sense_key.lower().strip()
+    if not sk_lower:
+        return None
+
+    # Also try the part after a colon (e.g. "gambling: banker's funds" -> "banker's funds")
+    sk_after_colon = sk_lower.split(":", 1)[1].strip() if ":" in sk_lower else ""
+
+    # Tier 1: substring match against glosses
+    for sense in sense_list:
+        for gloss in sense.glosses:
+            gl = gloss.lower()
+            if sk_lower in gl or (sk_after_colon and sk_after_colon in gl):
+                return sense
+
+    # Tier 2: substring match against raw_glosses
+    for sense in sense_list:
+        for raw in sense.raw_glosses:
+            rl = raw.lower()
+            if sk_lower in rl or (sk_after_colon and sk_after_colon in rl):
+                return sense
+
+    # Tier 3: content-word overlap
+    sk_words = _content_words(sense_key)
+    if not sk_words:
+        return None
+
+    best_sense = None
+    best_score = 0.0
+    for sense in sense_list:
+        for gloss in sense.glosses:
+            gloss_words = _content_words(gloss)
+            overlap = sk_words & gloss_words
+            score = len(overlap) / len(sk_words)
+            if score > best_score:
+                best_score = score
+                best_sense = sense
+
+    return best_sense if best_score >= 0.5 else None
+
+
+def extract_definition_and_examples(matched_sense):
+    """Extract definition and example from a matched Sense.
+    Returns (definition, example_text)."""
+    if matched_sense is None:
+        return ('', '')
+    definition = matched_sense.glosses[-1] if matched_sense.glosses else ''
+    example_text = ''
+    if matched_sense.examples:
+        example_text = matched_sense.examples[0].text
+    return (definition, example_text)
+
+
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
@@ -321,11 +443,29 @@ startPrefix = input(
 )
 
 # ---------------------------------------------------------------------------
+# Determine output path: full run overwrites senses file (with backup),
+# filtered run writes to a separate file.
+# ---------------------------------------------------------------------------
+
+if startPrefix:
+    outputPath = 'GLB_ENG_WiktionarySenses_initial.tsv'
+else:
+    outputPath = senseKeyPath
+    if os.path.exists(senseKeyPath):
+        backup_dir = "./backups"
+        os.makedirs(backup_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"GLB_ENG_WiktionarySenses_{timestamp}.tsv"
+        backup_path = os.path.join(backup_dir, backup_name)
+        shutil.copy2(senseKeyPath, backup_path)
+        print(f"Backed up {senseKeyPath} to {backup_path}")
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
 with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
-      open('GLB_ENG_WiktionarySenses_initial.tsv', 'w', newline='', encoding='utf-8') as perSense,
+      open(outputPath, 'w', newline='', encoding='utf-8') as perSense,
       open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as menaExp):
 
     writer = csv.writer(perSense, delimiter='\t', lineterminator='\n')
@@ -337,6 +477,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
 
     writer.writerow(['Glb', 'Eng', 'Clarification', 'Prt of Sp',
                       'Wiktionary Sense (in Translations)',
+                      'Definition', 'Example',
                       'App?', 'LLM?', 'Vetted?', 'Expert?', 'Spa', 'Epo']
                      + senses_lang_headers)
     menaWriter.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
@@ -416,6 +557,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                     continue
 
                 pickle_data = load_pickle(eng_word)
+                sense_data = load_sense_pickle(eng_word)
                 if not pickle_data:
                     writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
                     continue
@@ -426,7 +568,13 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                         continue
                     found_any = True
 
+                    sense_list = sense_data.get((eng_word, pos_key), [])
+
                     for sense, lang_translations in pickle_data[(eng_word, pos_key)].items():
+                        # Match translation sense to definition
+                        matched_sense = match_sense_to_definition(sense, sense_list)
+                        definition, example_text = extract_definition_and_examples(matched_sense)
+
                         # Cross-validation heuristic
                         heuristic_app, spa_col, epo_col = crossvalidate(
                             lang_translations, spa_words, epo_words)
@@ -460,6 +608,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
 
                         sense_row = [globasa_word, eng_word, clarification,
                                      pos_key, sense,
+                                     definition, example_text,
                                      app, llm, vetted, expert, spa_col, epo_col
                                      ] + sense_lang_cols
                         writer.writerow(sense_row)
