@@ -49,6 +49,7 @@ GLOSSPOS_TO_WIKT = {
 # Fallbacks always tried for a given Wiktionary PoS
 WIKT_POS_FALLBACKS = {
     "noun": ["name"],
+    "name": ["noun"],
     "phrase": ["particle", "adv"],
     "verb particle": ["adv"],
 }
@@ -122,32 +123,34 @@ def lang_display_name(code):
 # ---------------------------------------------------------------------------
 
 senseKeyPath = "./GLB_ENG_WiktionarySenses.tsv"
-existing_markings = {}  # (glb, eng, pos, sense) -> (llm, vetted, expert)
+existing_markings = {}  # (glb, eng, pos, sense) -> (app, llm, vetted, expert)
 
 if os.path.exists(senseKeyPath):
     with open(senseKeyPath, newline='', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t', quotechar='"')
         header = next(reader, None)
 
-        # Detect old vs new column format
-        if header and len(header) >= 6:
-            if header[5] == "LLM?":
-                # New format: App? | LLM? | Vetted? | Expert?
-                llm_col, vet_col, exp_col = 5, 6, 7
-            else:
-                # Old format: App? | Vetted?
-                llm_col, vet_col, exp_col = None, 5, None
+        # Build column index map from header names
+        if header:
+            col = {name: i for i, name in enumerate(header)}
+            eng_col = col.get('Eng', 1)
+            pos_col = col.get('Prt of Sp', 2)
+            sense_col = col.get('Wiktionary Sense (in Translations)', 3)
+            app_col = col.get('App?')
+            llm_col = col.get('LLM?')
+            vet_col = col.get('Vetted?')
+            exp_col = col.get('Expert?')
 
             for row in reader:
-                if len(row) < 4:
+                if len(row) <= sense_col:
                     continue
-                key = (row[0], row[1], row[2], row[3])
+                key = (row[0], row[eng_col], row[pos_col], row[sense_col])
+                app = row[app_col] if app_col is not None and app_col < len(row) else ''
                 llm = row[llm_col] if llm_col is not None and llm_col < len(row) else ''
-                vetted = row[vet_col] if vet_col < len(row) else ''
+                vetted = row[vet_col] if vet_col is not None and vet_col < len(row) else ''
                 expert = row[exp_col] if exp_col is not None and exp_col < len(row) else ''
-                # Only store if at least one vetting flag is set
                 if llm or vetted or expert:
-                    existing_markings[key] = (llm, vetted, expert)
+                    existing_markings[key] = (app, llm, vetted, expert)
 
     print(f"Loaded {len(existing_markings)} vetted markings from {senseKeyPath}")
 else:
@@ -186,6 +189,18 @@ def load_pickle(english_word):
 # ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
+
+_ITALIC_ANNOTATION_RE = re.compile(r'\(_([^_]*)_\)')
+
+
+def extract_italic_annotation(text):
+    """Extract and strip markdown italic annotations like '(_bird_)' from a gloss.
+    Returns (stripped_text, clarification)."""
+    matches = _ITALIC_ANNOTATION_RE.findall(text)
+    stripped = _ITALIC_ANNOTATION_RE.sub('', text).strip()
+    clarification = ", ".join(matches) if matches else ""
+    return stripped, clarification
+
 
 def expand_comma_glosses(glosses):
     """Split comma-separated glosses into individual ParsedGloss entries,
@@ -320,7 +335,8 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
     senses_lang_headers = [lang_display_name(c) for c in SENSES_LANGS]
     extension_lang_headers = [lang_display_name(c) for c in EXTENSION_LANGS]
 
-    writer.writerow(['Glb', 'Eng', 'Prt of Sp', 'Wiktionary Sense (in Translations)',
+    writer.writerow(['Glb', 'Eng', 'Clarification', 'Prt of Sp',
+                      'Wiktionary Sense (in Translations)',
                       'App?', 'LLM?', 'Vetted?', 'Expert?', 'Spa', 'Epo']
                      + senses_lang_headers)
     menaWriter.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
@@ -377,26 +393,31 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
             spa_words = get_words_for_pos(spa_glosses, eng_parsed.pos)
             epo_words = get_words_for_pos(epo_glosses, eng_parsed.pos)
 
-            # Split commas and expand parentheticals for individual lookups
-            lookup_words = []
+            # Split commas, extract italic annotations, expand parentheticals
+            # Each entry is (lookup_word, clarification, original_form)
+            lookup_entries = []
             for part in eng_parsed.gloss.split(","):
                 part = part.strip()
-                if part:
-                    lookup_words.extend(_expand_gloss_context(part))
+                if not part:
+                    continue
+                stripped, clarification = extract_italic_annotation(part)
+                if stripped:
+                    for v in _expand_gloss_context(stripped):
+                        lookup_entries.append((v, clarification, part))
 
             # Build list of (word, pos_key) pairs to try
             pos_keys = [wikt_pos] + WIKT_POS_FALLBACKS.get(wikt_pos, [])
             if single_pos:
                 pos_keys += WIKT_POS_SINGLE_FALLBACKS.get(wikt_pos, [])
 
-            for eng_word in lookup_words:
+            for eng_word, clarification, original_form in lookup_entries:
                 if eng_word.startswith("_"):
-                    writer.writerow([globasa_word, eng_word, wikt_pos])
+                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
                     continue
 
                 pickle_data = load_pickle(eng_word)
                 if not pickle_data:
-                    writer.writerow([globasa_word, eng_word, wikt_pos])
+                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
                     continue
 
                 found_any = False
@@ -406,13 +427,30 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                     found_any = True
 
                     for sense, lang_translations in pickle_data[(eng_word, pos_key)].items():
-                        # Fresh cross-validation
-                        app, spa_col, epo_col = crossvalidate(
+                        # Cross-validation heuristic
+                        heuristic_app, spa_col, epo_col = crossvalidate(
                             lang_translations, spa_words, epo_words)
 
-                        # Inherit LLM/Vetted/Expert from existing markings
-                        llm, vetted, expert = existing_markings.get(
-                            (globasa_word, eng_word, pos_key, sense), ('', '', ''))
+                        # Inherit vetted markings from existing TSV.
+                        # Try multiple key variants to handle annotation differences
+                        # between v2 (raw, paren-stripped, paren-removed) and v3 (italic-stripped).
+                        inherited_app, llm, vetted, expert = ('', '', '', '')
+                        v2_reduced = re.sub(r'\(.*?\)', '', original_form).strip()
+                        v2_unparened = original_form.replace("(", "").replace(")", "").strip()
+                        for eng_key in dict.fromkeys([eng_word, original_form,
+                                                      v2_reduced, v2_unparened]):
+                            marking = existing_markings.get(
+                                (globasa_word, eng_key, pos_key, sense))
+                            if marking:
+                                inherited_app, llm, vetted, expert = marking
+                                break
+
+                        # If any vetting column is marked, inherit the vetted App? judgment;
+                        # otherwise use the fresh heuristic result
+                        if llm or vetted or expert:
+                            app = inherited_app
+                        else:
+                            app = heuristic_app
 
                         # Senses TSV: per-sense language translations
                         sense_lang_cols = [
@@ -420,7 +458,8 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                             for lc in SENSES_LANGS
                         ]
 
-                        sense_row = [globasa_word, eng_word, pos_key, sense,
+                        sense_row = [globasa_word, eng_word, clarification,
+                                     pos_key, sense,
                                      app, llm, vetted, expert, spa_col, epo_col
                                      ] + sense_lang_cols
                         writer.writerow(sense_row)
@@ -436,7 +475,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                                             format_translation_word(t, pos_key))
 
                 if not found_any:
-                    writer.writerow([globasa_word, eng_word, wikt_pos])
+                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
 
         # Write extensions TSV row
         eng_sense_output = ', '.join(
