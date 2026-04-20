@@ -9,6 +9,9 @@ from datetime import datetime
 from typing import NamedTuple
 from collections import defaultdict
 
+from openpyxl import Workbook, load_workbook
+from openpyxl.utils import get_column_letter
+
 from Lexilista_parser import (parseWordEntry, GlossPoS, ParsedGloss,
                                ParsedWordEntry, _expand_gloss_context)
 
@@ -81,19 +84,14 @@ WIKT_POS_SINGLE_FALLBACKS = {
 VALIDATION_LANGS = {"Spa": ("es", 9), "Epo": ("eo", 8)}
 
 # Annotation-aid languages: shown per-sense in senses TSV to help annotators
-ANNOTATION_AID_LANGS = ['de', 'fr', 'ru', 'cmn']
+ANNOTATION_AID_LANGS = ['de', 'nl', 'fr', 'it', 'ru', 'cmn', 'ja', 'ar', 'tr']
 
 # Extension languages: fetched from Wiktionary for menalariExtension.tsv
-EXTENSION_LANGS = ['de', 'nl', 'ang', 'grc', 'la', 'fr', 'it', 'ru',
+EXTENSION_LANGS = ['es', 'eo', 'de', 'nl', 'ang', 'grc', 'la', 'fr', 'it', 'ru',
                    'yi', 'he', 'ar', 'cmn', 'ja', 'tr', 'tt']
 
-# All languages appearing in the senses TSV (annotation-aid ∪ extension, order preserved)
-SENSES_LANGS = []
-_seen = set()
-for lang in ANNOTATION_AID_LANGS + EXTENSION_LANGS:
-    if lang not in _seen:
-        SENSES_LANGS.append(lang)
-        _seen.add(lang)
+# Languages shown in the senses table (annotation-aid only, not extension-only)
+SENSES_LANGS = list(ANNOTATION_AID_LANGS)
 
 # ---------------------------------------------------------------------------
 # csv.field_size_limit fix
@@ -135,42 +133,134 @@ def lang_display_name(code):
 
 
 # ---------------------------------------------------------------------------
-# Preload existing vetted markings from GLB_ENG_WiktionarySenses.tsv
+# Senses file path: configurable directory, persisted across runs
 # ---------------------------------------------------------------------------
 
-senseKeyPath = "./GLB_ENG_WiktionarySenses.tsv"
-existing_markings = {}  # (glb, eng, pos, sense) -> (app, llm, vetted, expert)
+SENSES_FILENAME = "GLB_ENG_WiktionarySenses.xlsx"
+SENSES_TSV_FALLBACK = "./GLB_ENG_WiktionarySenses.tsv"
+CONFIG_FILE = ".senses_config.json"
+
+default_dir = "./"
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+        default_dir = json.load(f).get("senses_dir", default_dir)
+
+senses_dir = input(
+    f"Directory for {SENSES_FILENAME} [{default_dir}]:\n"
+).strip() or default_dir
+
+with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+    json.dump({"senses_dir": senses_dir}, f)
+
+senseKeyPath = os.path.join(senses_dir, SENSES_FILENAME)
+
+# ---------------------------------------------------------------------------
+# Preload existing vetted markings from .xlsx (fallback to .tsv)
+# ---------------------------------------------------------------------------
+
+
+def _load_markings_from_rows(header, rows):
+    """Build existing_markings dict from header + iterable of row tuples/lists."""
+    markings = {}
+    col = {name: i for i, name in enumerate(header)}
+    eng_col = col.get('Eng', 1)
+    pos_col = col.get('Prt of Sp', 2)
+    sense_col = col.get('Wiktionary Sense (in Translations)', 3)
+    app_col = col.get('App?')
+    llm_col = col.get('LLM?')
+    vet_col = col.get('Vetted?')
+    exp_col = col.get('Expert?')
+
+    for row in rows:
+        if len(row) <= sense_col:
+            continue
+        key = (row[0] or '', row[eng_col] or '', row[pos_col] or '', row[sense_col] or '')
+        app = (row[app_col] or '') if app_col is not None and app_col < len(row) else ''
+        llm = (row[llm_col] or '') if llm_col is not None and llm_col < len(row) else ''
+        vetted = (row[vet_col] or '') if vet_col is not None and vet_col < len(row) else ''
+        expert = (row[exp_col] or '') if exp_col is not None and exp_col < len(row) else ''
+        if llm or vetted or expert:
+            markings[key] = (app, llm, vetted, expert)
+    return markings
+
+
+existing_markings = {}
+existing_col_widths = {}  # header name -> width (character units)
+
+
+def _load_markings_from_xlsx(path):
+    """Load markings and column widths from an .xlsx file.
+    Returns (markings, col_widths) or raises on corruption."""
+    markings = {}
+    col_widths = {}
+
+    wb_in = load_workbook(path, read_only=True)
+    ws_in = wb_in.active
+    row_iter = ws_in.iter_rows(values_only=True)
+    header = next(row_iter, None)
+    if header:
+        header = [str(h) if h is not None else '' for h in header]
+        rows = ([str(c) if c is not None else '' for c in r] for r in row_iter)
+        markings = _load_markings_from_rows(header, rows)
+    wb_in.close()
+
+    wb_dims = load_workbook(path, read_only=False, data_only=True)
+    ws_dims = wb_dims.active
+    dims_header = [str(c.value) if c.value is not None else ''
+                   for c in next(ws_dims.iter_rows(min_row=1, max_row=1))]
+    for i, name in enumerate(dims_header, 1):
+        col_letter = get_column_letter(i)
+        dim = ws_dims.column_dimensions.get(col_letter)
+        if dim and dim.width:
+            col_widths[name] = dim.width
+    wb_dims.close()
+
+    return markings, col_widths
+
+
+def _find_latest_backup():
+    """Find the most recent .xlsx backup in ./backups/, or None."""
+    backup_dir = "./backups"
+    if not os.path.isdir(backup_dir):
+        return None
+    candidates = sorted(
+        [f for f in os.listdir(backup_dir)
+         if f.startswith("GLB_ENG_WiktionarySenses_") and f.endswith(".xlsx")],
+        reverse=True)
+    return os.path.join(backup_dir, candidates[0]) if candidates else None
+
+
+loaded = False
 
 if os.path.exists(senseKeyPath):
-    with open(senseKeyPath, newline='', encoding='utf-8') as f:
+    try:
+        existing_markings, existing_col_widths = _load_markings_from_xlsx(senseKeyPath)
+        print(f"Loaded {len(existing_markings)} vetted markings from {senseKeyPath}")
+        loaded = True
+    except Exception as e:
+        print(f"Warning: {senseKeyPath} is corrupted ({e}), checking backups...")
+
+if not loaded:
+    backup_path = _find_latest_backup()
+    if backup_path:
+        try:
+            existing_markings, existing_col_widths = _load_markings_from_xlsx(backup_path)
+            print(f"Loaded {len(existing_markings)} vetted markings from backup {backup_path}")
+            loaded = True
+        except Exception as e:
+            print(f"Warning: backup {backup_path} also corrupted ({e})")
+
+if not loaded and os.path.exists(SENSES_TSV_FALLBACK):
+    with open(SENSES_TSV_FALLBACK, newline='', encoding='utf-8') as f:
         reader = csv.reader(f, delimiter='\t', quotechar='"')
         header = next(reader, None)
-
-        # Build column index map from header names
         if header:
-            col = {name: i for i, name in enumerate(header)}
-            eng_col = col.get('Eng', 1)
-            pos_col = col.get('Prt of Sp', 2)
-            sense_col = col.get('Wiktionary Sense (in Translations)', 3)
-            app_col = col.get('App?')
-            llm_col = col.get('LLM?')
-            vet_col = col.get('Vetted?')
-            exp_col = col.get('Expert?')
+            existing_markings = _load_markings_from_rows(header, reader)
+    print(f"Loaded {len(existing_markings)} vetted markings from {SENSES_TSV_FALLBACK} (tsv fallback)")
+    loaded = True
 
-            for row in reader:
-                if len(row) <= sense_col:
-                    continue
-                key = (row[0], row[eng_col], row[pos_col], row[sense_col])
-                app = row[app_col] if app_col is not None and app_col < len(row) else ''
-                llm = row[llm_col] if llm_col is not None and llm_col < len(row) else ''
-                vetted = row[vet_col] if vet_col is not None and vet_col < len(row) else ''
-                expert = row[exp_col] if exp_col is not None and exp_col < len(row) else ''
-                if llm or vetted or expert:
-                    existing_markings[key] = (app, llm, vetted, expert)
-
-    print(f"Loaded {len(existing_markings)} vetted markings from {senseKeyPath}")
-else:
-    print(f"No existing senses file found at {senseKeyPath}, starting fresh")
+if not loaded:
+    print(f"No existing senses file found, starting fresh")
 
 # ---------------------------------------------------------------------------
 # Pickle cache
@@ -297,15 +387,15 @@ def match_sense_to_definition(sense_key, sense_list):
 
 
 def extract_definition_and_examples(matched_sense):
-    """Extract definition and example from a matched Sense.
-    Returns (definition, example_text)."""
+    """Extract definition and up to 3 examples from a matched Sense.
+    Returns (definition, example1, example2, example3)."""
     if matched_sense is None:
-        return ('', '')
+        return ('', '', '', '')
     definition = matched_sense.glosses[-1] if matched_sense.glosses else ''
-    example_text = ''
-    if matched_sense.examples:
-        example_text = matched_sense.examples[0].text
-    return (definition, example_text)
+    examples = ['', '', '']
+    for i, ex in enumerate(matched_sense.examples[:3]):
+        examples[i] = ex.text
+    return (definition, examples[0], examples[1], examples[2])
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +412,23 @@ def extract_italic_annotation(text):
     stripped = _ITALIC_ANNOTATION_RE.sub('', text).strip()
     clarification = ", ".join(matches) if matches else ""
     return stripped, clarification
+
+
+def build_annotation_map(text):
+    """Build {stripped_word: annotation_text} from a word-list translation field.
+
+    E.g. 'absurdidad (_dicho o hecho absurdo_), ridiculez'
+      -> {'absurdidad': 'dicho o hecho absurdo'}
+    """
+    annotations = {}
+    for part in re.split(r'[,;]', text):
+        part = part.strip()
+        if not part:
+            continue
+        stripped, annotation = extract_italic_annotation(part)
+        if stripped and annotation:
+            annotations[stripped] = annotation
+    return annotations
 
 
 def expand_comma_glosses(glosses):
@@ -448,14 +555,14 @@ startPrefix = input(
 # ---------------------------------------------------------------------------
 
 if startPrefix:
-    outputPath = 'GLB_ENG_WiktionarySenses_initial.tsv'
+    outputPath = os.path.join(senses_dir, 'GLB_ENG_WiktionarySenses_initial.xlsx')
 else:
     outputPath = senseKeyPath
     if os.path.exists(senseKeyPath):
         backup_dir = "./backups"
         os.makedirs(backup_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_name = f"GLB_ENG_WiktionarySenses_{timestamp}.tsv"
+        backup_name = f"GLB_ENG_WiktionarySenses_{timestamp}.xlsx"
         backup_path = os.path.join(backup_dir, backup_name)
         shutil.copy2(senseKeyPath, backup_path)
         print(f"Backed up {senseKeyPath} to {backup_path}")
@@ -464,22 +571,46 @@ else:
 # Main loop
 # ---------------------------------------------------------------------------
 
+wb_out = Workbook()
+ws_out = wb_out.active
+ws_out.title = "Senses"
+
 with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
-      open(outputPath, 'w', newline='', encoding='utf-8') as perSense,
       open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as menaExp):
 
-    writer = csv.writer(perSense, delimiter='\t', lineterminator='\n')
     menaWriter = csv.writer(menaExp, delimiter='\t', lineterminator='\n')
 
     # Build headers
     senses_lang_headers = [lang_display_name(c) for c in SENSES_LANGS]
     extension_lang_headers = [lang_display_name(c) for c in EXTENSION_LANGS]
 
-    writer.writerow(['Glb', 'Eng', 'Clarification', 'Prt of Sp',
-                      'Wiktionary Sense (in Translations)',
-                      'Definition', 'Example',
-                      'App?', 'LLM?', 'Vetted?', 'Expert?', 'Spa', 'Epo']
-                     + senses_lang_headers)
+    senses_header = (['Glb', 'Tags', 'Antonyms', 'Eng', 'Clarification', 'Prt of Sp',
+                       'Wiktionary Sense (in Translations)',
+                       'Definition', 'Example', 'Example 2', 'Example 3',
+                       '|',
+                       'App?', 'LLM?', 'Vetted?', 'Expert?', 'Spa', 'Epo']
+                      + senses_lang_headers)
+    ws_out.append(senses_header)
+
+    # Column widths: inherit from existing file, fall back to defaults
+    # Default: ~4.96 chars/cm (8.43 default width ≈ 1.70 cm)
+    CM = 4.96
+    DEFAULT_WIDTHS = {
+        'Definition': 3 * CM, 'Example': 3 * CM,
+        'Example 2': 3 * CM, 'Example 3': 3 * CM,
+        '|': 1 * CM,
+        'App?': 1 * CM, 'LLM?': 1 * CM,
+        'Vetted?': 1 * CM, 'Expert?': 1 * CM,
+    }
+    for i, name in enumerate(senses_header, 1):
+        col_letter = get_column_letter(i)
+        if name in existing_col_widths:
+            ws_out.column_dimensions[col_letter].width = existing_col_widths[name]
+        elif name in DEFAULT_WIDTHS:
+            ws_out.column_dimensions[col_letter].width = DEFAULT_WIDTHS[name]
+        else:
+            ws_out.column_dimensions[col_letter].width = min(len(name) + 4, 10 * CM)
+
     menaWriter.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
 
     menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
@@ -500,10 +631,11 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         spa_text = row[9].strip() if len(row) > 9 else ''
         epo_text = row[8].strip() if len(row) > 8 else ''
         tags = row[15] if len(row) > 15 else ''
+        antonyms = row[13] if len(row) > 13 else ''
 
         if not eng_text:
             menaWriter.writerow([globasa_word])
-            writer.writerow([globasa_word])
+            ws_out.append([globasa_word, tags, antonyms])
             continue
 
         # Parse all three languages via Lexilista_parser
@@ -514,8 +646,15 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
 
         if not eng_glosses:
             menaWriter.writerow([globasa_word])
-            writer.writerow([globasa_word])
+            ws_out.append([globasa_word, tags, antonyms])
             continue
+
+        # Word-list annotation maps for es/eo overlay in extension TSV
+        annotation_maps = {}
+        if spa_text:
+            annotation_maps['es'] = build_annotation_map(spa_text)
+        if epo_text:
+            annotation_maps['eo'] = build_annotation_map(epo_text)
 
         # Determine if single unique Wiktionary PoS (for extra fallbacks)
         unique_wikt_pos = {GLOSSPOS_TO_WIKT.get(g.pos) for g in eng_glosses} - {None}
@@ -553,13 +692,13 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
 
             for eng_word, clarification, original_form in lookup_entries:
                 if eng_word.startswith("_"):
-                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
+                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
                     continue
 
                 pickle_data = load_pickle(eng_word)
                 sense_data = load_sense_pickle(eng_word)
                 if not pickle_data:
-                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
+                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
                     continue
 
                 found_any = False
@@ -573,7 +712,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                     for sense, lang_translations in pickle_data[(eng_word, pos_key)].items():
                         # Match translation sense to definition
                         matched_sense = match_sense_to_definition(sense, sense_list)
-                        definition, example_text = extract_definition_and_examples(matched_sense)
+                        definition, ex1, ex2, ex3 = extract_definition_and_examples(matched_sense)
 
                         # Cross-validation heuristic
                         heuristic_app, spa_col, epo_col = crossvalidate(
@@ -600,18 +739,20 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                         else:
                             app = heuristic_app
 
-                        # Senses TSV: per-sense language translations
+                        # Senses xlsx: per-sense language translations
                         sense_lang_cols = [
                             get_sense_lang_translations(lang_translations, lc, pos_key)
                             for lc in SENSES_LANGS
                         ]
 
-                        sense_row = [globasa_word, eng_word, clarification,
+                        sense_row = [globasa_word, tags, antonyms,
+                                     eng_word, clarification,
                                      pos_key, sense,
-                                     definition, example_text,
+                                     definition, ex1, ex2, ex3,
+                                     '|',
                                      app, llm, vetted, expert, spa_col, epo_col
                                      ] + sense_lang_cols
-                        writer.writerow(sense_row)
+                        ws_out.append(sense_row)
                         print("\t".join(sense_row))
 
                         # Collect for extensions TSV if vetted
@@ -620,11 +761,14 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                             for j, lang_code in enumerate(EXTENSION_LANGS):
                                 if lang_code in lang_translations:
                                     for t in lang_translations[lang_code]:
-                                        output_glosses[j][i].add(
-                                            format_translation_word(t, pos_key))
+                                        formatted = format_translation_word(t, pos_key)
+                                        ann = annotation_maps.get(lang_code, {}).get(t.word, "")
+                                        if ann:
+                                            formatted += f" (_{ann}_)"
+                                        output_glosses[j][i].add(formatted)
 
                 if not found_any:
-                    writer.writerow([globasa_word, eng_word, clarification, wikt_pos])
+                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
 
         # Write extensions TSV row
         eng_sense_output = ', '.join(
@@ -634,3 +778,6 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         ext_row = ([globasa_word, eng_sense_output]
                    + [entry_to_string(output_glosses[j]) for j in range(len(EXTENSION_LANGS))])
         menaWriter.writerow(ext_row)
+
+wb_out.save(outputPath)
+print(f"Saved senses to {outputPath}")
