@@ -10,7 +10,7 @@ from collections import defaultdict
 
 import wget as wget
 
-from WiktionaryPreprocess import split_tsv_by_second_column
+#from WiktionaryPreprocess import split_tsv_by_second_column
 
 languages = ['deu', 'nld', 'fra', 'rus', 'cmn', 'jpn']
 
@@ -32,14 +32,10 @@ with open("./iso-639-3.tab", 'r', newline='', encoding='utf-8') as infile:
 # languageNames = {'deu': 'German', 'nld': 'Dutch', 'fra': 'French', 'rus': 'Russian', 'cmn': 'Mandarin', 'jpn': 'Japanese',                 'jpn': 'Japanese'}
 
 PoSDict = {"n": ['Noun'], "f": ['Verb'], "f.sah": ['Verb'], "b": ['Noun', 'Verb'], "t": ['Adjective', 'Adverb'],
-           "s": ['Adjective'], "p jm": ['Adverb'],
+           "s": ['Adjective'], "p jm": ['Adjective', 'Adverb'],
            "m": ['Adverb'], "lfik": ['Prefix'], "xfik": ['Suffix'], "b xfik": ['Suffix'], "t xfik": ['Suffix'],
            "su n": ['Proper noun'], "su t": ['Adjective'], "il": ['Interjection'], "l": ['Conjunction'],
            "num": ['Number'], "p": ['Preposition'], "pn": ['Pronoun'], "d": ['Determiner']}
-
-# This excludes senses
-blacklistDict = {("alokrasi", "revolution"): ["turning of an object around an axis",
-                                              "traversal of one body through an orbit around another body"]}
 
 whitelistDict = {("alokrasi", "revolution"): ["political upheaval", "removal and replacement of a government"]}
 
@@ -230,10 +226,10 @@ with open("./" + menalari_name, newline='') as menalari_file, open('GLB_ENG_Wikt
                 started = True
             else:
                 continue
-        englishGlosses = re.sub("\(_.*?_\)", "", row[5]).strip().split("; ")
-        spanishGlosses = re.sub("\(_.*?_\)", "", row[8]).strip().split("; ")
-        esperantoGlosses = re.sub("\(_.*?_\)", "", row[7]).strip().split("; ")
-        PoSs = row[2].split("; ")
+        englishGlosses = re.sub("\(_.*?_\)", "", row[6]).strip().split("; ")
+        spanishGlosses = re.sub("\(_.*?_\)", "", row[9]).strip().split("; ")
+        esperantoGlosses = re.sub("\(_.*?_\)", "", row[8]).strip().split("; ")
+        PoSs = row[3].split("; ")
         PoSlist = []
         PoSinDict = True
         for part in PoSs:
