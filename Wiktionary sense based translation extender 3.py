@@ -62,14 +62,61 @@ WIKT_POS_SINGLE_FALLBACKS = {
 VALIDATION_LANGS = {"Spa": ("es", 9), "Epo": ("eo", 8)}
 
 # Annotation-aid languages: shown per-sense in senses TSV to help annotators
-ANNOTATION_AID_LANGS = ['de', 'nl', 'fr', 'it', 'ru', 'cmn', 'ja', 'ar', 'tr']
+ANNOTATION_AID_LANGS = ['de', 'nl', 'fr', 'it', 'ru', 'cmn', 'ja', 'ar', 'tr',
+                        'fa', 'hi', 'ko', 'bg', 'ro']
 
 # Extension languages: fetched from Wiktionary for menalariExtension.tsv
-EXTENSION_LANGS = ['es', 'eo', 'de', 'nl', 'ang', 'grc', 'la', 'fr', 'it', 'ru',
-                   'yi', 'he', 'ar', 'cmn', 'ja', 'tr', 'tt']
+# Groups: Romance, Germanic, Classical, Slavic+E-European, Semitic+Turkic,
+#         East Asian, South/SE Asian, Iranian+Indic, African
+EXTENSION_LANGS = ['es', 'eo', 'pt', 'fr', 'it', 'ro',                     # Romance
+                   'de', 'de-ale', 'de-nds', 'de-rfr',                       # German + dialects
+                   'nl', 'ang', 'sv',                                         # Germanic (cont.)
+                   'grc', 'la', 'sa',                                        # Classical
+                   'ru', 'pl', 'bg', 'uk', 'sr', 'cs', 'hu',               # Slavic + E-European
+                   'yi', 'he',                                                # Semitic
+                   'ar', 'ar-egy', 'ar-hji', 'ar-mor', 'ar-glf',            # Arabic + dialects
+                   'tr', 'tt',                                                # Turkic
+                   'cmn', 'cmn-hok', 'cmn-dun',                              # Chinese + dialects
+                   'ja', 'ko', 'vi',                                          # East Asian (cont.)
+                   'id', 'ms', 'tl',                                         # SE Asian / Austronesian
+                   'fa', 'hi', 'ur', 'bn', 'ta', 'te', 'kn', 'ml',         # Iranian + Indic
+                   'gu', 'pa',                                                # Indic (cont.)
+                   'el',                                                      # Greek (modern)
+                   'sw']                                                      # African
 
 # Languages shown in the senses table (annotation-aid only, not extension-only)
 SENSES_LANGS = list(ANNOTATION_AID_LANGS)
+
+# Dialect-as-language mappings: virtual lang code -> (parent Wiktionary code, tag)
+# These get their own columns in output; translations with these tags are excluded
+# from the parent language column.
+DIALECT_LANGS = {
+    'de-ale': ('de', 'Alemannic-German'),
+    'de-nds': ('de', 'German-Low-German'),
+    'de-rfr': ('de', 'Rhine-Franconian'),
+    'ar-egy': ('ar', 'Egyptian-Arabic'),
+    'ar-hji': ('ar', 'Hijazi-Arabic'),
+    'ar-mor': ('ar', 'Moroccan-Arabic'),
+    'ar-glf': ('ar', 'Gulf-Arabic'),
+    'cmn-hok': ('cmn', 'Hokkien'),
+    'cmn-dun': ('cmn', 'Dungan'),
+}
+
+# All dialect tags (derived from DIALECT_LANGS), plus other non-standard variety tags
+# that should be excluded from the parent language but don't warrant their own column.
+DIALECT_TAGS = frozenset(
+    {tag for _, tag in DIALECT_LANGS.values()}
+    | {'Southern-Zazaki', 'Valencian', 'Taraškievica',
+       'Föhr-Amrum', 'Mooring'}
+)
+
+# Display names for dialect virtual codes
+DIALECT_DISPLAY_NAMES = {
+    'de-ale': 'Alemannic', 'de-nds': 'Low German', 'de-rfr': 'Rhine Franc.',
+    'ar-egy': 'Egyptian Ar.', 'ar-hji': 'Hijazi Ar.', 'ar-mor': 'Moroccan Ar.',
+    'ar-glf': 'Gulf Ar.',
+    'cmn-hok': 'Hokkien', 'cmn-dun': 'Dungan',
+}
 
 # ---------------------------------------------------------------------------
 # csv.field_size_limit fix
@@ -105,6 +152,8 @@ with open("./iso-639-3.tab", 'r', newline='', encoding='utf-8') as infile:
 
 
 def lang_display_name(code):
+    if code in DIALECT_DISPLAY_NAMES:
+        return DIALECT_DISPLAY_NAMES[code]
     if code in twoLetterCodes:
         return twoLetterCodes[code]
     return languageNames.get(code, code)
@@ -138,27 +187,46 @@ senseKeyPath = os.path.join(senses_dir, SENSES_FILENAME)
 
 
 def _load_markings_from_rows(header, rows):
-    """Build existing_markings dict from header + iterable of row tuples/lists."""
+    """Build existing_markings dict from header + iterable of row tuples/lists.
+    Returns {(glb, eng, pos, sense): (app, tier)} where tier is a single letter
+    representing the highest vetting tier: 'e' > 'v' > 'l' > 'a'.
+    Handles both new format (single 'Tier' column) and legacy format
+    (separate Script?/LLM?/Vetted?/Expert? columns)."""
     markings = {}
     col = {name: i for i, name in enumerate(header)}
     eng_col = col.get('Eng', 1)
     pos_col = col.get('Prt of Sp', 2)
     sense_col = col.get('Wiktionary Sense (in Translations)', 3)
     app_col = col.get('App?')
+    tier_col = col.get('Tier')
+    # Legacy columns (pre-consolidation)
+    scr_col = col.get('Script?')
     llm_col = col.get('LLM?')
     vet_col = col.get('Vetted?')
     exp_col = col.get('Expert?')
+
+    def _get(row, c):
+        return (row[c] or '') if c is not None and c < len(row) else ''
 
     for row in rows:
         if len(row) <= sense_col:
             continue
         key = (row[0] or '', row[eng_col] or '', row[pos_col] or '', row[sense_col] or '')
-        app = (row[app_col] or '') if app_col is not None and app_col < len(row) else ''
-        llm = (row[llm_col] or '') if llm_col is not None and llm_col < len(row) else ''
-        vetted = (row[vet_col] or '') if vet_col is not None and vet_col < len(row) else ''
-        expert = (row[exp_col] or '') if exp_col is not None and exp_col < len(row) else ''
-        if llm or vetted or expert:
-            markings[key] = (app, llm, vetted, expert)
+        app = _get(row, app_col)
+
+        if tier_col is not None:
+            # New format: single Tier column
+            tier = _get(row, tier_col)
+        else:
+            # Legacy format: collapse highest tier (e > v > l > a)
+            expert = _get(row, exp_col)
+            vetted = _get(row, vet_col)
+            llm = _get(row, llm_col)
+            script = _get(row, scr_col)
+            tier = expert or vetted or llm or script
+
+        if tier:
+            markings[key] = (app, tier)
     return markings
 
 
@@ -426,6 +494,13 @@ def crossvalidate(lang_translations, spa_words, epo_words):
     return ('s' if app_match else '', spa_col, epo_col)
 
 
+def is_dialect(translation):
+    """Return True if a Translation carries a known dialect tag."""
+    if not translation.tags:
+        return False
+    return bool(DIALECT_TAGS & frozenset(translation.tags.split('\t')))
+
+
 def format_translation_word(translation, wikt_pos):
     """Format a Translation with gender tags for nouns."""
     word = translation.word
@@ -442,12 +517,33 @@ def format_translation_word(translation, wikt_pos):
     return word
 
 
+def _resolve_lang(lang_code, lang_translations):
+    """Resolve a (possibly virtual dialect) lang code to (parent_code, filter_fn).
+
+    For dialect codes (e.g. 'de-ale'): looks up parent in lang_translations,
+    returns only translations carrying the required dialect tag.
+    For standard codes: returns translations excluding all dialect tags.
+    Returns (translations_iterable, True) or ([], False) if no data."""
+    if lang_code in DIALECT_LANGS:
+        parent, required_tag = DIALECT_LANGS[lang_code]
+        if parent not in lang_translations:
+            return [], False
+        filtered = [t for t in lang_translations[parent]
+                    if required_tag in (t.tags or '').split('\t')]
+        return filtered, bool(filtered)
+    else:
+        if lang_code not in lang_translations:
+            return [], False
+        filtered = [t for t in lang_translations[lang_code] if not is_dialect(t)]
+        return filtered, bool(filtered)
+
+
 def get_sense_lang_translations(lang_translations, lang_code, wikt_pos):
     """Get formatted translation words for a language from a sense."""
-    if lang_code not in lang_translations:
+    translations, found = _resolve_lang(lang_code, lang_translations)
+    if not found:
         return ""
-    words = [format_translation_word(t, wikt_pos) for t in lang_translations[lang_code]]
-    return ", ".join(words)
+    return ", ".join(format_translation_word(t, wikt_pos) for t in translations)
 
 
 def entry_to_string(entry):
@@ -517,7 +613,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                        'Wiktionary Sense (in Translations)',
                        'Definition', 'Example', 'Example 2', 'Example 3',
                        '|',
-                       'App?', 'LLM?', 'Vetted?', 'Expert?', 'Spa', 'Epo']
+                       'App?', 'Tier', 'Spa', 'Epo']
                       + senses_lang_headers)
     ws_out.append(senses_header)
 
@@ -528,8 +624,7 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         'Definition': 3 * CM, 'Example': 3 * CM,
         'Example 2': 3 * CM, 'Example 3': 3 * CM,
         '|': 1 * CM,
-        'App?': 1 * CM, 'LLM?': 1 * CM,
-        'Vetted?': 1 * CM, 'Expert?': 1 * CM,
+        'App?': 1 * CM, 'Tier': 1 * CM,
     }
     for i, name in enumerate(senses_header, 1):
         col_letter = get_column_letter(i)
@@ -543,7 +638,8 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
     menaWriter.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
 
     menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
-    next(menalariReader, None)
+    wl_header = next(menalariReader, [])
+    wl = {name: i for i, name in enumerate(wl_header)}
 
     started = False
 
@@ -554,13 +650,17 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
             else:
                 continue
 
+        def wl_get(col_name):
+            idx = wl.get(col_name)
+            return (row[idx].strip() if idx is not None and idx < len(row) else '')
+
         globasa_word = row[0]
-        wordclass = row[3]
-        eng_text = row[6].strip()
-        spa_text = row[9].strip() if len(row) > 9 else ''
-        epo_text = row[8].strip() if len(row) > 8 else ''
-        tags = row[15] if len(row) > 15 else ''
-        antonyms = row[13] if len(row) > 13 else ''
+        wordclass = wl_get('WordClass')
+        eng_text = wl_get('TranslationEng')
+        spa_text = wl_get('TranslationSpa')
+        epo_text = wl_get('TranslationEpo')
+        tags = wl_get('Tags')
+        antonyms = wl_get('Antonyms')
 
         if not eng_text:
             menaWriter.writerow([globasa_word])
@@ -642,10 +742,10 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                         heuristic_app, spa_col, epo_col = crossvalidate(
                             lang_translations, spa_words, epo_words)
 
-                        # Inherit vetted markings from existing TSV.
+                        # Inherit vetted markings from existing file.
                         # Try multiple key variants to handle annotation differences
                         # between v2 (raw, paren-stripped, paren-removed) and v3 (italic-stripped).
-                        inherited_app, llm, vetted, expert = ('', '', '', '')
+                        inherited_app, tier = '', ''
                         v2_reduced = re.sub(r'\(.*?\)', '', original_form).strip()
                         v2_unparened = original_form.replace("(", "").replace(")", "").strip()
                         for eng_key in dict.fromkeys([eng_word, original_form,
@@ -653,12 +753,12 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                             marking = existing_markings.get(
                                 (globasa_word, eng_key, pos_key, sense))
                             if marking:
-                                inherited_app, llm, vetted, expert = marking
+                                inherited_app, tier = marking
                                 break
 
-                        # If any vetting column is marked, inherit the vetted App? judgment;
+                        # If any tier has reviewed this, inherit the vetted App? judgment;
                         # otherwise use the fresh heuristic result
-                        if llm or vetted or expert:
+                        if tier:
                             app = inherited_app
                         else:
                             app = heuristic_app
@@ -674,22 +774,25 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                                      pos_key, sense,
                                      definition, ex1, ex2, ex3,
                                      '|',
-                                     app, llm, vetted, expert, spa_col, epo_col
+                                     app, tier, spa_col, epo_col
                                      ] + sense_lang_cols
                         ws_out.append(sense_row)
                         print("\t".join(sense_row))
 
-                        # Collect for extensions TSV if vetted
-                        if app == 's' and (expert == 'e' or vetted == 'v' or llm == 'l'):
+                        # Collect for extensions TSV if reviewed at any tier
+                        if app == 's' and tier in ('v', 'e'):
                             eng_sense_dict.setdefault(eng_word, set()).add(sense)
                             for j, lang_code in enumerate(EXTENSION_LANGS):
-                                if lang_code in lang_translations:
-                                    for t in lang_translations[lang_code]:
-                                        formatted = format_translation_word(t, pos_key)
-                                        ann = annotation_maps.get(lang_code, {}).get(t.word, "")
-                                        if ann:
-                                            formatted += f" (_{ann}_)"
-                                        output_glosses[j][i].add(formatted)
+                                resolved, found = _resolve_lang(lang_code, lang_translations)
+                                if not found:
+                                    continue
+                                for t in resolved:
+                                    formatted = format_translation_word(t, pos_key)
+                                    ann_key = DIALECT_LANGS[lang_code][0] if lang_code in DIALECT_LANGS else lang_code
+                                    ann = annotation_maps.get(ann_key, {}).get(t.word, "")
+                                    if ann:
+                                        formatted += f" (_{ann}_)"
+                                    output_glosses[j][i].add(formatted)
 
                 if not found_any:
                     ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
