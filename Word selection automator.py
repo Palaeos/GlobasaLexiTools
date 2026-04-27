@@ -7,7 +7,7 @@ import sys
 import csv
 import re
 import cutlet
-import GlobasaTransliterators as gbTr
+import GlobasaSourceTransliterators as gbTr
 from korean_romanizer.romanizer import Romanizer
 from transliterate import translit
 
