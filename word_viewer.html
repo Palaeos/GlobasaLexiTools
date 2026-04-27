@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globasa Word Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* Source Sans 3 — self-hosted variable font with true OpenType smcp/c2sc glyphs.
+   Google Fonts strips smcp during subsetting, so we serve the full font locally. */
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fonts/SourceSans3/SourceSans3VF-Upright.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Source Sans 3';
+  src: url('/fonts/SourceSans3/SourceSans3VF-Italic.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Dushan Musa Alphabet';
+  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Dushan Musa Alphabet';
+  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Dushan Musa Alphabet';
+  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'Dushan Musa Alphabet';
+  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold_Italic.otf') format('opentype');
+  font-weight: 700;
+  font-style: italic;
+}
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-serif: 'Libre Baskerville', Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+  --font-sans: 'Open Sans', system-ui, sans-serif;
+  /* Source Sans 3 (variable) has true OpenType smcp glyphs for proper small caps */
+  --font-sans-sc: 'Source Sans 3', 'Open Sans', system-ui, sans-serif;
+  /* Noto Sans for Greek — polytonic diacritics preserved; Greek small caps
+     inherently drop diacritics (standard convention), so we use bold instead */
+  --font-greek: 'Noto Sans', system-ui, sans-serif;
+  /* CJK fallbacks appended when lang-cjk class is active */
+  --font-cjk-ja: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  --font-cjk-zh-hans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-cjk-zh-hant: 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+  --font-cjk-ko: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  --body-size: 18px;
+  --lh: 1.45;
+  --color-text: #333;
+  --color-muted: #666;
+  --color-bg: #fafafa;
+  --color-surface: #fff;
+  --color-border: #e0e0e0;
+  --color-link: #1a5fb4;
+  --color-noun-bg: #ffd9b3;
+  --color-verb-bg: #ffc078;
+  --color-adj-bg: #b2f2e8;
+  --color-vadv-bg: #a9c4e8;
+  --color-other-bg: #ebebeb;
+  --color-gender-te: #2d7d46;
+  --color-gender-to: #666;
+  --color-gender-mante: #c0392b;
+  --color-gender-femte: #7b2d8b;
+  --radius: 6px;
+  --max-width: 90ch;
+  --section-gap: 2rem;
+  /* Menalari-style header/footer */
+  --color-header-bg: #d5edcf;
+  --color-header-text: #2a5a1e;
+  --color-footer-bg: #1a3a6b;
+  --color-footer-text: #fff;
+  --color-search-btn: #4a8c3f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e8e8e8;
+    --color-muted: #aaa;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-border: #444;
+    --color-link: #7cb4f8;
+    --color-noun-bg: #7a4a20;
+    --color-verb-bg: #7a5010;
+    --color-adj-bg: #1a5550;
+    --color-vadv-bg: #1a3560;
+    --color-other-bg: #333;
+    --color-gender-te: #52c97d;
+    --color-gender-to: #aaa;
+    --color-gender-mante: #e06060;
+    --color-gender-femte: #cf80e0;
+    --color-header-bg: #1e3318;
+    --color-header-text: #b0d8a8;
+    --color-footer-bg: #0e1f3d;
+    --color-footer-text: #ccc;
+    --color-search-btn: #3a6c30;
+  }
+}
+
+html { font-size: var(--body-size); }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: var(--lh);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  flex: 1;
+  width: 100%;
+}
+
+a { color: var(--color-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Site Header (menalari-style)
+   ============================================================ */
+.site-header {
+  background: var(--color-header-bg);
+  text-align: center;
+  padding: 1rem 1rem 0;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.site-brand svg { height: 28px; width: 28px; }
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-header-text);
+  letter-spacing: 0.01em;
+}
+.site-nav {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--color-header-text);
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.02em;
+}
+.site-nav a {
+  color: var(--color-header-text);
+  text-decoration: none;
+}
+.site-nav a:hover { text-decoration: underline; }
+.nav-sep { margin: 0 0.25em; }
+
+/* Search area inside header */
+.header-search {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding-bottom: 0;
+}
+.header-search-row {
+  display: flex;
+  gap: 0;
+  margin-bottom: 0;
+}
+.header-search-row input {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+}
+.header-search-row input:first-child {
+  border-start-start-radius: var(--radius);
+  border-end-start-radius: var(--radius);
+  border-inline-end: none;
+}
+.header-search-row input:last-child {
+  border-start-end-radius: var(--radius);
+  border-end-end-radius: var(--radius);
+}
+.search-btn-row {
+  margin: 0 auto;
+}
+.search-btn-row button {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.45rem 2rem;
+  background: var(--color-search-btn);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  border-end-start-radius: var(--radius);
+  border-end-end-radius: var(--radius);
+}
+.search-btn-row button:hover { opacity: 0.9; }
+
+/* ============================================================
+   Site Footer (menalari-style)
+   ============================================================ */
+.site-footer {
+  background: var(--color-footer-bg);
+  text-align: center;
+  padding: 0.6rem 1rem;
+}
+.site-footer .footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* ============================================================
+   Landing State (logo centered)
+   ============================================================ */
+.landing-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 0;
+}
+.landing-state svg {
+  width: 200px;
+  height: 200px;
+  opacity: 0.85;
+}
+.landing-state.hidden { display: none; }
+
+/* ============================================================
+   Search
+   ============================================================ */
+.search-wrap { position: relative; }
+
+.suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0; right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+  max-height: 20rem;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  display: none;
+}
+.suggestions.show { display: block; }
+.suggestion-item {
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+}
+.suggestion-item:hover, .suggestion-item.active {
+  background: var(--color-link);
+  color: #fff;
+}
+.suggestion-item:hover .sug-via, .suggestion-item.active .sug-via {
+  color: rgba(255,255,255,0.7);
+}
+.sug-word { font-weight: 600; }
+.sug-via {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  margin-inline-start: 1em;
+  white-space: nowrap;
+}
+
+#searchGlb, #searchTrans {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+#searchGlb {
+  border-start-start-radius: var(--radius);
+  border-inline-end: none;
+  direction: ltr;
+  text-align: start;
+}
+#searchTrans {
+  border-start-end-radius: var(--radius);
+}
+#searchGlb:focus, #searchTrans:focus { border-color: var(--color-link); }
+
+/* ============================================================
+   Language Selector (footer style)
+   ============================================================ */
+.lang-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+}
+.lang-selector .label {
+  font-family: var(--font-sans-sc);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-footer-text);
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.06em;
+  margin-inline-end: 0.3rem;
+  opacity: 0.7;
+}
+.lang-btn {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  padding: 0.22rem 0.55rem;
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--color-footer-text);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.lang-btn.selected-1 { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
+.lang-btn.selected-2 { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
+.lang-btn:hover:not(.selected-1):not(.selected-2) { border-color: rgba(255,255,255,0.5); }
+
+/* Script selector (inside content area) */
+.script-selector-wrap {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+.script-selector-wrap .label {
+  font-family: var(--font-sans-sc);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.06em;
+  margin-inline-end: 0.3rem;
+}
+.script-btn {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  padding: 0.28rem 0.65rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.script-btn.selected-1 { background: #1a5fb4; color: #fff; border-color: #1a5fb4; }
+.script-btn:hover:not(.selected-1) { border-color: #999; }
+
+/* ============================================================
+   Word Heading
+   ============================================================ */
+.word-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+}
+.word-title {
+  font-family: var(--font-sans);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.word-class {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+/* ============================================================
+   Entry Two-Column Grid
+   ============================================================ */
+.entry-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem 2.5rem;
+  align-items: start;
+}
+.entry-col-left { min-width: 0; }
+.entry-col-right { min-width: 14rem; }
+@media (max-width: 600px) {
+  .entry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Globasa gender color on the heading */
+.gender-te   { color: var(--color-gender-te); }
+.gender-to   { color: var(--color-gender-to); }
+.gender-mante{ color: var(--color-gender-mante); }
+.gender-femte{ color: var(--color-gender-femte); }
+
+/* Anaphor labels */
+.anaphor-label {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.15em 0.45em;
+  border-radius: 3px;
+  margin-inline-start: 0.4em;
+  vertical-align: middle;
+  display: inline-block;
+  border: 1px solid;
+}
+.anaphor-te    { color: var(--color-gender-te);    border-color: var(--color-gender-te); }
+.anaphor-to    { color: var(--color-gender-to);    border-color: var(--color-gender-to); }
+.anaphor-mante { color: var(--color-gender-mante); border-color: var(--color-gender-mante); }
+.anaphor-femte { color: var(--color-gender-femte); border-color: var(--color-gender-femte); }
+
+/* Speaker button */
+.btn-audio {
+  font-size: 1.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-link);
+  padding: 0 0.2rem;
+  vertical-align: middle;
+  line-height: 1;
+}
+.btn-audio:hover { opacity: 0.7; }
+
+/* ============================================================
+   Image
+   ============================================================ */
+.word-image-wrap {
+  margin-bottom: var(--section-gap);
+}
+.word-image-wrap img {
+  height: 200px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--radius);
+  display: block;
+}
+.word-image-wrap a { display: inline-block; }
+details.nsfw-wrap > summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  user-select: none;
+}
+
+/* ============================================================
+   Translation Table
+   ============================================================ */
+.trans-section { margin-bottom: var(--section-gap); }
+
+.trans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+}
+.trans-table th {
+  font-family: var(--font-sans-sc);
+  font-weight: 600;
+  font-size: 1rem;
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.65rem;
+  text-align: start;
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+.trans-table td {
+  padding: 0.55rem 0.65rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--color-border);
+}
+.trans-table tr:last-child td { border-bottom: none; }
+
+/* PoS label cell */
+.cell-pos {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  min-width: 6rem;
+}
+.cell-verbtype {
+  font-family: var(--font-sans);
+  font-size: 0.83rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+  min-width: 7rem;
+}
+
+/* PoS row colors */
+.pos-noun      { background: var(--color-noun-bg); }
+.pos-verb      { background: var(--color-verb-bg); }
+.pos-adj       { background: var(--color-adj-bg); }
+.pos-vadv      { background: var(--color-vadv-bg); }
+.pos-other     { background: var(--color-other-bg); }
+
+/* Translation cells */
+.cell-trans { line-height: 1.85; }
+.cell-trans .trans-item {
+  display: inline-block;
+  background: rgba(255,255,255,0.45);
+  padding: 0.08em 0.4em;
+  border-radius: 3px;
+  margin: 0.1em 0.1em;
+}
+@media (prefers-color-scheme: dark) {
+  .cell-trans .trans-item { background: rgba(255,255,255,0.08); }
+}
+
+/* Gender display */
+sup em, sub em { font-style: italic; font-family: var(--font-sans); font-size: 0.72em; }
+sup { vertical-align: super; font-size: 0.75em; }
+sub { vertical-align: sub; font-size: 0.75em; }
+
+/* Bidi: per-cell embedding for mixed-direction table content */
+td[dir="rtl"], td[dir="ltr"] { unicode-bidi: embed; }
+
+/* Globasa content: always LTR regardless of page direction */
+.word-title,
+.example-glb,
+.construction-form,
+.etymology-compound,
+.derived-entry-word {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Arabic/Hebrew cursive: letter-spacing disconnects joined letters;
+   small-caps meaningless for Arabic script */
+:root[dir="rtl"] .section-heading,
+:root[dir="rtl"] .meta-label,
+:root[dir="rtl"] .cell-pos,
+:root[dir="rtl"] .cell-verbtype,
+:root[dir="rtl"] .trans-table th,
+:root[dir="rtl"] .lang-selector .label,
+:root[dir="rtl"] .script-selector-wrap .label,
+:root[dir="rtl"] .search-btn-row button,
+:root[dir="rtl"] .site-nav {
+  letter-spacing: normal;
+  font-variant-caps: normal;
+  font-feature-settings: normal;
+}
+
+/* ============================================================
+   CJK typography: Chinese, Japanese, Korean
+   — Higher line-height (1.7 vs 1.45) for dense ideographic strokes
+   — Suppress letter-spacing/small-caps (no case distinction in CJK)
+   — Proper font stacks per script region
+   — text-autospace for CJK–Latin junctions
+   ============================================================ */
+body.lang-cjk {
+  --lh: 1.7;
+  text-autospace: ideograph-alpha ideograph-numeric;
+}
+body.lang-ja { font-family: 'Open Sans', var(--font-cjk-ja); }
+body.lang-zh-hans { font-family: 'Open Sans', var(--font-cjk-zh-hans); }
+body.lang-zh-hant { font-family: 'Open Sans', var(--font-cjk-zh-hant); }
+body.lang-ko { font-family: 'Open Sans', var(--font-cjk-ko); }
+
+/* CJK: no letter-spacing or small-caps (no case distinction) */
+body.lang-cjk .section-heading,
+body.lang-cjk .meta-label,
+body.lang-cjk .cell-pos,
+body.lang-cjk .cell-verbtype,
+body.lang-cjk .trans-table th,
+body.lang-cjk .lang-selector .label,
+body.lang-cjk .script-selector-wrap .label,
+body.lang-cjk .search-btn-row button,
+body.lang-cjk .site-nav {
+  letter-spacing: normal;
+  font-variant-caps: normal;
+  font-feature-settings: normal;
+}
+
+/* CJK translation cells: serif fallback to system CJK fonts */
+body.lang-ja .cell-trans { font-family: var(--font-serif), var(--font-cjk-ja); }
+body.lang-zh-hans .cell-trans { font-family: var(--font-serif), var(--font-cjk-zh-hans); }
+body.lang-zh-hant .cell-trans { font-family: var(--font-serif), var(--font-cjk-zh-hant); }
+body.lang-ko .cell-trans { font-family: var(--font-serif), var(--font-cjk-ko); }
+
+/* ============================================================
+   Greek typography (Ancient Greek / polytonic)
+   — Noto Sans for proper polytonic diacritics
+   — Greek small caps INHERENTLY drop diacritics (standard convention),
+     so we suppress smcp and use bold for heading distinction instead
+   ============================================================ */
+body.lang-grc { font-family: var(--font-greek); }
+body.lang-grc .cell-trans { font-family: var(--font-serif), var(--font-greek); }
+
+/* Suppress small caps for Greek — diacritics would be lost */
+body.lang-grc .section-heading,
+body.lang-grc .meta-label,
+body.lang-grc .cell-pos,
+body.lang-grc .cell-verbtype,
+body.lang-grc .trans-table th,
+body.lang-grc .lang-selector .label,
+body.lang-grc .script-selector-wrap .label,
+body.lang-grc .search-btn-row button,
+body.lang-grc .site-nav {
+  font-family: var(--font-greek);
+  font-variant-caps: normal;
+  font-feature-settings: normal;
+}
+
+/* ============================================================
+   Tag browser
+   ============================================================ */
+#tagBrowser {
+  /* Break out of .container max-width to span full viewport */
+  max-width: none;
+  width: 100vw;
+  margin-inline-start: calc(50% - 50vw);
+  padding: 0 2rem;
+}
+.tag-browser-heading {
+  font-family: var(--font-sans-sc);
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  color: var(--color-text);
+}
+.tag-browser-words {
+  margin-bottom: var(--section-gap);
+  columns: 4 16rem;
+  column-gap: 1.5rem;
+}
+.tag-browser-words .derived-entry {
+  break-inside: avoid;
+  margin-bottom: 0.6rem;
+}
+/* Compact PoS abbreviation in mini tables within tag browser */
+.tag-browser-words .mini-trans .cell-pos {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.35rem;
+}
+/* Mini translation table (compact, no header, shrink-to-fit) */
+.mini-trans { font-size: 0.9rem; width: auto; }
+.mini-trans .cell-pos { font-size: 0.78rem; min-width: auto; }
+.mini-trans td { padding: 0.3rem 0.5rem; }
+
+/* Clickable tag chips */
+a.chip.tag-link {
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+a.chip.tag-link:hover {
+  background: var(--color-link);
+  color: #fff;
+  border-color: var(--color-link);
+}
+
+/* ============================================================
+   Section Separator (horizontal rule)
+   ============================================================ */
+.section-rule {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--section-gap) 0 0.8rem;
+}
+
+/* ============================================================
+   Collapsible [+]/[-] Toggle
+   ============================================================ */
+.toggle-btn {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0 0.35em;
+  cursor: pointer;
+  vertical-align: middle;
+  margin-inline-start: 0.3em;
+  line-height: 1.4;
+}
+.toggle-btn:hover { border-color: #999; }
+.collapsible-body { display: none; }
+.collapsible-body.open { display: block; }
+
+/* ============================================================
+   Constructions
+   ============================================================ */
+.constructions-section { margin-bottom: var(--section-gap); }
+.section-heading {
+  font-family: var(--font-sans-sc);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.07em;
+  color: var(--color-muted);
+  margin-bottom: 0.6rem;
+}
+.construction-item {
+  display: flex;
+  gap: 1.2rem;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+  font-family: var(--font-serif);
+}
+.construction-form {
+  font-weight: 700;
+  white-space: nowrap;
+  min-width: 14ch;
+}
+.construction-trans { color: var(--color-muted); font-style: italic; font-size: 0.93rem; }
+.slot-label { font-size: 0.72em; vertical-align: super; font-family: var(--font-sans); }
+
+/* ============================================================
+   Metadata
+   ============================================================ */
+.meta-section {
+  margin-bottom: var(--section-gap);
+  display: grid;
+  gap: 0.6rem;
+}
+.meta-row {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.meta-label {
+  font-family: var(--font-sans-sc);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-caps: small-caps;
+  font-feature-settings: "smcp";
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.meta-value { font-family: var(--font-serif); }
+.chip {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  background: var(--color-other-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+/* ============================================================
+   Etymology
+   ============================================================ */
+.etymology-section { margin-bottom: var(--section-gap); }
+.etymology-table {
+  border-collapse: collapse;
+  font-family: var(--font-serif);
+  font-size: 0.95rem;
+  color: var(--color-muted);
+}
+.etymology-table td { padding: 0.15em 0.6em 0.15em 0; vertical-align: baseline; }
+.etym-lang {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.etym-val { color: var(--color-muted); }
+.etymology-compound {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  padding: 0.3em 0;
+}
+.etym-plus {
+  color: var(--color-muted);
+  margin: 0 0.15em;
+}
+
+/* ============================================================
+   Derived Words
+   ============================================================ */
+.derived-section { margin-bottom: var(--section-gap); }
+.derived-link-inline {
+  font-family: var(--font-sans);
+  font-size: 0.88rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--color-link);
+  border-radius: var(--radius);
+}
+.derived-details {
+  margin-top: 0.8rem;
+}
+.derived-entry {
+  margin-bottom: 1rem;
+  padding-inline-start: 0.8rem;
+  border-inline-start: 3px solid var(--color-border);
+}
+.derived-entry-word {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  cursor: pointer;
+  color: var(--color-link);
+}
+.derived-entry-word:hover { text-decoration: underline; }
+.derived-entry .trans-table { font-size: 0.92rem; }
+.derived-loading {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* ============================================================
+   Example Sentences
+   ============================================================ */
+.examples-section { margin-bottom: var(--section-gap); }
+.example-item {
+  margin-bottom: 1.2rem;
+  padding-inline-start: 1rem;
+  border-inline-start: 3px solid var(--color-border);
+}
+.example-glb {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+.example-glb span[title] { cursor: help; border-bottom: 1px dotted var(--color-muted); }
+.example-glb strong { font-weight: 700; }
+.example-trans {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--color-muted);
+  margin-bottom: 0.2rem;
+}
+.example-lang-tag {
+  font-style: normal;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  letter-spacing: 0.03em;
+}
+.example-source {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  color: var(--color-muted);
+}
+
+/* ============================================================
+   Sound Effect
+   ============================================================ */
+.sound-section { margin-bottom: var(--section-gap); }
+.sound-section audio { display: block; margin-bottom: 0.3rem; }
+.sound-attr { font-family: var(--font-sans); font-size: 0.78rem; color: var(--color-muted); }
+
+/* ============================================================
+   Footer link
+   ============================================================ */
+.footer-link { font-family: var(--font-sans); font-size: 0.88rem; color: var(--color-muted); margin-bottom: 2rem; }
+
+/* ============================================================
+   Status / Error
+   ============================================================ */
+#status { color: var(--color-muted); font-family: var(--font-sans); font-size: 0.9rem; margin-top: 1rem; }
+#result { display: none; }
+
+/* Musa script font override */
+body.script-musa .word-title,
+body.script-musa .example-glb,
+body.script-musa .derived-list a,
+body.script-musa .construction-form,
+body.script-musa .etymology-compound a,
+body.script-musa .sug-word {
+  font-family: 'Dushan Musa Alphabet', sans-serif;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     Header
+     ============================================================ -->
+<header class="site-header">
+  <div class="site-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 0 100 75" width="28" height="28">
+      <circle cx="78.75" cy="37.5" r="32.48" fill="#fff"/>
+      <g fill="#008113"><path d="M62.5 9.37a18.78 18.78 0 0 1 32.5 0c-6.7 0-12.9 3.58-16.25 9.37a18.78 18.78 0 0 0-16.24-9.37"/><path d="M95 9.37a18.85 18.85 0 0 1 18.74 18.76c0 3.3-.86 6.52-2.5 9.37a18.79 18.79 0 0 0-16.25-9.37 18.78 18.78 0 0 0 0-18.76"/><path d="M111.23 37.5a18.77 18.77 0 0 1 2.51 9.37 18.85 18.85 0 0 1-18.75 18.76 18.78 18.78 0 0 0 0-18.76c6.7 0 12.9-3.58 16.24-9.37"/><path d="M95 65.63a18.78 18.78 0 0 1-32.5 0c6.7 0 12.9-3.57 16.25-9.37a18.78 18.78 0 0 0 16.24 9.37"/><path d="M62.5 65.63a18.85 18.85 0 0 1-18.74-18.76c0-3.3.86-6.52 2.5-9.37a18.79 18.79 0 0 0 16.25 9.37 18.78 18.78 0 0 0 0 18.76"/><path d="M46.27 37.5a18.77 18.77 0 0 1-2.51-9.37A18.85 18.85 0 0 1 62.51 9.37a18.78 18.78 0 0 0 0 18.76c-6.7 0-12.9 3.58-16.25 9.37"/></g>
+      <g fill="#0040a9"><path d="M78.75 18.74c6.7 0 12.9 3.6 16.24 9.4-6.69 0-12.89 3.57-16.24 9.36a18.78 18.78 0 0 0 0-18.76"/><path d="M95 28.13a18.78 18.78 0 0 1 0 18.74 18.78 18.78 0 0 0-16.25-9.37c6.69 0 12.9-3.58 16.24-9.37"/><path d="M95 46.87a18.78 18.78 0 0 1-16.25 9.4 18.78 18.78 0 0 0 0-18.77 18.79 18.79 0 0 0 16.24 9.37"/><path d="M78.75 56.26c-6.7 0-12.9-3.6-16.24-9.4 6.69 0 12.89-3.57 16.24-9.36a18.78 18.78 0 0 0 0 18.76"/><path d="M62.5 46.87a18.78 18.78 0 0 1 0-18.74 18.78 18.78 0 0 0 16.25 9.37c-6.69 0-12.9 3.58-16.24 9.37"/><path d="M62.5 28.13c3.35-5.8 9.55-9.39 16.25-9.4a18.78 18.78 0 0 0 0 18.77 18.79 18.79 0 0 0-16.24-9.37"/></g>
+    </svg>
+    <span class="site-title">Globasa</span>
+  </div>
+  <nav class="site-nav">
+    <a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/aide" target="_blank" rel="noopener">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+  </nav>
+  <div class="header-search">
+    <div class="search-wrap">
+      <div class="header-search-row">
+        <input type="search" id="searchGlb" placeholder="Globasa Search" autocomplete="off" spellcheck="false">
+        <input type="search" id="searchTrans" placeholder="Translation Search" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+    </div>
+    <div class="search-btn-row">
+      <button type="button" id="searchBtn">Search</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     Main Content
+     ============================================================ -->
+<div class="container">
+
+  <div class="script-selector-wrap" id="scriptSelector">
+    <span class="label">Script:</span>
+    <!-- buttons injected by JS -->
+  </div>
+
+  <!-- Tag browser: shown when a tag is clicked -->
+  <div id="tagBrowser" style="display:none">
+    <div class="tag-browser-heading" id="tagBrowserHeading"></div>
+    <div class="tag-browser-words" id="tagBrowserWords"></div>
+  </div>
+
+  <!-- Landing state: shown when no word is selected -->
+  <div class="landing-state" id="landing">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 0 100 75" width="200" height="200">
+      <circle cx="78.75" cy="37.5" r="32.48" fill="#fff"/>
+      <g fill="#008113"><path d="M62.5 9.37a18.78 18.78 0 0 1 32.5 0c-6.7 0-12.9 3.58-16.25 9.37a18.78 18.78 0 0 0-16.24-9.37"/><path d="M95 9.37a18.85 18.85 0 0 1 18.74 18.76c0 3.3-.86 6.52-2.5 9.37a18.79 18.79 0 0 0-16.25-9.37 18.78 18.78 0 0 0 0-18.76"/><path d="M111.23 37.5a18.77 18.77 0 0 1 2.51 9.37 18.85 18.85 0 0 1-18.75 18.76 18.78 18.78 0 0 0 0-18.76c6.7 0 12.9-3.58 16.24-9.37"/><path d="M95 65.63a18.78 18.78 0 0 1-32.5 0c6.7 0 12.9-3.57 16.25-9.37a18.78 18.78 0 0 0 16.24 9.37"/><path d="M62.5 65.63a18.85 18.85 0 0 1-18.74-18.76c0-3.3.86-6.52 2.5-9.37a18.79 18.79 0 0 0 16.25 9.37 18.78 18.78 0 0 0 0 18.76"/><path d="M46.27 37.5a18.77 18.77 0 0 1-2.51-9.37A18.85 18.85 0 0 1 62.51 9.37a18.78 18.78 0 0 0 0 18.76c-6.7 0-12.9 3.58-16.25 9.37"/></g>
+      <g fill="#0040a9"><path d="M78.75 18.74c6.7 0 12.9 3.6 16.24 9.4-6.69 0-12.89 3.57-16.24 9.36a18.78 18.78 0 0 0 0-18.76"/><path d="M95 28.13a18.78 18.78 0 0 1 0 18.74 18.78 18.78 0 0 0-16.25-9.37c6.69 0 12.9-3.58 16.24-9.37"/><path d="M95 46.87a18.78 18.78 0 0 1-16.25 9.4 18.78 18.78 0 0 0 0-18.77 18.79 18.79 0 0 0 16.24 9.37"/><path d="M78.75 56.26c-6.7 0-12.9-3.6-16.24-9.4 6.69 0 12.89-3.57 16.24-9.36a18.78 18.78 0 0 0 0 18.76"/><path d="M62.5 46.87a18.78 18.78 0 0 1 0-18.74 18.78 18.78 0 0 0 16.25 9.37c-6.69 0-12.9 3.58-16.24 9.37"/><path d="M62.5 28.13c3.35-5.8 9.55-9.39 16.25-9.4a18.78 18.78 0 0 0 0 18.77 18.79 18.79 0 0 0-16.24-9.37"/></g>
+    </svg>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="result">
+    <!-- 1. Word heading (full width) -->
+    <div class="word-heading" id="wordHeading"></div>
+
+    <!-- Two-column layout -->
+    <div class="entry-grid">
+      <!-- Left column: translations, constructions, examples, metadata, derived -->
+      <div class="entry-col-left">
+        <!-- 2. Image -->
+        <div id="imageSection"></div>
+
+        <!-- 3. Translation table -->
+        <div class="trans-section" id="transSection"></div>
+
+        <!-- 4. Constructions -->
+        <div id="constructionsSection"></div>
+
+        <!-- 5. Metadata -->
+        <div id="metaSection"></div>
+
+        <!-- 8. Examples -->
+        <div id="examplesSection"></div>
+
+        <!-- 9. Sound effect -->
+        <div id="soundSection"></div>
+
+        <!-- 7. Derived words -->
+        <div id="derivedSection"></div>
+      </div>
+
+      <!-- Right column: etymology -->
+      <div class="entry-col-right">
+        <!-- 6. Etymology -->
+        <div id="etymologySection"></div>
+      </div>
+    </div>
+
+    <!-- 10. Menalari link (full width) -->
+    <div id="menalariLink" class="footer-link"></div>
+  </div>
+
+</div><!-- .container -->
+
+<!-- ============================================================
+     Footer
+     ============================================================ -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="lang-selector" id="langSelector">
+      <span class="label">Languages:</span>
+      <!-- buttons injected by JS -->
+    </div>
+  </div>
+</footer>
+
+<audio id="pronAudio" preload="none"></audio>
+
+<script src="/word_viewer_scripts.js"></script>
+<script>
+// ============================================================
+// Config
+// ============================================================
+
+const LANGS = [
+  "Globasa",
+  // From word-list.csv
+  "English", "Esperanto", "Spanish",
+  // Romance
+  "French", "Italian", "Portuguese", "Romanian",
+  // Germanic
+  "German", "Dutch", "Swedish", "Old English",
+  // Classical
+  "Ancient Greek", "Latin", "Sanskrit", "Greek",
+  // Slavic + E-European
+  "Russian", "Polish", "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian",
+  // Semitic + Turkic
+  "Yiddish", "Hebrew", "Arabic", "Turkish", "Tatar",
+  // East Asian
+  "Mandarin Chinese", "Japanese", "Korean", "Vietnamese",
+  // SE Asian / Austronesian
+  "Indonesian", "Malay", "Tagalog",
+  // Iranian + Indic
+  "Persian", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
+  "Malayalam", "Gujarati", "Panjabi",
+  // African
+  "Swahili",
+];
+
+// Map display names to API column names (identity for most)
+const LANG_COL = Object.fromEntries(LANGS.filter(l => l !== "Globasa").map(l => [l, l]));
+
+const RTL_LANGS = new Set(["Hebrew", "Arabic", "Yiddish", "Urdu", "Persian"]);
+
+// CJK language detection — maps display name to body class suffix
+const CJK_LANG_CLASS = {
+  "Japanese": "ja",
+  "Mandarin Chinese": "zh-hans",
+  "Korean": "ko",
+};
+
+// Map display language names to TMX language codes
+const LANG_TO_TMX = {
+  "English": "en", "Esperanto": "eo", "Spanish": "es",
+};
+// Reverse: TMX code to display name
+const TMX_TO_LANG = Object.fromEntries(Object.entries(LANG_TO_TMX).map(([k,v]) => [v, k]));
+
+// Gender display: for each language, how to render a word with a gender tag
+// 'm','f','n' correspond to masculine, feminine, neuter
+// 'article-before': <sup><em>ART</em></sup> WORD
+// 'anaphor-after':  WORD <sub><em>ANA</em></sub>
+// 'dutch': special (het before neuter; hij/zij after m/f)
+// null: no gender display
+
+const GENDER_CONFIG = {
+  "Spanish": {
+    type: "article-before",
+    m: "el", f: "la", n: "lo"
+  },
+  "German": {
+    type: "article-before",
+    m: "der", f: "die", n: "das"
+  },
+  "Dutch": { type: "dutch" },
+  "Old English": {
+    type: "article-before",
+    m: "se", f: "sēo", n: "þæt"
+  },
+  "Ancient Greek": {
+    type: "article-before",
+    m: "ὁ", f: "ἡ", n: "τό"
+  },
+  "Latin": {
+    type: "anaphor-after",
+    m: "is", f: "ea", n: "id"
+  },
+  "French": {
+    type: "article-before",
+    m: "le", f: "la", n: "l'"
+  },
+  "Italian": {
+    type: "article-before",
+    m: "il", f: "la", n: "il"
+  },
+  "Russian": {
+    type: "anaphor-after",
+    m: "он", f: "она", n: "оно"
+  },
+  "Yiddish": {
+    type: "article-before",
+    m: "דער", f: "די", n: "דאָס"
+  },
+  "Hebrew": {
+    type: "anaphor-after",
+    m: "הוא", f: "היא", n: null
+  },
+  "Arabic": {
+    type: "anaphor-after",
+    m: "هو", f: "هي", n: null
+  },
+  "Portuguese": {
+    type: "article-before",
+    m: "o", f: "a", n: "o"
+  },
+  "Romanian": {
+    type: "anaphor-after",
+    m: "el", f: "ea", n: "el"
+  },
+  "Swedish": {
+    // North Germanic: definite article is a postposed suffix (-en/-et).
+    // Shown as subscript after the noun per the spec.
+    type: "anaphor-after",
+    m: "-en", f: "-en", n: "-et"
+  },
+  "Greek": {
+    type: "article-before",
+    m: "ο", f: "η", n: "το"
+  },
+  "Polish": {
+    type: "anaphor-after",
+    m: "on", f: "ona", n: "ono"
+  },
+  "Bulgarian": {
+    type: "anaphor-after",
+    m: "той", f: "тя", n: "то"
+  },
+  "Ukrainian": {
+    type: "anaphor-after",
+    m: "він", f: "вона", n: "воно"
+  },
+  "Serbian": {
+    type: "anaphor-after",
+    m: "он", f: "она", n: "оно"
+  },
+  "Czech": {
+    type: "anaphor-after",
+    m: "on", f: "ona", n: "ono"
+  },
+  "Sanskrit": {
+    type: "anaphor-after",
+    m: "सः", f: "सा", n: "तत्"
+  },
+  "Hindi": {
+    type: "anaphor-after",
+    m: "वह", f: "वह", n: null
+  },
+  "Urdu": {
+    type: "anaphor-after",
+    m: "وہ", f: "وہ", n: null
+  },
+  "Persian": null,
+  "Mandarin Chinese": null,
+  "Japanese": null,
+  "Korean": null,
+  "Vietnamese": null,
+  "Turkish": null,
+  "Tatar": null,
+  "Hungarian": null,
+  "Indonesian": null,
+  "Malay": null,
+  "Tagalog": null,
+  "Bengali": null,
+  "Tamil": null,
+  "Telugu": null,
+  "Kannada": null,
+  "Malayalam": null,
+  "Gujarati": null,
+  "Panjabi": null,
+  "Swahili": null,
+};
+
+// Grammar and verb type labels are loaded from CSV via /i18n endpoint
+// Maps: pos name -> CSV key, verb type name -> CSV key
+const GRAMMAR_KEY_MAP = {
+  "noun": "grammar.noun", "proper noun": "grammar.proper_noun",
+  "verb": "grammar.verb", "adjective": "grammar.adjective",
+  "verbal adverb": "grammar.verbal_adverb", "adverb": "grammar.adverb",
+  "interjection": "grammar.interjection", "preposition": "grammar.preposition",
+  "conjunction": "grammar.conjunction", "determiner": "grammar.determiner",
+  "pronoun": "grammar.pronoun", "number": "grammar.number",
+  "particle": "grammar.particle", "prefix": "grammar.prefix",
+  "phrase": "grammar.phrase", "noun phrase": "grammar.noun_phrase",
+  "verb phrase": "grammar.verb_phrase", "adjective phrase": "grammar.adjective_phrase",
+  "phrasal adverb": "grammar.phrasal_adverb", "phrasal preposition": "grammar.phrasal_preposition",
+  "phrasal conjunction": "grammar.phrasal_conjunction", "prepositional phrase": "grammar.prepositional_phrase",
+  "postposition": "grammar.postposition", "possessive pronoun": "grammar.possessive_pronoun",
+  "possessive adjective": "grammar.possessive_adjective", "proper adjective": "grammar.proper_adjective",
+  "conjunction phrase": "grammar.conjunction_phrase",
+};
+const VERB_TYPE_KEY_MAP = {
+  "transitive": "verbtype.transitive", "intransitive": "verbtype.intransitive",
+  "intransitive (-cu)": "verbtype.intransitive_cu", "copular": "verbtype.copular",
+  "auxiliary": "verbtype.auxiliary", "echo-transitive": "verbtype.echo_transitive",
+  "feeling (hisi)": "verbtype.feeling_hisi", "state (jotay)": "verbtype.state_jotay",
+};
+
+// UI heading labels loaded from CSV at startup
+let UI_LABELS = {};
+let ETYM_LANG_MAP = {}; // Globasa name -> internal name (e.g. "Arabisa" -> "Arabic")
+
+async function loadI18n() {
+  const [i18nResp, etymResp] = await Promise.all([
+    fetch("/i18n"),
+    fetch("/etym_langs"),
+  ]);
+  if (i18nResp.ok) UI_LABELS = await i18nResp.json();
+  if (etymResp.ok) ETYM_LANG_MAP = await etymResp.json();
+}
+
+function uiLabel(key) {
+  const lang = selectedLangs.length > 0 ? selectedLangs[0] : "English";
+  const d = UI_LABELS[key];
+  if (!d) return key;
+  return d[lang] || d["English"] || key;
+}
+
+function langName(internalName) {
+  return uiLabel("lang." + internalName);
+}
+
+function etymLangName(globasaName) {
+  // Map Globasa etymology language name to display language
+  const internal = ETYM_LANG_MAP[globasaName];
+  if (internal) {
+    const localized = uiLabel("lang." + internal);
+    if (localized !== "lang." + internal) return localized;
+  }
+  return globasaName; // fallback: pass through unchanged
+}
+
+function grammarLabel(pos, lang) {
+  const csvKey = GRAMMAR_KEY_MAP[pos];
+  if (!csvKey) return pos;
+  const d = UI_LABELS[csvKey];
+  if (!d) return pos;
+  return d[lang] || d["English"] || pos;
+}
+function verbTypeLabel(vt, lang) {
+  const csvKey = VERB_TYPE_KEY_MAP[vt];
+  if (!csvKey) return vt;
+  const d = UI_LABELS[csvKey];
+  if (!d) return vt;
+  return d[lang] || d["English"] || vt;
+}
+
+// ============================================================
+// State
+// ============================================================
+
+let selectedLangs = [];
+let currentData = null;
+
+const LS_KEY = "glb_viewer_langs";
+
+function loadLangPref() {
+  try {
+    const v = localStorage.getItem(LS_KEY);
+    if (v) return JSON.parse(v);
+  } catch (e) {}
+  return ["German", "French"];
+}
+function saveLangPref() {
+  localStorage.setItem(LS_KEY, JSON.stringify(selectedLangs));
+}
+
+function updateDocDirection() {
+  const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : "English";
+  const isRTL = RTL_LANGS.has(firstLang);
+  document.documentElement.dir = isRTL ? "rtl" : "ltr";
+
+  // CJK body classes for typography (line-height, font stacks, letter-spacing)
+  document.body.classList.remove("lang-cjk", "lang-ja", "lang-zh-hans", "lang-zh-hant", "lang-ko", "lang-grc");
+  const cjkClass = CJK_LANG_CLASS[firstLang];
+  if (cjkClass) {
+    document.body.classList.add("lang-cjk", "lang-" + cjkClass);
+  }
+  // Ancient Greek: use Noto Sans, suppress smcp (Greek small caps drop diacritics)
+  if (firstLang === "Ancient Greek") {
+    document.body.classList.add("lang-grc");
+  }
+}
+
+// ============================================================
+// Language selector
+// ============================================================
+
+function buildLangSelector() {
+  const wrap = document.getElementById("langSelector");
+  wrap.innerHTML = "";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = uiLabel("ui.languages") + ":";
+  wrap.appendChild(label);
+
+  LANGS.forEach(lang => {
+    const btn = document.createElement("button");
+    btn.className = "lang-btn";
+    btn.textContent = langName(lang);
+    btn.dataset.lang = lang;
+
+    const idx = selectedLangs.indexOf(lang);
+    if (idx === 0) btn.classList.add("selected-1");
+    else if (idx === 1) btn.classList.add("selected-2");
+
+    btn.addEventListener("click", () => {
+      const i = selectedLangs.indexOf(lang);
+      if (i >= 0) {
+        selectedLangs.splice(i, 1);
+      } else {
+        if (selectedLangs.length >= 2) selectedLangs.shift();
+        selectedLangs.push(lang);
+      }
+      saveLangPref();
+      updateDocDirection();
+      buildLangSelector();
+      buildScriptSelector();
+      if (currentData) renderResult(currentData);
+    });
+    wrap.appendChild(btn);
+  });
+}
+
+// ============================================================
+// Script selector
+// ============================================================
+
+const SCRIPT_LS_KEY = "glb_viewer_script";
+
+function loadScriptPref() {
+  try { return localStorage.getItem(SCRIPT_LS_KEY) || "Latin"; } catch(e) { return "Latin"; }
+}
+
+function updateScriptBodyClass() {
+  document.body.classList.remove("script-musa", "script-cyrillic");
+  if (activeScript === "Musa") document.body.classList.add("script-musa");
+  else if (activeScript === "Cyrillic") document.body.classList.add("script-cyrillic");
+}
+
+function buildScriptSelector() {
+  const wrap = document.getElementById("scriptSelector");
+  wrap.innerHTML = "";
+  const label = document.createElement("span");
+  label.className = "label";
+  label.textContent = uiLabel("ui.script") + ":";
+  wrap.appendChild(label);
+
+  Object.keys(SCRIPTS).forEach(name => {
+    const btn = document.createElement("button");
+    btn.className = "script-btn";
+    if (name === activeScript) btn.classList.add("selected-1");
+    btn.textContent = name;
+    btn.addEventListener("click", () => {
+      activeScript = name;
+      localStorage.setItem(SCRIPT_LS_KEY, name);
+      updateScriptBodyClass();
+      buildScriptSelector();
+      if (currentData) renderResult(currentData);
+    });
+    wrap.appendChild(btn);
+  });
+  updateScriptBodyClass();
+}
+
+// ============================================================
+// Gender rendering
+// ============================================================
+
+function renderGenderedWord(text, gender, lang) {
+  const cfg = GENDER_CONFIG[lang];
+  if (!cfg || !gender) return mdToHtml(text);
+
+  const g = gender; // 'm','f','n'
+
+  if (cfg.type === "article-before") {
+    const art = cfg[g];
+    if (!art) return mdToHtml(text);
+    return `<sup><em>${escHtml(art)}</em></sup>&nbsp;${mdToHtml(text)}`;
+  }
+  if (cfg.type === "anaphor-after") {
+    const ana = cfg[g];
+    if (!ana) return mdToHtml(text);
+    return `${mdToHtml(text)}&nbsp;<sub><em>${escHtml(ana)}</em></sub>`;
+  }
+  if (cfg.type === "dutch") {
+    if (g === "n") {
+      return `<sup><em>het</em></sup>&nbsp;${mdToHtml(text)}`;
+    } else {
+      const ana = g === "m" ? "hij" : "zij";
+      return `${mdToHtml(text)}&nbsp;<sub><em>${ana}</em></sub>`;
+    }
+  }
+  return mdToHtml(text);
+}
+
+// ============================================================
+// PoS CSS class
+// ============================================================
+
+function posCssClass(pos) {
+  if (pos === "noun" || pos === "proper noun" || pos === "noun phrase") return "pos-noun";
+  if (pos === "verb" || pos === "verb phrase") return "pos-verb";
+  if (pos === "adjective" || pos === "proper adjective" || pos === "adjective phrase") return "pos-adj";
+  if (pos === "verbal adverb") return "pos-vadv";
+  return "pos-other";
+}
+
+// ============================================================
+// Translation table builder
+// ============================================================
+
+function buildTransTable(data) {
+  const { has_verbs, pos_groups } = data.translations;
+  // Globasa is a UI-only language — exclude it from translation table columns
+  const tableLangs = selectedLangs.filter(l => l !== "Globasa");
+  const langs = tableLangs.length > 0 ? tableLangs : ["German"];
+
+  // Use the actual first selected language (including Globasa) for UI/grammar labels
+  const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : langs[0];
+  const isRTL = RTL_LANGS.has(firstLang);
+
+  const table = document.createElement("table");
+  table.className = "trans-table";
+  if (isRTL) table.setAttribute("dir", "rtl");
+
+  // Header row
+  const thead = table.createTHead();
+  const hrow = thead.insertRow();
+
+  function makeHeader(text) {
+    const th = document.createElement("th");
+    th.textContent = text;
+    return th;
+  }
+
+  const langHeaders = langs.map(l => makeHeader(langName(l)));
+  const posHeaderLabel = makeHeader(uiLabel("pos"));
+  const vtHeaderLabel = makeHeader(uiLabel("verb_type"));
+
+  // Always append in logical order: PoS, VerbType, Lang(s)
+  // dir="rtl" on the table handles visual reversal for RTL languages
+  hrow.appendChild(posHeaderLabel);
+  if (has_verbs) hrow.appendChild(vtHeaderLabel);
+  langHeaders.forEach(h => hrow.appendChild(h));
+
+  // Body
+  const tbody = table.createTBody();
+
+  // Group consecutive verb rows so we can rowspan the PoS cell
+  let i = 0;
+  while (i < pos_groups.length) {
+    const pg = pos_groups[i];
+    const cssClass = posCssClass(pg.pos);
+
+    if (pg.pos === "verb" || pg.pos === "verb phrase") {
+      // Collect all consecutive verb sub-rows
+      let verbRows = [];
+      let j = i;
+      while (j < pos_groups.length && (pos_groups[j].pos === "verb" || pos_groups[j].pos === "verb phrase")) {
+        verbRows.push(pos_groups[j]);
+        j++;
+      }
+      const rowCount = verbRows.length;
+
+      verbRows.forEach((vg, vi) => {
+        const tr = tbody.insertRow();
+
+        // PoS cell: only on first verb row, rowspan
+        if (vi === 0) {
+          const tdPos = document.createElement("td");
+          tdPos.className = `cell-pos ${cssClass}`;
+          tdPos.rowSpan = rowCount;
+          tdPos.textContent = grammarLabel("verb", firstLang);
+          tr.appendChild(tdPos);
+        }
+        // Verb type cell
+        if (has_verbs) {
+          const tdVt = document.createElement("td");
+          tdVt.className = `cell-verbtype ${cssClass}`;
+          tdVt.textContent = vg.verb_type ? verbTypeLabel(vg.verb_type, firstLang) : "";
+          tr.appendChild(tdVt);
+        }
+        // Language cells
+        langs.forEach(lang => {
+          tr.appendChild(buildLangCell(vg, lang, cssClass));
+        });
+      });
+      i = j;
+    } else {
+      // Non-verb row
+      const tr = tbody.insertRow();
+      const posLabelText = grammarLabel(pg.pos, firstLang);
+
+      const tdPos = document.createElement("td");
+      tdPos.className = `cell-pos ${cssClass}`;
+      if (has_verbs) tdPos.colSpan = 2;
+      tdPos.textContent = posLabelText;
+      tr.appendChild(tdPos);
+      langs.forEach(lang => {
+        tr.appendChild(buildLangCell(pg, lang, cssClass));
+      });
+      i++;
+    }
+  }
+
+  return table;
+}
+
+function buildLangCell(pg, lang, cssClass) {
+  const td = document.createElement("td");
+  td.className = `cell-trans ${cssClass}`;
+  td.dir = RTL_LANGS.has(lang) ? "rtl" : "ltr";
+
+  const items = (pg.languages && pg.languages[lang]) || [];
+  if (items.length === 0) {
+    td.innerHTML = "<span style='color:var(--color-muted)'>—</span>";
+    return td;
+  }
+
+  // Flatten: split items that contain commas into separate sub-items
+  const flat = [];
+  items.forEach(item => {
+    const parts = item.text.split(/,\s*/);
+    parts.forEach(p => {
+      if (p) flat.push({text: p.trim(), gender: item.gender});
+    });
+  });
+
+  flat.forEach((item, i) => {
+    const span = document.createElement("span");
+    span.className = "trans-item";
+    span.innerHTML = renderGenderedWord(item.text, item.gender, lang);
+    td.appendChild(span);
+  });
+  return td;
+}
+
+// ============================================================
+// Mini translation table (single language, no header, compact)
+// Used for tag browser items and derived word previews
+// ============================================================
+
+// Short PoS abbreviations for compact display
+const POS_ABBREV = {
+  "noun": "n", "proper noun": "n.pr", "verb": "v", "verb phrase": "v.phr",
+  "adjective": "adj", "proper adjective": "adj.pr", "verbal adverb": "v.adv",
+  "adverb": "adv", "interjection": "interj", "pronoun": "pron",
+  "number": "num", "preposition": "prep", "phrasal preposition": "prep.phr",
+  "prepositional phrase": "prep.phr", "postposition": "postp",
+  "conjunction": "conj", "phrasal conjunction": "conj.phr",
+  "conjunction phrase": "conj.phr", "determiner": "det", "particle": "part",
+  "prefix": "pfx", "phrase": "phr", "noun phrase": "n.phr",
+  "adjective phrase": "adj.phr", "phrasal adverb": "adv.phr",
+  "possessive pronoun": "poss.pron", "possessive adjective": "poss.adj",
+};
+
+function buildMiniTransTable(data) {
+  const { has_verbs, pos_groups } = data.translations;
+  // Use only the first non-Globasa display language
+  const tableLangs = selectedLangs.filter(l => l !== "Globasa");
+  const lang = tableLangs.length > 0 ? tableLangs[0] : "English";
+  const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : lang;
+
+  const table = document.createElement("table");
+  table.className = "trans-table mini-trans";
+  if (RTL_LANGS.has(firstLang)) table.setAttribute("dir", "rtl");
+
+  // No header row — keep it compact
+  const tbody = table.createTBody();
+
+  let i = 0;
+  while (i < pos_groups.length) {
+    const pg = pos_groups[i];
+    const cssClass = posCssClass(pg.pos);
+
+    if (pg.pos === "verb" || pg.pos === "verb phrase") {
+      let verbRows = [];
+      let j = i;
+      while (j < pos_groups.length && (pos_groups[j].pos === "verb" || pos_groups[j].pos === "verb phrase")) {
+        verbRows.push(pos_groups[j]);
+        j++;
+      }
+      verbRows.forEach((vg, vi) => {
+        const tr = tbody.insertRow();
+        if (vi === 0) {
+          const tdPos = document.createElement("td");
+          tdPos.className = `cell-pos ${cssClass}`;
+          tdPos.rowSpan = verbRows.length;
+          tdPos.textContent = POS_ABBREV["verb"] || "v";
+          tr.appendChild(tdPos);
+        }
+        tr.appendChild(buildLangCell(vg, lang, cssClass));
+      });
+      i = j;
+    } else {
+      const tr = tbody.insertRow();
+      const tdPos = document.createElement("td");
+      tdPos.className = `cell-pos ${cssClass}`;
+      tdPos.textContent = POS_ABBREV[pg.pos] || pg.pos;
+      tr.appendChild(tdPos);
+      tr.appendChild(buildLangCell(pg, lang, cssClass));
+      i++;
+    }
+  }
+  return table;
+}
+
+// ============================================================
+// Render full result
+// ============================================================
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function mdToHtml(s) {
+  // Escape HTML first, then convert _text_ to <em>text</em>
+  return escHtml(s).replace(/_((?:(?!_).)+)_/g, "<em>$1</em>");
+}
+
+function buildExampleItem(ex, data, prefCodes) {
+  const item = document.createElement("div");
+  item.className = "example-item";
+  const isGlobasaMode = selectedLangs.includes("Globasa");
+  const glbDiv = document.createElement("div");
+  glbDiv.className = "example-glb";
+  const glossary = isGlobasaMode ? {} : (data.word_glossary || {});
+  glbDiv.innerHTML = buildGlobExample(ex.glb_seg, data.word, glossary);
+  item.appendChild(glbDiv);
+  const trans = ex.translations || {};
+  const aligns = ex.alignments || {};
+  const targetWord = data.word.toLowerCase();
+  for (const code of prefCodes) {
+    if (trans[code]) {
+      const transDiv = document.createElement("div");
+      transDiv.className = "example-trans";
+      const displayLang = TMX_TO_LANG[code] || code;
+      if (prefCodes.length > 1) {
+        const langTag = document.createElement("span");
+        langTag.className = "example-lang-tag";
+        langTag.textContent = langName(displayLang) + ": ";
+        transDiv.appendChild(langTag);
+      }
+      const langAlign = aligns[code] || {};
+      if (isGlobasaMode) {
+        const reverseAlign = {};
+        for (const [glbWord, positions] of Object.entries(langAlign)) {
+          for (const pos of positions) {
+            if (!reverseAlign[pos]) reverseAlign[pos] = [];
+            reverseAlign[pos].push(glbWord);
+          }
+        }
+        transDiv.innerHTML += buildTransWithGlobasaTooltips(trans[code], reverseAlign, targetWord);
+      } else {
+        const alignedPositions = new Set(langAlign[targetWord] || []);
+        if (alignedPositions.size > 0) {
+          transDiv.innerHTML += buildAlignedTranslation(trans[code], alignedPositions);
+        } else {
+          transDiv.appendChild(document.createTextNode(trans[code]));
+        }
+      }
+      item.appendChild(transDiv);
+    }
+  }
+  if (ex.context) {
+    const srcDiv = document.createElement("div");
+    srcDiv.className = "example-source";
+    srcDiv.textContent = "\u2014 " + ex.context;
+    item.appendChild(srcDiv);
+  }
+  return item;
+}
+
+function renderResult(data) {
+  document.getElementById("landing").classList.add("hidden");
+  document.getElementById("result").style.display = "block";
+
+  // --- 1. Heading ---
+  const headDiv = document.getElementById("wordHeading");
+  headDiv.innerHTML = "";
+
+  const titleSpan = document.createElement("span");
+  titleSpan.className = "word-title";
+  let gClass = "";
+  if (data.globasa_gender === "te") gClass = "gender-te";
+  else if (data.globasa_gender === "to") gClass = "gender-to";
+  else if (data.globasa_gender === "mante") gClass = "gender-mante";
+  else if (data.globasa_gender === "femte") gClass = "gender-femte";
+  titleSpan.innerHTML = gClass
+    ? `<span class="${gClass}">${escHtml(convertScript(data.word))}</span>`
+    : escHtml(convertScript(data.word));
+  headDiv.appendChild(titleSpan);
+
+  if (data.wordclass) {
+    const wcSpan = document.createElement("span");
+    wcSpan.className = "word-class";
+    wcSpan.textContent = `[${data.wordclass}]`;
+    headDiv.appendChild(wcSpan);
+  }
+
+  // Anaphor labels
+  if (data.globasa_gender) {
+    const ANAPHOR_INFO = {
+      "te":    {label: "te", title: "3rd person animate (he/she/it [living])"},
+      "to":    {label: "to", title: "3rd person inanimate (it)"},
+      "mante": {label: "mante", title: "masculine (he)"},
+      "femte": {label: "femte", title: "feminine (she)"},
+    };
+    // Parse: "te", "to", "te, to", "to, te", "mante", "femte"
+    const parts = data.globasa_gender.split(/[,.]/).map(s => s.trim()).filter(s => s);
+    parts.forEach(p => {
+      const info = ANAPHOR_INFO[p];
+      if (info) {
+        const lbl = document.createElement("span");
+        lbl.className = `anaphor-label anaphor-${p}`;
+        lbl.textContent = info.label;
+        lbl.title = info.title;
+        headDiv.appendChild(lbl);
+      }
+    });
+  }
+
+  if (data.has_pronunciation) {
+    const btn = document.createElement("button");
+    btn.className = "btn-audio";
+    btn.title = "Play pronunciation";
+    btn.textContent = "🔊";
+    btn.addEventListener("click", () => {
+      const au = document.getElementById("pronAudio");
+      au.src = `/audio/${data.word}.ogg`;
+      au.play();
+    });
+    headDiv.appendChild(btn);
+  }
+
+  // --- 2. Image ---
+  const imgSection = document.getElementById("imageSection");
+  imgSection.innerHTML = "";
+  if (data.image && data.image.direct_url) {
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "word-image-wrap";
+    const imgEl = document.createElement("img");
+    imgEl.src = data.image.direct_url;
+    imgEl.alt = data.word;
+    imgEl.loading = "lazy";
+    const link = document.createElement("a");
+    link.href = data.image.source_page || data.image.direct_url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.appendChild(imgEl);
+
+    if (data.nsfw) {
+      const det = document.createElement("details");
+      det.className = "nsfw-wrap";
+      const sum = document.createElement("summary");
+      sum.textContent = "⚠ NSFW image — click to reveal";
+      det.appendChild(sum);
+      det.appendChild(link);
+      imgWrap.appendChild(det);
+    } else {
+      imgWrap.appendChild(link);
+    }
+    imgSection.appendChild(imgWrap);
+  }
+
+  // --- 3. Translation table ---
+  const transSection = document.getElementById("transSection");
+  transSection.innerHTML = "";
+  if (data.translations && data.translations.pos_groups && data.translations.pos_groups.length > 0) {
+    transSection.appendChild(buildTransTable(data));
+  }
+
+  // --- 4. Constructions ---
+  const consSection = document.getElementById("constructionsSection");
+  consSection.innerHTML = "";
+  const cons = data.constructions || [];
+  const filteredCons = cons.filter(c => c.construction);
+  if (filteredCons.length > 0) {
+    consSection.appendChild(document.createElement("hr")).className = "section-rule";
+    const wrap = document.createElement("div");
+    wrap.className = "constructions-section";
+    const h = document.createElement("div");
+    h.className = "section-heading";
+    h.textContent = uiLabel("constructions");
+    wrap.appendChild(h);
+    filteredCons.forEach(c => {
+      const item = document.createElement("div");
+      item.className = "construction-item";
+
+      // Determine slot type from construction: contains 'na' → verb slot, else noun slot
+      const conText = c.construction;
+      const hasVerbSlot = /\bna\b/.test(conText);
+      const slotLabel = hasVerbSlot ? "ᵛ" : "ⁿ";
+      // Append the slot indicator with the white rectangle ▯
+      const formSpan = document.createElement("span");
+      formSpan.className = "construction-form";
+      formSpan.innerHTML = escHtml(convertScriptSentence(conText)) + ` ▯<span class="slot-label">${slotLabel}</span>`;
+
+      const transSpan = document.createElement("span");
+      transSpan.className = "construction-trans";
+      transSpan.textContent = c.translation || "";
+
+      item.appendChild(formSpan);
+      item.appendChild(transSpan);
+      wrap.appendChild(item);
+    });
+    consSection.appendChild(wrap);
+  }
+
+  // --- 5. Metadata ---
+  const metaSection = document.getElementById("metaSection");
+  metaSection.innerHTML = "";
+  const hasMeta = (data.synonyms && data.synonyms.length > 0) ||
+                  (data.antonyms && data.antonyms.length > 0) ||
+                  (data.tags && data.tags.length > 0) ||
+                  data.category;
+  if (hasMeta) {
+    metaSection.appendChild(document.createElement("hr")).className = "section-rule";
+    const wrap = document.createElement("div");
+    wrap.className = "meta-section";
+
+    if (data.synonyms && data.synonyms.length > 0) {
+      wrap.appendChild(makeMetaRow(uiLabel("synonyms"),
+        data.synonyms.map(w => `<a href="#" class="word-link" data-word="${escHtml(w)}">${escHtml(convertScript(w))}</a>`).join(", ")));
+    }
+    if (data.antonyms && data.antonyms.length > 0) {
+      wrap.appendChild(makeMetaRow(uiLabel("antonyms"),
+        data.antonyms.map(w => `<a href="#" class="word-link" data-word="${escHtml(w)}">${escHtml(convertScript(w))}</a>`).join(", ")));
+    }
+    if (data.tags && data.tags.length > 0) {
+      const tagHtml = data.tags.map(t =>
+        `<a href="#" class="chip tag-link" data-tag="${escHtml(t)}">${escHtml(t)}</a>`
+      ).join(" ");
+      wrap.appendChild(makeMetaRow(uiLabel("tags"), tagHtml));
+    }
+    if (data.category) {
+      const catKey = "cat." + data.category.replace(/ /g, "_");
+      const catLabel = uiLabel(catKey) || data.category;
+      wrap.appendChild(makeMetaRow(uiLabel("category"), escHtml(catLabel)));
+    }
+    metaSection.appendChild(wrap);
+
+    // Attach click handlers to word links
+    metaSection.querySelectorAll(".word-link").forEach(a => {
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        const w = a.textContent.trim();
+        glbInput.value = w; transInput.value = "";
+        doLookup(w);
+      });
+    });
+    // Attach click handlers to tag links
+    metaSection.querySelectorAll(".tag-link").forEach(a => {
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        browseTag(a.dataset.tag);
+      });
+    });
+  }
+
+  // --- 6. Etymology ---
+  const etymSection = document.getElementById("etymologySection");
+  etymSection.innerHTML = "";
+  if (data.etymology) {
+    const wrap = document.createElement("div");
+    wrap.className = "etymology-section";
+    const h = document.createElement("div");
+    h.className = "section-heading";
+    h.textContent = uiLabel("etymology");
+    // Detect compound etymology: "word1 + word2 + ..." (no language names/parens)
+    const isCompound = /^-?[a-zA-ZğüşıöçĞÜŞİÖÇ]+(\s*\+\s*-?[a-zA-ZğüşıöçĞÜŞİÖÇ]+)+$/.test(data.etymology.trim());
+
+    wrap.appendChild(h);
+
+    if (isCompound) {
+      const compDiv = document.createElement("div");
+      compDiv.className = "etymology-compound";
+      data.etymology.split("+").forEach((part, i) => {
+        if (i > 0) {
+          const plus = document.createElement("span");
+          plus.className = "etym-plus";
+          plus.textContent = " + ";
+          compDiv.appendChild(plus);
+        }
+        const w = part.trim();
+        const a = document.createElement("a");
+        a.href = "#";
+        a.className = "word-link";
+        a.textContent = convertScript(w);
+        a.addEventListener("click", e => {
+          e.preventDefault();
+          glbInput.value = w.replace(/^-/, ""); transInput.value = "";
+          doLookup(w.replace(/^-/, ""));
+        });
+        compDiv.appendChild(a);
+      });
+      wrap.appendChild(compDiv);
+    } else {
+      // Multi-language etymology: split on ", " outside parentheses
+      // Format: "Arabisa (إنسان "iinsan"), Turkisa (insan)"
+      const parts = [];
+      let depth = 0, cur = "";
+      for (const ch of data.etymology) {
+        if (ch === "(") depth++;
+        if (ch === ")") depth--;
+        if (ch === "," && depth === 0) {
+          parts.push(cur.trim());
+          cur = "";
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur.trim()) parts.push(cur.trim());
+
+      const tbl = document.createElement("table");
+      tbl.className = "etymology-table";
+      parts.forEach(part => {
+        const m = part.match(/^(\S+)\s*(.*)/);
+        if (!m) return;
+        const tr = document.createElement("tr");
+        const tdLang = document.createElement("td");
+        tdLang.className = "etym-lang";
+        tdLang.textContent = etymLangName(m[1]);
+        const tdVal = document.createElement("td");
+        tdVal.className = "etym-val";
+        tdVal.textContent = (m[2] || "").replace(/^\(/, "").replace(/\)$/, "").trim();
+        tr.appendChild(tdLang);
+        tr.appendChild(tdVal);
+        tbl.appendChild(tr);
+      });
+      wrap.appendChild(tbl);
+    }
+    etymSection.appendChild(wrap);
+  }
+
+  // --- 7. Derived words ---
+  const derivedSection = document.getElementById("derivedSection");
+  derivedSection.innerHTML = "";
+  if (data.derived_words && data.derived_words.length > 0) {
+    derivedSection.appendChild(document.createElement("hr")).className = "section-rule";
+    const wrap = document.createElement("div");
+    wrap.className = "derived-section";
+    const headerRow = document.createElement("div");
+    headerRow.style.display = "flex";
+    headerRow.style.alignItems = "center";
+    headerRow.style.gap = "0.3rem";
+    headerRow.style.flexWrap = "wrap";
+    const h = document.createElement("span");
+    h.className = "section-heading";
+    h.style.marginBottom = "0";
+    h.textContent = uiLabel("derived_words") + ":";
+    headerRow.appendChild(h);
+    const toggleBtn = makeToggleBtn();
+    headerRow.appendChild(toggleBtn);
+    // Inline word links (always visible)
+    data.derived_words.forEach(w => {
+      const a = document.createElement("a");
+      a.href = "#";
+      a.className = "derived-link-inline";
+      a.textContent = convertScript(w);
+      a.addEventListener("click", e => {
+        e.preventDefault();
+        glbInput.value = w; transInput.value = "";
+        doLookup(w);
+      });
+      headerRow.appendChild(a);
+    });
+    wrap.appendChild(headerRow);
+    // Expandable translation tables for each derived word
+    const detailsBody = document.createElement("div");
+    detailsBody.className = "collapsible-body derived-details";
+    let detailsLoaded = false;
+    toggleBtn.addEventListener("click", () => {
+      toggleCollapsible(toggleBtn, detailsBody);
+      if (!detailsLoaded) {
+        detailsLoaded = true;
+        loadDerivedDetails(data.derived_words, detailsBody);
+      }
+    });
+    wrap.appendChild(detailsBody);
+    derivedSection.appendChild(wrap);
+  }
+
+  // --- 8. Examples ---
+  const exSection = document.getElementById("examplesSection");
+  exSection.innerHTML = "";
+  const examples = data.examples || [];
+  if (examples.length > 0) {
+    exSection.appendChild(document.createElement("hr")).className = "section-rule";
+    const wrap = document.createElement("div");
+    wrap.className = "examples-section";
+    const headerRow = document.createElement("div");
+    headerRow.style.display = "flex";
+    headerRow.style.alignItems = "center";
+    headerRow.style.gap = "0.3rem";
+    const h = document.createElement("span");
+    h.className = "section-heading";
+    h.style.marginBottom = "0";
+    h.textContent = uiLabel("example_sentences") + ":";
+    headerRow.appendChild(h);
+    const exToggle = makeToggleBtn();
+    headerRow.appendChild(exToggle);
+    wrap.appendChild(headerRow);
+    const exBody = document.createElement("div");
+    exBody.className = "collapsible-body";
+
+    // Map selected viewer languages to TMX codes
+    const prefCodes = selectedLangs
+      .map(l => LANG_TO_TMX[l])
+      .filter(c => c);
+
+    // Sort: examples with a translation in a selected language first
+    const hasTranslation = ex => prefCodes.some(c => (ex.translations || {})[c]);
+    const sorted = [...examples].sort((a, b) => hasTranslation(b) - hasTranslation(a));
+
+    const MAX_EXAMPLES = 5;
+    const sliced = sorted.slice(0, MAX_EXAMPLES);
+    sliced.forEach((ex, exIdx) => {
+      const item = buildExampleItem(ex, data, prefCodes);
+      // First example always visible; rest go in collapsible body
+      if (exIdx === 0) {
+        wrap.appendChild(item);
+      } else {
+        exBody.appendChild(item);
+      }
+    });
+    if (sliced.length > 1) {
+      wrap.appendChild(exBody);
+      exToggle.addEventListener("click", () => toggleCollapsible(exToggle, exBody));
+    } else {
+      exToggle.style.display = "none";
+    }
+    exSection.appendChild(wrap);
+  }
+
+  // --- 9. Sound effect ---
+  const soundSection = document.getElementById("soundSection");
+  soundSection.innerHTML = "";
+  if (data.sound_effect && data.sound_effect.audio_url) {
+    const wrap = document.createElement("div");
+    wrap.className = "sound-section";
+    const h = document.createElement("div");
+    h.className = "section-heading";
+    h.textContent = uiLabel("sound_effect");
+    const aud = document.createElement("audio");
+    aud.controls = true;
+    aud.src = data.sound_effect.audio_url;
+    aud.preload = "none";
+    const attr = document.createElement("div");
+    attr.className = "sound-attr";
+    if (data.sound_effect.source_url) {
+      attr.innerHTML = `Source: <a href="${escHtml(data.sound_effect.source_url)}" target="_blank" rel="noopener">${escHtml(data.sound_effect.source_url)}</a>`;
+    }
+    wrap.appendChild(h);
+    wrap.appendChild(aud);
+    wrap.appendChild(attr);
+    soundSection.appendChild(wrap);
+  }
+
+  // --- 10. Menalari link ---
+  const mLink = document.getElementById("menalariLink");
+  mLink.innerHTML = "";
+  mLink.appendChild(document.createElement("hr")).className = "section-rule";
+  const mLinkA = document.createElement("a");
+  mLinkA.href = `https://menalari.globasa.net/eng/lexi/${encodeURIComponent(data.word)}`;
+  mLinkA.target = "_blank";
+  mLinkA.rel = "noopener";
+  mLinkA.textContent = "\uD83D\uDD17 word link";
+  mLink.appendChild(mLinkA);
+}
+
+function makeMetaRow(label, html) {
+  const row = document.createElement("div");
+  row.className = "meta-row";
+  const lbl = document.createElement("span");
+  lbl.className = "meta-label";
+  lbl.textContent = label + ":";
+  const val = document.createElement("span");
+  val.className = "meta-value";
+  val.innerHTML = html;
+  row.appendChild(lbl);
+  row.appendChild(val);
+  return row;
+}
+
+function buildAlignedTranslation(text, alignedPositions) {
+  // Tokenize matching GIZA's tokenization (punctuation split from words)
+  const tokens = text.replace(/([.,:;!?"""()'\u2014\-])/g, ' $1 ').split(/\s+/).filter(t => t);
+  let html = "";
+  tokens.forEach((tok, idx) => {
+    if (idx > 0) html += " ";
+    if (alignedPositions.has(idx)) {
+      html += `<strong>${mdToHtml(tok)}</strong>`;
+    } else {
+      html += mdToHtml(tok);
+    }
+  });
+  return html;
+}
+
+function buildTransWithGlobasaTooltips(text, reverseAlign, targetWord) {
+  // In Globasa mode: each translation token gets a tooltip showing the aligned Globasa word(s)
+  // targetWord's aligned tokens are bolded
+  const tokens = text.replace(/([.,:;!?"""()'\u2014\-])/g, ' $1 ').split(/\s+/).filter(t => t);
+  let html = "";
+  tokens.forEach((tok, idx) => {
+    if (idx > 0) html += " ";
+    const glbWords = reverseAlign[idx];
+    const isTarget = glbWords && glbWords.some(w => w === targetWord);
+    const inner = isTarget ? `<strong>${escHtml(tok)}</strong>` : escHtml(tok);
+    if (glbWords && glbWords.length > 0) {
+      const tooltip = glbWords.join(", ");
+      html += `<span title="${escHtml(tooltip)}">${inner}</span>`;
+    } else {
+      html += inner;
+    }
+  });
+  return html;
+}
+
+function pickGloss(glossEntry) {
+  // glossEntry is {lang: gloss} — pick best match for selected languages
+  if (!glossEntry) return "";
+  let raw = "";
+  for (const lang of selectedLangs) {
+    if (glossEntry[lang]) { raw = glossEntry[lang]; break; }
+  }
+  if (!raw) raw = glossEntry["English"] || Object.values(glossEntry)[0] || "";
+  // Strip _markdown_ for plain-text tooltip contexts
+  return raw.replace(/_([^_]+)_/g, "$1");
+}
+
+function buildGlobExample(seg, targetWord, glossary) {
+  // Split into word tokens and whitespace/punctuation, preserving originals
+  const target = targetWord.toLowerCase();
+  const MAX_NGRAM = 5;
+
+  // Split into alternating [word, separator, word, separator, ...] tokens
+  // where "word" tokens are alphabetic and separators are whitespace/punctuation
+  const parts = seg.split(/(\s+)/);
+  // Extract just the word tokens with their indices into parts[]
+  const words = []; // [{idx, raw, clean}]
+  parts.forEach((p, i) => {
+    if (!/\s+/.test(p) && p.length > 0) {
+      const clean = p.toLowerCase().replace(/[^a-zğüşıöç]/g, "");
+      if (clean) words.push({idx: i, raw: p, clean});
+    }
+  });
+
+  // Greedy longest-match: mark which word indices are consumed by a phrase
+  // consumed[wordIdx] = {tooltip, phraseLen} or null
+  const consumed = new Array(words.length).fill(null);
+  for (let i = 0; i < words.length; i++) {
+    if (consumed[i]) continue;
+    // Try longest n-gram first
+    for (let n = Math.min(MAX_NGRAM, words.length - i); n >= 1; n--) {
+      const phrase = words.slice(i, i + n).map(w => w.clean).join(" ");
+      const glossEntry = glossary[phrase];
+      if (glossEntry) {
+        const tooltip = pickGloss(glossEntry);
+        if (tooltip) {
+          for (let k = i; k < i + n; k++) {
+            consumed[k] = {tooltip, start: i, len: n};
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  // Build result: iterate over parts[], using consumed[] for word tokens
+  let result = "";
+  let wordIdx = 0;
+  parts.forEach((p, i) => {
+    if (/\s+/.test(p)) {
+      result += p;
+      return;
+    }
+    const clean = p.toLowerCase().replace(/[^a-zğüşıöç]/g, "");
+    if (!clean) {
+      result += escHtml(p);
+      return;
+    }
+
+    const info = consumed[wordIdx];
+    const isTarget = clean === target;
+
+    const display = escHtml(convertScript(p));
+    if (info) {
+      // Part of a matched phrase — open span on first word, close on last
+      const isFirst = (wordIdx === info.start);
+      const isLast = (wordIdx === info.start + info.len - 1);
+      if (isFirst) result += `<span title="${escHtml(info.tooltip)}">`;
+      result += isTarget ? `<strong>${display}</strong>` : display;
+      if (isLast) result += `</span>`;
+    } else if (isTarget) {
+      result += `<strong>${display}</strong>`;
+    } else {
+      result += display;
+    }
+    wordIdx++;
+  });
+  return result;
+}
+
+// ============================================================
+// Derived word detail loader
+// ============================================================
+
+function loadDerivedDetails(words, container) {
+  const loading = document.createElement("div");
+  loading.className = "derived-loading";
+  loading.textContent = "Loading translations\u2026";
+  container.appendChild(loading);
+
+  // Fetch all derived words in parallel
+  const tableLangs = selectedLangs.filter(l => l !== "Globasa");
+  const langs = tableLangs.length > 0 ? tableLangs : ["English"];
+  const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : langs[0];
+
+  Promise.all(words.map(w =>
+    fetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+  )).then(results => {
+    loading.remove();
+    results.forEach((dData, i) => {
+      if (!dData || !dData.translations || !dData.translations.pos_groups.length) return;
+      const entry = document.createElement("div");
+      entry.className = "derived-entry";
+      const wordEl = document.createElement("div");
+      wordEl.className = "derived-entry-word";
+      wordEl.textContent = convertScript(words[i]);
+      wordEl.addEventListener("click", () => {
+        glbInput.value = words[i]; transInput.value = "";
+        doLookup(words[i]);
+      });
+      entry.appendChild(wordEl);
+      entry.appendChild(buildMiniTransTable(dData));
+      container.appendChild(entry);
+    });
+  });
+}
+
+// ============================================================
+// Collapsible [+]/[-] helpers
+// ============================================================
+
+function makeToggleBtn() {
+  const btn = document.createElement("button");
+  btn.className = "toggle-btn";
+  btn.textContent = "[+]";
+  btn.title = "Show/hide";
+  return btn;
+}
+
+function toggleCollapsible(btn, body) {
+  const isOpen = body.classList.toggle("open");
+  btn.textContent = isOpen ? "[\u2212]" : "[+]";
+}
+
+// ============================================================
+// Lookup
+// ============================================================
+
+let debounceTimer = null;
+let suggestTimer = null;
+let activeSugIdx = -1;
+let activeInput = null; // tracks which input triggered suggestions
+
+const sugBox = document.getElementById("suggestions");
+const glbInput = document.getElementById("searchGlb");
+const transInput = document.getElementById("searchTrans");
+
+function hideSuggestions() {
+  sugBox.classList.remove("show");
+  sugBox.innerHTML = "";
+  activeSugIdx = -1;
+}
+
+function selectSuggestion(word) {
+  glbInput.value = word;
+  transInput.value = "";
+  hideSuggestions();
+  doLookup(word);
+}
+
+function showSuggestions(items) {
+  sugBox.innerHTML = "";
+  if (items.length === 0) {
+    hideSuggestions();
+    return;
+  }
+  activeSugIdx = -1;
+  items.forEach((item, i) => {
+    const div = document.createElement("div");
+    div.className = "suggestion-item";
+    const wordSpan = document.createElement("span");
+    wordSpan.className = "sug-word";
+    wordSpan.textContent = item.word;
+    div.appendChild(wordSpan);
+    if (item.type === "translation" && item.via) {
+      const viaSpan = document.createElement("span");
+      viaSpan.className = "sug-via";
+      viaSpan.textContent = `\u2190 ${item.via}`;
+      div.appendChild(viaSpan);
+    }
+    div.addEventListener("mousedown", e => {
+      e.preventDefault();
+      selectSuggestion(item.word);
+    });
+    sugBox.appendChild(div);
+  });
+  sugBox.classList.add("show");
+}
+
+function updateActiveSuggestion() {
+  const items = sugBox.querySelectorAll(".suggestion-item");
+  items.forEach((el, i) => {
+    el.classList.toggle("active", i === activeSugIdx);
+  });
+}
+
+function fetchSuggestions(q, mode) {
+  if (q.length < 2) { hideSuggestions(); return; }
+  const langs = selectedLangs.length > 0 ? selectedLangs.join(",") : "English";
+  const modeParam = mode === "trans" ? "&mode=trans" : "";
+  fetch(`/suggest?q=${encodeURIComponent(q)}&langs=${encodeURIComponent(langs)}${modeParam}`)
+    .then(r => r.json())
+    .then(items => {
+      if (items.length === 1 && items[0].type === "exact") {
+        hideSuggestions();
+        return;
+      }
+      showSuggestions(items);
+    })
+    .catch(() => hideSuggestions());
+}
+
+function doLookup(word) {
+  word = word.trim();
+  hideSuggestions();
+  document.getElementById("tagBrowser").style.display = "none";
+  if (!word) {
+    document.getElementById("status").textContent = "";
+    document.getElementById("result").style.display = "none";
+    document.getElementById("landing").classList.remove("hidden");
+    return;
+  }
+  document.getElementById("landing").classList.add("hidden");
+  document.getElementById("status").textContent = `Looking up \u201c${word}\u201d\u2026`;
+
+  fetch(`/lookup/${encodeURIComponent(word)}`)
+    .then(r => {
+      if (!r.ok) throw new Error(r.status === 404 ? `\u201c${word}\u201d not found.` : `Error ${r.status}`);
+      return r.json();
+    })
+    .then(data => {
+      currentData = data;
+      document.getElementById("status").textContent = "";
+      renderResult(data);
+    })
+    .catch(err => {
+      document.getElementById("status").textContent = err.message || "Lookup failed.";
+      document.getElementById("result").style.display = "none";
+      document.getElementById("landing").classList.add("hidden");
+      fetchSuggestions(word, "glb");
+    });
+}
+
+function browseTag(tag) {
+  // Hide word result and landing, show tag browser
+  document.getElementById("result").style.display = "none";
+  document.getElementById("landing").classList.add("hidden");
+  document.getElementById("status").textContent = "";
+  const browser = document.getElementById("tagBrowser");
+  const heading = document.getElementById("tagBrowserHeading");
+  const wordsDiv = document.getElementById("tagBrowserWords");
+  browser.style.display = "block";
+  heading.textContent = tag;
+  wordsDiv.innerHTML = "<em style='color:var(--color-muted)'>Loading\u2026</em>";
+
+  fetch(`/tags/${encodeURIComponent(tag)}`)
+    .then(r => r.ok ? r.json() : Promise.reject("Tag not found"))
+    .then(data => {
+      wordsDiv.innerHTML = "";
+      // Fetch all words in parallel and render mini tables
+      Promise.all(data.words.map(w =>
+        fetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+      )).then(results => {
+        results.forEach((wData, i) => {
+          const entry = document.createElement("div");
+          entry.className = "derived-entry";
+          const wordEl = document.createElement("div");
+          wordEl.className = "derived-entry-word";
+          wordEl.textContent = convertScript(data.words[i]);
+          wordEl.addEventListener("click", () => {
+            glbInput.value = data.words[i]; transInput.value = "";
+            doLookup(data.words[i]);
+          });
+          entry.appendChild(wordEl);
+          if (wData && wData.translations && wData.translations.pos_groups.length) {
+            entry.appendChild(buildMiniTransTable(wData));
+          }
+          wordsDiv.appendChild(entry);
+        });
+      });
+    })
+    .catch(() => {
+      wordsDiv.innerHTML = "<em style='color:var(--color-muted)'>Failed to load tag.</em>";
+    });
+}
+
+// Search button: prefer Globasa input, fall back to translation input
+document.getElementById("searchBtn").addEventListener("click", () => {
+  clearTimeout(debounceTimer);
+  clearTimeout(suggestTimer);
+  const glbVal = glbInput.value.trim();
+  const transVal = transInput.value.trim();
+  if (glbVal) {
+    doLookup(glbVal);
+  } else if (transVal) {
+    fetchSuggestions(transVal, "trans");
+  }
+});
+
+// Globasa input: direct lookup
+function attachInputEvents(input, mode) {
+  input.addEventListener("input", e => {
+    clearTimeout(debounceTimer);
+    clearTimeout(suggestTimer);
+    activeInput = input;
+    const val = e.target.value.trim();
+    if (mode === "glb") {
+      // Clear the other input
+      transInput.value = "";
+      suggestTimer = setTimeout(() => fetchSuggestions(val, "glb"), 180);
+      debounceTimer = setTimeout(() => doLookup(val), 500);
+    } else {
+      // Translation: show suggestions only, don't auto-lookup
+      glbInput.value = "";
+      suggestTimer = setTimeout(() => fetchSuggestions(val, "trans"), 180);
+    }
+  });
+
+  input.addEventListener("keydown", e => {
+    const items = sugBox.querySelectorAll(".suggestion-item");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeSugIdx = Math.min(activeSugIdx + 1, items.length - 1);
+      updateActiveSuggestion();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeSugIdx = Math.max(activeSugIdx - 1, -1);
+      updateActiveSuggestion();
+    } else if (e.key === "Enter") {
+      clearTimeout(debounceTimer);
+      clearTimeout(suggestTimer);
+      if (activeSugIdx >= 0 && activeSugIdx < items.length) {
+        e.preventDefault();
+        const word = items[activeSugIdx].querySelector(".sug-word").textContent;
+        selectSuggestion(word);
+      } else if (mode === "glb") {
+        doLookup(e.target.value);
+      } else {
+        fetchSuggestions(e.target.value.trim(), "trans");
+      }
+    } else if (e.key === "Escape") {
+      hideSuggestions();
+    }
+  });
+
+  input.addEventListener("blur", () => {
+    setTimeout(hideSuggestions, 150);
+  });
+}
+
+attachInputEvents(glbInput, "glb");
+attachInputEvents(transInput, "trans");
+
+// ============================================================
+// Init
+// ============================================================
+
+selectedLangs = loadLangPref();
+activeScript = loadScriptPref();
+updateDocDirection();
+buildLangSelector();
+buildScriptSelector();
+document.getElementById("searchTrans").dir = "auto";
+
+// Load i18n then auto-lookup if ?word= in URL
+loadI18n().then(() => {
+  const params = new URLSearchParams(location.search);
+  const initWord = params.get("word");
+  if (initWord) {
+    glbInput.value = initWord;
+    doLookup(initWord);
+  }
+});
+</script>
+</body>
+</html>

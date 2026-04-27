@@ -1,0 +1,103 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Extend TMX with Tell-Tale Heart parallel text",
+      "type": "process",
+      "command": "python3",
+      "args": ["fill_telltale_english.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Generate TMX from CSV",
+      "type": "process",
+      "command": "python3",
+      "args": ["make_tmx.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Extend TMX with UDHR (Spanish + Esperanto)",
+      "type": "process",
+      "command": "python3",
+      "args": ["extend_tmx_udhr.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Extend TMX with multilingual data (Vanege, Xwexi, Ektor, Pepper & Carrot)",
+      "type": "process",
+      "command": "python3",
+      "args": ["extend_tmx_eo.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Sense Judge (script tiers only)",
+      "type": "shell",
+      "command": "LD_LIBRARY_PATH=/usr/local/cuda-12.0/targets/x86_64-linux/lib:$LD_LIBRARY_PATH /usr/bin/python3 -u LLM_sense_judge.py --no-llm",
+      "group": "build",
+      "isBackground": false,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Sense Judge (with Qwen LLM)",
+      "type": "shell",
+      "command": "LD_LIBRARY_PATH=/usr/local/cuda-12.0/targets/x86_64-linux/lib:$LD_LIBRARY_PATH /usr/bin/python3 -u LLM_sense_judge.py",
+      "group": "build",
+      "isBackground": false,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Word Viewer: Rebuild LMDB & Start",
+      "type": "shell",
+      "command": "rm -rf WordViewerLMDB && ${workspaceFolder}/venv/bin/python3 'Word Viewer.py'",
+      "group": "build",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building WordViewerLMDB",
+          "endsPattern": "Running on"
+        }
+      }
+    },
+    {
+      "label": "Word Viewer",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["Word Viewer.py"],
+      "group": "build",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Running on",
+          "endsPattern": "Running on"
+        }
+      }
+    },
+    {
+      "label": "Regenerate TMX (full pipeline)",
+      "dependsOn": [
+        "Generate TMX from CSV",
+        "Extend TMX with Tell-Tale Heart parallel text",
+        "Extend TMX with UDHR (Spanish + Esperanto)",
+        "Extend TMX with multilingual data (Vanege, Xwexi, Ektor, Pepper & Carrot)"
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
