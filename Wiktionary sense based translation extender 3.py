@@ -5,118 +5,18 @@ import re
 import json
 import shutil
 from datetime import datetime
-from collections import defaultdict
-
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 
-from Lexilista_parser import (parseWordEntry, GlossPoS, ParsedGloss,
-                               ParsedWordEntry, _expand_gloss_context)
-from wiktionary_db import WiktionaryDB, Translation, Example, Sense
-
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
-GLOSSPOS_TO_WIKT = {
-    GlossPoS.NOUN: "noun",
-    GlossPoS.PROPER_NOUN: "name",
-    GlossPoS.VERB: "verb",
-    GlossPoS.ADJECTIVE: "adj",
-    GlossPoS.PROPER_ADJECTIVE: "adj",
-    GlossPoS.VERBAL_ADVERB: "adv",
-    GlossPoS.ADVERB: "adv",
-    GlossPoS.PHRASAL_ADVERB: "adv",
-    GlossPoS.INTERJECTION: "intj",
-    GlossPoS.PRONOUN: "pron",
-    GlossPoS.POSSESSIVE_PRONOUN: "pron",
-    GlossPoS.NUMBER: "num",
-    GlossPoS.PREPOSITION: "prep",
-    GlossPoS.PHRASAL_PREPOSITION: "prep_phrase",
-    GlossPoS.PREPOSITIONAL_PHRASE: "prep_phrase",
-    GlossPoS.CONJUNCTION: "conj",
-    GlossPoS.DETERMINER: "det",
-    GlossPoS.PARTICLE: "particle",
-    GlossPoS.PREFIX: "prefix",
-    GlossPoS.POSSESSIVE_ADJECTIVE: "adj",
-    GlossPoS.PHRASE: "phrase",
-}
-
-# Fallbacks always tried for a given Wiktionary PoS
-WIKT_POS_FALLBACKS = {
-    "noun": ["name"],
-    "name": ["noun"],
-    "phrase": ["particle", "adv"],
-    "verb particle": ["adv"],
-}
-
-# Extra fallbacks tried only when the word has a single unique Wiktionary PoS
-WIKT_POS_SINGLE_FALLBACKS = {
-    "noun": ["verb"],
-    "adj": ["adv"],
-}
-
-# Validation languages: well-covered in word-list.csv, used for App? cross-validation
-# Maps display name -> (Wiktionary lang code, word-list.csv column index)
-VALIDATION_LANGS = {"Spa": ("es", 9), "Epo": ("eo", 8)}
-
-# Annotation-aid languages: shown per-sense in senses TSV to help annotators
-ANNOTATION_AID_LANGS = ['de', 'nl', 'fr', 'it', 'ru', 'cmn', 'ja', 'ar', 'tr',
-                        'fa', 'hi', 'ko', 'bg', 'ro']
-
-# Extension languages: fetched from Wiktionary for menalariExtension.tsv
-# Groups: Romance, Germanic, Classical, Slavic+E-European, Semitic+Turkic,
-#         East Asian, South/SE Asian, Iranian+Indic, African
-EXTENSION_LANGS = ['es', 'eo', 'pt', 'fr', 'it', 'ro',                     # Romance
-                   'de', 'de-ale', 'de-nds', 'de-rfr',                       # German + dialects
-                   'nl', 'ang', 'sv',                                         # Germanic (cont.)
-                   'grc', 'la', 'sa',                                        # Classical
-                   'ru', 'pl', 'bg', 'uk', 'sr', 'cs', 'hu',               # Slavic + E-European
-                   'yi', 'he',                                                # Semitic
-                   'ar', 'ar-egy', 'ar-hji', 'ar-mor', 'ar-glf',            # Arabic + dialects
-                   'tr', 'tt',                                                # Turkic
-                   'cmn', 'cmn-hok', 'cmn-dun',                              # Chinese + dialects
-                   'ja', 'ko', 'vi',                                          # East Asian (cont.)
-                   'id', 'ms', 'tl',                                         # SE Asian / Austronesian
-                   'fa', 'hi', 'ur', 'bn', 'ta', 'te', 'kn', 'ml',         # Iranian + Indic
-                   'gu', 'pa',                                                # Indic (cont.)
-                   'el',                                                      # Greek (modern)
-                   'sw']                                                      # African
-
-# Languages shown in the senses table (annotation-aid only, not extension-only)
-SENSES_LANGS = list(ANNOTATION_AID_LANGS)
-
-# Dialect-as-language mappings: virtual lang code -> (parent Wiktionary code, tag)
-# These get their own columns in output; translations with these tags are excluded
-# from the parent language column.
-DIALECT_LANGS = {
-    'de-ale': ('de', 'Alemannic-German'),
-    'de-nds': ('de', 'German-Low-German'),
-    'de-rfr': ('de', 'Rhine-Franconian'),
-    'ar-egy': ('ar', 'Egyptian-Arabic'),
-    'ar-hji': ('ar', 'Hijazi-Arabic'),
-    'ar-mor': ('ar', 'Moroccan-Arabic'),
-    'ar-glf': ('ar', 'Gulf-Arabic'),
-    'cmn-hok': ('cmn', 'Hokkien'),
-    'cmn-dun': ('cmn', 'Dungan'),
-}
-
-# All dialect tags (derived from DIALECT_LANGS), plus other non-standard variety tags
-# that should be excluded from the parent language but don't warrant their own column.
-DIALECT_TAGS = frozenset(
-    {tag for _, tag in DIALECT_LANGS.values()}
-    | {'Southern-Zazaki', 'Valencian', 'Taraškievica',
-       'Föhr-Amrum', 'Mooring'}
+from Lexilista_parser import parseWordEntry, GlossPoS, _expand_gloss_context
+from wiktionary_db import WiktionaryDB
+from wiktionary_constants import (
+    GLOSSPOS_TO_WIKT, WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
+    SENSES_LANGS,
+    lang_display_name, extract_italic_annotation,
+    expand_comma_glosses, get_words_for_pos, get_sense_lang_translations,
+    _load_markings_from_rows, _load_markings_from_xlsx, _find_latest_backup,
 )
-
-# Display names for dialect virtual codes
-DIALECT_DISPLAY_NAMES = {
-    'de-ale': 'Alemannic', 'de-nds': 'Low German', 'de-rfr': 'Rhine Franc.',
-    'ar-egy': 'Egyptian Ar.', 'ar-hji': 'Hijazi Ar.', 'ar-mor': 'Moroccan Ar.',
-    'ar-glf': 'Gulf Ar.',
-    'cmn-hok': 'Hokkien', 'cmn-dun': 'Dungan',
-}
 
 # ---------------------------------------------------------------------------
 # csv.field_size_limit fix
@@ -129,34 +29,6 @@ while True:
         break
     except OverflowError:
         maxInt = int(maxInt / 10)
-
-# ---------------------------------------------------------------------------
-# Load language name lookups
-# ---------------------------------------------------------------------------
-
-with open("language-codes ISO 639-2.json", 'r', encoding='utf-8') as f:
-    twoLetterCodes = json.load(f)
-
-if not os.path.exists("./iso-639-3.tab"):
-    import wget
-    print("Downloading the ISO-639-3 names for language codes")
-    wget.download("https://iso639-3.sil.org/sites/iso639-3/files/downloads/iso-639-3.tab",
-                  'iso-639-3.tab')
-
-languageNames = {}
-with open("./iso-639-3.tab", 'r', newline='', encoding='utf-8') as infile:
-    reader = csv.reader(infile, delimiter='\t')
-    next(reader, None)
-    for row in reader:
-        languageNames.setdefault(row[0], row[6])
-
-
-def lang_display_name(code):
-    if code in DIALECT_DISPLAY_NAMES:
-        return DIALECT_DISPLAY_NAMES[code]
-    if code in twoLetterCodes:
-        return twoLetterCodes[code]
-    return languageNames.get(code, code)
 
 
 # ---------------------------------------------------------------------------
@@ -185,96 +57,8 @@ senseKeyPath = os.path.join(senses_dir, SENSES_FILENAME)
 # Preload existing vetted markings from .xlsx (fallback to .tsv)
 # ---------------------------------------------------------------------------
 
-
-def _load_markings_from_rows(header, rows):
-    """Build existing_markings dict from header + iterable of row tuples/lists.
-    Returns {(glb, eng, pos, sense): (app, tier)} where tier is a single letter
-    representing the highest vetting tier: 'e' > 'v' > 'l' > 'a'.
-    Handles both new format (single 'Tier' column) and legacy format
-    (separate Script?/LLM?/Vetted?/Expert? columns)."""
-    markings = {}
-    col = {name: i for i, name in enumerate(header)}
-    eng_col = col.get('Eng', 1)
-    pos_col = col.get('Prt of Sp', 2)
-    sense_col = col.get('Wiktionary Sense (in Translations)', 3)
-    app_col = col.get('App?')
-    tier_col = col.get('Tier')
-    # Legacy columns (pre-consolidation)
-    scr_col = col.get('Script?')
-    llm_col = col.get('LLM?')
-    vet_col = col.get('Vetted?')
-    exp_col = col.get('Expert?')
-
-    def _get(row, c):
-        return (row[c] or '') if c is not None and c < len(row) else ''
-
-    for row in rows:
-        if len(row) <= sense_col:
-            continue
-        key = (row[0] or '', row[eng_col] or '', row[pos_col] or '', row[sense_col] or '')
-        app = _get(row, app_col)
-
-        if tier_col is not None:
-            # New format: single Tier column
-            tier = _get(row, tier_col)
-        else:
-            # Legacy format: collapse highest tier (e > v > l > a)
-            expert = _get(row, exp_col)
-            vetted = _get(row, vet_col)
-            llm = _get(row, llm_col)
-            script = _get(row, scr_col)
-            tier = expert or vetted or llm or script
-
-        if tier:
-            markings[key] = (app, tier)
-    return markings
-
-
 existing_markings = {}
 existing_col_widths = {}  # header name -> width (character units)
-
-
-def _load_markings_from_xlsx(path):
-    """Load markings and column widths from an .xlsx file.
-    Returns (markings, col_widths) or raises on corruption."""
-    markings = {}
-    col_widths = {}
-
-    wb_in = load_workbook(path, read_only=True)
-    ws_in = wb_in.active
-    row_iter = ws_in.iter_rows(values_only=True)
-    header = next(row_iter, None)
-    if header:
-        header = [str(h) if h is not None else '' for h in header]
-        rows = ([str(c) if c is not None else '' for c in r] for r in row_iter)
-        markings = _load_markings_from_rows(header, rows)
-    wb_in.close()
-
-    wb_dims = load_workbook(path, read_only=False, data_only=True)
-    ws_dims = wb_dims.active
-    dims_header = [str(c.value) if c.value is not None else ''
-                   for c in next(ws_dims.iter_rows(min_row=1, max_row=1))]
-    for i, name in enumerate(dims_header, 1):
-        col_letter = get_column_letter(i)
-        dim = ws_dims.column_dimensions.get(col_letter)
-        if dim and dim.width:
-            col_widths[name] = dim.width
-    wb_dims.close()
-
-    return markings, col_widths
-
-
-def _find_latest_backup():
-    """Find the most recent .xlsx backup in ./backups/, or None."""
-    backup_dir = "./backups"
-    if not os.path.isdir(backup_dir):
-        return None
-    candidates = sorted(
-        [f for f in os.listdir(backup_dir)
-         if f.startswith("GLB_ENG_WiktionarySenses_") and f.endswith(".xlsx")],
-        reverse=True)
-    return os.path.join(backup_dir, candidates[0]) if candidates else None
-
 
 loaded = False
 
@@ -396,57 +180,8 @@ def extract_definition_and_examples(matched_sense):
 
 
 # ---------------------------------------------------------------------------
-# Helper functions
+# English-specific helper functions
 # ---------------------------------------------------------------------------
-
-_ITALIC_ANNOTATION_RE = re.compile(r'\(_([^_]*)_\)')
-
-
-def extract_italic_annotation(text):
-    """Extract and strip markdown italic annotations like '(_bird_)' from a gloss.
-    Returns (stripped_text, clarification)."""
-    matches = _ITALIC_ANNOTATION_RE.findall(text)
-    stripped = _ITALIC_ANNOTATION_RE.sub('', text).strip()
-    clarification = ", ".join(matches) if matches else ""
-    return stripped, clarification
-
-
-def build_annotation_map(text):
-    """Build {stripped_word: annotation_text} from a word-list translation field.
-
-    E.g. 'absurdidad (_dicho o hecho absurdo_), ridiculez'
-      -> {'absurdidad': 'dicho o hecho absurdo'}
-    """
-    annotations = {}
-    for part in re.split(r'[,;]', text):
-        part = part.strip()
-        if not part:
-            continue
-        stripped, annotation = extract_italic_annotation(part)
-        if stripped and annotation:
-            annotations[stripped] = annotation
-    return annotations
-
-
-def expand_comma_glosses(glosses):
-    """Split comma-separated glosses into individual ParsedGloss entries,
-    then apply parenthetical expansion to each part."""
-    expanded = []
-    for g in glosses:
-        parts = g.gloss.split(",")
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-            variants = _expand_gloss_context(part)
-            for v in variants:
-                expanded.append(ParsedGloss(v, g.pos, g.verb_type, g.qualifier, g.affix_type))
-    return expanded
-
-
-def get_words_for_pos(glosses, target_pos):
-    """Extract individual words from expanded glosses matching target PoS."""
-    return {g.gloss.strip() for g in glosses if g.pos == target_pos}
 
 
 def crossvalidate(lang_translations, spa_words, epo_words):
@@ -494,67 +229,6 @@ def crossvalidate(lang_translations, spa_words, epo_words):
     return ('s' if app_match else '', spa_col, epo_col)
 
 
-def is_dialect(translation):
-    """Return True if a Translation carries a known dialect tag."""
-    if not translation.tags:
-        return False
-    return bool(DIALECT_TAGS & frozenset(translation.tags.split('\t')))
-
-
-def format_translation_word(translation, wikt_pos):
-    """Format a Translation with gender tags for nouns."""
-    word = translation.word
-    if wikt_pos in ('noun', 'name'):
-        genders = []
-        if 'masculine' in translation.tags:
-            genders.append("<m>")
-        if 'feminine' in translation.tags:
-            genders.append("<f>")
-        if 'neuter' in translation.tags:
-            genders.append("<n>")
-        if genders:
-            word += " " + "/".join(genders)
-    return word
-
-
-def _resolve_lang(lang_code, lang_translations):
-    """Resolve a (possibly virtual dialect) lang code to (parent_code, filter_fn).
-
-    For dialect codes (e.g. 'de-ale'): looks up parent in lang_translations,
-    returns only translations carrying the required dialect tag.
-    For standard codes: returns translations excluding all dialect tags.
-    Returns (translations_iterable, True) or ([], False) if no data."""
-    if lang_code in DIALECT_LANGS:
-        parent, required_tag = DIALECT_LANGS[lang_code]
-        if parent not in lang_translations:
-            return [], False
-        filtered = [t for t in lang_translations[parent]
-                    if required_tag in (t.tags or '').split('\t')]
-        return filtered, bool(filtered)
-    else:
-        if lang_code not in lang_translations:
-            return [], False
-        filtered = [t for t in lang_translations[lang_code] if not is_dialect(t)]
-        return filtered, bool(filtered)
-
-
-def get_sense_lang_translations(lang_translations, lang_code, wikt_pos):
-    """Get formatted translation words for a language from a sense."""
-    translations, found = _resolve_lang(lang_code, lang_translations)
-    if not found:
-        return ""
-    return ", ".join(format_translation_word(t, wikt_pos) for t in translations)
-
-
-def entry_to_string(entry):
-    """Format a list of sets into 'a, b; c, d' (comma within group, semicolon between)."""
-    parts = []
-    for s in entry:
-        if s:
-            parts.append(", ".join(s))
-    return "; ".join(parts)
-
-
 # ---------------------------------------------------------------------------
 # Download word-list if needed
 # ---------------------------------------------------------------------------
@@ -600,14 +274,10 @@ wb_out = Workbook()
 ws_out = wb_out.active
 ws_out.title = "Senses"
 
-with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
-      open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as menaExp):
-
-    menaWriter = csv.writer(menaExp, delimiter='\t', lineterminator='\n')
+with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
 
     # Build headers
     senses_lang_headers = [lang_display_name(c) for c in SENSES_LANGS]
-    extension_lang_headers = [lang_display_name(c) for c in EXTENSION_LANGS]
 
     senses_header = (['Glb', 'Tags', 'Antonyms', 'Eng', 'Clarification', 'Prt of Sp',
                        'Wiktionary Sense (in Translations)',
@@ -635,8 +305,6 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         else:
             ws_out.column_dimensions[col_letter].width = min(len(name) + 4, 10 * CM)
 
-    menaWriter.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
-
     menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
     wl_header = next(menalariReader, [])
     wl = {name: i for i, name in enumerate(wl_header)}
@@ -663,7 +331,6 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         antonyms = wl_get('Antonyms')
 
         if not eng_text:
-            menaWriter.writerow([globasa_word])
             ws_out.append([globasa_word, tags, antonyms])
             continue
 
@@ -674,24 +341,12 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
         epo_glosses = expand_comma_glosses(parsed.translations.get("Epo", []))
 
         if not eng_glosses:
-            menaWriter.writerow([globasa_word])
             ws_out.append([globasa_word, tags, antonyms])
             continue
-
-        # Word-list annotation maps for es/eo overlay in extension TSV
-        annotation_maps = {}
-        if spa_text:
-            annotation_maps['es'] = build_annotation_map(spa_text)
-        if epo_text:
-            annotation_maps['eo'] = build_annotation_map(epo_text)
 
         # Determine if single unique Wiktionary PoS (for extra fallbacks)
         unique_wikt_pos = {GLOSSPOS_TO_WIKT.get(g.pos) for g in eng_glosses} - {None}
         single_pos = len(unique_wikt_pos) == 1
-
-        # Accumulators for extensions TSV
-        eng_sense_dict = {}  # eng_word -> set of sense keys
-        output_glosses = [[set() for _ in eng_glosses] for _ in EXTENSION_LANGS]
 
         for i, eng_parsed in enumerate(eng_glosses):
             wikt_pos = GLOSSPOS_TO_WIKT.get(eng_parsed.pos)
@@ -779,32 +434,8 @@ with (open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file,
                         ws_out.append(sense_row)
                         print("\t".join(sense_row))
 
-                        # Collect for extensions TSV if reviewed at any tier
-                        if app == 's' and tier in ('v', 'e'):
-                            eng_sense_dict.setdefault(eng_word, set()).add(sense)
-                            for j, lang_code in enumerate(EXTENSION_LANGS):
-                                resolved, found = _resolve_lang(lang_code, lang_translations)
-                                if not found:
-                                    continue
-                                for t in resolved:
-                                    formatted = format_translation_word(t, pos_key)
-                                    ann_key = DIALECT_LANGS[lang_code][0] if lang_code in DIALECT_LANGS else lang_code
-                                    ann = annotation_maps.get(ann_key, {}).get(t.word, "")
-                                    if ann:
-                                        formatted += f" (_{ann}_)"
-                                    output_glosses[j][i].add(formatted)
-
                 if not found_any:
                     ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
-
-        # Write extensions TSV row
-        eng_sense_output = ', '.join(
-            word + " [" + "|".join(senses) + "]"
-            for word, senses in eng_sense_dict.items()
-        )
-        ext_row = ([globasa_word, eng_sense_output]
-                   + [entry_to_string(output_glosses[j]) for j in range(len(EXTENSION_LANGS))])
-        menaWriter.writerow(ext_row)
 
 wb_out.save(outputPath)
 db.close()
