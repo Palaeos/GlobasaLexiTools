@@ -290,82 +290,74 @@ while True:
     db = dbs[source_lang]
 
     # Try multiple PoS variants
-    # Map wordclass to Wiktionary PoS
-    from Lexilista_parser import GlossPoS, parseWordEntry
-    parsed = parseWordEntry(eng_text, wordclass, {})
-    eng_glosses = parsed.translations.get("Eng", [])
-    wikt_pos_list = list({GLOSSPOS_TO_WIKT.get(g.pos) for g in eng_glosses} - {None})
-
-    if not wikt_pos_list:
-        wikt_pos_list = ['noun', 'verb', 'adj', 'adv', 'conj', 'particle', 'phrase']
+    # For manually entered words, try all common PoS since the non-English
+    # Wiktionary may categorize the word differently than English
+    ALL_POS = ['noun', 'name', 'verb', 'adj', 'adv', 'conj', 'particle',
+               'phrase', 'intj', 'pron', 'num', 'prep', 'prep_phrase', 'det', 'prefix']
 
     found_any = False
-    for wikt_pos in wikt_pos_list:
-        pos_keys = [wikt_pos] + WIKT_POS_FALLBACKS.get(wikt_pos, [])
-        for pos_key in pos_keys:
-            trans_entry = db.get_translations(lookup_word, pos_key)
-            if trans_entry is None:
+    for pos_key in ALL_POS:
+        trans_entry = db.get_translations(lookup_word, pos_key)
+        if trans_entry is None:
+            continue
+
+        found_any = True
+        sense_list = db.get_senses(lookup_word, pos_key) or []
+
+        print(f"\n  Found in {source_lang} Wiktionary as \"{lookup_word}\" ({pos_key}):")
+
+        # Display all senses
+        sense_items = list(trans_entry.items())
+        sense_data = []
+        for idx, (sense_key, lang_translations) in enumerate(sense_items, 1):
+            definition, ex1, ex2, ex3 = display_sense(
+                idx, sense_key, lang_translations, sense_list, pos_key)
+            sense_data.append((sense_key, lang_translations, definition, ex1, ex2, ex3))
+
+        # Ask which to keep
+        print(f"\n  Select senses to keep (e.g. '1,3' or 'all' or 'none'):")
+        selection = input("  Keep: ").strip().lower()
+
+        if selection in ('none', 'n', ''):
+            continue
+        if selection == 'all':
+            selected = list(range(len(sense_data)))
+        else:
+            try:
+                selected = [int(x.strip()) - 1 for x in selection.split(',')]
+            except ValueError:
+                print("  Invalid selection")
                 continue
 
-            found_any = True
-            sense_list = db.get_senses(lookup_word, pos_key) or []
-
-            print(f"\n  Found in {source_lang} Wiktionary as \"{lookup_word}\" ({pos_key}):")
-
-            # Display all senses
-            sense_items = list(trans_entry.items())
-            sense_data = []  # (sense_key, lang_translations, definition, ex1, ex2, ex3)
-            for idx, (sense_key, lang_translations) in enumerate(sense_items, 1):
-                definition, ex1, ex2, ex3 = display_sense(
-                    idx, sense_key, lang_translations, sense_list, pos_key)
-                sense_data.append((sense_key, lang_translations, definition, ex1, ex2, ex3))
-
-            # Ask which to keep
-            print(f"\n  Select senses to keep (e.g. '1,3' or 'all' or 'none'):")
-            selection = input("  Keep: ").strip().lower()
-
-            if selection in ('none', 'n', ''):
+        for idx in selected:
+            if idx < 0 or idx >= len(sense_data):
                 continue
-            if selection == 'all':
-                selected = list(range(len(sense_data)))
-            else:
-                try:
-                    selected = [int(x.strip()) - 1 for x in selection.split(',')]
-                except ValueError:
-                    print("  Invalid selection")
-                    continue
+            sense_key, lang_translations, definition, ex1, ex2, ex3 = sense_data[idx]
 
-            for idx in selected:
-                if idx < 0 or idx >= len(sense_data):
-                    continue
-                sense_key, lang_translations, definition, ex1, ex2, ex3 = sense_data[idx]
+            key = (glb_input, lookup_word, pos_key, sense_key)
+            if key in curated_keys:
+                print(f"    Skipping duplicate: {sense_key}")
+                continue
 
-                # Check for duplicates
-                key = (glb_input, lookup_word, pos_key, sense_key)
-                if key in curated_keys:
-                    print(f"    Skipping duplicate: {sense_key}")
-                    continue
+            sense_lang_cols = [
+                get_sense_lang_translations(lang_translations, lc, pos_key)
+                for lc in SENSES_LANGS
+            ]
 
-                # Build sense language columns
-                sense_lang_cols = [
-                    get_sense_lang_translations(lang_translations, lc, pos_key)
-                    for lc in SENSES_LANGS
-                ]
+            row = [glb_input, source_lang, lookup_word, pos_key,
+                   sense_key,
+                   definition, ex1, ex2, ex3,
+                   '|',
+                   's', 'v'] + sense_lang_cols
+            ws_out.append(row)
+            curated_keys.add(key)
+            added_count += 1
 
-                row = [glb_input, source_lang, lookup_word, pos_key,
-                       sense_key,
-                       definition, ex1, ex2, ex3,
-                       '|',
-                       's', 'v'] + sense_lang_cols
-                ws_out.append(row)
-                curated_keys.add(key)
-                added_count += 1
-
-            if selected:
-                save_workbook()
-                kept = len([i for i in selected if 0 <= i < len(sense_data)])
-                print(f"\n  Appended {kept} sense(s) for {glb_input} "
-                      f"(source: {source_lang}/{lookup_word})")
+        if selected:
+            save_workbook()
+            kept = len([i for i in selected if 0 <= i < len(sense_data)])
+            print(f"\n  Appended {kept} sense(s) for {glb_input} "
+                  f"(source: {source_lang}/{lookup_word})")
 
     if not found_any:
         print(f"  No entries found for \"{lookup_word}\" in {source_lang} Wiktionary")

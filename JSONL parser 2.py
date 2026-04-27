@@ -83,23 +83,24 @@ with open(file_path, 'r', encoding='utf-8') as file:
                 if (word, PoS) not in translationDictionary:
                     translationDictionary[(word, PoS)] = {}
                 for translation in translations:
-                    if 'word' not in translation or 'sense' not in translation or 'code' not in translation:
+                    if 'word' not in translation or 'sense' not in translation:
                         continue
-                    if translation['sense'] not in translationDictionary[(word, PoS)]:
-                        translationDictionary[(word, PoS)][translation['sense']] = {}
-                    if translation['code'] not in translationDictionary[(word, PoS)][translation['sense']]:
-                        translationDictionary[(word, PoS)][translation['sense']][translation['code']] = set()
-                    if 'tags' in translation:
-                        if 'romanization' in translation:
-                            translationDictionary[(word, PoS)][translation['sense']][translation['code']].add(
-                                Translation(translation['word'], translation['romanization'],
-                                            "\t".join(translation['tags'])))
-                        else:
-                            translationDictionary[(word, PoS)][translation['sense']][translation['code']].add(
-                                Translation(translation['word'], "", "\t".join(translation['tags'])))
+                    lang_code_t = translation.get('code') or translation.get('lang_code')
+                    if not lang_code_t:
+                        continue
+                    sense_key = translation['sense']
+                    if sense_key not in translationDictionary[(word, PoS)]:
+                        translationDictionary[(word, PoS)][sense_key] = {}
+                    if lang_code_t not in translationDictionary[(word, PoS)][sense_key]:
+                        translationDictionary[(word, PoS)][sense_key][lang_code_t] = set()
+                    tags = translation.get('tags', [])
+                    rom = translation.get('romanization', '') or translation.get('roman', '')
+                    if tags:
+                        translationDictionary[(word, PoS)][sense_key][lang_code_t].add(
+                            Translation(translation['word'], rom, "\t".join(tags)))
                     else:
-                        translationDictionary[(word, PoS)][translation['sense']][translation['code']].add(
-                            Translation(translation['word'], "", ""))
+                        translationDictionary[(word, PoS)][sense_key][lang_code_t].add(
+                            Translation(translation['word'], rom, ""))
         except json.JSONDecodeError as e:
             print(f"Error parsing line: {line}")
             print(e)
