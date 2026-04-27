@@ -1,3 +1,5 @@
+from enum import Enum
+
 from PIL import Image
 import csv
 import re
@@ -9,6 +11,8 @@ import pandas as pd
 from bs4 import BeautifulSoup
 
 atomf = pd.read_csv("Periodic_20Table_20of_20Elements.csv", index_col=2)
+imgf = pd.read_csv("menalariImages_edited.csv", index_col=0, sep="\t") # For detecting existing images
+imgf.fillna(False, inplace=True)
 
 PoSDict = {"n": ['Noun'], "f": ['Verb'], "f.sah": ['Verb'], "b": ['Noun', 'Verb'], "t": ['Adjective', 'Adverb'],
            "s": ['Adjective'], "p jm": ['Prepositional Phrase'],
@@ -84,7 +88,8 @@ def FindImageURL(noun):
     elif soupBody.find("table", class_="infobox biota"):
         sourceURL = "https://en.wikipedia.org" + soupBody.find("table", class_="infobox biota").a.attrs["href"]
     elif soupBody.find("figure", class_="mw-default-size", typeof="mw:File/Thumb"):
-        sourceURL = "https://en.wikipedia.org" + soupBody.find("figure", class_="mw-default-size", typeof="mw:File/Thumb").a.attrs["href"]
+        if soupBody.find("figure", class_="mw-default-size", typeof="mw:File/Thumb").a:
+            sourceURL = "https://en.wikipedia.org" + soupBody.find("figure", class_="mw-default-size", typeof="mw:File/Thumb").a.attrs["href"]
 
     if not sourceURL:
         return None
@@ -133,10 +138,19 @@ def FindCountryMapURL(noun):
 
 #FindBioImageURL("Hirundinidae")
 menalari_name = "word-list.csv"
+
+menalari_name = "word-list.csv"
 atomic = True # Periodic Table related
 
-with open("./" + menalari_name, newline='') as menalari_file, open('menalariImages.tsv', 'w', newline='') as menaImages:
+class Mode(Enum):
+    GENERIC = 1
+    BIO = 2
+    ATOMIC = 3
+
+
+with open("./" + menalari_name, newline='') as menalari_file, open('menalariImages.tsv', 'w', newline='') as menaImages:#, open('menalariImages_old.tsv', 'w', newline='') as menaOldImages:
     menaWriter = csv.writer(menaImages, delimiter='\t', lineterminator='\n')
+    #menaOldWriter = csv.writer(menaOldImages, delimiter='\t', lineterminator='\n')
 
     menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
     next(menalariReader, None)
@@ -147,7 +161,7 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariImag
     for row in menalariReader:
         englishGlosses = row[6].replace("(_", "(").replace("_)", ")").strip().split("; ")
         # row[6].strip().split("; ")
-        output = [row[0]]
+        output = [row[0], row[6]]
         PoSs = row[3].split("; ")
         PoSlist = []
         PoSinDict = True
@@ -163,13 +177,42 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariImag
                 PoSinDict = False
         corrected = False
         unknownFound = False
-        if len(PoSlist) == 2 and len(englishGlosses[0].split(", ")) == 1:
-            firstGloss = englishGlosses[0].split(", ")[0].strip()
-            if "mubile" == row[15]:
-                URL = FindImageURL(firstGloss)
-                if URL:
-                    output += URL
-            """
+        mode = Mode.BIO
+        firstGloss = englishGlosses[0].split(", ")[0].strip()
+        lastGloss = englishGlosses[0].split(", ")[-1].strip()
+        match mode:
+            case Mode.GENERIC:
+                if len(PoSlist) == 2 and len(englishGlosses[0].split(", ")) == 1:
+                    if row[0] in imgf.index and isinstance(imgf.DirectURL[str(row[0])], bool):
+                        URL = FindImageURL(firstGloss)
+                        if URL:
+                            output += URL
+            case Mode.BIO:
+                if PoSs[0] == "b" and lastGloss != lastGloss.strip("_"):
+                    if row[0] in imgf.index and isinstance(imgf.DirectURL[str(row[0])], bool):
+                        URL = FindBioImageURL(lastGloss.strip("_"))
+                        if URL is not None:
+                            output += URL
+            case Mode.ATOMIC:
+                if lastGloss in atomf.AtomicNumber:
+                    atomNum = atomf.AtomicNumber[lastGloss]
+                    if atomNum == atomNum:
+                        URL = FindAtomImageURL(atomNum)
+                        if URL:
+                            output += URL
+
+
+
+
+        menaWriter.writerow(output)
+        #if row[0] in imgf.index and not isinstance(imgf.DirectURL[str(row[0])], bool):
+        #    menaOldWriter.writerow([row[0], row[6], imgf.loc[row[0]].DirectURL, imgf.loc[row[0]].SourcePage])
+        #else:
+        #    menaOldWriter.writerow([row[0], row[6]])
+        print(", ".join(output))
+
+
+"""
             if atomic:
                 if lastGloss in atomf.AtomicNumber:
                     atomNum = atomf.AtomicNumber[lastGloss]
@@ -182,6 +225,3 @@ with open("./" + menalari_name, newline='') as menalari_file, open('menalariImag
                 if URL:
                     output += URL
             """
-
-        menaWriter.writerow(output)
-        print(", ".join(output))
