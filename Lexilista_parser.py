@@ -144,15 +144,24 @@ _SORTED_TRANSLATION_PREFIXES = sorted(_TRANSLATION_ANNOTATION_MAP.keys(), key=le
 # Regex for detecting gloss-internal parentheticals (optional context)
 # Excludes (_italic_) markdown clarifications (contain underscores)
 _GLOSS_CONTEXT_RE = re.compile(r'^(\([^_)]+\)\s*)+')
+_GLOSS_TRAILING_CONTEXT_RE = re.compile(r'(\s*\([^_)]+\))+$')
 
 
 def _expand_gloss_context(gloss: str) -> list[str]:
-    """Returns [compact, verbose] if leading parens found, else [gloss].
+    """Returns [compact, verbose] if leading or trailing parens found, else [gloss].
     E.g. '(have a particular) smell' -> ['smell', 'have a particular smell']
+         'sourdough (bread)' -> ['sourdough', 'sourdough bread']
     """
     m = _GLOSS_CONTEXT_RE.match(gloss)
     if m:
         compact = gloss[m.end():].strip()
+        verbose = re.sub(r'[()]', '', gloss).strip()
+        verbose = re.sub(r'\s+', ' ', verbose)
+        if compact and verbose and compact != verbose:
+            return [compact, verbose]
+    m2 = _GLOSS_TRAILING_CONTEXT_RE.search(gloss)
+    if m2:
+        compact = gloss[:m2.start()].strip()
         verbose = re.sub(r'[()]', '', gloss).strip()
         verbose = re.sub(r'\s+', ' ', verbose)
         if compact and verbose and compact != verbose:
