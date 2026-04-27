@@ -3,22 +3,27 @@ import re
 import markdown
 import string
 
+import random
+
+from tabulate import tabulate
 import genanki
 import pandas as pd
 
-
+def safeTabulate(input):
+  return tabulate(input, tablefmt='unsafehtml').replace("&lt;", "<").replace("&gt;", ">")
 
 PoSDict = {"n": ['Noun'], "f": ['Verb'], "f.sah": ['Verb'], "b": ['Noun', 'Verb'], "t": ['Adjective', 'Verbal Adverb'],
            "s": ['Adjective'], "p jm": ['Prepositional Phrase'],
            "m": ['Adverb'], "lfik": ['Prefix'], "xfik": ['Suffix'], "b xfik": ['Suffix'], "t xfik": ['Suffix'],
            "su n": ['Proper noun'], "su t": ['Adjective'], "il": ['Interjection'], "l": ['Conjunction'],
-           "num": ['Number'], "p": ['Preposition'], "pn": ['Pronoun'], "d": ['Determiner']}
+           "num": ['Number'], "p": ['Preposition'], "pn": ['Pronoun'], "jm p": ['Phrasal preposition'], "d": ['Determiner']}
 contentWordTypes = ["n", "f", "b", "t", "s", "p jm", "m", "il" "su t", "su n"]
 
 my_model = genanki.Model(
   1607392319,
   'Simple Model',
   fields=[
+    {'name': 'ID'},
     {'name': 'Question'},
     {'name': 'Answer'},
   ],
@@ -42,7 +47,13 @@ menalari_name = "word-list.csv"
 ranking_name = "Doxo_word_frequency.csv"
 
 df = pd.read_csv(menalari_name, index_col=0)
+prnf = pd.read_csv("menalariPronouns_edited.tsv", sep="\t", index_col=0)
 imgf = pd.read_csv("menalariImages_edited.csv", index_col=0, sep="\t")
+imgf.fillna(False, inplace = True)
+gfcf = pd.read_csv("graphic_blacklist", index_col=0, sep=",")
+prnf.fillna(False, inplace = True)
+cardEscrow = []
+maxEscrowLength = 5
 
 with open("./" + ranking_name, newline='') as ranking_file:
   rankingReader = csv.reader(ranking_file, delimiter='\t', quotechar="'")
@@ -51,7 +62,17 @@ with open("./" + ranking_name, newline='') as ranking_file:
   for row in rankingReader:
     if not row[0] in df.index or str(row[0]).lower() == "devtest":
       continue
+    #if row[0] == "(fe) duli mara":
+    #  print("duli mara")
+    if row[0] == "gao":
+      print("duli mara")
     selected_rows = df.loc[row[0]]
+    pronouns = ""
+    if row[0] in prnf.index:
+      if isinstance(prnf.loc[row[0]].Pronoun, str):
+        pronouns = '<i style="text-align:center;">' + prnf.loc[row[0]].Pronoun + '</i>'
+      #elif not isinstance(prnf.loc[row[0]].Pronoun, bool):
+      #  pronouns = '<i style="text-align:center;">' + prnf.loc[row[0]].Pronoun[0] + '</i>'
     englishText = str(selected_rows['TranslationEng'])
     englishGlosses = englishText.strip().split("; ")
     #spanishGlosses = re.sub("\(_.*?_\)", "", selected_rows['TranslationSpa']).strip().split("; ")
@@ -89,47 +110,74 @@ with open("./" + ranking_name, newline='') as ranking_file:
     print(markdown.markdown(front_side) + " " + markdown.markdown(glosses))
     # Recognition
     backside = None
-    if imgf.DirectURL[row[0]] == imgf.DirectURL[row[0]]:
-      backside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
+    if row[0] in imgf.index and imgf.DirectURL[row[0]]:
+      if str(row[0]) in gfcf.index:
+        #backside = '<table class="tg"><thead> <tr><td class="tg-0lax"><details><summary>NSFW</summary><img src="' + str(imgf.DirectURL[row[
+        #  0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></details></td><td class="tg-0lax">' + pronouns + " " + markdown.markdown(
+        #  glosses) + '</tr></thead></table>'
+        backside = tabulate([['<details><summary>NSFW</summary><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></details>', pronouns],[markdown.markdown(glosses)]], tablefmt='unsafehtml')
+      else:
+        #backside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax">' + pronouns + '<details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
+        backside = tabulate([['<img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a>', pronouns], ['<details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details>']], tablefmt='unsafehtml')
+
     else:
       if len(row) > 1 and row[1] == row[1]:
-        backside ='<table class="tg"><thead> <tr><td class="tg-0lax">' + markdown.markdown(str(row[1])) + '</td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(
-          glosses) + '</details></tr></thead></table>'
+        if len(row) > 3:
+          backside = tabulate([[markdown.markdown(str(row[1])), pronouns], ['<details><summary>English Translations</summary>' + markdown.markdown(str(row[3])) + '</details>','<details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details>']],tablefmt='unsafehtml')
+        else:
+          backside = tabulate([[markdown.markdown(str(row[1])), pronouns], ["", '<details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details>']], tablefmt='unsafehtml')
       else:
-        backside = markdown.markdown(glosses)
+        backside = tabulate([[pronouns], [markdown.markdown(glosses)]], tablefmt='unsafehtml').replace("<tbody>\n<tr><td>", '<tbody>\n<tr><td style="text-align: center;">')
     print(backside)
     if not tags:
       my_note = genanki.Note(
         model=my_model,
-        fields=[str(row[0]), backside]
+        fields=[str(row[0]) + "_r", str(row[0]), backside]
       )
     else:
       my_note = genanki.Note(
         model=my_model,
-        fields=[str(row[0]), backside],
+        fields=[str(row[0]) + "_r", str(row[0]), backside],
         tags=tags
       )
     my_deck.add_note(my_note)
     # Production
     frontside = None
-    if imgf.DirectURL[row[0]] == imgf.DirectURL[row[0]]:
-      frontside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
+    if row[0] in imgf.index and imgf.DirectURL[row[0]]:
+      if row[0] in gfcf.index:
+        frontside = '<table class="tg"><thead> <tr><td class="tg-0lax"><details><summary>NSFW</summary><img src="' + str(imgf.DirectURL[row[
+          0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></details></td><td class="tg-0lax">' + markdown.markdown(
+          glosses) + '</tr></thead></table>'
+      else:
+        frontside ='<table class="tg"><thead> <tr><td class="tg-0lax"><img src="' + str(imgf.DirectURL[row[0]]) + '" alt="Image" height="250"><br><a href=" + str(imgf.SourcePage[row[0]]) + ">source</a></td><td class="tg-0lax"><details><summary>English Translations</summary>' + markdown.markdown(glosses) + '</details></tr></thead></table>'
     else:
       frontside = markdown.markdown(glosses)
     if len(row) > 1 and row[1] == row[1]:
       frontside += markdown.markdown(re.sub("\*\*.*?\*\*", "[...]", str(row[1])))
+      if len(row) > 3:
+        frontside += markdown.markdown(str(row[3]))
+    if pronouns:
+      backside = tabulate([[row[0], pronouns]], tablefmt="unsafehtml")
+    else:
+      backside = row[0]
     if tags == ["nan"]:
       my_note = genanki.Note(
         model=my_model,
-        fields=[frontside, row[0]]
+        fields=[str(row[0]) + "_p", frontside, backside]
       )
     else:
       my_note = genanki.Note(
         model=my_model,
-        fields=[frontside, row[0]],
+        fields=[str(row[0]) + "_p", frontside, backside],
         tags=tags
       )
-    my_deck.add_note(my_note)
+    cardEscrow += [my_note]
+    if len(cardEscrow) >= maxEscrowLength:
+      random.shuffle(cardEscrow)
+      for card in cardEscrow:
+        my_deck.add_note(card)
+      cardEscrow = []
+
 
 genanki.Package(my_deck).write_to_file('GlobasaContent.apkg')
 """
