@@ -304,14 +304,16 @@ def entry_to_string(entry):
 
 def _load_markings_from_rows(header, rows):
     """Build markings dict from header + iterable of row tuples/lists.
-    Returns {(glb, eng, pos, sense): (app, tier)} where tier is a single letter
-    representing the highest vetting tier: 'e' > 'v' > 'l' > 'a'.
+    Returns {(glb, eng, pos, verb_type, sense): (app, tier)} where tier is a
+    single letter representing the highest vetting tier: 'e' > 'v' > 'l' > 'a'.
     Handles both new format (single 'Tier' column) and legacy format
-    (separate Script?/LLM?/Vetted?/Expert? columns)."""
+    (separate Script?/LLM?/Vetted?/Expert? columns).
+    For files without a VerbType column, verb_type defaults to ''."""
     markings = {}
     col = {name: i for i, name in enumerate(header)}
     eng_col = col.get('Eng', col.get('LookupWord', 1))
     pos_col = col.get('Prt of Sp', 2)
+    vt_col = col.get('VerbType')
     sense_col = col.get('Wiktionary Sense (in Translations)',
                         col.get('Wiktionary Sense', 3))
     app_col = col.get('App?')
@@ -327,7 +329,8 @@ def _load_markings_from_rows(header, rows):
     for row in rows:
         if len(row) <= sense_col:
             continue
-        key = (row[0] or '', row[eng_col] or '', row[pos_col] or '', row[sense_col] or '')
+        verb_type = _get(row, vt_col)
+        key = (row[0] or '', row[eng_col] or '', row[pos_col] or '', verb_type, row[sense_col] or '')
         app = _get(row, app_col)
 
         if tier_col is not None:

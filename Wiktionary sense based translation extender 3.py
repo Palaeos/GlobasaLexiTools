@@ -8,7 +8,7 @@ from datetime import datetime
 from openpyxl import Workbook, load_workbook
 from openpyxl.utils import get_column_letter
 
-from Lexilista_parser import parseWordEntry, GlossPoS, _expand_gloss_context
+from Lexilista_parser import parseWordEntry, GlossPoS, VerbType, _expand_gloss_context
 from wiktionary_db import WiktionaryDB
 from wiktionary_constants import (
     GLOSSPOS_TO_WIKT, WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
@@ -97,6 +97,22 @@ if not loaded:
 # ---------------------------------------------------------------------------
 
 db = WiktionaryDB(readonly=True)
+
+
+# ---------------------------------------------------------------------------
+# Verb type display names
+# ---------------------------------------------------------------------------
+
+_VERB_TYPE_NAMES = {
+    VerbType.INTRANSITIVE: "intransitive",
+    VerbType.TRANSITIVE: "transitive",
+    VerbType.ECHO_TRANSITIVE: "echo-transitive",
+    VerbType.COPULAR: "copular",
+    VerbType.AUXILIARY: "auxiliary",
+    VerbType.INTRANSITIVE_CU: "intransitive (-cu)",
+    VerbType.FEELING: "feeling (hisi)",
+    VerbType.STATE: "state (jotay)",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +296,7 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
     senses_lang_headers = [lang_display_name(c) for c in SENSES_LANGS]
 
     senses_header = (['Glb', 'Tags', 'Antonyms', 'Eng', 'Clarification', 'Prt of Sp',
+                       'VerbType',
                        'Wiktionary Sense (in Translations)',
                        'Definition', 'Example', 'Example 2', 'Example 3',
                        '|',
@@ -294,6 +311,7 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
         'Definition': 3 * CM, 'Example': 3 * CM,
         'Example 2': 3 * CM, 'Example 3': 3 * CM,
         '|': 1 * CM,
+        'VerbType': 2 * CM,
         'App?': 1 * CM, 'Tier': 1 * CM,
     }
     for i, name in enumerate(senses_header, 1):
@@ -376,7 +394,8 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
 
             for eng_word, clarification, original_form in lookup_entries:
                 if eng_word.startswith("_"):
-                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
+                    vt = _VERB_TYPE_NAMES.get(eng_parsed.verb_type, '') if eng_parsed.verb_type else ''
+                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos, vt])
                     continue
 
                 found_any = False
@@ -403,10 +422,15 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
                         inherited_app, tier = '', ''
                         v2_reduced = re.sub(r'\(.*?\)', '', original_form).strip()
                         v2_unparened = original_form.replace("(", "").replace(")", "").strip()
+                        vt_name = _VERB_TYPE_NAMES.get(eng_parsed.verb_type, '') if eng_parsed.verb_type else ''
                         for eng_key in dict.fromkeys([eng_word, original_form,
                                                       v2_reduced, v2_unparened]):
+                            # Try with verb_type first, then without (legacy compat)
                             marking = existing_markings.get(
-                                (globasa_word, eng_key, pos_key, sense))
+                                (globasa_word, eng_key, pos_key, vt_name, sense))
+                            if not marking:
+                                marking = existing_markings.get(
+                                    (globasa_word, eng_key, pos_key, '', sense))
                             if marking:
                                 inherited_app, tier = marking
                                 break
@@ -424,9 +448,11 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
                             for lc in SENSES_LANGS
                         ]
 
+                        verb_type_name = _VERB_TYPE_NAMES.get(eng_parsed.verb_type, '') if eng_parsed.verb_type else ''
+
                         sense_row = [globasa_word, tags, antonyms,
                                      eng_word, clarification,
-                                     pos_key, sense,
+                                     pos_key, verb_type_name, sense,
                                      definition, ex1, ex2, ex3,
                                      '|',
                                      app, tier, spa_col, epo_col
@@ -435,7 +461,8 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as menalari_file:
                         print("\t".join(sense_row))
 
                 if not found_any:
-                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos])
+                    vt = _VERB_TYPE_NAMES.get(eng_parsed.verb_type, '') if eng_parsed.verb_type else ''
+                    ws_out.append([globasa_word, tags, antonyms, eng_word, clarification, wikt_pos, vt])
 
 wb_out.save(outputPath)
 db.close()

@@ -99,6 +99,7 @@ def load_vetted_senses(xlsx_path, source_type):
         source_idx = col.get('Source')
 
     pos_idx = col.get('Prt of Sp', 2)
+    vt_idx = col.get('VerbType')
     sense_idx = col.get('Wiktionary Sense (in Translations)',
                         col.get('Wiktionary Sense', 3))
 
@@ -117,6 +118,7 @@ def load_vetted_senses(xlsx_path, source_type):
         glb = row[0]
         lookup_word = row[word_idx] if word_idx < len(row) else ''
         pos = row[pos_idx] if pos_idx < len(row) else ''
+        verb_type = row[vt_idx] if vt_idx is not None and vt_idx < len(row) else ''
         sense = row[sense_idx] if sense_idx < len(row) else ''
         source = row[source_idx] if source_idx is not None and source_idx < len(row) else 'en'
 
@@ -127,6 +129,7 @@ def load_vetted_senses(xlsx_path, source_type):
             'glb': glb,
             'lookup_word': lookup_word,
             'pos': pos,
+            'verb_type': verb_type,
             'sense': sense,
             'source': source,
         })
@@ -226,18 +229,29 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
             annotation_maps['eo'] = build_annotation_map(wl['epo'])
 
         # Determine PoS groups from word-list.csv English glosses
+        # Groups are keyed by (wikt_pos, verb_type_name) to match Word Viewer's
+        # pos_group_keys structure
         eng_text = wl.get('eng', '')
         wordclass = wl.get('wordclass', '')
         parsed = parseWordEntry(eng_text, wordclass, {})
         eng_glosses = parsed.translations.get("Eng", [])
 
-        # Map Wiktionary PoS → group index (first occurrence wins)
-        pos_to_group = {}
+        from Lexilista_parser import VerbType as _VT
+        _VT_NAMES = {
+            _VT.INTRANSITIVE: "intransitive", _VT.TRANSITIVE: "transitive",
+            _VT.ECHO_TRANSITIVE: "echo-transitive", _VT.COPULAR: "copular",
+            _VT.AUXILIARY: "auxiliary", _VT.INTRANSITIVE_CU: "intransitive (-cu)",
+            _VT.FEELING: "feeling (hisi)", _VT.STATE: "state (jotay)",
+        }
+
+        group_key_to_idx = {}
         for g in eng_glosses:
             wikt_pos = GLOSSPOS_TO_WIKT.get(g.pos)
-            if wikt_pos and wikt_pos not in pos_to_group:
-                pos_to_group[wikt_pos] = len(pos_to_group)
-        num_groups = max(len(pos_to_group), 1)
+            vt_name = _VT_NAMES.get(g.verb_type, '') if g.verb_type else ''
+            key = (wikt_pos, vt_name)
+            if wikt_pos and key not in group_key_to_idx:
+                group_key_to_idx[key] = len(group_key_to_idx)
+        num_groups = max(len(group_key_to_idx), 1)
 
         # Accumulators: per-group sets for each language
         eng_sense_dict = {}
@@ -259,8 +273,17 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
             lang_translations = trans_entry[s['sense']]
             eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
 
-            # Determine which group this sense belongs to
-            group_idx = pos_to_group.get(s['pos'], 0)
+            # Determine which group this sense belongs to by (pos, verb_type)
+            vt = s.get('verb_type', '')
+            group_idx = group_key_to_idx.get((s['pos'], vt))
+            if group_idx is None and not vt:
+                # Legacy data without VerbType — match by pos alone (first matching group)
+                for (gp, gvt), gidx in group_key_to_idx.items():
+                    if gp == s['pos']:
+                        group_idx = gidx
+                        break
+            if group_idx is None:
+                group_idx = 0
 
             for j, lang_code in enumerate(EXTENSION_LANGS):
                 resolved, found = _resolve_lang(lang_code, lang_translations)
