@@ -298,10 +298,25 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
                     output_glosses[j][group_idx].add(formatted)
 
             # For non-English sources, include the lookup word itself as a
-            # translation for the source language (e.g. Lebewesen → German)
+            # translation for the source language (e.g. Lebewesen → German),
+            # with gender tag if available from the entry's sense tags
             if s['source'] != 'en' and s['source'] in ext_lang_idx:
                 j = ext_lang_idx[s['source']]
-                output_glosses[j][group_idx].add(s['lookup_word'])
+                pivot = s['lookup_word']
+                if s['pos'] in ('noun', 'name'):
+                    sense_list = db.get_senses(s['lookup_word'], s['pos']) or []
+                    if sense_list:
+                        stags = sense_list[0].tags
+                        genders = []
+                        if 'masculine' in stags:
+                            genders.append('<m>')
+                        if 'feminine' in stags:
+                            genders.append('<f>')
+                        if 'neuter' in stags:
+                            genders.append('<n>')
+                        if genders:
+                            pivot += ' ' + '/'.join(genders)
+                output_glosses[j][group_idx].add(pivot)
 
         # Build eng_sense_output
         eng_sense_output = ', '.join(

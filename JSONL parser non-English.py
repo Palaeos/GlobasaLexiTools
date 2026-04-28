@@ -145,6 +145,9 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
             word = data['word']
             PoS = data['pos']
 
+            # Entry-level tags (gender, etc.) — prepended to each sense's tags
+            entry_tags = tuple(data.get('tags', ()))
+
             # --- Senses extraction ---
             if 'senses' in data:
                 if (word, PoS) not in senseDictionary:
@@ -153,7 +156,7 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
                 for sense_data in data['senses']:
                     glosses = tuple(sense_data.get('glosses', ()))
                     raw_glosses = tuple(sense_data.get('raw_glosses', ()))
-                    tags = tuple(sense_data.get('tags', ()))
+                    tags = entry_tags + tuple(sense_data.get('tags', ()))
                     examples = tuple(
                         Example(
                             ex.get('text', ''),
