@@ -213,6 +213,7 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as f:
 # ---------------------------------------------------------------------------
 
 extension_lang_headers = [lang_display_name(c) for c in EXTENSION_LANGS]
+ext_lang_idx = {code: i for i, code in enumerate(EXTENSION_LANGS)}
 
 with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f, delimiter='\t', lineterminator='\n')
@@ -295,6 +296,12 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
                     if ann:
                         formatted += f" (_{ann}_)"
                     output_glosses[j][group_idx].add(formatted)
+
+            # For non-English sources, include the lookup word itself as a
+            # translation for the source language (e.g. Lebewesen → German)
+            if s['source'] != 'en' and s['source'] in ext_lang_idx:
+                j = ext_lang_idx[s['source']]
+                output_glosses[j][group_idx].add(s['lookup_word'])
 
         # Build eng_sense_output
         eng_sense_output = ', '.join(

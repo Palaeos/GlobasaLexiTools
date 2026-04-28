@@ -85,6 +85,43 @@
       }
     },
     {
+      "label": "English Wiktionary Sense Extender",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["-u", "Wiktionary sense based translation extender 3.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Wiktionary Extension Builder",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["-u", "Wiktionary extension builder.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Multi-Wiktionary Sense Curator",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["-u", "Multi-Wiktionary sense curator.py"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Wiktionary Extensions (full pipeline)",
+      "dependsOn": [
+        "English Wiktionary Sense Extender",
+        "Wiktionary Extension Builder"
+      ],
+      "dependsOrder": "sequence",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
       "label": "Regenerate TMX (full pipeline)",
       "dependsOn": [
         "Generate TMX from CSV",
