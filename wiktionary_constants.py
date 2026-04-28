@@ -284,11 +284,17 @@ def get_sense_lang_translations(lang_translations, lang_code, wikt_pos):
 
 
 def entry_to_string(entry):
-    """Format a list of sets into 'a, b; c, d' (comma within group, semicolon between)."""
-    parts = []
-    for s in entry:
+    """Format a list of sets into 'a, b; c, d' (comma within group, semicolon between).
+    Empty groups are preserved as empty strings to maintain positional alignment
+    with PoS groups (e.g. [set(), {'verb'}] -> '; verb')."""
+    # Strip trailing empty groups
+    last_nonempty = -1
+    for i, s in enumerate(entry):
         if s:
-            parts.append(", ".join(s))
+            last_nonempty = i
+    if last_nonempty < 0:
+        return ""
+    parts = [", ".join(s) if s else "" for s in entry[:last_nonempty + 1]]
     return "; ".join(parts)
 
 
