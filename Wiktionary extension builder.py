@@ -19,9 +19,10 @@ import json
 
 from openpyxl import load_workbook
 
+from Lexilista_parser import parseWordEntry
 from wiktionary_db import WiktionaryDB
 from wiktionary_constants import (
-    EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
+    GLOSSPOS_TO_WIKT, EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
     build_annotation_map, entry_to_string,
 )
@@ -194,6 +195,7 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as f:
             'eng': row.get('TranslationEng', '').strip(),
             'spa': row.get('TranslationSpa', '').strip(),
             'epo': row.get('TranslationEpo', '').strip(),
+            'wordclass': row.get('WordClass', '').strip(),
         }
 
 # ---------------------------------------------------------------------------
@@ -223,10 +225,23 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
         if wl.get('epo'):
             annotation_maps['eo'] = build_annotation_map(wl['epo'])
 
-        # Accumulators
-        eng_sense_dict = {}  # lookup_word -> set of sense keys
-        # For each EXTENSION_LANG, collect translation words across all senses
-        lang_translations_all = {lc: set() for lc in EXTENSION_LANGS}
+        # Determine PoS groups from word-list.csv English glosses
+        eng_text = wl.get('eng', '')
+        wordclass = wl.get('wordclass', '')
+        parsed = parseWordEntry(eng_text, wordclass, {})
+        eng_glosses = parsed.translations.get("Eng", [])
+
+        # Map Wiktionary PoS → group index (first occurrence wins)
+        pos_to_group = {}
+        for g in eng_glosses:
+            wikt_pos = GLOSSPOS_TO_WIKT.get(g.pos)
+            if wikt_pos and wikt_pos not in pos_to_group:
+                pos_to_group[wikt_pos] = len(pos_to_group)
+        num_groups = max(len(pos_to_group), 1)
+
+        # Accumulators: per-group sets for each language
+        eng_sense_dict = {}
+        output_glosses = [[set() for _ in range(num_groups)] for _ in EXTENSION_LANGS]
 
         for s in senses:
             source = s['source']
@@ -238,14 +253,16 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
             if trans_entry is None:
                 continue
 
-            # Find the matching sense in the translations dict
             if s['sense'] not in trans_entry:
                 continue
 
             lang_translations = trans_entry[s['sense']]
             eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
 
-            for lang_code in EXTENSION_LANGS:
+            # Determine which group this sense belongs to
+            group_idx = pos_to_group.get(s['pos'], 0)
+
+            for j, lang_code in enumerate(EXTENSION_LANGS):
                 resolved, found = _resolve_lang(lang_code, lang_translations)
                 if not found:
                     continue
@@ -255,7 +272,7 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
                     ann = annotation_maps.get(ann_key, {}).get(t.word, "")
                     if ann:
                         formatted += f" (_{ann}_)"
-                    lang_translations_all[lang_code].add(formatted)
+                    output_glosses[j][group_idx].add(formatted)
 
         # Build eng_sense_output
         eng_sense_output = ', '.join(
@@ -264,8 +281,8 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
         )
 
         ext_row = ([globasa_word, eng_sense_output]
-                   + [", ".join(sorted(lang_translations_all[lc]))
-                      for lc in EXTENSION_LANGS])
+                   + [entry_to_string(output_glosses[j])
+                      for j in range(len(EXTENSION_LANGS))])
         writer.writerow(ext_row)
 
         if eng_sense_output:
