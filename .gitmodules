@@ -1,0 +1,9 @@
+[submodule "xwexi-pages-grav"]
+	path = xwexi-pages-grav
+	url = https://github.com/Globasa-Team/xwexi-pages-grav.git
+[submodule "doxo-pages-grav"]
+	path = doxo-pages-grav
+	url = https://github.com/Globasa-Team/doxo-pages-grav.git
+[submodule "giza-pp"]
+	path = giza-pp
+	url = https://github.com/moses-smt/giza-pp.git

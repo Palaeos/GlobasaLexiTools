@@ -1,0 +1,1044 @@
+"""
+Improved GIZA++ alignment pipeline for Globasa.
+Builds on run_giza.py with:
+  1. Dictionary seeding from word-list.csv + menalariExtension.tsv
+  2. Word-level pair augmentation
+  3. Factored morphological representation (PosTagger.py + spaCy)
+  4. Bidirectional alignment + GDFA symmetrization
+"""
+
+import csv
+import re
+import xml.etree.ElementTree as ET
+import subprocess
+from pathlib import Path
+
+import spacy
+from PosTagger import tokenize as glb_tokenize, assign_pos
+
+TMX_FILE = Path(__file__).resolve().parent / "Doxo_passages.tmx"
+WORDLIST = Path(__file__).resolve().parent / "Old wordlists" / "word-list.csv"
+MENALARI = Path(__file__).resolve().parent / "menalariExtension.tsv"
+BASE_DIR = Path(__file__).resolve().parent
+GIZA_DIR = BASE_DIR / "giza-pp"
+GIZA = GIZA_DIR / "GIZA++-v2/GIZA++"
+PLAIN2SNT = GIZA_DIR / "GIZA++-v2/plain2snt.out"
+SNT2COOC = GIZA_DIR / "GIZA++-v2/snt2cooc.out"
+MKCLS = GIZA_DIR / "mkcls-v2/mkcls"
+OUT_DIR = Path(__file__).resolve().parent / "giza_output_improved"
+NS = "{http://www.w3.org/XML/1998/namespace}"
+
+# Map GIZA target language codes to word-list.csv and menalariExtension.tsv columns
+LANG_TO_WORDLIST_COL = {
+    "en": "TranslationEng", "eo": "TranslationEpo", "es": "TranslationSpa",
+    "de": "TranslationDeu", "fr": "TranslationFra", "ru": "TranslationRus",
+    "zh": "TranslationZho",
+}
+
+LANG_TO_MENALARI_COL = {
+    "en": "Eng with Senses", "eo": "Esperanto", "es": "Spanish",
+    "de": "German", "fr": "French", "ru": "Russian", "zh": "Mandarin",
+    "nl": "Dutch", "pt": "Portuguese", "id": "Indonesian", "tr": "Turkish",
+    "ar": "Arabic", "hi": "Hindi", "sw": "Swahili", "da": None,
+}
+
+
+# ---------------------------------------------------------------------------
+# Gloss parsing
+# ---------------------------------------------------------------------------
+
+_WORDLIST_ANNOTATION_RE = re.compile(
+    r'^(?:n|v\.tr|v\.intr|v\.cop|v\.aux|v phrs|adj|adv|interj|prep|conj|det|'
+    r'pron|num|par|prop n|prop adj|poss pron|poss adj|phrs|pfx|m|'
+    r'n/v\.tr sfx|n/v\.intr sfx|adj/adv sfx|n sfx|v\.tr sfx|adj sfx|adv sfx|'
+    r'cop plus prep|bound root|root sfx[^:]*|root pfx|'
+    r'tr|intr|tr/intr|intr \(optional -cu\)|tr/intr \(optional -cu\))'
+    r'(?:\s*\([^)]+\))?\s*:\s*',
+    re.IGNORECASE,
+)
+
+_ITALIC_RE = re.compile(r'_([^_]+)_')
+_PARENS_RE = re.compile(r'\([^)]*\)')
+_GENDER_TAG_RE = re.compile(r'\s*<[fmn]+(?:pl)?>\s*')
+_SENSE_BRACKET_RE = re.compile(r'\s*\[[^\]]*\]\s*')
+
+
+def parse_wordlist_gloss(text):
+    """Extract clean individual words from a word-list.csv translation cell.
+    Returns list of lowercase single-word strings.
+    """
+    if not text or not text.strip():
+        return []
+    words = set()
+    for segment in text.split(";"):
+        segment = segment.strip()
+        # Strip PoS annotation prefix
+        segment = _WORDLIST_ANNOTATION_RE.sub("", segment)
+        # Strip italic markers
+        segment = _ITALIC_RE.sub(r"\1", segment)
+        # Strip parenthetical qualifiers
+        segment = _PARENS_RE.sub("", segment)
+        # Split on comma
+        for part in segment.split(","):
+            part = part.strip().lower()
+            # Only keep single words (no phrases for dictionary seeding)
+            if part and " " not in part and len(part) > 1 and not part.startswith("-"):
+                words.add(part)
+    return list(words)
+
+
+def parse_menalari_gloss(text):
+    """Extract clean individual words from a menalariExtension.tsv cell.
+    Returns list of lowercase single-word strings.
+    """
+    if not text or not text.strip():
+        return []
+    words = set()
+    # Strip gender tags like <f>, <m>, <n>, <mf>
+    text = _GENDER_TAG_RE.sub(" ", text)
+    # Strip sense brackets like [bird]
+    text = _SENSE_BRACKET_RE.sub(" ", text)
+    for part in text.split(","):
+        part = part.strip().lower()
+        # Only keep single words, skip affixes
+        if part and " " not in part and len(part) > 1 and not part.startswith("-"):
+            words.add(part)
+    return list(words)
+
+
+# ---------------------------------------------------------------------------
+# Load lexical data
+# ---------------------------------------------------------------------------
+
+_wordlist_cache = None
+_menalari_cache = None
+_morphemes_cache = None
+
+
+def _load_wordlist():
+    global _wordlist_cache
+    if _wordlist_cache is not None:
+        return _wordlist_cache
+    _wordlist_cache = []
+    with open(WORDLIST, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            _wordlist_cache.append(row)
+    return _wordlist_cache
+
+
+def _load_menalari():
+    global _menalari_cache
+    if _menalari_cache is not None:
+        return _menalari_cache
+    _menalari_cache = []
+    with open(MENALARI, encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            _menalari_cache.append(row)
+    return _menalari_cache
+
+
+def get_word_pairs(lang2):
+    """Get (globasa_word, target_word) pairs for a target language.
+    Combines word-list.csv and menalariExtension.tsv sources.
+    Returns deduplicated list of (glb, tgt) tuples.
+    """
+    pairs = set()
+
+    # Source 1: word-list.csv
+    wl_col = LANG_TO_WORDLIST_COL.get(lang2)
+    if wl_col:
+        for row in _load_wordlist():
+            glb = row.get("Word", "").strip().lower()
+            if not glb or glb.startswith("(") or glb.startswith("-"):
+                continue
+            trans = row.get(wl_col, "")
+            for word in parse_wordlist_gloss(trans):
+                pairs.add((glb, word))
+
+    # Source 2: menalariExtension.tsv
+    men_col = LANG_TO_MENALARI_COL.get(lang2)
+    if men_col:
+        for row in _load_menalari():
+            glb = (row.get("Globasa") or "").strip().lower()
+            if not glb:
+                continue
+            trans = row.get(men_col) or ""
+            for word in parse_menalari_gloss(trans):
+                pairs.add((glb, word))
+
+    return list(pairs)
+
+
+# ---------------------------------------------------------------------------
+# Morphological segmentation
+# ---------------------------------------------------------------------------
+
+def _load_morphemes():
+    """Build morpheme lookup and affix inventory from word-list.csv."""
+    global _morphemes_cache
+    if _morphemes_cache is not None:
+        return _morphemes_cache
+
+    # Pass 1: collect affixes
+    prefixes = set()
+    suffixes = set()
+    all_words = set()
+    for row in _load_wordlist():
+        word = row.get("Word", "").strip().lower()
+        if word:
+            all_words.add(word.lstrip("-").rstrip("-"))
+        cat = row.get("Category", "")
+        wc = row.get("WordClass", "")
+        if cat == "affix":
+            clean = word.strip("-")
+            if word.startswith("-"):
+                suffixes.add(clean)
+            elif word.endswith("-"):
+                prefixes.add(clean)
+            elif "lfik" in wc:
+                prefixes.add(clean)
+            elif "xfik" in wc:
+                suffixes.add(clean)
+
+    # Pass 2: build explicit morpheme lookup from LexiliAsel
+    explicit = {}
+    for row in _load_wordlist():
+        la = row.get("LexiliAsel", "")
+        word = row.get("Word", "").strip().lower()
+        if "+" not in la or not word:
+            continue
+        plus_parts = la.split("+")
+        if len(plus_parts) < 2:
+            continue
+        morphemes = []
+        for i, part in enumerate(plus_parts):
+            subparts = [s.strip() for s in part.split(",")]
+            if i == 0:
+                candidate = subparts[-1].strip()
+            elif i == len(plus_parts) - 1:
+                candidate = subparts[0].strip()
+            else:
+                candidate = part.strip()
+            candidate = candidate.strip("-").strip().lower()
+            if candidate:
+                morphemes.append(candidate)
+        if len(morphemes) >= 2:
+            explicit[word] = morphemes
+
+    # Pass 3: build full lookup with productive affix stripping
+    _morphemes_cache = dict(explicit)
+
+    # Sort suffixes/prefixes longest-first for greedy matching
+    sorted_suffixes = sorted(suffixes, key=len, reverse=True)
+    sorted_prefixes = sorted(prefixes, key=len, reverse=True)
+
+    # For words in text not in explicit lookup, try affix stripping
+    # We store the affix lists for runtime use
+    _morphemes_cache["__suffixes__"] = sorted_suffixes
+    _morphemes_cache["__prefixes__"] = sorted_prefixes
+    _morphemes_cache["__all_words__"] = all_words
+    _morphemes_cache["__explicit__"] = explicit
+
+    return _morphemes_cache
+
+
+def segment_word(word, morphemes=None):
+    """Segment a Globasa word into morphemes using lookup + productive affix stripping.
+    Returns list of morpheme strings, or [word] if no decomposition found.
+    """
+    if morphemes is None:
+        morphemes = _load_morphemes()
+
+    # Direct lookup
+    if word in morphemes and not word.startswith("__"):
+        return morphemes[word]
+
+    explicit = morphemes["__explicit__"]
+    all_words = morphemes["__all_words__"]
+    sorted_suffixes = morphemes["__suffixes__"]
+    sorted_prefixes = morphemes["__prefixes__"]
+
+    # If the word is a known root/entry with no explicit decomposition, don't strip
+    if word in all_words and word not in explicit:
+        return [word]
+
+    # Try stripping one suffix
+    for sfx in sorted_suffixes:
+        if word.endswith(sfx) and len(word) > len(sfx) + 1:
+            stem = word[:-len(sfx)]
+            if stem in explicit:
+                return explicit[stem] + [sfx]
+            if stem in all_words:
+                return [stem, sfx]
+
+    # Try stripping one prefix
+    for pfx in sorted_prefixes:
+        if word.startswith(pfx) and len(word) > len(pfx) + 1:
+            stem = word[len(pfx):]
+            if stem in explicit:
+                return [pfx] + explicit[stem]
+            if stem in all_words:
+                return [pfx, stem]
+
+    # Try stripping prefix + suffix
+    for pfx in sorted_prefixes:
+        if word.startswith(pfx) and len(word) > len(pfx) + 2:
+            remainder = word[len(pfx):]
+            for sfx in sorted_suffixes:
+                if remainder.endswith(sfx) and len(remainder) > len(sfx) + 1:
+                    stem = remainder[:-len(sfx)]
+                    if stem in explicit:
+                        return [pfx] + explicit[stem] + [sfx]
+                    if stem in all_words:
+                        return [pfx, stem, sfx]
+
+    return [word]
+
+
+_mwe_cache = None
+
+
+def _load_mwes():
+    """Load multi-word expressions from word-list.csv.
+    Returns dict mapping (word1, word2, ...) → joined form for known MWEs.
+
+    Sources:
+    1. Entries with spaces in the Word column (e.g., "bon xanse")
+    2. Derived words whose LexiliAsel components are all standalone roots
+       (e.g., "tigades" = "tiga + des" → MWE ("tiga", "des") → "tigades")
+    """
+    global _mwe_cache
+    if _mwe_cache is not None:
+        return _mwe_cache
+    _mwe_cache = {}
+
+    # Collect all root words for validation
+    roots = set()
+    for row in _load_wordlist():
+        cat = row.get("Category", "")
+        if cat == "root":
+            roots.add(row.get("Word", "").strip().lower())
+
+    for row in _load_wordlist():
+        word = row.get("Word", "").strip()
+
+        # Source 1: explicit multi-word entries
+        if " " in word and not word.startswith("("):
+            parts = tuple(word.lower().split())
+            if len(parts) >= 2:
+                _mwe_cache[parts] = word.lower().replace(" ", "")
+
+        # Source 2: derived words decomposable into roots (compound words)
+        la = row.get("LexiliAsel", "")
+        if "+" in la and " " not in word:
+            plus_parts = la.split("+")
+            if len(plus_parts) >= 2:
+                morphemes = []
+                for i, part in enumerate(plus_parts):
+                    subparts = [s.strip() for s in part.split(",")]
+                    candidate = (subparts[-1] if i == 0 else subparts[0]).strip().strip("-").lower()
+                    morphemes.append(candidate)
+                # Only create MWE if ALL parts are standalone roots
+                if len(morphemes) >= 2 and all(m in roots for m in morphemes):
+                    _mwe_cache[tuple(morphemes)] = word.lower()
+
+    return _mwe_cache
+
+
+def join_mwes(tokens):
+    """Join adjacent tokens that form known multi-word expressions.
+    Uses greedy longest-match from left to right.
+    """
+    mwes = _load_mwes()
+    if not mwes:
+        return tokens
+    # Find max MWE length
+    max_len = max(len(k) for k in mwes)
+    result = []
+    i = 0
+    while i < len(tokens):
+        matched = False
+        # Try longest match first
+        for length in range(min(max_len, len(tokens) - i), 1, -1):
+            candidate = tuple(tokens[i:i + length])
+            if candidate in mwes:
+                result.append(mwes[candidate])
+                i += length
+                matched = True
+                break
+        if not matched:
+            result.append(tokens[i])
+            i += 1
+    return result
+
+
+# ---------------------------------------------------------------------------
+# TMX extraction
+# ---------------------------------------------------------------------------
+
+def extract_parallel(tmx_path, lang1, lang2):
+    """Extract parallel sentences for a language pair from TMX."""
+    tree = ET.parse(tmx_path)
+    pairs = []
+    for tu in tree.getroot().find("body").findall("tu"):
+        texts = {}
+        for tuv in tu.findall("tuv"):
+            lang = tuv.get(f"{NS}lang")
+            seg = tuv.find("seg")
+            if seg is not None and seg.text:
+                texts[lang] = seg.text.strip()
+        if lang1 in texts and lang2 in texts:
+            pairs.append((texts[lang1], texts[lang2]))
+    return pairs
+
+
+# ---------------------------------------------------------------------------
+# Tokenization
+# ---------------------------------------------------------------------------
+
+def tokenize(text, segment_morphemes=False):
+    """Tokenize text: lowercase, split punctuation, optionally segment morphemes.
+    When segment_morphemes=True:
+      1. Join known multi-word expressions (e.g., "tiga des" → "tiga_des")
+      2. Segment compounds into morphemes (e.g., "kitabudom" → "kitabu dom")
+    """
+    text = text.lower()
+    text = re.sub(r'([.,:;!?\u201c\u201d\u201e\u201f"()\'—\-])', r' \1 ', text)
+    tokens = text.split()
+    if segment_morphemes:
+        # Step 1: join multi-word expressions into single tokens
+        tokens = join_mwes(tokens)
+        # Step 2: segment each token into morphemes
+        morphemes = _load_morphemes()
+        expanded = []
+        for tok in tokens:
+            expanded.extend(segment_word(tok, morphemes))
+        tokens = expanded
+    return " ".join(tokens)
+
+
+# ---------------------------------------------------------------------------
+# Factored tokenization
+# ---------------------------------------------------------------------------
+
+_spacy_models = {}
+
+
+def _get_spacy(lang):
+    """Load and cache a spaCy model for the given language code."""
+    if lang not in _spacy_models:
+        model_map = {
+            "en": "en_core_web_sm", "de": "de_core_news_sm",
+            "fr": "fr_core_news_sm", "es": "es_core_news_sm",
+            "pt": "pt_core_news_sm", "nl": "nl_core_news_sm",
+            "ru": "ru_core_news_sm", "zh": "zh_core_web_sm",
+            "ja": "ja_core_news_sm",
+        }
+        model_name = model_map.get(lang)
+        if model_name:
+            try:
+                _spacy_models[lang] = spacy.load(model_name)
+            except OSError:
+                _spacy_models[lang] = None
+        else:
+            _spacy_models[lang] = None
+    return _spacy_models[lang]
+
+
+def _infer_pos_from_wordclass(word):
+    """Infer a POS label from word-list.csv WordClass for a single word.
+    Used as fallback when PosTagger returns UNK.
+    """
+    rows = _load_wordlist()
+    for row in rows:
+        if row.get("Word", "").strip().lower() == word:
+            wc = row.get("WordClass", "").strip()
+            if wc.startswith("b"):
+                return "N"  # default to noun for b-class
+            elif wc.startswith("t"):
+                return "ADJ"
+            elif wc.startswith("f"):
+                return "V"
+            elif wc.startswith("num"):
+                return "NUM"
+            elif wc == "p" or wc.startswith("jm p") or wc.startswith("p jm"):
+                return "PREP"
+            elif wc == "l" or wc.startswith("l ") or wc.startswith("jm l"):
+                return "CONJ"
+            elif wc in ("d", "tabl: d"):
+                return "DET"
+            elif wc in ("pn", "tabl: pn"):
+                return "PRON"
+            elif wc == "m" or wc.startswith("tabl: m"):
+                return "ADV"
+            elif wc in ("par", "f par"):
+                return "PAR"
+            elif wc == "il":
+                return "INTJ"
+            elif "lfik" in wc:
+                return "PFX"
+            elif "xfik" in wc:
+                return "SFX"
+            elif wc.startswith("su n"):
+                return "PROPN"
+            elif wc.startswith("su t"):
+                return "PROPN"
+            break
+    return "UNK"
+
+
+def factorize_glb(sentence):
+    """Factored Globasa tokenization: morpheme segmentation + head-final POS.
+
+    1. Run PosTagger to get contextual POS for each word
+    2. Segment the SURFACE form (not lemma) into morphemes via segment_word()
+    3. Tag only the last morpheme (head) with the resolved POS
+
+    Uses PosTagger for POS disambiguation but segment_word() for decomposition,
+    since segment_word() handles the full morpheme inventory (73 prefixes,
+    61 suffixes, 4571 explicit decompositions) while PosTagger's lemmatize()
+    only strips a small set of affixes.
+
+    Returns list of factored token strings.
+    """
+    tokens = glb_tokenize(sentence)
+    pos_list = assign_pos(tokens)
+    morphemes_data = _load_morphemes()
+
+    result = []
+    for (surface, lemma, trail), pos in zip(tokens, pos_list):
+        # Strip trailing punctuation from surface to get the core word
+        core = surface
+        if trail and core.endswith(trail):
+            core = core[:-len(trail)]
+        core = core.lower().strip()
+
+        if not core:
+            if trail:
+                result.append(trail)
+            continue
+
+        # For UNK words, try to resolve POS from WordClass via segment_word
+        if pos == "UNK":
+            parts = segment_word(core, morphemes_data)
+            # If segmentation found morphemes, infer POS from the last morpheme
+            if len(parts) > 1:
+                # Check if any part is a known word with a WordClass
+                last = parts[-1]
+                all_words = morphemes_data.get("__all_words__", set())
+                if last in all_words:
+                    pos = _infer_pos_from_wordclass(last)
+            elif core in morphemes_data.get("__all_words__", set()):
+                pos = _infer_pos_from_wordclass(core)
+        else:
+            # Segment the surface form into morphemes
+            parts = segment_word(core, morphemes_data)
+
+        # Tag only the last morpheme (head) with POS; internals are untagged
+        for i, morph in enumerate(parts):
+            if i == len(parts) - 1:
+                result.append(f"{morph}|{pos}")
+            else:
+                result.append(morph)
+
+        # Append trailing punctuation as separate token
+        if trail:
+            result.append(trail)
+
+    return result
+
+
+def factorize_target(sentence, lang):
+    """Factored target language tokenization via spaCy: lemma|POS.
+
+    Returns list of factored token strings.
+    Falls back to plain lowercase tokens if no spaCy model available.
+    """
+    nlp = _get_spacy(lang)
+    if nlp is None:
+        # Fallback: plain lowercase tokenization
+        text = sentence.lower()
+        text = re.sub(r'([.,:;!?"""()\'—\-])', r' \1 ', text)
+        return text.split()
+
+    doc = nlp(sentence)
+    result = []
+    for token in doc:
+        if token.is_punct:
+            result.append(token.text)
+        else:
+            result.append(f"{token.lemma_.lower()}|{token.tag_}")
+    return result
+
+
+def defactorize(token):
+    """Strip |POS suffix from a factored token."""
+    if "|" in token:
+        return token.rsplit("|", 1)[0]
+    return token
+
+
+# ---------------------------------------------------------------------------
+# Dictionary seeding
+# ---------------------------------------------------------------------------
+
+def build_seed_dict(lang2, work_dir):
+    """Write a GIZA++ dictionary file from lexical resources.
+    Format: source_id target_id (using .vcb vocabulary IDs).
+    Must be called after plain2snt has generated .vcb files.
+    """
+    lang1 = "glb"
+    vcb1_path = work_dir / f"{lang1}.vcb"
+    vcb2_path = work_dir / f"{lang2}.vcb"
+
+    # Build word→id maps from .vcb files (format: id word count)
+    word2id_src = {}
+    for line in open(vcb1_path, encoding="utf-8"):
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            word2id_src[parts[1]] = parts[0]
+
+    word2id_tgt = {}
+    for line in open(vcb2_path, encoding="utf-8"):
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            word2id_tgt[parts[1]] = parts[0]
+
+    pairs = get_word_pairs(lang2)
+    dict_path = work_dir / f"{lang1}_{lang2}.dict"
+    written = 0
+    with open(dict_path, "w", encoding="utf-8") as f:
+        for glb, tgt in pairs:
+            src_id = word2id_src.get(glb)
+            tgt_id = word2id_tgt.get(tgt)
+            if src_id and tgt_id:
+                f.write(f"{src_id} {tgt_id}\n")
+                written += 1
+    print(f"  Dictionary: {written}/{len(pairs)} seed pairs mapped to vocab IDs → {dict_path.name}")
+    return dict_path
+
+
+# ---------------------------------------------------------------------------
+# GIZA++ pipeline
+# ---------------------------------------------------------------------------
+
+def run_giza(lang1, lang2, pairs, work_dir):
+    """Run improved GIZA++ on a language pair with factored tokenization."""
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Factorize all sentences
+    print("  Factorizing sentences...")
+    factored_pairs = []
+    glb_vocab = set()
+    for s1, s2 in pairs:
+        glb_tokens = factorize_glb(s1)
+        tgt_tokens = factorize_target(s2, lang2)
+        glb_line = " ".join(glb_tokens)
+        tgt_line = " ".join(tgt_tokens)
+        factored_pairs.append((glb_line, tgt_line))
+        glb_vocab.update(defactorize(t) for t in glb_tokens)
+
+    # Write tokenized parallel files
+    f1 = work_dir / f"{lang1}.txt"
+    f2 = work_dir / f"{lang2}.txt"
+    with open(f1, "w") as out1, open(f2, "w") as out2:
+        # Real sentences (duplicated 3x to outweigh word pairs)
+        for line1, line2 in factored_pairs:
+            for _ in range(3):
+                out1.write(line1 + "\n")
+                out2.write(line2 + "\n")
+
+        # Word-level pairs (only for words in TMX, unfactored)
+        word_pairs = get_word_pairs(lang2)
+        wp_count = 0
+        for glb, tgt in word_pairs:
+            if glb in glb_vocab:
+                out1.write(glb + "\n")
+                out2.write(tgt + "\n")
+                wp_count += 1
+
+    total = len(pairs) * 3 + wp_count
+    print(f"\n{'='*60}")
+    print(f"  {lang1}-{lang2}: {len(pairs)} sentences (×3) + {wp_count} word pairs = {total} lines")
+    print(f"{'='*60}")
+
+    # plain2snt
+    subprocess.run([str(PLAIN2SNT), str(f1), str(f2)], cwd=str(work_dir),
+                   check=True, capture_output=True)
+
+    vcb1 = work_dir / f"{lang1}.vcb"
+    vcb2 = work_dir / f"{lang2}.vcb"
+    snt12 = work_dir / f"{lang1}_{lang2}.snt"
+    snt21 = work_dir / f"{lang2}_{lang1}.snt"
+
+    for src, dst in [
+        (work_dir / f"{lang1}.txt.vcb", vcb1),
+        (work_dir / f"{lang2}.txt.vcb", vcb2),
+        (work_dir / f"{lang1}.txt_{lang2}.txt.snt", snt12),
+        (work_dir / f"{lang2}.txt_{lang1}.txt.snt", snt21),
+    ]:
+        if src.exists() and src != dst:
+            src.rename(dst)
+
+    # mkcls
+    for lang in [lang1, lang2]:
+        subprocess.run(
+            [str(MKCLS), "-c50", f"-p{lang}.txt", f"-V{lang}.cls"],
+            cwd=str(work_dir), check=True, capture_output=True
+        )
+
+    # snt2cooc
+    cooc_name = f"{lang1}_{lang2}.cooc"
+    with open(work_dir / cooc_name, "w") as cooc_f:
+        subprocess.run(
+            [str(SNT2COOC), f"{lang1}.vcb", f"{lang2}.vcb", f"{lang1}_{lang2}.snt"],
+            cwd=str(work_dir), check=True, stdout=cooc_f
+        )
+
+    # Build seed dictionary
+    dict_path = build_seed_dict(lang2, work_dir)
+
+    # GIZA++ forward: glb → en
+    print("  Running GIZA++ forward...")
+    subprocess.run([
+        str(GIZA),
+        "-S", f"{lang1}.vcb",
+        "-T", f"{lang2}.vcb",
+        "-C", f"{lang1}_{lang2}.snt",
+        "-CoocurrenceFile", cooc_name,
+        "-o", f"{lang1}_{lang2}",
+        "-outputpath", "./",
+        "-dictionary", str(dict_path.name),
+    ], cwd=str(work_dir), check=True, capture_output=True)
+
+    # GIZA++ backward: en → glb
+    print("  Running GIZA++ backward...")
+    cooc_rev = f"{lang2}_{lang1}.cooc"
+    with open(work_dir / cooc_rev, "w") as cooc_f:
+        subprocess.run(
+            [str(SNT2COOC), f"{lang2}.vcb", f"{lang1}.vcb", f"{lang2}_{lang1}.snt"],
+            cwd=str(work_dir), check=True, stdout=cooc_f
+        )
+    subprocess.run([
+        str(GIZA),
+        "-S", f"{lang2}.vcb",
+        "-T", f"{lang1}.vcb",
+        "-C", f"{lang2}_{lang1}.snt",
+        "-CoocurrenceFile", cooc_rev,
+        "-o", f"{lang2}_{lang1}",
+        "-outputpath", "./",
+    ], cwd=str(work_dir), check=True, capture_output=True)
+
+    # Report forward results
+    fwd_files = sorted(work_dir.glob(f"{lang1}_{lang2}.A3.final*"))
+    bwd_files = sorted(work_dir.glob(f"{lang2}_{lang1}.A3.final*"))
+
+    if fwd_files:
+        print(f"  Forward alignment: {fwd_files[0].name}")
+        show_alignments(fwd_files[0], lang1, lang2, n=3)
+
+    t_files = sorted(work_dir.glob(f"{lang1}_{lang2}.t3.final*"))
+    if t_files:
+        print(f"  T-table: {t_files[0].name}")
+        show_top_translations(t_files[0], vcb1, vcb2, n=10)
+
+    # Symmetrize with GDFA
+    if fwd_files and bwd_files:
+        print("  Symmetrizing (GDFA)...")
+        fwd_aligns = parse_a3(fwd_files[0])
+        bwd_aligns = parse_a3(bwd_files[0])
+        symmetric = gdfa_symmetrize(fwd_aligns, bwd_aligns)
+
+        # Apply function word alignment rules
+        print("  Applying function word rules...")
+        symmetric, fw_stats = apply_funcword_rules(symmetric)
+        print(f"    le→NULL (before passive): {fw_stats['le_fixed']}")
+        print(f"    na→to|TO only: {fw_stats['na_fixed']}")
+        print(f"    da→NULL (resumptive): {fw_stats['da_nulled']}")
+        print(f"    kam→NULL (question): {fw_stats['kam_nulled']}")
+
+        pharaoh_file = work_dir / f"{lang1}_{lang2}.gdfa"
+        write_pharaoh(symmetric, pharaoh_file)
+        print(f"  Corrected: {pharaoh_file.name} ({len(symmetric)} sentences)")
+        show_symmetric_alignments(symmetric, n=5)
+    else:
+        print("  WARNING: Could not symmetrize — missing alignment files")
+
+
+# ---------------------------------------------------------------------------
+# A3 parsing and GDFA symmetrization
+# ---------------------------------------------------------------------------
+
+def parse_a3(a3_file):
+    """Parse GIZA++ A3.final into list of (target_tokens, source_tokens, alignment).
+    alignment: dict mapping source_pos (0-based) → set of target_pos (0-based).
+    In GIZA++ A3 format, source line has: NULL ({...}) word1 ({...}) word2 ({...})
+    The numbers in braces are 1-based target positions aligned to that source word.
+    """
+    lines = open(a3_file).readlines()
+    results = []
+    for i in range(0, len(lines), 3):
+        if i + 2 >= len(lines):
+            break
+        target_tokens = lines[i + 1].strip().split()
+        src_line = lines[i + 2].strip()
+        # Parse: NULL ({ 3 7 }) word1 ({ 1 }) word2 ({ 2 4 }) ...
+        align = {}
+        src_pos = -1  # -1 for NULL
+        for token in src_line.split():
+            if token == "NULL":
+                src_pos = -1
+            elif token == "({":
+                continue
+            elif token == "})":
+                src_pos += 1
+            else:
+                try:
+                    tgt_pos = int(token) - 1  # convert 1-based to 0-based
+                    if src_pos >= 0:
+                        align.setdefault(src_pos, set()).add(tgt_pos)
+                except ValueError:
+                    # It's a source word
+                    pass
+        # Re-parse to get clean source tokens
+        source_tokens = []
+        for token in src_line.split():
+            if token in ("NULL", "({", "})"):
+                continue
+            try:
+                int(token)
+            except ValueError:
+                source_tokens.append(token)
+        results.append((target_tokens, source_tokens, align))
+    return results
+
+
+def gdfa_symmetrize(fwd_aligns, bwd_aligns):
+    """Grow-diag-final-and symmetrization.
+    fwd_aligns: list of (tgt_tokens, src_tokens, src2tgt_dict) from glb→en
+    bwd_aligns: list of (src_tokens, tgt_tokens, tgt2src_dict) from en→glb
+    Returns: list of (src_tokens, tgt_tokens, set of (src_pos, tgt_pos) pairs)
+    """
+    results = []
+    for idx in range(min(len(fwd_aligns), len(bwd_aligns))):
+        tgt_tokens_f, src_tokens_f, fwd = fwd_aligns[idx]
+        src_tokens_b, tgt_tokens_b, bwd = bwd_aligns[idx]
+
+        n_src = len(src_tokens_f)
+        n_tgt = len(tgt_tokens_f)
+
+        # Convert forward: src→{tgt} to set of (src, tgt) pairs
+        fwd_set = set()
+        for s, tgts in fwd.items():
+            for t in tgts:
+                fwd_set.add((s, t))
+
+        # Convert backward: tgt→{src} to set of (src, tgt) pairs
+        bwd_set = set()
+        for t, srcs in bwd.items():
+            for s in srcs:
+                bwd_set.add((s, t))
+
+        # Intersection
+        alignment = fwd_set & bwd_set
+        union = fwd_set | bwd_set
+
+        # Grow: add neighboring points from union
+        neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1),
+                     (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        changed = True
+        while changed:
+            changed = False
+            aligned_src = {s for s, t in alignment}
+            aligned_tgt = {t for s, t in alignment}
+            for s, t in list(union - alignment):
+                if s not in aligned_src or t not in aligned_tgt:
+                    for ds, dt in neighbors:
+                        ns, nt = s + ds, t + dt
+                        if (ns, nt) in alignment:
+                            alignment.add((s, t))
+                            aligned_src.add(s)
+                            aligned_tgt.add(t)
+                            changed = True
+                            break
+
+        # Final: add remaining unaligned points from union
+        aligned_src = {s for s, t in alignment}
+        aligned_tgt = {t for s, t in alignment}
+        for s, t in fwd_set:
+            if s not in aligned_src:
+                alignment.add((s, t))
+                aligned_src.add(s)
+        for s, t in bwd_set:
+            if t not in aligned_tgt:
+                alignment.add((s, t))
+                aligned_tgt.add(t)
+
+        results.append((src_tokens_f, tgt_tokens_f, alignment))
+    return results
+
+
+def write_pharaoh(alignments, output_file):
+    """Write alignments in Pharaoh format (i-j pairs per line)."""
+    with open(output_file, "w") as f:
+        for src_tokens, tgt_tokens, pairs in alignments:
+            line = " ".join(f"{s}-{t}" for s, t in sorted(pairs))
+            f.write(line + "\n")
+
+
+# ---------------------------------------------------------------------------
+# Function word alignment rules (post-hoc correction)
+# ---------------------------------------------------------------------------
+
+def apply_funcword_rules(alignments):
+    """Apply deterministic rules to correct function word alignments.
+
+    Operates on GDFA output: list of (src_tokens, tgt_tokens, set of (s,t) pairs).
+    Returns corrected alignments (same format).
+
+    Rules:
+    1. le|PAR before passive be- → le goes to NULL, be inherits le's target
+    2. le|PAR aligned to a content verb → keep (correct: past tense marker)
+    3. na|PAR → prefer to|TO; drop links to content words
+    4. da|PRON (resumptive) → NULL (no English equivalent)
+    5. kam|PAR (question marker) → NULL
+    6. hay|V → prefer there|EX; also link to be|VBD/VBZ
+    """
+    corrected = []
+    stats = {"le_fixed": 0, "na_fixed": 0, "da_nulled": 0, "kam_nulled": 0}
+
+    for src_tokens, tgt_tokens, pairs in alignments:
+        new_pairs = set(pairs)
+
+        # Build lookup: src_pos → set of tgt_pos
+        src_to_tgt = {}
+        for s, t in pairs:
+            src_to_tgt.setdefault(s, set()).add(t)
+
+        for s_pos in range(len(src_tokens)):
+            stok = src_tokens[s_pos]
+
+            # Rule 1: le|PAR before passive be-
+            # If le|PAR is followed by an untagged 'be' (passive prefix),
+            # le should go to NULL and its target should transfer to be
+            if stok == "le|PAR" and s_pos + 1 < len(src_tokens):
+                next_tok = src_tokens[s_pos + 1]
+                if next_tok == "be":
+                    # le's current target links
+                    le_targets = src_to_tgt.get(s_pos, set())
+                    # Remove le's links
+                    for t in list(le_targets):
+                        new_pairs.discard((s_pos, t))
+                        # Transfer to be (next position)
+                        new_pairs.add((s_pos + 1, t))
+                    stats["le_fixed"] += 1
+
+            # Rule 2: na|PAR — keep only links to to|TO, drop content word links
+            if stok == "na|PAR":
+                na_targets = src_to_tgt.get(s_pos, set())
+                has_to = any(
+                    t < len(tgt_tokens) and tgt_tokens[t].startswith("to|")
+                    for t in na_targets
+                )
+                if has_to:
+                    # Keep only the to|TO link, drop others
+                    for t in list(na_targets):
+                        if t < len(tgt_tokens) and not tgt_tokens[t].startswith("to|"):
+                            new_pairs.discard((s_pos, t))
+                            stats["na_fixed"] += 1
+
+            # Rule 3: da|PRON (resumptive pronoun) → NULL
+            if stok == "da|PRON" or stok == "da|UNK":
+                for t in list(src_to_tgt.get(s_pos, set())):
+                    new_pairs.discard((s_pos, t))
+                stats["da_nulled"] += 1
+
+            # Rule 4: kam|PAR → NULL (question marker, no English word)
+            if stok.startswith("kam|"):
+                for t in list(src_to_tgt.get(s_pos, set())):
+                    new_pairs.discard((s_pos, t))
+                stats["kam_nulled"] += 1
+
+        corrected.append((src_tokens, tgt_tokens, new_pairs))
+
+    return corrected, stats
+
+
+def show_symmetric_alignments(alignments, n=5):
+    """Display symmetrized alignments with many-to-many links."""
+    print(f"\n  Symmetrized alignments (GDFA):")
+    for src_tokens, tgt_tokens, pairs in alignments[:n]:
+        # Build tgt_pos → [src words] map
+        tgt_to_src = {}
+        for s, t in pairs:
+            tgt_to_src.setdefault(t, []).append(s)
+        print(f"    TGT: {' '.join(tgt_tokens)}")
+        print(f"    SRC: {' '.join(src_tokens)}")
+        links = []
+        for t_pos in sorted(tgt_to_src.keys()):
+            src_words = [src_tokens[s] for s in sorted(tgt_to_src[t_pos]) if s < len(src_tokens)]
+            tgt_word = tgt_tokens[t_pos] if t_pos < len(tgt_tokens) else "?"
+            if src_words:
+                links.append(f"{'+'.join(src_words)}↔{tgt_word}")
+        print(f"    Links: {', '.join(links)}")
+        print()
+
+
+def show_alignments(a3_file, lang1, lang2, n=5):
+    """Display n sample alignments from GIZA++ A3 output."""
+    print(f"\n  Sample alignments ({lang1} → {lang2}):")
+    lines = open(a3_file).readlines()
+    count = 0
+    for i in range(0, len(lines), 3):
+        if count >= n or i + 2 >= len(lines):
+            break
+        target = lines[i + 1].strip()
+        source_aligned = lines[i + 2].strip()
+        print(f"    {lang2}: {target}")
+        print(f"    {lang1}: {source_aligned}")
+        print()
+        count += 1
+
+
+def show_top_translations(t_file, vcb1_file, vcb2_file, n=15):
+    """Show top translation pairs from the t-table."""
+    vcb1 = {}
+    for line in open(vcb1_file):
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            vcb1[parts[0]] = parts[1]
+
+    vcb2 = {}
+    for line in open(vcb2_file):
+        parts = line.strip().split()
+        if len(parts) >= 2:
+            vcb2[parts[0]] = parts[1]
+
+    top_pairs = []
+    for line in open(t_file):
+        parts = line.strip().split()
+        if len(parts) >= 3:
+            src_id, tgt_id, prob = parts[0], parts[1], float(parts[2])
+            src_word = vcb1.get(src_id, f"?{src_id}")
+            tgt_word = vcb2.get(tgt_id, f"?{tgt_id}")
+            if src_word != "NULL" and tgt_word != "NULL" and prob > 0.3:
+                top_pairs.append((src_word, tgt_word, prob))
+
+    top_pairs.sort(key=lambda x: -x[2])
+    print(f"\n  Top translation pairs (p > 0.3):")
+    for src, tgt, prob in top_pairs[:n]:
+        print(f"    {src:20s} → {tgt:20s}  ({prob:.3f})")
+
+
+if __name__ == "__main__":
+    OUT_DIR.mkdir(exist_ok=True)
+
+    target_langs = ["en", "eo", "es", "de", "fr", "ru", "nl", "pt", "id",
+                    "da", "ar", "hi", "sw", "tr", "zh"]
+    for l2 in target_langs:
+        l1 = "glb"
+        pairs = extract_parallel(TMX_FILE, l1, l2)
+        if len(pairs) < 10:
+            print(f"SKIP {l1}-{l2}: only {len(pairs)} pairs")
+            continue
+        run_giza(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}")
