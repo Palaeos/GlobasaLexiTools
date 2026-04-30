@@ -1407,12 +1407,53 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
             "-abil": [(1, 6.0), (0, 1.0)], # -able (typically merges)
             "-fil": [(1, 5.0), (0, 1.0)],  # -prone (merges)
             "-kal": [(1, 5.0), (0, 1.0)],  # -less (merges)
+            # Existential/locative verbs: often map to multi-word English
+            # constructions like "there is/are/was" + content, hence
+            # fertility 2 is plausible (many-to-one alignment).
+            "hay": [(2, 4.0), (1, 2.0), (0, 0.5)],  # existential: "there is/are"
+            "ogar": [(2, 3.0), (1, 3.0), (0, 1.0)], # live/dwell, esp. "there was X"
+            "loka": [(2, 2.0), (1, 3.0), (0, 1.0)], # be located, esp. existential
         }
 
         for word, ferts in funcword_fert.items():
             for fertility, alpha in ferts:
                 f.write(f"FERF\t{word}\t{fertility}\t{alpha}\n")
                 fert_count += 1
+
+        # Existential LEX priors: words that often align to "there be" in English
+        # (Globasa has lexical existentials, not "there is/are" syntax)
+        existential_priors = {
+            "en": {
+                "hay": [("there", 10.0), ("be", 5.0), ("is", 3.0), ("are", 3.0)],
+                "ogar": [("there", 5.0), ("be", 4.0), ("live", 3.0), ("dwell", 2.0)],
+                "loka": [("there", 5.0), ("be", 4.0), ("locate", 3.0)],
+            },
+            "de": {
+                "hay": [("es", 3.0), ("geben", 4.0), ("gibt", 3.0)],
+                "ogar": [("leben", 2.0), ("wohnen", 2.0), ("es", 1.5)],
+                "loka": [("liegen", 2.0), ("befinden", 2.0)],
+            },
+            "fr": {
+                "hay": [("il", 3.0), ("y", 4.0), ("avoir", 3.0)],
+                "ogar": [("vivre", 2.0), ("habiter", 2.0)],
+                "loka": [("se", 2.0), ("trouver", 2.0), ("situer", 2.0)],
+            },
+            "es": {
+                "hay": [("haber", 4.0), ("hay", 3.0), ("existir", 2.0)],
+                "ogar": [("vivir", 2.0), ("habitar", 2.0)],
+                "loka": [("ubicar", 2.0), ("encontrar", 2.0)],
+            },
+            "ru": {
+                "hay": [("есть", 4.0), ("быть", 2.0)],
+            },
+        }
+        ex_priors = existential_priors.get(lang2, {})
+        for src, tgts in ex_priors.items():
+            for tgt, alpha in tgts:
+                key = (src, tgt)
+                if key not in seen and key not in decomp_seen:
+                    f.write(f"LEX\t{src}\t{tgt}\t{alpha}\n")
+                    lex_count += 1
 
         # Target-side article fertility priors (FERR)
         # Articles in European languages typically have NO Globasa counterpart
