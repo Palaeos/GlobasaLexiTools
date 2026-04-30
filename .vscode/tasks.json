@@ -135,6 +135,37 @@
         "isDefault": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Run eflomal alignment (all language pairs)",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["-u", "run_giza_improved.py", "--eflomal"],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run eflomal alignment (one language pair)",
+      "type": "shell",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": [
+        "-u",
+        "-c",
+        "import sys; from run_giza_improved import extract_parallel, run_eflomal, multiway_concordance, TMX_FILE, OUT_DIR; lang = '${input:targetLang}'; OUT_DIR.mkdir(exist_ok=True); conc = multiway_concordance(TMX_FILE); pairs = extract_parallel(TMX_FILE, 'glb', lang); run_eflomal('glb', lang, pairs, OUT_DIR / f'glb_{lang}', concordance_pairs=conc)"
+      ],
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "targetLang",
+      "type": "pickString",
+      "description": "Target language code",
+      "default": "en",
+      "options": ["en", "eo", "es", "de", "fr", "ru", "nl", "pt", "id", "da", "ar", "hi", "sw", "tr", "zh"]
     }
   ]
 }
