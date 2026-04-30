@@ -80,9 +80,9 @@ def parse_wordlist_gloss(text):
         segment = _PARENS_RE.sub("", segment)
         # Split on comma
         for part in segment.split(","):
-            part = part.strip().lower()
-            # Only keep single words (no phrases for dictionary seeding)
-            if part and " " not in part and len(part) > 1 and not part.startswith("-"):
+            part = part.strip().lower().replace("\n", "").replace("\r", "")
+            # Only keep single clean words (no phrases, no whitespace)
+            if part and " " not in part and "\t" not in part and len(part) > 1 and not part.startswith("-"):
                 words.add(part)
     return list(words)
 
@@ -99,9 +99,9 @@ def parse_menalari_gloss(text):
     # Strip sense brackets like [bird]
     text = _SENSE_BRACKET_RE.sub(" ", text)
     for part in text.split(","):
-        part = part.strip().lower()
-        # Only keep single words, skip affixes
-        if part and " " not in part and len(part) > 1 and not part.startswith("-"):
+        part = part.strip().lower().replace("\n", "").replace("\r", "")
+        # Only keep single clean words, skip affixes
+        if part and " " not in part and "\t" not in part and len(part) > 1 and not part.startswith("-"):
             words.add(part)
     return list(words)
 
