@@ -173,6 +173,43 @@ def get_word_pairs(lang2):
 # Morphological segmentation
 # ---------------------------------------------------------------------------
 
+# Grammatical affixes that typically map to separate words in target
+# languages. These get separated and marked (-li, be-) during decomposition.
+#
+# Compound-root suffixes like -dom, -din, -bol, -doku are NOT in this list
+# because they carry independent meaning and behave like noun roots in
+# compounds (e.g., kitabu+dom = library, where dom = building).
+_GRAMMATICAL_SUFFIXES = {
+    "li",   # adjective marker → "of", "-al", "-ic" (insanli ↔ "human" / "des hommes")
+    "ya",   # abstract noun → "-ness", "-ity" (huruya ↔ "freedom")
+    "do",   # passive participle → "-ed" (basataytido ↔ "translated")
+    "ne",   # active participle/agent → "-ing", "-er" (ergone ↔ "worker")
+    "mo",   # adverb marker → "-ly" (perfetomo ↔ "perfectly")
+    "cu",   # become / intransitive → "become" (sahi+cu ↔ "become correct")
+    "gi",   # causative → "make" (sahi+gi ↔ "make correct" / "correct")
+    "abil", # -able / can be (lubiabil ↔ "lovable")
+    "ible", # -ible (variant of -abil)
+    "bisu", # must be
+    "musi", # which must
+    "gimu", # which should
+    "kal",  # without sufficient / -less (huruya+kal ↔ "freedomless")
+    "laye", # worthy
+    "fil",  # tending to / -prone
+    "pul",  # full of / -ful (jiwa+pul ↔ "vibrant")
+    "ple",  # multiplier (-uple)
+}
+_GRAMMATICAL_PREFIXES = {
+    "be",   # passive marker → "be"/"is"/"was" (bekrea ↔ "was created")
+    "du",   # continuous/durative → "keep -ing"
+    "ri",   # again / re- → "re-" (riskri ↔ "rewrite")
+    "aw",   # away / un-do → "away", "un-"
+    "ja",   # already (perfective) → "already", "have"
+    "no",   # negation → "not"/"un-"
+    "nen",  # without → "-less"
+    "ge",   # collective / group
+}
+
+
 def _load_morphemes():
     """Build morpheme lookup and affix inventory from word-list.csv."""
     global _morphemes_cache
@@ -243,13 +280,19 @@ def _load_morphemes():
 
 
 def segment_word(word, morphemes=None):
-    """Segment a Globasa word into word-list entries with minimum splits.
+    """Segment a Globasa word into morphemes.
 
-    Rules:
-    - If the word is in the word-list, keep it whole (no decomposition).
-    - If the word is NOT in the word-list, find the minimum decomposition
-      where each piece is a word-list entry.
-    - Prefer fewer pieces: 2 > 3, stem+suffix > prefix+stem+suffix.
+    Affix marking:
+    - Suffixes are marked with leading hyphen: -li, -ya, -do
+    - Prefixes are marked with trailing hyphen: be-, du-, mal-
+
+    Decomposition rules:
+    - Always strip known affixes (e.g., insanli → insan + -li), even if the
+      derived form is in the word-list. This preserves cross-linguistic
+      information (e.g., -li ↔ "de" in French possessive constructions).
+    - Root+root compounds (kitabudom): keep whole if in word-list.
+    - Otherwise, find minimum decomposition where each piece is a word-list
+      entry or a known affix.
 
     Returns list of strings, or [word] if no decomposition found.
     """
@@ -260,37 +303,60 @@ def segment_word(word, morphemes=None):
     sorted_suffixes = morphemes["__suffixes__"]
     sorted_prefixes = morphemes["__prefixes__"]
 
-    # If the word is in the word-list, keep it whole
+    # Use curated grammatical affix lists (sorted longest-first for matching)
+    gram_sfx = sorted(_GRAMMATICAL_SUFFIXES, key=len, reverse=True)
+    gram_pfx = sorted(_GRAMMATICAL_PREFIXES, key=len, reverse=True)
+
+    # First priority: strip a grammatical suffix if the stem is a valid word.
+    # Applied even if the full word is in the word-list (e.g., insanli)
+    # since these suffixes carry cross-linguistic information.
+    for sfx in gram_sfx:
+        if word.endswith(sfx) and len(word) > len(sfx) + 1:
+            stem = word[:-len(sfx)]
+            if stem in all_words:
+                stem_parts = segment_word(stem, morphemes)
+                return stem_parts + [f"-{sfx}"]
+
+    # Second priority: strip a grammatical prefix if the stem is a valid word
+    for pfx in gram_pfx:
+        if word.startswith(pfx) and len(word) > len(pfx) + 1:
+            stem = word[len(pfx):]
+            if stem in all_words:
+                stem_parts = segment_word(stem, morphemes)
+                return [f"{pfx}-"] + stem_parts
+
+    # If the word is in the word-list (and has no grammatical affix), keep it whole
+    # This protects compound roots like kitabudom, xorsomno, somnokamer
     if word in all_words:
         return [word]
 
-    # Not in word-list — try minimum decomposition into word-list entries.
+    # Not in word-list — try fuller decomposition (any affix, any compound)
 
-    # 1-split: suffix stripping (word = stem + suffix, both in word-list)
+    # Grammatical prefix + stem + grammatical suffix
+    for pfx in gram_pfx:
+        if word.startswith(pfx) and len(word) > len(pfx) + 2:
+            remainder = word[len(pfx):]
+            for sfx in gram_sfx:
+                if remainder.endswith(sfx) and len(remainder) > len(sfx) + 1:
+                    stem = remainder[:-len(sfx)]
+                    if stem in all_words:
+                        return [f"{pfx}-", stem, f"-{sfx}"]
+
+    # Fallback: full affix inventory (compound roots like -dom, -din)
+    # These are NOT marked with hyphens since they're semantic content
     for sfx in sorted_suffixes:
         if word.endswith(sfx) and len(word) > len(sfx) + 1:
             stem = word[:-len(sfx)]
             if stem in all_words:
                 return [stem, sfx]
 
-    # 1-split: prefix stripping (word = prefix + stem, both in word-list)
     for pfx in sorted_prefixes:
         if word.startswith(pfx) and len(word) > len(pfx) + 1:
             stem = word[len(pfx):]
             if stem in all_words:
                 return [pfx, stem]
 
-    # 2-split: prefix + stem + suffix (all in word-list)
-    for pfx in sorted_prefixes:
-        if word.startswith(pfx) and len(word) > len(pfx) + 2:
-            remainder = word[len(pfx):]
-            for sfx in sorted_suffixes:
-                if remainder.endswith(sfx) and len(remainder) > len(sfx) + 1:
-                    stem = remainder[:-len(sfx)]
-                    if stem in all_words:
-                        return [pfx, stem, sfx]
-
-    # 1-split: root + root compound (try splitting at every position)
+    # Root + root compound (try splitting at every position)
     for split_pos in range(2, len(word) - 1):
         left, right = word[:split_pos], word[split_pos:]
         if left in all_words and right in all_words:
@@ -553,12 +619,11 @@ def factorize_glb(sentence):
             # Segment the surface form into morphemes
             parts = segment_word(core, morphemes_data)
 
-        # Tag only the last morpheme (head) with POS; internals are untagged
-        for i, morph in enumerate(parts):
-            if i == len(parts) - 1:
-                result.append(f"{morph}|{pos}")
-            else:
-                result.append(morph)
+        # Emit morphemes without POS factors (LEX/FERF/FERR/HMM priors
+        # provide POS-like constraints; factoring would prevent priors from
+        # matching the corpus tokens).
+        for morph in parts:
+            result.append(morph)
 
         # Append trailing punctuation as separate token
         if trail:
@@ -586,7 +651,7 @@ def factorize_target(sentence, lang):
         if token.is_punct:
             result.append(token.text)
         else:
-            result.append(f"{token.lemma_.lower()}|{token.tag_}")
+            result.append(token.lemma_.lower())
     return result
 
 
@@ -1151,43 +1216,36 @@ def apply_funcword_rules(alignments):
         for s_pos in range(len(src_tokens)):
             stok = src_tokens[s_pos]
 
-            # Rule 1: le|PAR before passive be-
-            # If le|PAR is followed by an untagged 'be' (passive prefix),
-            # le should go to NULL and its target should transfer to be
-            if stok == "le|PAR" and s_pos + 1 < len(src_tokens):
-                next_tok = src_tokens[s_pos + 1]
-                if next_tok == "be":
-                    # le's current target links
+            # Rule 1: le before passive be- → transfer le's target to be
+            if stok == "le" and s_pos + 1 < len(src_tokens):
+                if src_tokens[s_pos + 1] == "be-":
                     le_targets = src_to_tgt.get(s_pos, set())
-                    # Remove le's links
                     for t in list(le_targets):
                         new_pairs.discard((s_pos, t))
-                        # Transfer to be (next position)
                         new_pairs.add((s_pos + 1, t))
                     stats["le_fixed"] += 1
 
-            # Rule 2: na|PAR — keep only links to to|TO, drop content word links
-            if stok == "na|PAR":
+            # Rule 2: na — keep only links to "to" (English infinitive marker)
+            if stok == "na":
                 na_targets = src_to_tgt.get(s_pos, set())
                 has_to = any(
-                    t < len(tgt_tokens) and tgt_tokens[t].startswith("to|")
+                    t < len(tgt_tokens) and tgt_tokens[t] == "to"
                     for t in na_targets
                 )
                 if has_to:
-                    # Keep only the to|TO link, drop others
                     for t in list(na_targets):
-                        if t < len(tgt_tokens) and not tgt_tokens[t].startswith("to|"):
+                        if t < len(tgt_tokens) and tgt_tokens[t] != "to":
                             new_pairs.discard((s_pos, t))
                             stats["na_fixed"] += 1
 
-            # Rule 3: da|PRON (resumptive pronoun) → NULL
-            if stok == "da|PRON" or stok == "da|UNK":
+            # Rule 3: da (resumptive pronoun) → NULL
+            if stok == "da":
                 for t in list(src_to_tgt.get(s_pos, set())):
                     new_pairs.discard((s_pos, t))
                 stats["da_nulled"] += 1
 
-            # Rule 4: kam|PAR → NULL (question marker, no English word)
-            if stok.startswith("kam|"):
+            # Rule 4: kam (question marker) → NULL
+            if stok == "kam":
                 for t in list(src_to_tgt.get(s_pos, set())):
                     new_pairs.discard((s_pos, t))
                 stats["kam_nulled"] += 1
@@ -1296,24 +1354,74 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
                 f.write(f"LEX\t{glb}\t{tgt}\t1.0\n")
                 lex_count += 1
 
+        # Decomposition LEX priors:
+        # When a Globasa derived word (e.g., huruya) maps to a target word
+        # (e.g., "freedom"), distribute the LEX evidence to BOTH the root
+        # (huru) AND the affix marker (-ya). Use HIGH alpha (2.0) so this
+        # overcomes the bare-root direct LEX prior (e.g., huru → "free")
+        # and forces both root and affix to compete for the derived-form
+        # target, producing many-to-one alignment.
+        morphemes_data = _load_morphemes()
+        decomp_count = 0
+        decomp_seen = set()
+        for glb, tgt in list(seen):
+            parts = segment_word(glb, morphemes_data)
+            if len(parts) >= 2:
+                has_affix = any(p.startswith("-") or p.endswith("-") for p in parts)
+                if has_affix:
+                    for part in parts:
+                        key = (part, tgt)
+                        if key not in seen and key not in decomp_seen:
+                            decomp_seen.add(key)
+                            f.write(f"LEX\t{part}\t{tgt}\t2.0\n")
+                            decomp_count += 1
+        lex_count += decomp_count
+
         # Function word fertility priors (Globasa-specific)
         funcword_fert = {
-            "le|PAR": [(0, 5.0), (1, 1.0)],
-            "xa|PAR": [(0, 3.0), (1, 2.0)],
-            "nun|PAR": [(0, 5.0)],
-            "am|PAR": [(0, 5.0)],
-            "ger|PAR": [(0, 5.0)],
-            "da|PRON": [(0, 10.0)],
-            "kam|PAR": [(0, 10.0)],
-            "na|PAR": [(1, 5.0)],
-            "cel|PREP": [(1, 5.0)],
-            "fe|PREP": [(1, 3.0), (0, 2.0)],
-            "be": [(1, 5.0)],
+            "le": [(0, 5.0), (1, 1.0)],
+            "xa": [(0, 3.0), (1, 2.0)],
+            "nun": [(0, 5.0)],
+            "am": [(0, 5.0)],
+            "ger": [(0, 5.0)],
+            "da": [(0, 10.0)],
+            "kam": [(0, 10.0)],
+            "na": [(1, 5.0)],
+            "cel": [(1, 5.0)],
+            "fe": [(1, 3.0), (0, 2.0)],
+            "be-": [(1, 5.0)],
+            # Derivational suffixes: strongly encourage fertility 1 so the
+            # suffix aligns to the same target word as its root (e.g., huruya
+            # → "freedom" with both huru and -ya linking to "freedom").
+            # In some languages (-li ↔ "de" / "of" in possessive constructions)
+            # the suffix may align to a separate word; in others, it merges
+            # with the root in the target translation.
+            "-li": [(1, 6.0), (0, 1.0)],   # strong fertility 1 (merge or → "of")
+            "-ya": [(1, 8.0), (0, 0.5)],   # very strong fertility 1 (merge w/ root)
+            "-do": [(1, 6.0), (0, 1.0)],   # passive participle (merges)
+            "-ne": [(1, 6.0), (0, 1.0)],   # agent suffix (merges or → "-er"/"-ing")
+            "-mo": [(1, 5.0), (0, 1.0)],   # adverb suffix (merges or → "-ly")
+            "-cu": [(1, 5.0), (0, 1.0)],   # become suffix (merges or → "become")
+            "-gi": [(1, 5.0), (0, 1.0)],   # causative (merges or → "make")
+            "-pul": [(1, 6.0), (0, 1.0)],  # -ful (merges with root, e.g., jiwapul ↔ "vibrant")
+            "-abil": [(1, 6.0), (0, 1.0)], # -able (typically merges)
+            "-fil": [(1, 5.0), (0, 1.0)],  # -prone (merges)
+            "-kal": [(1, 5.0), (0, 1.0)],  # -less (merges)
         }
 
         for word, ferts in funcword_fert.items():
             for fertility, alpha in ferts:
                 f.write(f"FERF\t{word}\t{fertility}\t{alpha}\n")
+                fert_count += 1
+
+        # Target-side article fertility priors (FERR)
+        # Articles in European languages typically have NO Globasa counterpart
+        # (Globasa has no definite/indefinite articles). Exception: hin (this/the
+        # demonstrative), den (as/like). So articles → fertility 0 (NULL alignment).
+        article_fert = _get_article_fertility_priors(lang2)
+        for word, ferts in article_fert.items():
+            for fertility, alpha in ferts:
+                f.write(f"FERR\t{word}\t{fertility}\t{alpha}\n")
                 fert_count += 1
 
         # HMM distortion priors (language-pair-specific word order)
@@ -1649,6 +1757,86 @@ def _get_distortion_priors(lang2):
     """Get HMM distortion priors for a language pair."""
     profile_key = _LANG_TO_PROFILE.get(lang2, "svo")
     return _DISTORTION_PROFILES.get(profile_key, _DISTORTION_PROFILES["svo"])
+
+
+# Target-side article fertility priors (factored as lemma|POS to match spaCy output)
+# Globasa has no articles, so articles in European languages typically map to NULL
+# (fertility 0). Exception: definite article often corresponds to demonstrative
+# `hin` ("this") and `den` (~"as"/"like"), so we allow some fertility-1 mass.
+_ARTICLE_FERTILITY_PRIORS = {
+    "en": {
+        "the": [(0, 5.0), (1, 1.0)],   # mostly NULL, sometimes ↔ hin
+        "a": [(0, 8.0), (1, 0.5)],     # almost always NULL
+        "an": [(0, 8.0), (1, 0.5)],
+    },
+    "de": {
+        "der": [(0, 5.0), (1, 1.0)],
+        "die": [(0, 5.0), (1, 1.0)],
+        "das": [(0, 5.0), (1, 1.0)],
+        "den": [(0, 5.0), (1, 1.0)],
+        "dem": [(0, 5.0), (1, 1.0)],
+        "des": [(0, 5.0), (1, 1.0)],
+        "ein": [(0, 8.0), (1, 0.5)],
+        "eine": [(0, 8.0), (1, 0.5)],
+        "einer": [(0, 8.0), (1, 0.5)],
+        "eines": [(0, 8.0), (1, 0.5)],
+        "einem": [(0, 8.0), (1, 0.5)],
+        "einen": [(0, 8.0), (1, 0.5)],
+    },
+    "fr": {
+        "le": [(0, 5.0), (1, 1.0)],
+        "la": [(0, 5.0), (1, 1.0)],
+        "les": [(0, 5.0), (1, 1.0)],
+        "l'": [(0, 5.0), (1, 1.0)],
+        "un": [(0, 8.0), (1, 0.5)],
+        "une": [(0, 8.0), (1, 0.5)],
+        "du": [(0, 5.0), (1, 1.0)],
+    },
+    "es": {
+        "el": [(0, 5.0), (1, 1.0)],
+        "la": [(0, 5.0), (1, 1.0)],
+        "los": [(0, 5.0), (1, 1.0)],
+        "las": [(0, 5.0), (1, 1.0)],
+        "un": [(0, 8.0), (1, 0.5)],
+        "una": [(0, 8.0), (1, 0.5)],
+        "unos": [(0, 8.0), (1, 0.5)],
+        "unas": [(0, 8.0), (1, 0.5)],
+    },
+    "pt": {
+        "o": [(0, 5.0), (1, 1.0)],
+        "os": [(0, 5.0), (1, 1.0)],
+        "as": [(0, 5.0), (1, 1.0)],
+        "um": [(0, 8.0), (1, 0.5)],
+        "uma": [(0, 8.0), (1, 0.5)],
+    },
+    "nl": {
+        "de": [(0, 5.0), (1, 1.0)],
+        "het": [(0, 5.0), (1, 1.0)],
+        "een": [(0, 8.0), (1, 0.5)],
+    },
+    # Esperanto: definite article only (no indefinite)
+    "eo": {
+        "la": [(0, 5.0), (1, 1.0)],
+    },
+    # Italian
+    "it": {
+        "il": [(0, 5.0), (1, 1.0)],
+        "lo": [(0, 5.0), (1, 1.0)],
+        "i": [(0, 5.0), (1, 1.0)],
+    },
+    # Danish: definite article is a suffix, indefinite is "en"/"et"
+    "da": {
+        "en": [(0, 8.0), (1, 0.5)],
+        "et": [(0, 8.0), (1, 0.5)],
+    },
+    # Russian, Mandarin, Indonesian, Swahili, Arabic, Hindi, Turkish: no
+    # standalone articles, so no FERR priors needed
+}
+
+
+def _get_article_fertility_priors(lang2):
+    """Get target-side article fertility priors (FERR) for a language."""
+    return _ARTICLE_FERTILITY_PRIORS.get(lang2, {})
 
 
 def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
