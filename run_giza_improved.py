@@ -203,6 +203,8 @@ _GRAMMATICAL_SUFFIXES = {
 
 # POS produced by each derivational suffix (the suffix dictates the
 # compound's category). Used to tag the suffix in factored output.
+# Note: -ya forms either nouns (kept whole) or verbal forms (separated),
+# so when separated, -ya is verbal — it acts like a copula ("be").
 _SUFFIX_DERIVED_POS = {
     "li": "ADJ",   "do": "ADJ",
     "ne": "ADJ",   "mo": "ADV",  "cu": "V",
@@ -210,6 +212,7 @@ _SUFFIX_DERIVED_POS = {
     "bisu": "ADJ", "musi": "ADJ","gimu": "ADJ",
     "kal": "ADJ",  "laye": "ADJ","fil": "ADJ",
     "pul": "ADJ",  "ple": "ADJ",
+    "ya": "V",  # -ya separated only when verbal: aligns to copula "be"
 }
 _GRAMMATICAL_PREFIXES = {
     "be",   # passive marker → "be"/"is"/"was" (bekrea ↔ "was created")
@@ -640,6 +643,21 @@ def factorize_glb(sentence):
 
         # Segment the surface form into morphemes
         parts = segment_word(core, morphemes_data)
+
+        # Special rule for -ya: it forms a noun when attached to an adjective
+        # root (huru→huruya = "freedom"). When used as a NOUN in context,
+        # keep whole. When used as a VERB ("be in X state"), separate so the
+        # -ya morpheme can align to the copula "be" (or NULL in zero-copula
+        # languages like Russian, Arabic).
+        if (len(parts) == 1 and pos == "V" and core.endswith("ya")
+                and len(core) > 3):
+            stem = core[:-2]
+            all_words = morphemes_data.get("__all_words__", set())
+            if stem in all_words:
+                # Check stem is adjective-class (t)
+                stem_pos = _infer_pos_from_wordclass(stem)
+                if stem_pos == "ADJ":
+                    parts = [stem, "-ya"]
 
         # POS tagging strategy:
         # - Single token with contextual POS: use that POS
@@ -1514,7 +1532,11 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
             # the suffix may align to a separate word; in others, it merges
             # with the root in the target translation.
             "-li": [(1, 6.0), (0, 1.0)],   # strong fertility 1 (merge or → "of")
-            # -ya is not separated (huruya kept whole), so no fertility prior
+            # -ya: verbal/copular when separated (huru -ya = "be free")
+            # - In English, German, French, Spanish: aligns to copula "be"/"sein"/"être"/"ser"
+            # - In Russian, Arabic, Mandarin (zero-copula): aligns to NULL
+            "-ya|V": [(1, 4.0), (0, 4.0)],  # roughly equal: copula or NULL
+            "-ya": [(1, 4.0), (0, 4.0)],
             "-do": [(1, 6.0), (0, 1.0)],   # passive participle (merges)
             "-ne": [(1, 6.0), (0, 1.0)],   # agent suffix (merges or → "-er"/"-ing")
             "-mo": [(1, 5.0), (0, 1.0)],   # adverb suffix (merges or → "-ly")
@@ -1544,24 +1566,36 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
                 "hay": [("there", 10.0), ("be", 5.0), ("is", 3.0), ("are", 3.0)],
                 "ogar": [("there", 5.0), ("be", 4.0), ("live", 3.0), ("dwell", 2.0)],
                 "loka": [("there", 5.0), ("be", 4.0), ("locate", 3.0)],
+                # Verbal -ya: copular reading aligns to "be"
+                "-ya": [("be", 5.0), ("is", 2.0), ("are", 2.0), ("was", 2.0), ("were", 2.0)],
+                "-ya|V": [("be|AUX", 5.0), ("be|VERB", 5.0)],
             },
             "de": {
                 "hay": [("es", 3.0), ("geben", 4.0), ("gibt", 3.0)],
                 "ogar": [("leben", 2.0), ("wohnen", 2.0), ("es", 1.5)],
                 "loka": [("liegen", 2.0), ("befinden", 2.0)],
+                "-ya": [("sein", 5.0), ("ist", 2.0), ("war", 2.0)],
+                "-ya|V": [("sein|AUX", 5.0), ("sein|VERB", 5.0)],
             },
             "fr": {
                 "hay": [("il", 3.0), ("y", 4.0), ("avoir", 3.0)],
                 "ogar": [("vivre", 2.0), ("habiter", 2.0)],
                 "loka": [("se", 2.0), ("trouver", 2.0), ("situer", 2.0)],
+                "-ya": [("être", 5.0), ("est", 2.0), ("sont", 2.0)],
+                "-ya|V": [("être|AUX", 5.0), ("être|VERB", 5.0)],
             },
             "es": {
                 "hay": [("haber", 4.0), ("hay", 3.0), ("existir", 2.0)],
                 "ogar": [("vivir", 2.0), ("habitar", 2.0)],
                 "loka": [("ubicar", 2.0), ("encontrar", 2.0)],
+                # Spanish has two copulas: ser (essential) and estar (state)
+                "-ya": [("ser", 4.0), ("estar", 4.0), ("es", 2.0), ("está", 2.0)],
+                "-ya|V": [("ser|AUX", 4.0), ("estar|AUX", 4.0)],
             },
             "ru": {
                 "hay": [("есть", 4.0), ("быть", 2.0)],
+                # Russian is zero-copula in present tense — -ya often → NULL
+                "-ya": [("быть", 2.0)],  # weak prior (mostly NULL)
             },
         }
         ex_priors = existential_priors.get(lang2, {})
