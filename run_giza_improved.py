@@ -180,8 +180,10 @@ def get_word_pairs(lang2):
 # because they carry independent meaning and behave like noun roots in
 # compounds (e.g., kitabu+dom = library, where dom = building).
 _GRAMMATICAL_SUFFIXES = {
+    # NOTE: noun-forming -ya is intentionally NOT separated. Words like
+    # `huruya` (freedom) are kept whole so they align directly to a single
+    # target noun (no need for many-to-one alignment).
     "li",   # adjective marker → "of", "-al", "-ic" (insanli ↔ "human" / "des hommes")
-    "ya",   # abstract noun → "-ness", "-ity" (huruya ↔ "freedom")
     "do",   # passive participle → "-ed" (basataytido ↔ "translated")
     "ne",   # active participle/agent → "-ing", "-er" (ergone ↔ "worker")
     "mo",   # adverb marker → "-ly" (perfetomo ↔ "perfectly")
@@ -202,7 +204,7 @@ _GRAMMATICAL_SUFFIXES = {
 # POS produced by each derivational suffix (the suffix dictates the
 # compound's category). Used to tag the suffix in factored output.
 _SUFFIX_DERIVED_POS = {
-    "li": "ADJ",   "ya": "N",    "do": "ADJ",
+    "li": "ADJ",   "do": "ADJ",
     "ne": "ADJ",   "mo": "ADV",  "cu": "V",
     "gi": "V",     "abil": "ADJ","ible": "ADJ",
     "bisu": "ADJ", "musi": "ADJ","gimu": "ADJ",
@@ -1471,28 +1473,15 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
             f.write(f"LEX\t{glb}\t{tgt}\t1.0\n")
             lex_count += 1
 
-        # Decomposition LEX priors:
-        # When a Globasa derived word (e.g., huruya) maps to a target word
-        # (e.g., "freedom"), distribute the LEX evidence to BOTH the root
-        # (huru) AND the affix marker (-ya). Use HIGH alpha (2.0) so this
-        # overcomes the bare-root direct LEX prior (e.g., huru → "free")
-        # and forces both root and affix to compete for the derived-form
-        # target, producing many-to-one alignment.
-        morphemes_data = _load_morphemes()
-        decomp_count = 0
-        decomp_seen = set()
-        for glb, tgt in list(seen):
-            parts = segment_word(glb, morphemes_data)
-            if len(parts) >= 2:
-                has_affix = any(p.startswith("-") or p.endswith("-") for p in parts)
-                if has_affix:
-                    for part in parts:
-                        key = (part, tgt)
-                        if key not in seen and key not in decomp_seen:
-                            decomp_seen.add(key)
-                            f.write(f"LEX\t{part}\t{tgt}\t2.0\n")
-                            decomp_count += 1
-        lex_count += decomp_count
+        # NOTE: We deliberately do NOT emit cross-segmentation LEX priors
+        # like `huru ↔ freedom` or `-ya|N ↔ freedom|NOUN`. The bare ADJ root
+        # `huru` shouldn't get pulled to "freedom" (that's the noun's meaning),
+        # and the suffix `-ya|N` shouldn't be paired with specific target nouns
+        # via prior. Instead, eflomal's EM learns the joint alignment of
+        # `huru -ya` to "freedom" from corpus co-occurrence: when the
+        # segmented compound appears in many sentences alongside "freedom",
+        # the statistical model converges on the many-to-one alignment via
+        # GDFA symmetrization.
 
         # Function word fertility priors (Globasa-specific)
         # Provide both factored and unfactored forms for robustness
@@ -1525,7 +1514,7 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
             # the suffix may align to a separate word; in others, it merges
             # with the root in the target translation.
             "-li": [(1, 6.0), (0, 1.0)],   # strong fertility 1 (merge or → "of")
-            "-ya": [(1, 8.0), (0, 0.5)],   # very strong fertility 1 (merge w/ root)
+            # -ya is not separated (huruya kept whole), so no fertility prior
             "-do": [(1, 6.0), (0, 1.0)],   # passive participle (merges)
             "-ne": [(1, 6.0), (0, 1.0)],   # agent suffix (merges or → "-er"/"-ing")
             "-mo": [(1, 5.0), (0, 1.0)],   # adverb suffix (merges or → "-ly")
@@ -1579,7 +1568,7 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
         for src, tgts in ex_priors.items():
             for tgt, alpha in tgts:
                 key = (src, tgt)
-                if key not in seen and key not in decomp_seen:
+                if key not in seen:
                     f.write(f"LEX\t{src}\t{tgt}\t{alpha}\n")
                     lex_count += 1
 
