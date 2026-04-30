@@ -1337,14 +1337,15 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
 
 # Language-specific distortion patterns relative to Globasa SVO
 _DISTORTION_PROFILES = {
-    # SVO languages: mostly monotone alignment, small jumps dominate
+    # SVO + Adj-N: English, Danish (monotone, adjective before noun like Globasa)
     "svo": {
         "hmmf": {1: 10.0, 2: 3.0, -1: 2.0, 0: 1.0, 3: 1.0, -2: 1.0},
         "hmmr": {1: 10.0, 2: 3.0, -1: 2.0, 0: 1.0, 3: 1.0, -2: 1.0},
     },
-    # German V2/V-final: mostly monotone but verb can jump to end in
-    # subordinate clauses (large positive jump from S position to V-final)
-    # Also: separable verb prefixes cause backward jumps
+    # German V2/V-final + Adj-N (adjective order matches Globasa)
+    # Verb can jump to end in subordinate clauses
+    # Separable verb prefixes cause backward jumps
+    # Adverbs before verb in subclauses (matches Globasa)
     "de": {
         "hmmf": {
             1: 8.0,    # monotone (most common)
@@ -1387,31 +1388,33 @@ _DISTORTION_PROFILES = {
             -3: 2.0, -4: 1.5, -5: 1.0, 4: 1.5, 5: 1.0,
         },
     },
-    # Arabic VSO: verb-initial, prepositions fused as proclitics
-    # Globasa SVO → Arabic VSO:
-    #   S position 1 → moves right (after V), V position 2 → moves left (position 1)
-    # Also: Arabic has no copula (zero copula), articles fused as al-
+    # Arabic VSO + N-Adj: verb-initial, adjective after noun
+    # Globasa SVO → Arabic VSO: V jumps left, S jumps right
+    # Globasa Adj-N → Arabic N-Adj: adjective swaps to after noun
+    # Also: zero copula, articles fused as al-, adverbs after verb
     "ar": {
         "hmmf": {
-            1: 6.0,    # monotone (within phrases)
-            -1: 5.0,   # backward (V-initial: Globasa V at pos 2 → Arabic V at pos 1)
+            1: 5.0,    # monotone (within phrases)
+            -1: 6.0,   # backward (VSO + N-Adj: both cause backward jumps)
             2: 3.0,    # forward skip (S jumps past V)
             0: 2.0,    # same position (proclitic fusion)
-            -2: 3.0,   # medium backward
+            -2: 4.0,   # medium backward (VSO + N-Adj compound)
             3: 2.0,    # medium forward
-            -3: 1.5,   # larger backward
+            -3: 2.0,   # larger backward
             4: 1.5,
-            -4: 1.0,
+            -4: 1.5,
             5: 1.0,
+            -5: 1.0,
         },
         "hmmr": {
-            1: 6.0, -1: 5.0, 2: 3.0, 0: 2.0, -2: 3.0, 3: 2.0,
-            -3: 1.5, 4: 1.5, -4: 1.0, 5: 1.0,
+            1: 5.0, -1: 6.0, 2: 3.0, 0: 2.0, -2: 4.0, 3: 2.0,
+            -3: 2.0, 4: 1.5, -4: 1.5, 5: 1.0, -5: 1.0,
         },
     },
-    # Russian: flexible word order (SVO default but SOV/OVS common)
+    # Russian: flexible SVO + Adj-N (adjective order matches Globasa)
     # No articles → Globasa determiners map to NULL
-    # Rich case morphology → word order more flexible than Globasa
+    # Rich case morphology → frequent SOV/OVS scrambling
+    # Adverbs flexible (before or after verb)
     "ru": {
         "hmmf": {
             1: 7.0,    # monotone (SVO default)
@@ -1430,7 +1433,7 @@ _DISTORTION_PROFILES = {
             -3: 1.5, 4: 1.5, -4: 1.0, 5: 1.0,
         },
     },
-    # Dutch: V2 main clause (like German), verb-final in subclauses
+    # Dutch: V2/V-final (like German) + Adj-N (matches Globasa)
     # Very similar to German profile
     "nl": {
         "hmmf": {
@@ -1526,34 +1529,119 @@ _DISTORTION_PROFILES = {
             -4: 2.0, 3: 2.0, -5: 1.5, -6: 1.0, 4: 1.0, 5: 1.0,
         },
     },
-    # Esperanto: strictly SVO, very regular, close to Globasa word order
-    # Accusative -n allows some flexibility but SVO strongly dominant
+    # Esperanto: SVO, Adj-N (like Globasa), very regular
+    # Accusative -n allows some flexibility but SVO + Adj-N strongly dominant
     "eo": {
         "hmmf": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
         "hmmr": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
     },
-    # Indonesian: SVO, very similar word order to Globasa
-    # Both are analytic, isolating languages
-    "id": {
-        "hmmf": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
-        "hmmr": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
+    # French: SVO + N-Adj (noun before adjective, opposite of Globasa Adj-N)
+    # Globasa "bon kitabu" → French "bon livre" (short adj before) BUT
+    # Globasa "day kitabu" → French "livre grand" (most adj after)
+    # Adverbs typically follow verb: Globasa "velosi doxo" → French "lire vite"
+    "fr": {
+        "hmmf": {
+            1: 7.0,    # monotone (SVO matches)
+            -1: 5.0,   # backward (N-Adj swap: adj follows noun)
+            2: 3.0,    # forward skip
+            0: 1.5,    # same position
+            -2: 2.0,   # larger backward (adj + adverb reordering)
+            3: 1.5,
+            -3: 1.0,
+            4: 1.0,
+        },
+        "hmmr": {
+            1: 7.0, -1: 5.0, 2: 3.0, 0: 1.5, -2: 2.0, 3: 1.5,
+            -3: 1.0, 4: 1.0,
+        },
     },
-    # Swahili: SVO, but verb-initial in some constructions
-    # Noun class prefixes may cause slight reordering
+    # Spanish: SVO + N-Adj (like French, most adjectives after noun)
+    # Adverbs flexible but often after verb
+    "es": {
+        "hmmf": {
+            1: 7.0,    # monotone (SVO matches)
+            -1: 5.0,   # backward (N-Adj swap)
+            2: 3.0,    # forward skip
+            0: 1.5,    # same position
+            -2: 2.0,   # larger backward
+            3: 1.5,
+            -3: 1.0,
+            4: 1.0,
+        },
+        "hmmr": {
+            1: 7.0, -1: 5.0, 2: 3.0, 0: 1.5, -2: 2.0, 3: 1.5,
+            -3: 1.0, 4: 1.0,
+        },
+    },
+    # Portuguese: SVO + N-Adj (like Spanish/French)
+    "pt": {
+        "hmmf": {
+            1: 7.0, -1: 5.0, 2: 3.0, 0: 1.5, -2: 2.0, 3: 1.5,
+            -3: 1.0, 4: 1.0,
+        },
+        "hmmr": {
+            1: 7.0, -1: 5.0, 2: 3.0, 0: 1.5, -2: 2.0, 3: 1.5,
+            -3: 1.0, 4: 1.0,
+        },
+    },
+    # Indonesian: SVO + N-Adj (adjective follows noun: "buku besar" = book big)
+    # Analytic like Globasa but opposite adjective order
+    # Also: possessor follows head ("rumah saya" = house my)
+    "id": {
+        "hmmf": {
+            1: 8.0,    # monotone (SVO, analytic)
+            -1: 4.0,   # backward (N-Adj swap, possessor after head)
+            2: 3.0,
+            0: 1.5,    # same position (analytic, no inflection)
+            -2: 2.0,
+            3: 1.0,
+        },
+        "hmmr": {
+            1: 8.0, -1: 4.0, 2: 3.0, 0: 1.5, -2: 2.0, 3: 1.0,
+        },
+    },
+    # Swahili: SVO + N-Adj (adjective follows noun)
+    # Noun class agreement prefixes on adjectives
+    # Adverbs typically follow verb
     "sw": {
-        "hmmf": {1: 9.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 1.5, -2: 1.5, 4: 1.0},
-        "hmmr": {1: 9.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 1.5, -2: 1.5, 4: 1.0},
+        "hmmf": {
+            1: 7.0,    # monotone (SVO)
+            -1: 4.0,   # backward (N-Adj, verb-initial in some constructions)
+            2: 3.0,
+            0: 2.0,    # same position (noun class prefixes → multiple:one)
+            -2: 2.0,
+            3: 1.5,
+            -3: 1.0,
+            4: 1.0,
+        },
+        "hmmr": {
+            1: 7.0, -1: 4.0, 2: 3.0, 0: 2.0, -2: 2.0, 3: 1.5,
+            -3: 1.0, 4: 1.0,
+        },
     },
 }
 
 # Map language codes to distortion profiles
 _LANG_TO_PROFILE = {
-    "en": "svo", "es": "svo", "fr": "svo", "pt": "svo", "da": "svo",
-    "eo": "eo", "id": "id", "sw": "sw",
+    # Adj-N + SVO (monotone, matches Globasa closely)
+    "en": "svo", "da": "svo",
+    # Adj-N + SVO, very regular
+    "eo": "eo",
+    # N-Adj + SVO (adjective after noun, unlike Globasa)
+    "fr": "fr", "es": "es", "pt": "pt",
+    "id": "id", "sw": "sw",
+    # Adj-N + V2/V-final
     "de": "de", "nl": "nl",
-    "tr": "tr",
-    "ar": "ar", "ru": "ru", "zh": "zh",
-    "hi": "hi", "ja": "ja", "ko": "ko",
+    # Adj-N + flexible SVO
+    "ru": "ru",
+    # N-Adj + VSO
+    "ar": "ar",
+    # SVO + head-final RC
+    "zh": "zh",
+    # SOV + Adj-N + postpositions
+    "tr": "tr", "hi": "hi",
+    # SOV + Adj-N + head-final (strictest reordering)
+    "ja": "ja", "ko": "ko",
 }
 
 
