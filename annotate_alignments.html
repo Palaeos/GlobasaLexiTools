@@ -297,6 +297,52 @@ main {
   opacity: 0.55;
 }
 
+/* Focus mode: when a token is hovered or pinned, dim everything except
+   the focused token and its linked partners. Makes which-word-aligns-
+   to-which obvious at a glance. */
+.entry-card.has-focus .tok {
+  opacity: 0.25;
+  filter: grayscale(0.4);
+  transition: opacity 0.1s, filter 0.1s;
+}
+.entry-card.has-focus .tok.in-focus {
+  opacity: 1;
+  filter: none;
+  outline: 2px solid var(--color-link);
+  outline-offset: 1px;
+}
+
+/* Explicit link list below the sentence pair */
+.link-list {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  padding: 0.25rem 0 0.1rem;
+  min-height: 1.2rem;
+  font-family: var(--font-sans);
+}
+.link-list .from-tok {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.link-list .arrow {
+  margin: 0 0.3rem;
+  opacity: 0.6;
+}
+.link-list .to-tok {
+  display: inline-block;
+  padding: 0.02rem 0.35rem;
+  margin-right: 0.3rem;
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.link-list .to-tok.null {
+  font-style: italic;
+  opacity: 0.6;
+  border-style: dashed;
+}
+
 /* Card action buttons */
 .card-actions {
   display: flex;
@@ -690,6 +736,12 @@ main {
     });
     card.appendChild(tgtRow);
 
+    /* Link list: shows the focused token's links explicitly as text */
+    const linkList = document.createElement("div");
+    linkList.className = "link-list";
+    linkList.dataset.cardKey = cardKey;
+    card.appendChild(linkList);
+
     /* Action buttons */
     const actions = document.createElement("div");
     actions.className = "card-actions";
@@ -698,6 +750,10 @@ main {
     resetBtn.addEventListener("click", () => resetToAuto(card, entry, cardKey));
     actions.appendChild(resetBtn);
     card.appendChild(actions);
+
+    /* Wire up focus mode: hover or click a token to dim others and
+       show explicit links text */
+    wireFocusMode(card, cardKey);
 
     applyColors(card, cardKey);
     return card;
@@ -862,6 +918,100 @@ main {
       }
       span.style.background = bg;
     });
+  }
+
+  /* ── Focus mode: hover/click a token to dim everything else and
+        show explicit "X → Y, Z" link text below the sentence ────── */
+  const PINNED_KEY = {};  // cardKey -> {side, idx} of pinned token (or absent)
+
+  function wireFocusMode(card, cardKey) {
+    /* mouseover (event delegation) */
+    card.addEventListener("mouseover", e => {
+      const tok = e.target.closest(".tok");
+      if (!tok) return;
+      /* If a token is pinned in this card, hover doesn't change focus */
+      if (PINNED_KEY[cardKey]) return;
+      focusToken(card, cardKey, tok, /*pinned=*/false);
+    });
+    card.addEventListener("mouseleave", () => {
+      if (PINNED_KEY[cardKey]) return;  // keep pinned focus
+      clearFocus(card, cardKey);
+    });
+  }
+
+  function getLinksFor(cardKey, side, idx) {
+    /* Return list of {side, idx} pairs that this token is linked to */
+    const cs = cardState[cardKey];
+    if (!cs) return [];
+    const partners = [];
+    if (side === "glb") {
+      cs.links.forEach(([g, t]) => { if (g === idx) partners.push({side: "tgt", idx: t}); });
+    } else {
+      cs.links.forEach(([g, t]) => { if (t === idx) partners.push({side: "glb", idx: g}); });
+    }
+    return partners;
+  }
+
+  function focusToken(card, cardKey, tok, pinned) {
+    const side = tok.dataset.side;
+    const idx  = parseInt(tok.dataset.idx, 10);
+    const partners = getLinksFor(cardKey, side, idx);
+
+    /* Mark card as focused so CSS dims un-focused tokens */
+    card.classList.add("has-focus");
+    /* Clear previous in-focus marks */
+    card.querySelectorAll(".tok.in-focus").forEach(t => t.classList.remove("in-focus"));
+    tok.classList.add("in-focus");
+    partners.forEach(p => {
+      const sel = '.tok[data-side="' + p.side + '"][data-idx="' + p.idx + '"]';
+      const el = card.querySelector(sel);
+      if (el) el.classList.add("in-focus");
+    });
+
+    /* Update link list */
+    const linkList = card.querySelector(".link-list");
+    if (linkList) {
+      linkList.innerHTML = "";
+      const fromSpan = document.createElement("span");
+      fromSpan.className = "from-tok";
+      fromSpan.textContent = tok.textContent;
+      linkList.appendChild(fromSpan);
+      const arrow = document.createElement("span");
+      arrow.className = "arrow";
+      arrow.textContent = "→";
+      linkList.appendChild(arrow);
+      const cs = cardState[cardKey];
+      const isNullMarked = side === "glb" ? cs.nullGlb.has(idx) : cs.nullTgt.has(idx);
+      if (partners.length === 0 && !isNullMarked) {
+        const nul = document.createElement("span");
+        nul.className = "to-tok null";
+        nul.textContent = "(unaligned)";
+        linkList.appendChild(nul);
+      } else if (isNullMarked) {
+        const nul = document.createElement("span");
+        nul.className = "to-tok null";
+        nul.textContent = "NULL (no equivalent)";
+        linkList.appendChild(nul);
+      } else {
+        partners.forEach(p => {
+          const sel = '.tok[data-side="' + p.side + '"][data-idx="' + p.idx + '"]';
+          const partnerEl = card.querySelector(sel);
+          if (partnerEl) {
+            const t = document.createElement("span");
+            t.className = "to-tok";
+            t.textContent = partnerEl.textContent;
+            linkList.appendChild(t);
+          }
+        });
+      }
+    }
+  }
+
+  function clearFocus(card, cardKey) {
+    card.classList.remove("has-focus");
+    card.querySelectorAll(".tok.in-focus").forEach(t => t.classList.remove("in-focus"));
+    const linkList = card.querySelector(".link-list");
+    if (linkList) linkList.innerHTML = "";
   }
 
   /* ── Schedule auto-save with 500 ms debounce ────────────── */
