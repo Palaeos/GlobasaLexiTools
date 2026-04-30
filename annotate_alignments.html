@@ -412,6 +412,7 @@ main {
   let showFilter = "all";   // "all" | "annotated" | "unannotated"
   let annotatedIds = new Set();
   let debounceTimer = null;
+  let targetSid = null;     // sentence_id from URL ?sid=N to scroll to
 
   /* Per-card state: cardState[cardKey] = {links:[[i,j],...], nullGlb:Set, nullTgt:Set, status:"auto"|"edited"|"saved"} */
   const cardState = {};
@@ -455,8 +456,27 @@ main {
         opt.textContent = LANG_NAMES[item.lang] || item.lang;
         langSelect.appendChild(opt);
       });
-      currentLang = langs[0].lang;
+
+      /* Honor URL params: ?lang=en&sid=14 jumps to that sentence */
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlLang = urlParams.get("lang");
+      const urlSid = parseInt(urlParams.get("sid"), 10);
+
+      const availableLangs = langs.map(l => l.lang);
+      if (urlLang && availableLangs.indexOf(urlLang) >= 0) {
+        currentLang = urlLang;
+      } else {
+        currentLang = langs[0].lang;
+      }
       langSelect.value = currentLang;
+
+      /* If a sentence_id was passed, compute which page contains it */
+      if (!isNaN(urlSid) && urlSid >= 0) {
+        const perPage = 20;  // matches loadAlignments default
+        currentPage = Math.floor(urlSid / perPage) + 1;
+        targetSid = urlSid;
+      }
+
       refreshAnnotatedIds().then(() => {
         loadContexts();
         loadAlignments();
@@ -582,6 +602,20 @@ main {
       /* Overlay saved gold annotation if available */
       loadGoldAnnotation(currentLang, globalIdx, card, entry);
     });
+
+    /* If we arrived via ?sid=N, scroll the target card into view */
+    if (targetSid !== null) {
+      const cardKey = currentLang + ":" + targetSid;
+      const targetCard = entriesDiv.querySelector(
+        '.entry-card[data-card-key="' + cardKey + '"]'
+      );
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+        targetCard.style.outline = "3px solid var(--color-link)";
+        setTimeout(() => { targetCard.style.outline = ""; }, 2000);
+      }
+      targetSid = null;  // only jump once
+    }
   }
 
   /* ── Build one annotation card ──────────────────────────── */
