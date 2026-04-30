@@ -427,13 +427,29 @@ def parse_improved_alignments(lang, align_type="gdfa"):
         """Strip |POS tags from 'word|POS word|POS ...' format."""
         return [t.rsplit("|", 1)[0] for t in tokens_line.split()]
 
+    # Load original-case TMX tokens for display: spaCy lemmatizes the
+    # target ("generated"→"generate", "stories"→"story") which is good
+    # for the alignment model but bad for users — they want to see the
+    # actual sentence text. When token counts match (typical), we
+    # substitute TMX surface tokens for display.
+    tmx_entries = _load_tmx_contexts(lang)
+
     entries = []
     with open(glb_path, encoding="utf-8") as fg, \
          open(tgt_path, encoding="utf-8") as ft, \
          open(align_path, encoding="utf-8") as fa:
-        for glb_line, tgt_line, align_line in zip(fg, ft, fa):
+        for sent_idx, (glb_line, tgt_line, align_line) in enumerate(zip(fg, ft, fa)):
             glb_tokens = strip_pos(glb_line.strip())
             target_tokens = strip_pos(tgt_line.strip())
+            ctx = ""
+            # Substitute TMX surface tokens when counts match
+            if sent_idx < len(tmx_entries):
+                tmx = tmx_entries[sent_idx]
+                ctx = tmx.get("context", "")
+                if len(tmx["glb_tokens"]) == len(glb_tokens):
+                    glb_tokens = tmx["glb_tokens"]
+                if len(tmx["target_tokens"]) == len(target_tokens):
+                    target_tokens = tmx["target_tokens"]
             links = []
             for pair in align_line.strip().split():
                 if "-" in pair:
@@ -444,7 +460,7 @@ def parse_improved_alignments(lang, align_type="gdfa"):
                     "glb_tokens": glb_tokens,
                     "target_tokens": target_tokens,
                     "links": links,
-                    "context": "",
+                    "context": ctx,
                 })
     return entries
 
