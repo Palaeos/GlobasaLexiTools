@@ -11,7 +11,10 @@ Then open http://localhost:5000
 import os
 import re
 import csv
+import json
+import subprocess
 import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 import lmdb
 import msgpack
 import pandas as pd
@@ -36,6 +39,12 @@ CONSTRUCTIONS_XLSX = os.path.join(BASE_DIR, "Constructions.xlsx")
 TMX_FILE = os.path.join(BASE_DIR, "Doxo_passages.tmx")
 GIZA_DIR = os.path.join(BASE_DIR, "giza_output")
 HTML_FILE = os.path.join(BASE_DIR, "word_viewer.html")
+ALIGNMENT_HTML = os.path.join(BASE_DIR, "alignment_viewer.html")
+TRANSLATE_HTML = os.path.join(BASE_DIR, "translation_aide.html")
+APERTIUM_DIR = "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-eng"
+GIZA_IMPROVED_DIR = os.path.join(BASE_DIR, "giza_output_improved")
+ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
+GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -259,14 +268,13 @@ def load_all_giza_alignments():
 
     Returns dict: tmx_lang_code -> {glb_seg_key: {glb_word: {target_positions}}}
     """
-    pairs = {
-        "en": os.path.join(GIZA_DIR, "glb_en", "glb_en.A3.final"),
-        "eo": os.path.join(GIZA_DIR, "glb_eo", "glb_eo.A3.final"),
-    }
-    # Spanish alignment would be glb_es if it exists
-    es_path = os.path.join(GIZA_DIR, "glb_es", "glb_es.A3.final")
-    if os.path.isfile(es_path):
-        pairs["es"] = es_path
+    # Auto-discover all glb_XX alignment directories
+    pairs = {}
+    for lang in ["en", "eo", "es", "de", "fr", "ru", "nl", "pt", "id",
+                 "da", "ar", "hi", "sw", "tr", "zh"]:
+        path = os.path.join(GIZA_DIR, f"glb_{lang}", f"glb_{lang}.A3.final")
+        if os.path.isfile(path):
+            pairs[lang] = path
 
     result = {}
     for lang, path in pairs.items():
@@ -274,6 +282,505 @@ def load_all_giza_alignments():
             print(f"  Parsing GIZA++ alignments for {lang}...")
             result[lang] = parse_giza_a3(path)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Full alignment parsers (for Alignment Viewer page)
+# ---------------------------------------------------------------------------
+
+ALIGN_LANGS = ["en", "eo", "es", "de", "fr", "ru", "nl", "pt", "id",
+               "da", "ar", "hi", "sw", "tr", "zh"]
+
+_alignment_cache = {}  # (lang, source) -> list of entries
+_tmx_contexts_cache = {}  # lang -> list of contexts in alignment order
+
+
+_GIZA_PUNCT_RE = re.compile(r'([.,:;!?"""()\'—\-])')
+
+
+def _giza_tokenize_preserve_case(text):
+    """Same tokenization as run_giza.py but preserves original case."""
+    text = _GIZA_PUNCT_RE.sub(r' \1 ', text)
+    return text.split()
+
+
+def _load_tmx_contexts(lang):
+    """Extract context and original-case sentences for each (glb, lang)
+    sentence pair from the TMX, in the same order as the A3.final file.
+
+    Returns list of dicts: [{context, glb_tokens, target_tokens}]
+    Tokenized the same way as run_giza.py (punctuation split) but with
+    original casing preserved.
+    """
+    if lang in _tmx_contexts_cache:
+        return _tmx_contexts_cache[lang]
+
+    entries = []
+    try:
+        tree = ET.parse(TMX_FILE)
+        body = tree.getroot().find("body")
+        if body is None:
+            body = tree.getroot()
+        ns = "{http://www.w3.org/XML/1998/namespace}"
+        for tu in body.findall("tu"):
+            ctx = ""
+            for prop in tu.findall("prop"):
+                if prop.get("type") == "x-context":
+                    ctx = (prop.text or "").strip()
+                    break
+            segs = {}
+            for tuv in tu.findall("tuv"):
+                tv_lang = tuv.get(f"{ns}lang", "")
+                seg = tuv.find("seg")
+                if seg is not None and seg.text and seg.text.strip():
+                    segs[tv_lang] = seg.text.strip()
+            if "glb" in segs and lang in segs:
+                entries.append({
+                    "context": ctx,
+                    "glb_tokens": _giza_tokenize_preserve_case(segs["glb"]),
+                    "target_tokens": _giza_tokenize_preserve_case(segs[lang]),
+                })
+    except Exception as e:
+        print(f"  Warning: TMX context load failed for {lang}: {e}")
+
+    _tmx_contexts_cache[lang] = entries
+    return entries
+
+
+def parse_giza_a3_full(a3_path, lang=None):
+    """Parse A3.final preserving full sentence pairs and alignment links.
+
+    If lang is given, uses the TMX original-case tokens for display
+    (GIZA lowercases input). The token positions match because both use
+    whitespace tokenization.
+
+    Returns list of dicts: [{glb_tokens, target_tokens, links, context}]
+    """
+    entries = []
+    try:
+        with open(a3_path, encoding="utf-8") as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return entries
+
+    tmx_entries = _load_tmx_contexts(lang) if lang else []
+
+    i = 0
+    while i + 2 < len(lines):
+        target_line = lines[i + 1].strip()
+        giza_target_tokens = target_line.split()
+        align_line = lines[i + 2].strip()
+
+        giza_glb_tokens = []
+        links = []
+        for m in re.finditer(r'(\S+)\s+\(\{\s*((?:\d+\s*)*)\}\)', align_line):
+            glb_word = m.group(1)
+            indices_str = m.group(2).strip()
+            if glb_word == "NULL":
+                continue
+            src_idx = len(giza_glb_tokens)
+            giza_glb_tokens.append(glb_word)
+            if indices_str:
+                for x in indices_str.split():
+                    links.append([src_idx, int(x) - 1])
+
+        if giza_glb_tokens:
+            entry_idx = len(entries)
+            ctx = ""
+            glb_tokens = giza_glb_tokens
+            target_tokens = giza_target_tokens
+            # Replace with original-case tokens from TMX if available and lengths match
+            if entry_idx < len(tmx_entries):
+                tmx = tmx_entries[entry_idx]
+                ctx = tmx["context"]
+                if len(tmx["glb_tokens"]) == len(giza_glb_tokens):
+                    glb_tokens = tmx["glb_tokens"]
+                if len(tmx["target_tokens"]) == len(giza_target_tokens):
+                    target_tokens = tmx["target_tokens"]
+            entries.append({
+                "glb_tokens": glb_tokens,
+                "target_tokens": target_tokens,
+                "links": links,
+                "context": ctx,
+            })
+        i += 3
+
+    return entries
+
+
+def parse_improved_alignments(lang, align_type="gdfa"):
+    """Parse improved alignment files (.fwd/.rev/.gdfa).
+
+    Reads glb.txt, {lang}.txt (strips |POS tags), and alignment file.
+    Returns list of dicts: [{glb_tokens, target_tokens, links}]
+    """
+    lang_dir = os.path.join(GIZA_IMPROVED_DIR, f"glb_{lang}")
+    glb_path = os.path.join(lang_dir, "glb.txt")
+    tgt_path = os.path.join(lang_dir, f"{lang}.txt")
+    align_path = os.path.join(lang_dir, f"glb_{lang}.{align_type}")
+
+    for p in [glb_path, tgt_path, align_path]:
+        if not os.path.isfile(p):
+            return []
+
+    def strip_pos(tokens_line):
+        """Strip |POS tags from 'word|POS word|POS ...' format."""
+        return [t.rsplit("|", 1)[0] for t in tokens_line.split()]
+
+    entries = []
+    with open(glb_path, encoding="utf-8") as fg, \
+         open(tgt_path, encoding="utf-8") as ft, \
+         open(align_path, encoding="utf-8") as fa:
+        for glb_line, tgt_line, align_line in zip(fg, ft, fa):
+            glb_tokens = strip_pos(glb_line.strip())
+            target_tokens = strip_pos(tgt_line.strip())
+            links = []
+            for pair in align_line.strip().split():
+                if "-" in pair:
+                    s, t = pair.split("-", 1)
+                    links.append([int(s), int(t)])
+            if glb_tokens:
+                entries.append({
+                    "glb_tokens": glb_tokens,
+                    "target_tokens": target_tokens,
+                    "links": links,
+                    "context": "",
+                })
+    return entries
+
+
+def _load_alignments(lang, source):
+    """Load and cache alignment data for a language pair and source type."""
+    key = (lang, source)
+    if key in _alignment_cache:
+        return _alignment_cache[key]
+
+    if source == "a3":
+        path = os.path.join(GIZA_DIR, f"glb_{lang}", f"glb_{lang}.A3.final")
+        data = parse_giza_a3_full(path, lang=lang)
+    elif source in ("fwd", "rev", "gdfa"):
+        data = parse_improved_alignments(lang, source)
+    else:
+        data = []
+
+    _alignment_cache[key] = data
+    return data
+
+
+# ---------------------------------------------------------------------------
+# Apertium helpers
+# ---------------------------------------------------------------------------
+
+_APERTIUM_PIPELINES = {
+    "eng-glb": {
+        "front": (
+            "lt-proc -w {d}/eng.automorf.bin"
+            " | cg-proc -w {d}/eng-glb.rlx.bin"
+            " | apertium-tagger -g {d}/eng-glb.prob"
+            " | lsx-proc {d}/eng-glb.autoseq.bin"
+            " | apertium-pretransfer"
+            " | lt-proc -b {d}/eng-glb.autobil.bin"
+        ),
+        "back": (
+            "lrx-proc -m {d}/eng-glb.autolex.bin"
+            " | apertium-anaphora {d}/apertium-glb-eng.eng-glb.arx"
+            " | rtx-proc -a {d}/eng-glb.rtx.bin"
+            " | lsx-proc {d}/eng-glb.revautoseq.bin"
+            " | lt-proc -g {d}/eng-glb.autogen.bin"
+            " | lt-proc -p {d}/eng-glb.autopgen.bin"
+        ),
+    },
+    "glb-eng": {
+        "front": (
+            "lt-proc -w {d}/glb-eng.automorf.bin"
+            " | cg-proc -w {d}/glb-eng.rlx.bin"
+            " | apertium-tagger -g {d}/glb-eng.prob"
+            " | lsx-proc {d}/glb-eng.autoseq.bin"
+            " | apertium-pretransfer"
+            " | lt-proc -b {d}/glb-eng.autobil.bin"
+        ),
+        "back": (
+            "lrx-proc -m {d}/glb-eng.autolex.bin"
+            " | apertium-anaphora {d}/apertium-glb-eng.glb-eng.arx"
+            " | rtx-proc -a {d}/glb-eng.rtx.bin"
+            " | lsx-proc {d}/glb-eng.revautoseq.bin"
+            " | lt-proc -g {d}/glb-eng.autogen.bin"
+            " | lt-proc -p {d}/glb-eng.autopgen.bin"
+        ),
+    },
+}
+
+
+def _run_apertium(text, mode):
+    """Run a full apertium translation."""
+    try:
+        proc = subprocess.run(
+            ["apertium", "-d", APERTIUM_DIR, mode],
+            input=text, capture_output=True, text=True, timeout=10,
+        )
+        return proc.stdout.strip()
+    except (subprocess.TimeoutExpired, Exception) as e:
+        return f"[Error: {e}]"
+
+
+def _run_pipeline_half(text, direction, half):
+    """Run the front or back half of the Apertium pipeline.
+
+    half: "front" or "back"
+    """
+    pipeline = _APERTIUM_PIPELINES.get(direction, {}).get(half, "")
+    if not pipeline:
+        return ""
+    cmd = pipeline.format(d=APERTIUM_DIR)
+    try:
+        proc = subprocess.run(
+            ["bash", "-c", cmd],
+            input=text, capture_output=True, text=True, timeout=10,
+        )
+        return proc.stdout.strip()
+    except (subprocess.TimeoutExpired, Exception) as e:
+        return f"[Error: {e}]"
+
+
+_BILTRANS_RE = re.compile(r'\^([^$]+)\$')
+_BILTRANS_UNIT_RE = re.compile(r'([^<>/]+)((?:<[^>]+>)*)')
+
+
+def _parse_biltrans(biltrans_str):
+    """Parse biltrans output into structured token list.
+
+    Each ^...$ unit becomes a dict:
+    {
+        "raw": original ^...$ text,
+        "source_lemma": str,
+        "source_tags": str,
+        "alternatives": [{lemma, tags, raw}],
+        "is_noun": bool,
+        "is_suppressed_article": bool,
+    }
+    """
+    tokens = []
+    for m in _BILTRANS_RE.finditer(biltrans_str):
+        raw = m.group(1)
+        parts = raw.split("/")
+        if not parts:
+            continue
+
+        # Source side
+        src = parts[0]
+        sm = _BILTRANS_UNIT_RE.match(src)
+        source_lemma = sm.group(1) if sm else src
+        source_tags = sm.group(2) if sm else ""
+
+        # Target alternatives
+        alternatives = []
+        for alt in parts[1:]:
+            am = _BILTRANS_UNIT_RE.match(alt.lstrip("@"))
+            if am:
+                alternatives.append({
+                    "lemma": am.group(1),
+                    "tags": am.group(2),
+                    "raw": alt,
+                })
+
+        is_noun = any("<n>" in a.get("tags", "") for a in alternatives)
+        # Articles: @-prefixed det units have no Globasa equivalent
+        is_suppressed = src.startswith("@") or (
+            alternatives and alternatives[0]["raw"].startswith("@")
+        )
+        is_det = "<det>" in source_tags
+
+        tokens.append({
+            "raw": "^" + raw + "$",
+            "source_lemma": source_lemma.lstrip("@"),
+            "source_tags": source_tags,
+            "alternatives": alternatives,
+            "is_noun": is_noun,
+            "is_det": is_det,
+            "is_suppressed_article": is_det and is_suppressed,
+            "is_numeral": "<num>" in source_tags,
+        })
+
+    return tokens
+
+
+def _apply_overrides(biltrans_tokens, overrides, articles, direction):
+    """Apply user overrides and article choices to biltrans tokens.
+
+    overrides: {str(idx): chosen_lemma}
+    articles: {str(idx): "un"|"a"|"the"|""}
+    direction: "eng-glb" or "glb-eng"
+
+    Returns modified biltrans string ready for the back half.
+    """
+    # eng→glb: find which nouns follow suppressed articles and should have
+    # their <sg> changed to <sp> to prevent transfer-rule un insertion
+    suppress_sg = set()  # biltrans indices of nouns to suppress
+    if direction == "eng-glb":
+        for i, tok in enumerate(biltrans_tokens):
+            if tok["is_suppressed_article"]:
+                idx_str = str(i)
+                # Unless user explicitly requested un
+                if not (idx_str in articles and articles[idx_str] == "un"):
+                    # Find the next noun token
+                    for j in range(i + 1, len(biltrans_tokens)):
+                        if biltrans_tokens[j]["is_noun"]:
+                            suppress_sg.add(j)
+                            break
+
+    result_units = []
+    for i, tok in enumerate(biltrans_tokens):
+        idx_str = str(i)
+
+        # Apply lexical override: reorder alternatives so chosen is first
+        if idx_str in overrides:
+            chosen = overrides[idx_str]
+            alts = tok["alternatives"]
+            reordered = [a for a in alts if a["lemma"] == chosen]
+            reordered += [a for a in alts if a["lemma"] != chosen]
+            if reordered:
+                src = tok["raw"].split("/")[0].lstrip("^")
+                raw = "^" + src + "/" + "/".join(a["raw"] for a in reordered) + "$"
+                # Also suppress sg if needed
+                if i in suppress_sg:
+                    raw = raw.replace("<sg>", "<sp>")
+                result_units.append(raw)
+                continue
+
+        # Handle article insertion (glb→eng): insert det before noun
+        if direction == "glb-eng" and tok["is_noun"] and idx_str in articles:
+            art = articles[idx_str]
+            if art == "the":
+                result_units.append("^the<det><def><sp>/the<det><def><sp>$")
+            elif art == "a":
+                result_units.append("^a<det><ind><sg>/a<det><ind><sg>$")
+
+        # Handle eng→glb: suppress @-prefixed articles (keep them out of stream)
+        if direction == "eng-glb" and tok["is_suppressed_article"]:
+            # Article is always removed from biltrans; un suppression is done
+            # by changing noun's <sg> to <sp> (see suppress_sg above)
+            continue
+
+        raw = tok["raw"]
+        # Suppress un insertion: change <sg> to <sp> on affected nouns
+        if i in suppress_sg:
+            raw = raw.replace("<sg>", "<sp>")
+        result_units.append(raw)
+
+    return " ".join(result_units)
+
+
+def _build_token_info(output_text, biltrans_tokens, direction):
+    """Build interactive token info by matching biltrans lemmas to output words.
+
+    The Apertium transfer can insert/reorder words, so we match by lemma
+    rather than sequential position.
+
+    Returns:
+      output_words: list of output word strings (for rendering)
+      interactions: list of dicts, one per biltrans token that is interactive
+    """
+    # Clean output: strip trailing \uffff and other control chars
+    output_text = re.sub(r'[\uffff\x00-\x1f]+', '', output_text).strip()
+    output_words = output_text.split() if output_text else []
+
+    # Build set of lemmas from biltrans first alternatives (selected translation)
+    # Match them to output word positions. Try exact match first, then substring
+    # (for compound nouns merged by transfer rules, e.g. myaw+somno -> myawsomno).
+    lemma_to_out = {}
+    used_positions = set()
+    biltrans_lemmas = []
+    for tok in biltrans_tokens:
+        if tok["alternatives"]:
+            biltrans_lemmas.append(tok["alternatives"][0]["lemma"])
+        else:
+            biltrans_lemmas.append(None)
+
+    # Pass 1: exact match (each output word can be claimed by only one lemma)
+    for lemma in biltrans_lemmas:
+        if not lemma or lemma in lemma_to_out:
+            continue
+        ll = lemma.lower()
+        for j, ow in enumerate(output_words):
+            if j in used_positions:
+                continue
+            if ow.lower().lstrip("*@#") == ll:
+                lemma_to_out[lemma] = j
+                used_positions.add(j)
+                break
+
+    # Pass 2: substring match for compound nouns
+    for lemma in biltrans_lemmas:
+        if not lemma or lemma in lemma_to_out:
+            continue
+        ll = lemma.lower()
+        for j, ow in enumerate(output_words):
+            if ll in ow.lower():
+                lemma_to_out[lemma] = j
+                break
+
+    interactions = []
+    for i, tok in enumerate(biltrans_tokens):
+        # Suppressed articles (eng→glb): emit info for un toggle
+        if direction == "eng-glb" and tok["is_suppressed_article"]:
+            # Find the next noun token's lemma in the output
+            # The noun following this article can have un toggled
+            interactions.append({
+                "biltrans_idx": i,
+                "type": "suppressed_article",
+                "source": tok["source_lemma"],
+            })
+            continue
+
+        if not tok["alternatives"]:
+            continue
+
+        lemma = tok["alternatives"][0]["lemma"]
+        out_pos = lemma_to_out.get(lemma)
+
+        # Build alternatives (only for tokens with >1 unique lemma)
+        seen_lemmas = set()
+        alts = []
+        for a in tok["alternatives"]:
+            if a["lemma"] in seen_lemmas:
+                continue
+            seen_lemmas.add(a["lemma"])
+            if direction == "eng-glb":
+                gloss = _get_gloss(a["lemma"])
+            else:
+                gloss = ""
+            alts.append({"lemma": a["lemma"], "gloss": gloss})
+        if len(alts) <= 1:
+            alts = []  # No choices to show if only 1 unique lemma
+
+        if out_pos is not None or alts or tok["is_noun"]:
+            interactions.append({
+                "biltrans_idx": i,
+                "type": "word",
+                "source": tok["source_lemma"],
+                "output_idx": out_pos,
+                "is_noun": tok["is_noun"],
+                "is_numeral": tok.get("is_numeral", False),
+                "alternatives": alts,
+            })
+
+    return output_words, interactions
+
+
+def _get_gloss(lemma):
+    """Look up a short English gloss for a Globasa lemma."""
+    entry = _all_entries.get(lemma)
+    if not entry:
+        return ""
+    # Get the wordlist entry from LMDB for full translations
+    wl = _db.get_wordlist(lemma)
+    if wl:
+        eng = wl.get("TranslationEng", "")
+        if eng:
+            short = eng.split(";")[0].strip()
+            short = re.sub(r"^[a-z./ ]+:\s*", "", short)
+            return short
+    return ""
 
 
 # ---------------------------------------------------------------------------
@@ -1035,6 +1542,312 @@ def rebuild():
     build_db()
     _db = WordViewerDB(LMDB_DIR, readonly=True)
     return jsonify({"status": "rebuilt"})
+
+
+# ---------------------------------------------------------------------------
+# Alignment Viewer
+# ---------------------------------------------------------------------------
+
+@app.route("/alignments")
+def alignment_viewer():
+    return send_file(ALIGNMENT_HTML)
+
+
+@app.route("/api/alignment_langs")
+def alignment_langs():
+    """Return available languages and sources with entry counts."""
+    result = []
+    for lang in ALIGN_LANGS:
+        entry = {"lang": lang, "sources": []}
+        # A3
+        a3_path = os.path.join(GIZA_DIR, f"glb_{lang}", f"glb_{lang}.A3.final")
+        if os.path.isfile(a3_path):
+            data = _load_alignments(lang, "a3")
+            entry["sources"].append({"source": "a3", "count": len(data)})
+        # Improved
+        for src in ("fwd", "rev", "gdfa"):
+            p = os.path.join(GIZA_IMPROVED_DIR, f"glb_{lang}", f"glb_{lang}.{src}")
+            if os.path.isfile(p):
+                data = _load_alignments(lang, src)
+                entry["sources"].append({"source": src, "count": len(data)})
+        if entry["sources"]:
+            result.append(entry)
+    return jsonify(result)
+
+
+@app.route("/api/alignment_contexts")
+def api_alignment_contexts():
+    """Return distinct corpus sections (TMX contexts) for a language.
+
+    Only meaningful for source='a3' (the natural-text corpus).
+    """
+    lang = request.args.get("lang", "en")
+    source = request.args.get("source", "a3")
+    if lang not in ALIGN_LANGS:
+        return jsonify([])
+
+    data = _load_alignments(lang, source)
+    counts = {}
+    for entry in data:
+        ctx = entry.get("context", "")
+        counts[ctx] = counts.get(ctx, 0) + 1
+    result = [{"context": c, "count": n} for c, n in counts.items() if c]
+    result.sort(key=lambda x: -x["count"])
+    return jsonify(result)
+
+
+@app.route("/api/alignments")
+def api_alignments():
+    """Paginated alignment data for a language pair."""
+    lang = request.args.get("lang", "en")
+    source = request.args.get("source", "a3")
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 50))
+    q = request.args.get("q", "").strip().lower()
+    context_filter = request.args.get("context", "").strip()
+
+    if lang not in ALIGN_LANGS:
+        return jsonify({"error": f"Unknown language: {lang}"}), 400
+
+    data = _load_alignments(lang, source)
+
+    # Filter by corpus section
+    if context_filter:
+        data = [e for e in data if e.get("context", "") == context_filter]
+
+    # Filter by query
+    if q:
+        filtered = []
+        for entry in data:
+            glb_match = any(q in t.lower() for t in entry["glb_tokens"])
+            tgt_match = any(q in t.lower() for t in entry["target_tokens"])
+            if glb_match or tgt_match:
+                filtered.append(entry)
+        data = filtered
+
+    total = len(data)
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_data = data[start:end]
+
+    return jsonify({
+        "lang": lang,
+        "source": source,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "entries": page_data,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Gold Alignment Annotation
+# ---------------------------------------------------------------------------
+
+def _gold_tsv_path(lang):
+    """Return path to the gold TSV file for a language."""
+    os.makedirs(GOLD_DIR, exist_ok=True)
+    return os.path.join(GOLD_DIR, f"{lang}.tsv")
+
+
+def _load_gold_annotation(lang, sentence_id):
+    """Return the latest gold annotation for (lang, sentence_id), or None."""
+    path = _gold_tsv_path(lang)
+    if not os.path.isfile(path):
+        return None
+    best = None
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            parts = line.split("\t")
+            if len(parts) < 6:
+                continue
+            try:
+                sid = int(parts[0])
+            except ValueError:
+                continue
+            if sid != sentence_id:
+                continue
+            timestamp = parts[5]
+            if best is None or timestamp > best["timestamp"]:
+                try:
+                    links = json.loads(parts[3])
+                except json.JSONDecodeError:
+                    links = []
+                best = {
+                    "sentence_id": sid,
+                    "links": links,
+                    "annotator": parts[4],
+                    "timestamp": timestamp,
+                }
+    return best
+
+
+def _load_all_annotated_ids(lang):
+    """Return a set of sentence_ids that have at least one gold annotation."""
+    path = _gold_tsv_path(lang)
+    if not os.path.isfile(path):
+        return set()
+    ids = set()
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) >= 1:
+                try:
+                    ids.add(int(parts[0]))
+                except ValueError:
+                    pass
+    return ids
+
+
+@app.route("/annotate")
+def annotation_viewer():
+    return send_file(ANNOTATE_HTML)
+
+
+@app.route("/api/gold_alignment", methods=["GET"])
+def api_get_gold_alignment():
+    """Return the latest gold annotation for (lang, sentence_id).
+
+    Query params: lang, sentence_id
+    Returns 200 with {sentence_id, links, annotator, timestamp} or 404.
+    """
+    lang = request.args.get("lang", "en")
+    try:
+        sid = int(request.args.get("sentence_id", -1))
+    except ValueError:
+        return jsonify({"error": "sentence_id must be an integer"}), 400
+
+    if lang not in ALIGN_LANGS:
+        return jsonify({"error": f"Unknown language: {lang}"}), 400
+
+    annotation = _load_gold_annotation(lang, sid)
+    if annotation is None:
+        return jsonify({"error": "not found"}), 404
+    return jsonify(annotation)
+
+
+@app.route("/api/gold_alignment", methods=["POST"])
+def api_post_gold_alignment():
+    """Save a gold annotation for one sentence.
+
+    Body JSON: {lang, sentence_id, glb_tokens (list), tgt_tokens (list),
+                links ([[i,j],...]), annotator (optional)}
+    Appends one TSV row to gold_alignments/{lang}.tsv.
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    lang = data.get("lang", "en")
+    try:
+        sid = int(data.get("sentence_id", -1))
+    except (TypeError, ValueError):
+        return jsonify({"error": "sentence_id must be an integer"}), 400
+
+    if lang not in ALIGN_LANGS:
+        return jsonify({"error": f"Unknown language: {lang}"}), 400
+
+    glb_tokens = data.get("glb_tokens", [])
+    tgt_tokens = data.get("tgt_tokens", [])
+    links = data.get("links", [])
+    annotator = data.get("annotator", "anonymous")
+    timestamp = datetime.now(timezone.utc).isoformat()
+
+    glb_str = " ".join(str(t) for t in glb_tokens)
+    tgt_str = " ".join(str(t) for t in tgt_tokens)
+    links_json = json.dumps(links, separators=(",", ":"))
+
+    path = _gold_tsv_path(lang)
+    row = "\t".join([str(sid), glb_str, tgt_str, links_json, annotator, timestamp])
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(row + "\n")
+
+    return jsonify({"status": "saved", "timestamp": timestamp})
+
+
+@app.route("/api/annotated_ids")
+def api_annotated_ids():
+    """Return set of sentence_ids already annotated for a language.
+
+    Query params: lang
+    Returns {lang, annotated_ids: [int, ...]}
+    """
+    lang = request.args.get("lang", "en")
+    if lang not in ALIGN_LANGS:
+        return jsonify({"error": f"Unknown language: {lang}"}), 400
+    ids = sorted(_load_all_annotated_ids(lang))
+    return jsonify({"lang": lang, "annotated_ids": ids})
+
+
+# ---------------------------------------------------------------------------
+# Translation Aide (Apertium)
+# ---------------------------------------------------------------------------
+
+@app.route("/translate")
+def translation_aide():
+    return send_file(TRANSLATE_HTML)
+
+
+@app.route("/api/translate", methods=["POST"])
+def api_translate():
+    """Translate text using the Apertium eng-glb pair.
+
+    Supports lexical overrides and article/number resolution.
+    """
+    data = request.get_json()
+    text = (data.get("text", "") or "").strip()
+    direction = data.get("direction", "eng-glb")
+    overrides = data.get("overrides", {})
+    articles = data.get("articles", {})
+    show_stages = data.get("stages", False)
+
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+    if direction not in ("eng-glb", "glb-eng"):
+        return jsonify({"error": "Invalid direction"}), 400
+    if len(text) > 5000:
+        return jsonify({"error": "Text too long (max 5000 chars)"}), 400
+
+    # Run front half (stages 1-6) to get biltrans
+    biltrans_str = _run_pipeline_half(text, direction, "front")
+
+    # Parse biltrans
+    biltrans_tokens = _parse_biltrans(biltrans_str)
+
+    # Apply overrides and article choices, rebuild biltrans stream
+    modified_biltrans = _apply_overrides(
+        biltrans_tokens, overrides, articles, direction
+    )
+
+    # Run back half (stages 7-12) to get final output
+    raw_output = _run_pipeline_half(modified_biltrans, direction, "back")
+
+    # Build interactive token info
+    output_words, interactions = _build_token_info(
+        raw_output, biltrans_tokens, direction
+    )
+
+    # Clean output string
+    output = " ".join(output_words)
+
+    # Optional pipeline stages for debug view
+    stages = None
+    if show_stages:
+        stages = {
+            "biltrans": biltrans_str,
+        }
+        for suffix in ("morph", "disam", "biltrans", "transfer"):
+            mode = f"{direction}-{suffix}"
+            stages[suffix] = _run_apertium(text, mode)
+
+    return jsonify({
+        "input": text,
+        "direction": direction,
+        "output": output,
+        "output_words": output_words,
+        "interactions": interactions,
+        "stages": stages,
+    })
 
 
 if __name__ == "__main__" or True:

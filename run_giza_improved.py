@@ -1634,6 +1634,15 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
 
     print(f"  Built priors: {lex_count} LEX + {fert_count} FERF + {hmm_count} HMM")
 
+    # Append gold-derived priors (from manual annotation UI) if available.
+    # These override dictionary priors where they disagree (eflomal sums alphas
+    # for matching (src,tgt) pairs; gold alpha * 5.0 > dictionary alpha * 1.0).
+    try:
+        import merge_gold_priors
+        merge_gold_priors.append_gold_priors(lang2, priors_file)
+    except Exception as e:
+        print(f"  [gold priors] skipped for {lang2}: {e}")
+
 
 # Language-specific distortion patterns relative to Globasa SVO
 _DISTORTION_PROFILES = {
