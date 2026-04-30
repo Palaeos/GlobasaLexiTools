@@ -715,6 +715,121 @@ def multiway_concordance(tmx_path):
 
 
 # ---------------------------------------------------------------------------
+# SimAlign pivot alignment (Improvement 4)
+# ---------------------------------------------------------------------------
+
+def simalign_pivot(tmx_path, glb_en_a3_path):
+    """Derive glb↔X word pairs via English pivot using SimAlign.
+
+    1. Extract multi-way TUs (UDHR + P&C) from TMX
+    2. Parse existing glb↔en alignment from GIZA++ A3 output
+    3. Run SimAlign on en↔X for each target language
+    4. Compose: glb→en→X to get glb↔X word pairs
+
+    Returns dict of {lang_code: [(glb_word, tgt_word), ...]}
+    """
+    from simalign import SentenceAligner
+    aligner = SentenceAligner(model="bert-base-multilingual-cased", token_type="bpe")
+
+    tree = ET.parse(tmx_path)
+    NS_XML = "{http://www.w3.org/XML/1998/namespace}"
+
+    # Parse glb↔en alignments
+    fwd_aligns = parse_a3(glb_en_a3_path)
+
+    # Build sentence index: en_text → alignment_index (for matching TMX to A3)
+    en_to_idx = {}
+    for idx, (tgt_tokens, src_tokens, align) in enumerate(fwd_aligns):
+        en_key = " ".join(tgt_tokens).lower()
+        en_to_idx[en_key] = idx
+
+    # Collect multi-way TUs
+    result = {}  # lang → set of (glb, tgt) pairs
+    tu_count = 0
+    aligned_count = 0
+
+    for tu in tree.getroot().find("body").findall("tu"):
+        props = {p.get("type"): p.text for p in tu.findall("prop")}
+        ctx = props.get("x-context", "")
+        if not any(ctx.startswith(c) for c in MULTIWAY_CONTEXTS):
+            continue
+
+        texts = {}
+        for tuv in tu.findall("tuv"):
+            lang = tuv.get(f"{NS_XML}lang")
+            seg = tuv.find("seg")
+            if seg is not None and seg.text:
+                texts[lang] = seg.text.strip()
+
+        if "glb" not in texts or "en" not in texts:
+            continue
+        tu_count += 1
+
+        # Find matching glb↔en alignment
+        en_factored = " ".join(factorize_target(texts["en"], "en")).lower()
+        a3_idx = en_to_idx.get(en_factored)
+        if a3_idx is None:
+            continue
+        aligned_count += 1
+
+        tgt_tokens_a3, src_tokens_a3, glb_en_align = fwd_aligns[a3_idx]
+
+        # For each non-English, non-Globasa language
+        for lang_code, tgt_text in texts.items():
+            if lang_code in ("glb", "en"):
+                continue
+
+            # Run SimAlign on en↔X
+            en_words = texts["en"].split()
+            x_words = tgt_text.split()
+            if not en_words or not x_words:
+                continue
+
+            try:
+                sim_result = aligner.get_word_aligns(en_words, x_words)
+                en_x_pairs = sim_result["itermax"]
+            except Exception:
+                continue
+
+            # Build en_pos → x_pos map
+            en_to_x = {}
+            for en_pos, x_pos in en_x_pairs:
+                en_to_x.setdefault(en_pos, []).append(x_pos)
+
+            # Compose: glb→en→X
+            # glb_en_align: src_pos → set of tgt_pos (in factored A3)
+            # We need to map A3 target positions (factored en) back to raw en positions
+            # Since factored en may differ in tokenization, use string matching
+            for src_pos, tgt_positions in glb_en_align.items():
+                if src_pos >= len(src_tokens_a3):
+                    continue
+                glb_word = defactorize(src_tokens_a3[src_pos])
+                if not glb_word or glb_word in (".", ",", ";", ":", "!", "?"):
+                    continue
+
+                for tgt_pos in tgt_positions:
+                    if tgt_pos >= len(tgt_tokens_a3):
+                        continue
+                    # Find which raw en_word this factored position corresponds to
+                    # Use position directly (approximate — factored/raw may differ slightly)
+                    if tgt_pos in en_to_x:
+                        for x_pos in en_to_x[tgt_pos]:
+                            if x_pos < len(x_words):
+                                x_word = x_words[x_pos].lower().strip(".,;:!?\"'")
+                                if x_word and len(x_word) > 1:
+                                    result.setdefault(lang_code, set()).add(
+                                        (glb_word, x_word))
+
+    result_lists = {lang: list(pairs) for lang, pairs in result.items()}
+    total = sum(len(v) for v in result_lists.values())
+    print(f"  SimAlign pivot: {tu_count} TUs, {aligned_count} matched A3, "
+          f"{total} derived pairs across {len(result_lists)} languages")
+    for lang in sorted(result_lists.keys()):
+        print(f"    {lang}: {len(result_lists[lang])} pairs")
+    return result_lists
+
+
+# ---------------------------------------------------------------------------
 # GIZA++ pipeline
 # ---------------------------------------------------------------------------
 
