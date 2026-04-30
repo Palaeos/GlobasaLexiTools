@@ -619,10 +619,106 @@ def build_seed_dict(lang2, work_dir):
 
 
 # ---------------------------------------------------------------------------
+# Multi-way concordance (Improvement 5)
+# ---------------------------------------------------------------------------
+
+MULTIWAY_CONTEXTS = {"Globatotal Deklaradoku tem Insanli Haki", "Pilpil ji Karote"}
+
+
+def multiway_concordance(tmx_path):
+    """Extract confirmed word pairs from multi-way TUs (UDHR + P&C).
+
+    For each TU with multiple target languages:
+    1. Identify Globasa content words (from word-list.csv)
+    2. Look up their translations in menalariExtension.tsv
+    3. Check if those translations appear in the target sentence
+    4. Confirmed matches become high-confidence alignment anchors
+
+    Returns dict of {lang_code: [(glb_word, tgt_word), ...]}
+    """
+    tree = ET.parse(tmx_path)
+    NS_XML = "{http://www.w3.org/XML/1998/namespace}"
+
+    # Build Globasa → {lang: [translations]} from menalari
+    menalari = _load_menalari()
+    glb_translations = {}  # glb_word → {lang_code: set of target words}
+    for row in menalari:
+        glb = (row.get("Globasa") or "").strip().lower()
+        if not glb:
+            continue
+        for lang_code, col_name in LANG_TO_MENALARI_COL.items():
+            if col_name is None:
+                continue
+            trans = row.get(col_name) or ""
+            words = parse_menalari_gloss(trans)
+            if words:
+                glb_translations.setdefault(glb, {}).setdefault(lang_code, set()).update(words)
+
+    # Also add word-list translations
+    for row in _load_wordlist():
+        glb = row.get("Word", "").strip().lower()
+        if not glb or glb.startswith("(") or glb.startswith("-"):
+            continue
+        for lang_code, col_name in LANG_TO_WORDLIST_COL.items():
+            trans = row.get(col_name, "")
+            words = parse_wordlist_gloss(trans)
+            if words:
+                glb_translations.setdefault(glb, {}).setdefault(lang_code, set()).update(words)
+
+    confirmed = {}  # lang_code → [(glb, tgt)]
+    tu_count = 0
+
+    for tu in tree.getroot().find("body").findall("tu"):
+        # Check if this TU is from a multi-way context
+        props = {p.get("type"): p.text for p in tu.findall("prop")}
+        ctx = props.get("x-context", "")
+        if not any(ctx.startswith(c) for c in MULTIWAY_CONTEXTS):
+            continue
+
+        # Extract all translations
+        texts = {}
+        for tuv in tu.findall("tuv"):
+            lang = tuv.get(f"{NS_XML}lang")
+            seg = tuv.find("seg")
+            if seg is not None and seg.text:
+                texts[lang] = seg.text.strip()
+
+        if "glb" not in texts:
+            continue
+        tu_count += 1
+
+        # Tokenize Globasa sentence to get content words
+        glb_words = set(texts["glb"].lower().split())
+
+        # For each target language, check concordance
+        for lang_code, tgt_text in texts.items():
+            if lang_code == "glb":
+                continue
+            tgt_lower = tgt_text.lower()
+            tgt_words = set(tgt_lower.split())
+
+            for glb_word in glb_words:
+                if glb_word not in glb_translations:
+                    continue
+                expected = glb_translations[glb_word].get(lang_code, set())
+                for tgt_word in expected:
+                    if tgt_word in tgt_words:
+                        confirmed.setdefault(lang_code, set()).add((glb_word, tgt_word))
+
+    # Convert sets to lists
+    result = {lang: list(pairs) for lang, pairs in confirmed.items()}
+    total = sum(len(v) for v in result.values())
+    print(f"  Multi-way concordance: {tu_count} TUs → {total} confirmed pairs across {len(result)} languages")
+    for lang in sorted(result.keys()):
+        print(f"    {lang}: {len(result[lang])} pairs")
+    return result
+
+
+# ---------------------------------------------------------------------------
 # GIZA++ pipeline
 # ---------------------------------------------------------------------------
 
-def run_giza(lang1, lang2, pairs, work_dir):
+def run_giza(lang1, lang2, pairs, work_dir, concordance_pairs=None):
     """Run improved GIZA++ on a language pair with factored tokenization."""
     work_dir.mkdir(parents=True, exist_ok=True)
 
@@ -649,9 +745,12 @@ def run_giza(lang1, lang2, pairs, work_dir):
                 out2.write(line2 + "\n")
 
         # Word-level pairs (only for words in TMX, unfactored)
+        # Combine dictionary pairs + concordance-confirmed pairs
         word_pairs = get_word_pairs(lang2)
+        conc_pairs = concordance_pairs.get(lang2, []) if concordance_pairs else []
+        all_word_pairs = set(word_pairs) | set(conc_pairs)
         wp_count = 0
-        for glb, tgt in word_pairs:
+        for glb, tgt in all_word_pairs:
             if glb in glb_vocab:
                 out1.write(glb + "\n")
                 out2.write(tgt + "\n")
@@ -1033,6 +1132,10 @@ def show_top_translations(t_file, vcb1_file, vcb2_file, n=15):
 if __name__ == "__main__":
     OUT_DIR.mkdir(exist_ok=True)
 
+    # Compute multi-way concordance once for all language pairs
+    print("Computing multi-way concordance...")
+    conc = multiway_concordance(TMX_FILE)
+
     target_langs = ["en", "eo", "es", "de", "fr", "ru", "nl", "pt", "id",
                     "da", "ar", "hi", "sw", "tr", "zh"]
     for l2 in target_langs:
@@ -1041,4 +1144,4 @@ if __name__ == "__main__":
         if len(pairs) < 10:
             print(f"SKIP {l1}-{l2}: only {len(pairs)} pairs")
             continue
-        run_giza(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}")
+        run_giza(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}", concordance_pairs=conc)
