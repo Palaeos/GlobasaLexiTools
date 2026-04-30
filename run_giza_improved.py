@@ -518,12 +518,27 @@ def factorize_glb(sentence):
                 result.append(trail)
             continue
 
+        # Decompose multi-word tokens (e.g., "fe nunya" → "fe" PREP + "nunya" N)
+        # PosTagger joins them for POS disambiguation, but alignment needs them split
+        if " " in core:
+            mw_parts = core.split()
+            for mw_word in mw_parts:
+                mw_pos = _infer_pos_from_wordclass(mw_word)
+                mw_morphemes = segment_word(mw_word, morphemes_data)
+                for j, morph in enumerate(mw_morphemes):
+                    if j == len(mw_morphemes) - 1:
+                        result.append(f"{morph}|{mw_pos}")
+                    else:
+                        result.append(morph)
+            if trail:
+                result.append(trail)
+            continue
+
         # For UNK words, try to resolve POS from WordClass via segment_word
         if pos == "UNK":
             parts = segment_word(core, morphemes_data)
             # If segmentation found morphemes, infer POS from the last morpheme
             if len(parts) > 1:
-                # Check if any part is a known word with a WordClass
                 last = parts[-1]
                 all_words = morphemes_data.get("__all_words__", set())
                 if last in all_words:
