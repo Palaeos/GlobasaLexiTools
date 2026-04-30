@@ -1274,17 +1274,20 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
         LEX  src_word  tgt_word  alpha   — lexical translation prior
         FERF src_word  fertility alpha   — forward fertility prior
         FERR tgt_word  fertility alpha   — reverse fertility prior
+        HMMF jump      alpha             — forward HMM distortion prior
+        HMMR jump      alpha             — reverse HMM distortion prior
 
     Sources:
     1. Dictionary word pairs (word-list + menalari + concordance) → LEX priors
     2. Function word fertility knowledge → FERF priors
+    3. Language-specific word order knowledge → HMMF/HMMR distortion priors
     """
     lex_count = 0
     fert_count = 0
+    hmm_count = 0
 
     with open(priors_file, "w") as f:
         # LEX priors from dictionary pairs
-        # Weight: 1.0 per pair (modest Dirichlet pseudo-count)
         seen = set()
         for glb, tgt in word_pairs:
             key = (glb, tgt)
@@ -1294,24 +1297,18 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
                 lex_count += 1
 
         # Function word fertility priors (Globasa-specific)
-        # These encode knowledge about which Globasa words have no
-        # direct English equivalent (fertility 0) vs. which map 1-to-1
         funcword_fert = {
-            # TAM markers: often fertility 0 (fused into English verb inflection)
-            "le|PAR": [(0, 5.0), (1, 1.0)],      # past tense → often NULL
-            "xa|PAR": [(0, 3.0), (1, 2.0)],       # future → sometimes "will"
-            "nun|PAR": [(0, 5.0)],                 # present → NULL (English default)
-            "am|PAR": [(0, 5.0)],                  # imperative → NULL
-            "ger|PAR": [(0, 5.0)],                 # progressive → NULL
-            # Resumptive/question markers: always NULL
-            "da|PRON": [(0, 10.0)],                # resumptive → NULL
-            "kam|PAR": [(0, 10.0)],                # question marker → NULL
-            # Prepositions/particles: usually 1-to-1
-            "na|PAR": [(1, 5.0)],                  # infinitive → "to"
-            "cel|PREP": [(1, 5.0)],                # purpose → "to"/"for"
-            "fe|PREP": [(1, 3.0), (0, 2.0)],       # at/in → prep or NULL
-            # Passive prefix: maps to auxiliary
-            "be": [(1, 5.0)],                       # passive → "was"/"is"
+            "le|PAR": [(0, 5.0), (1, 1.0)],
+            "xa|PAR": [(0, 3.0), (1, 2.0)],
+            "nun|PAR": [(0, 5.0)],
+            "am|PAR": [(0, 5.0)],
+            "ger|PAR": [(0, 5.0)],
+            "da|PRON": [(0, 10.0)],
+            "kam|PAR": [(0, 10.0)],
+            "na|PAR": [(1, 5.0)],
+            "cel|PREP": [(1, 5.0)],
+            "fe|PREP": [(1, 3.0), (0, 2.0)],
+            "be": [(1, 5.0)],
         }
 
         for word, ferts in funcword_fert.items():
@@ -1319,7 +1316,95 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
                 f.write(f"FERF\t{word}\t{fertility}\t{alpha}\n")
                 fert_count += 1
 
-    print(f"  Built priors: {lex_count} LEX + {fert_count} FERF")
+        # HMM distortion priors (language-pair-specific word order)
+        # HMMF jump alpha: forward direction (glb→tgt)
+        #   jump = difference in target position between consecutive source words
+        #   Positive jump = target word is to the right (monotone)
+        #   Negative jump = target word is to the left (reordering)
+        #
+        # Globasa is SVO. Distortion depends on target language word order.
+
+        hmm_priors = _get_distortion_priors(lang2)
+        for jump, alpha in hmm_priors["hmmf"].items():
+            f.write(f"HMMF\t{jump}\t{alpha}\n")
+            hmm_count += 1
+        for jump, alpha in hmm_priors["hmmr"].items():
+            f.write(f"HMMR\t{jump}\t{alpha}\n")
+            hmm_count += 1
+
+    print(f"  Built priors: {lex_count} LEX + {fert_count} FERF + {hmm_count} HMM")
+
+
+# Language-specific distortion patterns relative to Globasa SVO
+_DISTORTION_PROFILES = {
+    # SVO languages: mostly monotone alignment, small jumps dominate
+    "svo": {
+        "hmmf": {1: 10.0, 2: 3.0, -1: 2.0, 0: 1.0, 3: 1.0, -2: 1.0},
+        "hmmr": {1: 10.0, 2: 3.0, -1: 2.0, 0: 1.0, 3: 1.0, -2: 1.0},
+    },
+    # German V2/V-final: mostly monotone but verb can jump to end in
+    # subordinate clauses (large positive jump from S position to V-final)
+    # Also: separable verb prefixes cause backward jumps
+    "de": {
+        "hmmf": {
+            1: 8.0,    # monotone (most common)
+            2: 3.0,    # small forward skip
+            -1: 3.0,   # German article before noun where Globasa has none
+            0: 1.5,    # same position (1-to-many)
+            3: 2.0,    # medium forward skip
+            -2: 2.0,   # separable prefix or reordering
+            4: 1.5,    # larger forward (verb to end in subclause)
+            5: 1.0,
+            6: 1.0,    # long jump (verb-final in long subordinate clause)
+            -3: 1.0,   # backward jump (German compound split)
+        },
+        "hmmr": {
+            1: 8.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 2.0, -2: 2.0,
+            4: 1.5, 5: 1.0, 6: 1.0, -3: 1.0,
+        },
+    },
+    # Turkish SOV: verb systematically at end of clause
+    # Globasa SVO → Turkish SOV means:
+    #   S maps near start (monotone), V jumps to end, O stays in middle
+    # Postpositions: Globasa "in X" → Turkish "X-de" (prep follows noun)
+    # Agglutination: one Turkish word may cover multiple Globasa words
+    "tr": {
+        "hmmf": {
+            1: 6.0,    # monotone (adj-noun, within noun phrases)
+            2: 3.0,    # small forward skip
+            -1: 4.0,   # backward jump (very common: SOV reordering)
+            0: 2.0,    # same position (agglutinative: multiple→one)
+            -2: 3.0,   # medium backward (verb skipping object)
+            3: 2.0,    # forward skip
+            -3: 2.0,   # larger backward
+            -4: 1.5,   # verb from position 2 to end
+            -5: 1.0,
+            4: 1.5,
+            5: 1.0,    # postposition follows noun
+        },
+        "hmmr": {
+            1: 6.0, 2: 3.0, -1: 4.0, 0: 2.0, -2: 3.0, 3: 2.0,
+            -3: 2.0, -4: 1.5, -5: 1.0, 4: 1.5, 5: 1.0,
+        },
+    },
+}
+
+# Map language codes to distortion profiles
+_LANG_TO_PROFILE = {
+    "en": "svo", "eo": "svo", "es": "svo", "fr": "svo", "pt": "svo",
+    "id": "svo", "sw": "svo", "zh": "svo", "da": "svo", "nl": "svo",
+    "de": "de", "tr": "tr",
+    # SOV languages get Turkish-like profile
+    "hi": "tr", "ja": "tr", "ko": "tr",
+    # VSO/flexible get default SVO (conservative)
+    "ar": "svo", "ru": "svo",
+}
+
+
+def _get_distortion_priors(lang2):
+    """Get HMM distortion priors for a language pair."""
+    profile_key = _LANG_TO_PROFILE.get(lang2, "svo")
+    return _DISTORTION_PROFILES.get(profile_key, _DISTORTION_PROFILES["svo"])
 
 
 def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
