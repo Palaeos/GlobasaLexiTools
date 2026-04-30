@@ -243,54 +243,58 @@ def _load_morphemes():
 
 
 def segment_word(word, morphemes=None):
-    """Segment a Globasa word into morphemes using lookup + productive affix stripping.
-    Returns list of morpheme strings, or [word] if no decomposition found.
+    """Segment a Globasa word into word-list entries with minimum splits.
+
+    Rules:
+    - If the word is in the word-list, keep it whole (no decomposition).
+    - If the word is NOT in the word-list, find the minimum decomposition
+      where each piece is a word-list entry.
+    - Prefer fewer pieces: 2 > 3, stem+suffix > prefix+stem+suffix.
+
+    Returns list of strings, or [word] if no decomposition found.
     """
     if morphemes is None:
         morphemes = _load_morphemes()
 
-    # Direct lookup
-    if word in morphemes and not word.startswith("__"):
-        return morphemes[word]
-
-    explicit = morphemes["__explicit__"]
     all_words = morphemes["__all_words__"]
     sorted_suffixes = morphemes["__suffixes__"]
     sorted_prefixes = morphemes["__prefixes__"]
 
-    # If the word is a known root/entry with no explicit decomposition, don't strip
-    if word in all_words and word not in explicit:
+    # If the word is in the word-list, keep it whole
+    if word in all_words:
         return [word]
 
-    # Try stripping one suffix
+    # Not in word-list — try minimum decomposition into word-list entries.
+
+    # 1-split: suffix stripping (word = stem + suffix, both in word-list)
     for sfx in sorted_suffixes:
         if word.endswith(sfx) and len(word) > len(sfx) + 1:
             stem = word[:-len(sfx)]
-            if stem in explicit:
-                return explicit[stem] + [sfx]
             if stem in all_words:
                 return [stem, sfx]
 
-    # Try stripping one prefix
+    # 1-split: prefix stripping (word = prefix + stem, both in word-list)
     for pfx in sorted_prefixes:
         if word.startswith(pfx) and len(word) > len(pfx) + 1:
             stem = word[len(pfx):]
-            if stem in explicit:
-                return [pfx] + explicit[stem]
             if stem in all_words:
                 return [pfx, stem]
 
-    # Try stripping prefix + suffix
+    # 2-split: prefix + stem + suffix (all in word-list)
     for pfx in sorted_prefixes:
         if word.startswith(pfx) and len(word) > len(pfx) + 2:
             remainder = word[len(pfx):]
             for sfx in sorted_suffixes:
                 if remainder.endswith(sfx) and len(remainder) > len(sfx) + 1:
                     stem = remainder[:-len(sfx)]
-                    if stem in explicit:
-                        return [pfx] + explicit[stem] + [sfx]
                     if stem in all_words:
                         return [pfx, stem, sfx]
+
+    # 1-split: root + root compound (try splitting at every position)
+    for split_pos in range(2, len(word) - 1):
+        left, right = word[:split_pos], word[split_pos:]
+        if left in all_words and right in all_words:
+            return [left, right]
 
     return [word]
 
