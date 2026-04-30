@@ -1387,17 +1387,173 @@ _DISTORTION_PROFILES = {
             -3: 2.0, -4: 1.5, -5: 1.0, 4: 1.5, 5: 1.0,
         },
     },
+    # Arabic VSO: verb-initial, prepositions fused as proclitics
+    # Globasa SVO → Arabic VSO:
+    #   S position 1 → moves right (after V), V position 2 → moves left (position 1)
+    # Also: Arabic has no copula (zero copula), articles fused as al-
+    "ar": {
+        "hmmf": {
+            1: 6.0,    # monotone (within phrases)
+            -1: 5.0,   # backward (V-initial: Globasa V at pos 2 → Arabic V at pos 1)
+            2: 3.0,    # forward skip (S jumps past V)
+            0: 2.0,    # same position (proclitic fusion)
+            -2: 3.0,   # medium backward
+            3: 2.0,    # medium forward
+            -3: 1.5,   # larger backward
+            4: 1.5,
+            -4: 1.0,
+            5: 1.0,
+        },
+        "hmmr": {
+            1: 6.0, -1: 5.0, 2: 3.0, 0: 2.0, -2: 3.0, 3: 2.0,
+            -3: 1.5, 4: 1.5, -4: 1.0, 5: 1.0,
+        },
+    },
+    # Russian: flexible word order (SVO default but SOV/OVS common)
+    # No articles → Globasa determiners map to NULL
+    # Rich case morphology → word order more flexible than Globasa
+    "ru": {
+        "hmmf": {
+            1: 7.0,    # monotone (SVO default)
+            -1: 4.0,   # backward (OVS, topic fronting)
+            2: 3.0,    # forward skip
+            0: 2.0,    # same position
+            -2: 3.0,   # medium backward (flexible order)
+            3: 2.0,
+            -3: 1.5,   # larger backward (scrambling)
+            4: 1.5,
+            -4: 1.0,
+            5: 1.0,
+        },
+        "hmmr": {
+            1: 7.0, -1: 4.0, 2: 3.0, 0: 2.0, -2: 3.0, 3: 2.0,
+            -3: 1.5, 4: 1.5, -4: 1.0, 5: 1.0,
+        },
+    },
+    # Dutch: V2 main clause (like German), verb-final in subclauses
+    # Very similar to German profile
+    "nl": {
+        "hmmf": {
+            1: 8.0,    # monotone
+            2: 3.0,    # small forward
+            -1: 3.0,   # article/determiner reordering
+            0: 1.5,    # same position
+            3: 2.0,    # medium forward
+            -2: 2.0,   # separable verb / reordering
+            4: 1.5,    # verb-final in subclause
+            5: 1.0,
+            6: 1.0,
+            -3: 1.0,
+        },
+        "hmmr": {
+            1: 8.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 2.0, -2: 2.0,
+            4: 1.5, 5: 1.0, 6: 1.0, -3: 1.0,
+        },
+    },
+    # Chinese: SVO but relative clauses precede noun (head-final for RC)
+    # No inflection → 1-to-1 word mapping more common
+    # Topic-comment structure → topic can front
+    "zh": {
+        "hmmf": {
+            1: 8.0,    # monotone (SVO)
+            -1: 3.0,   # backward (RC precedes noun, topic fronting)
+            2: 3.0,    # forward skip
+            0: 2.0,    # same position (no inflection, classifiers)
+            -2: 2.0,   # relative clause reordering
+            3: 1.5,
+            -3: 1.5,   # longer RC
+            4: 1.0,
+            -4: 1.0,
+        },
+        "hmmr": {
+            1: 8.0, -1: 3.0, 2: 3.0, 0: 2.0, -2: 2.0, 3: 1.5,
+            -3: 1.5, 4: 1.0, -4: 1.0,
+        },
+    },
+    # Hindi: SOV, postpositions, head-final
+    # Like Turkish but less agglutinative, more analytic
+    # Compound verbs (light verb constructions): "kaam karna" = work do
+    "hi": {
+        "hmmf": {
+            1: 6.0,    # monotone (within NP)
+            -1: 4.0,   # backward (SOV)
+            2: 3.0,    # forward skip
+            0: 2.5,    # same position (compound verbs, postpositions)
+            -2: 3.0,   # verb past object
+            3: 2.0,
+            -3: 2.0,
+            -4: 1.5,
+            4: 1.5,
+            -5: 1.0,
+            5: 1.0,
+        },
+        "hmmr": {
+            1: 6.0, -1: 4.0, 2: 3.0, 0: 2.5, -2: 3.0, 3: 2.0,
+            -3: 2.0, -4: 1.5, 4: 1.5, -5: 1.0, 5: 1.0,
+        },
+    },
+    # Japanese: strictly SOV, head-final, postpositions, particles
+    # Very different from Globasa SVO — large reordering
+    # Verb always final, modifiers always precede head
+    "ja": {
+        "hmmf": {
+            1: 5.0,    # monotone (within phrases)
+            -1: 5.0,   # backward (very frequent: head-final)
+            0: 3.0,    # same position (particles, agglutination)
+            -2: 4.0,   # medium backward (verb to end)
+            2: 2.5,    # forward skip
+            -3: 3.0,   # larger backward
+            -4: 2.0,
+            3: 2.0,
+            -5: 1.5,
+            -6: 1.0,   # very long backward (verb in long sentence)
+            4: 1.0,
+            5: 1.0,
+        },
+        "hmmr": {
+            1: 5.0, -1: 5.0, 0: 3.0, -2: 4.0, 2: 2.5, -3: 3.0,
+            -4: 2.0, 3: 2.0, -5: 1.5, -6: 1.0, 4: 1.0, 5: 1.0,
+        },
+    },
+    # Korean: SOV, head-final, postpositions (similar to Japanese)
+    "ko": {
+        "hmmf": {
+            1: 5.0, -1: 5.0, 0: 3.0, -2: 4.0, 2: 2.5, -3: 3.0,
+            -4: 2.0, 3: 2.0, -5: 1.5, -6: 1.0, 4: 1.0, 5: 1.0,
+        },
+        "hmmr": {
+            1: 5.0, -1: 5.0, 0: 3.0, -2: 4.0, 2: 2.5, -3: 3.0,
+            -4: 2.0, 3: 2.0, -5: 1.5, -6: 1.0, 4: 1.0, 5: 1.0,
+        },
+    },
+    # Esperanto: strictly SVO, very regular, close to Globasa word order
+    # Accusative -n allows some flexibility but SVO strongly dominant
+    "eo": {
+        "hmmf": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
+        "hmmr": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
+    },
+    # Indonesian: SVO, very similar word order to Globasa
+    # Both are analytic, isolating languages
+    "id": {
+        "hmmf": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
+        "hmmr": {1: 12.0, 2: 3.0, -1: 1.5, 0: 1.0, 3: 1.0, -2: 0.5},
+    },
+    # Swahili: SVO, but verb-initial in some constructions
+    # Noun class prefixes may cause slight reordering
+    "sw": {
+        "hmmf": {1: 9.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 1.5, -2: 1.5, 4: 1.0},
+        "hmmr": {1: 9.0, 2: 3.0, -1: 3.0, 0: 1.5, 3: 1.5, -2: 1.5, 4: 1.0},
+    },
 }
 
 # Map language codes to distortion profiles
 _LANG_TO_PROFILE = {
-    "en": "svo", "eo": "svo", "es": "svo", "fr": "svo", "pt": "svo",
-    "id": "svo", "sw": "svo", "zh": "svo", "da": "svo", "nl": "svo",
-    "de": "de", "tr": "tr",
-    # SOV languages get Turkish-like profile
-    "hi": "tr", "ja": "tr", "ko": "tr",
-    # VSO/flexible get default SVO (conservative)
-    "ar": "svo", "ru": "svo",
+    "en": "svo", "es": "svo", "fr": "svo", "pt": "svo", "da": "svo",
+    "eo": "eo", "id": "id", "sw": "sw",
+    "de": "de", "nl": "nl",
+    "tr": "tr",
+    "ar": "ar", "ru": "ru", "zh": "zh",
+    "hi": "hi", "ja": "ja", "ko": "ko",
 }
 
 
