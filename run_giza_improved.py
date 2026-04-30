@@ -1267,6 +1267,61 @@ def show_top_translations(t_file, vcb1_file, vcb2_file, n=15):
 # eflomal aligner (alternative to GIZA++)
 # ---------------------------------------------------------------------------
 
+def _build_eflomal_priors(lang2, priors_file, word_pairs):
+    """Build Dirichlet priors file for eflomal from lexical resources.
+
+    Priors format (one per line):
+        LEX  src_word  tgt_word  alpha   — lexical translation prior
+        FERF src_word  fertility alpha   — forward fertility prior
+        FERR tgt_word  fertility alpha   — reverse fertility prior
+
+    Sources:
+    1. Dictionary word pairs (word-list + menalari + concordance) → LEX priors
+    2. Function word fertility knowledge → FERF priors
+    """
+    lex_count = 0
+    fert_count = 0
+
+    with open(priors_file, "w") as f:
+        # LEX priors from dictionary pairs
+        # Weight: 1.0 per pair (modest Dirichlet pseudo-count)
+        seen = set()
+        for glb, tgt in word_pairs:
+            key = (glb, tgt)
+            if key not in seen:
+                seen.add(key)
+                f.write(f"LEX\t{glb}\t{tgt}\t1.0\n")
+                lex_count += 1
+
+        # Function word fertility priors (Globasa-specific)
+        # These encode knowledge about which Globasa words have no
+        # direct English equivalent (fertility 0) vs. which map 1-to-1
+        funcword_fert = {
+            # TAM markers: often fertility 0 (fused into English verb inflection)
+            "le|PAR": [(0, 5.0), (1, 1.0)],      # past tense → often NULL
+            "xa|PAR": [(0, 3.0), (1, 2.0)],       # future → sometimes "will"
+            "nun|PAR": [(0, 5.0)],                 # present → NULL (English default)
+            "am|PAR": [(0, 5.0)],                  # imperative → NULL
+            "ger|PAR": [(0, 5.0)],                 # progressive → NULL
+            # Resumptive/question markers: always NULL
+            "da|PRON": [(0, 10.0)],                # resumptive → NULL
+            "kam|PAR": [(0, 10.0)],                # question marker → NULL
+            # Prepositions/particles: usually 1-to-1
+            "na|PAR": [(1, 5.0)],                  # infinitive → "to"
+            "cel|PREP": [(1, 5.0)],                # purpose → "to"/"for"
+            "fe|PREP": [(1, 3.0), (0, 2.0)],       # at/in → prep or NULL
+            # Passive prefix: maps to auxiliary
+            "be": [(1, 5.0)],                       # passive → "was"/"is"
+        }
+
+        for word, ferts in funcword_fert.items():
+            for fertility, alpha in ferts:
+                f.write(f"FERF\t{word}\t{fertility}\t{alpha}\n")
+                fert_count += 1
+
+    print(f"  Built priors: {lex_count} LEX + {fert_count} FERF")
+
+
 def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
     """Run eflomal alignment with factored tokenization.
 
@@ -1327,13 +1382,19 @@ def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
     with open(tgt_file, "w") as f:
         f.write("\n".join(tgt_lines) + "\n")
 
-    # Run eflomal
+    # Build Dirichlet priors from lexical resources
+    priors_file = work_dir / f"{lang1}_{lang2}.priors"
+    _build_eflomal_priors(lang2, priors_file, all_word_pairs)
+    print(f"  Priors: {priors_file.name}")
+
+    # Run eflomal with priors
     aligner = eflomal.Aligner(model=3, n_samplers=3)
-    with open(src_file) as sf, open(tgt_file) as tf:
+    with open(src_file) as sf, open(tgt_file) as tf, open(priors_file) as pf:
         aligner.align(
             sf, tf,
             links_filename_fwd=str(fwd_file),
             links_filename_rev=str(rev_file),
+            priors_input=pf,
         )
 
     # Read Pharaoh-format alignments
