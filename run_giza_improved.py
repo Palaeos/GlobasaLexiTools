@@ -198,6 +198,17 @@ _GRAMMATICAL_SUFFIXES = {
     "pul",  # full of / -ful (jiwa+pul ↔ "vibrant")
     "ple",  # multiplier (-uple)
 }
+
+# POS produced by each derivational suffix (the suffix dictates the
+# compound's category). Used to tag the suffix in factored output.
+_SUFFIX_DERIVED_POS = {
+    "li": "ADJ",   "ya": "N",    "do": "ADJ",
+    "ne": "ADJ",   "mo": "ADV",  "cu": "V",
+    "gi": "V",     "abil": "ADJ","ible": "ADJ",
+    "bisu": "ADJ", "musi": "ADJ","gimu": "ADJ",
+    "kal": "ADJ",  "laye": "ADJ","fil": "ADJ",
+    "pul": "ADJ",  "ple": "ADJ",
+}
 _GRAMMATICAL_PREFIXES = {
     "be",   # passive marker → "be"/"is"/"was" (bekrea ↔ "was created")
     "du",   # continuous/durative → "keep -ing"
@@ -515,6 +526,31 @@ def _get_spacy(lang):
     return _spacy_models[lang]
 
 
+def _tag_morpheme(morph):
+    """Tag a single morpheme with its intrinsic POS factor.
+
+    - Suffix marker (-li, -ya, etc.): tag with derived POS (-li|ADJ, -ya|N)
+    - Prefix marker (be-, du-, etc.): leave untagged (prefixes don't change
+      POS in Globasa, the root keeps its category)
+    - Bare root: tag with WordClass-derived POS (huru|ADJ, kitabu|N)
+    """
+    if morph.startswith("-"):
+        # Suffix: tag with derived POS
+        sfx = morph[1:]
+        derived = _SUFFIX_DERIVED_POS.get(sfx)
+        if derived:
+            return f"{morph}|{derived}"
+        return morph
+    if morph.endswith("-"):
+        # Prefix: leave untagged
+        return morph
+    # Bare root: use WordClass POS
+    pos = _infer_pos_from_wordclass(morph)
+    if pos and pos != "UNK":
+        return f"{morph}|{pos}"
+    return morph
+
+
 def _infer_pos_from_wordclass(word):
     """Infer a POS label from word-list.csv WordClass for a single word.
     Used as fallback when PosTagger returns UNK.
@@ -593,51 +629,45 @@ def factorize_glb(sentence):
         if " " in core:
             mw_parts = core.split()
             for mw_word in mw_parts:
-                mw_pos = _infer_pos_from_wordclass(mw_word)
                 mw_morphemes = segment_word(mw_word, morphemes_data)
-                # Tag last non-affix morpheme (root head) with POS
-                head_idx = -1
-                for k in range(len(mw_morphemes) - 1, -1, -1):
-                    m = mw_morphemes[k]
-                    if not m.startswith("-") and not m.endswith("-"):
-                        head_idx = k
-                        break
-                for j, morph in enumerate(mw_morphemes):
-                    if j == head_idx:
-                        result.append(f"{morph}|{mw_pos}")
-                    else:
-                        result.append(morph)
+                for morph in mw_morphemes:
+                    result.append(_tag_morpheme(morph))
             if trail:
                 result.append(trail)
             continue
 
-        # For UNK words, try to resolve POS from WordClass via segment_word
-        if pos == "UNK":
-            parts = segment_word(core, morphemes_data)
-            if len(parts) > 1:
-                last = parts[-1].lstrip("-").rstrip("-")
-                all_words = morphemes_data.get("__all_words__", set())
-                if last in all_words:
-                    pos = _infer_pos_from_wordclass(last)
-            elif core in morphemes_data.get("__all_words__", set()):
-                pos = _infer_pos_from_wordclass(core)
-        else:
-            parts = segment_word(core, morphemes_data)
+        # Segment the surface form into morphemes
+        parts = segment_word(core, morphemes_data)
 
-        # Tag the last NON-AFFIX morpheme (root head) with POS
-        # Affix markers (with leading or trailing hyphen) stay untagged
-        head_idx = -1
-        for i in range(len(parts) - 1, -1, -1):
-            morph = parts[i]
-            if not morph.startswith("-") and not morph.endswith("-"):
-                head_idx = i
-                break
-
-        for i, morph in enumerate(parts):
-            if i == head_idx:
-                result.append(f"{morph}|{pos}")
+        # POS tagging strategy:
+        # - Single token with contextual POS: use that POS
+        # - Multi-morpheme: tag each morpheme with its intrinsic POS
+        #   (huru|ADJ + -ya|N, where root keeps WordClass POS and suffix
+        #   gets its derived POS). EXCEPT: if the compound has only prefixes
+        #   (no suffixes), the LAST root is the categorial head — use the
+        #   contextual POS from PosTagger (e.g., bekrea → be- krea|V where
+        #   krea takes the contextual V from "le bekrea").
+        if len(parts) == 1:
+            if pos != "UNK":
+                result.append(f"{parts[0]}|{pos}")
             else:
-                result.append(morph)
+                result.append(_tag_morpheme(parts[0]))
+        else:
+            has_suffix = any(p.startswith("-") for p in parts)
+            # Find the head morpheme (last non-affix root)
+            head_idx = -1
+            for i in range(len(parts) - 1, -1, -1):
+                p = parts[i]
+                if not p.startswith("-") and not p.endswith("-"):
+                    head_idx = i
+                    break
+            for i, morph in enumerate(parts):
+                if i == head_idx and not has_suffix and pos != "UNK":
+                    # Prefix-only compound: head root gets contextual POS
+                    result.append(f"{morph}|{pos}")
+                else:
+                    # Suffix-bearing compound or non-head root: intrinsic POS
+                    result.append(_tag_morpheme(morph))
 
         # Append trailing punctuation as separate token
         if trail:
