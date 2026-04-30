@@ -745,10 +745,19 @@ main {
     /* Action buttons */
     const actions = document.createElement("div");
     actions.className = "card-actions";
+
     const resetBtn = document.createElement("button");
     resetBtn.textContent = "Reset to auto";
+    resetBtn.title = "Replace current annotation with the eflomal auto-alignment";
     resetBtn.addEventListener("click", () => resetToAuto(card, entry, cardKey));
     actions.appendChild(resetBtn);
+
+    const eraseBtn = document.createElement("button");
+    eraseBtn.textContent = "Erase all links";
+    eraseBtn.title = "Clear all links and NULL marks from this sentence (start from scratch)";
+    eraseBtn.addEventListener("click", () => eraseAllLinks(card, cardKey));
+    actions.appendChild(eraseBtn);
+
     card.appendChild(actions);
 
     /* Wire up focus mode: hover or click a token to dim others and
@@ -855,6 +864,23 @@ main {
     pendingSelect = null;
     card.querySelectorAll(".tok.null-marked").forEach(t => t.classList.remove("null-marked"));
     setStatus(cardKey, "auto");
+    applyColors(card, cardKey);
+    scheduleSave(cardKey);
+  }
+
+  /* ── Erase all links: clear annotation entirely ─────────── */
+  function eraseAllLinks(card, cardKey) {
+    const cs = cardState[cardKey];
+    cs.links = [];
+    cs.nullGlb.clear();
+    cs.nullTgt.clear();
+    clearAllSelected();
+    pendingSelect = null;
+    card.querySelectorAll(".tok.null-marked").forEach(t => t.classList.remove("null-marked"));
+    /* Clear focus state too */
+    delete PINNED_KEY[cardKey];
+    clearFocus(card, cardKey);
+    setStatus(cardKey, "edited");
     applyColors(card, cardKey);
     scheduleSave(cardKey);
   }
