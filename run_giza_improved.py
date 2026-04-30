@@ -575,8 +575,8 @@ def factorize_target(sentence, lang):
     """
     nlp = _get_spacy(lang)
     if nlp is None:
-        # Fallback: plain lowercase tokenization
-        text = sentence.lower()
+        # Fallback: whitespace tokenization, preserve case (important for German etc.)
+        text = sentence
         text = re.sub(r'([.,:;!?"""()\'—\-])', r' \1 ', text)
         return text.split()
 
