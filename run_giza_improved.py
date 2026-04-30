@@ -1263,8 +1263,153 @@ def show_top_translations(t_file, vcb1_file, vcb2_file, n=15):
         print(f"    {src:20s} → {tgt:20s}  ({prob:.3f})")
 
 
+# ---------------------------------------------------------------------------
+# eflomal aligner (alternative to GIZA++)
+# ---------------------------------------------------------------------------
+
+def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
+    """Run eflomal alignment with factored tokenization.
+
+    Uses the same preprocessing as run_giza (factorized tokens, word pair
+    augmentation) but replaces GIZA++ with eflomal's Bayesian HMM+fertility
+    model. Natively outputs both directions; symmetrized with atools grow-diag.
+    """
+    import eflomal
+    from tempfile import NamedTemporaryFile
+
+    work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Factorize all sentences
+    print("  Factorizing sentences...")
+    factored_pairs = []
+    glb_vocab = set()
+    for s1, s2 in pairs:
+        glb_tokens = factorize_glb(s1)
+        tgt_tokens = factorize_target(s2, lang2)
+        glb_line = " ".join(glb_tokens)
+        tgt_line = " ".join(tgt_tokens)
+        factored_pairs.append((glb_line, tgt_line))
+        glb_vocab.update(defactorize(t) for t in glb_tokens)
+
+    # Prepare corpus: sentences (no duplication — eflomal handles small corpora)
+    # + word-level pairs
+    word_pairs = get_word_pairs(lang2)
+    conc_pairs = concordance_pairs.get(lang2, []) if concordance_pairs else []
+    all_word_pairs = set(word_pairs) | set(conc_pairs)
+
+    src_lines = []
+    tgt_lines = []
+    sent_count = 0
+    for glb_line, tgt_line in factored_pairs:
+        if glb_line.strip() and tgt_line.strip():
+            src_lines.append(glb_line)
+            tgt_lines.append(tgt_line)
+            sent_count += 1
+    wp_count = 0
+    for glb, tgt in all_word_pairs:
+        if glb in glb_vocab and glb.strip() and tgt.strip():
+            src_lines.append(glb)
+            tgt_lines.append(tgt)
+            wp_count += 1
+
+    print(f"\n{'='*60}")
+    print(f"  {lang1}-{lang2} (eflomal): {len(pairs)} sentences + {wp_count} word pairs = {len(src_lines)} lines")
+    print(f"{'='*60}")
+
+    # Write to temp files
+    src_file = work_dir / f"{lang1}.txt"
+    tgt_file = work_dir / f"{lang2}.txt"
+    fwd_file = work_dir / f"{lang1}_{lang2}.fwd"
+    rev_file = work_dir / f"{lang1}_{lang2}.rev"
+
+    with open(src_file, "w") as f:
+        f.write("\n".join(src_lines) + "\n")
+    with open(tgt_file, "w") as f:
+        f.write("\n".join(tgt_lines) + "\n")
+
+    # Run eflomal
+    aligner = eflomal.Aligner(model=3, n_samplers=3)
+    with open(src_file) as sf, open(tgt_file) as tf:
+        aligner.align(
+            sf, tf,
+            links_filename_fwd=str(fwd_file),
+            links_filename_rev=str(rev_file),
+        )
+
+    # Read Pharaoh-format alignments
+    fwd_links = open(fwd_file).readlines()
+    rev_links = open(rev_file).readlines()
+
+    # Symmetrize (grow-diag-final-and on Pharaoh links)
+    alignments = []
+    for i in range(min(len(src_lines), len(fwd_links), len(rev_links))):
+        src_tokens = src_lines[i].split()
+        tgt_tokens = tgt_lines[i].split()
+
+        def parse_pharaoh(line):
+            pairs_set = set()
+            for pair in line.strip().split():
+                if "-" in pair:
+                    s, t = pair.split("-", 1)
+                    pairs_set.add((int(s), int(t)))
+            return pairs_set
+
+        fwd_set = parse_pharaoh(fwd_links[i])
+        rev_set = parse_pharaoh(rev_links[i])
+
+        # GDFA symmetrization
+        alignment = fwd_set & rev_set
+        union = fwd_set | rev_set
+        neighbors = [(-1, 0), (1, 0), (0, -1), (0, 1),
+                     (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        changed = True
+        while changed:
+            changed = False
+            aligned_src = {s for s, t in alignment}
+            aligned_tgt = {t for s, t in alignment}
+            for s, t in list(union - alignment):
+                if s not in aligned_src or t not in aligned_tgt:
+                    for ds, dt in neighbors:
+                        if (s + ds, t + dt) in alignment:
+                            alignment.add((s, t))
+                            changed = True
+                            break
+        aligned_src = {s for s, t in alignment}
+        aligned_tgt = {t for s, t in alignment}
+        for s, t in fwd_set:
+            if s not in aligned_src:
+                alignment.add((s, t))
+        for s, t in rev_set:
+            if t not in aligned_tgt:
+                alignment.add((s, t))
+
+        alignments.append((src_tokens, tgt_tokens, alignment))
+
+    # Apply function word rules (only on sentence alignments, not word pairs)
+    sentence_alignments = alignments[:sent_count]
+    sentence_alignments, fw_stats = apply_funcword_rules(sentence_alignments)
+    print(f"  Function word corrections:")
+    print(f"    le→NULL (before passive): {fw_stats['le_fixed']}")
+    print(f"    da→NULL (resumptive): {fw_stats['da_nulled']}")
+    print(f"    kam→NULL (question): {fw_stats['kam_nulled']}")
+
+    # Write final Pharaoh output
+    gdfa_file = work_dir / f"{lang1}_{lang2}.gdfa"
+    write_pharaoh(sentence_alignments, gdfa_file)
+    print(f"  Output: {gdfa_file.name} ({len(sentence_alignments)} sentences)")
+
+    # Show samples
+    show_symmetric_alignments(sentence_alignments, n=5)
+
+    return sentence_alignments
+
+
 if __name__ == "__main__":
+    import sys
     OUT_DIR.mkdir(exist_ok=True)
+
+    # Choose aligner: --eflomal or default GIZA++
+    use_eflomal = "--eflomal" in sys.argv
 
     # Compute multi-way concordance once for all language pairs
     print("Computing multi-way concordance...")
@@ -1278,4 +1423,7 @@ if __name__ == "__main__":
         if len(pairs) < 10:
             print(f"SKIP {l1}-{l2}: only {len(pairs)} pairs")
             continue
-        run_giza(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}", concordance_pairs=conc)
+        if use_eflomal:
+            run_eflomal(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}", concordance_pairs=conc)
+        else:
+            run_giza(l1, l2, pairs, OUT_DIR / f"{l1}_{l2}", concordance_pairs=conc)
