@@ -595,8 +595,15 @@ def factorize_glb(sentence):
             for mw_word in mw_parts:
                 mw_pos = _infer_pos_from_wordclass(mw_word)
                 mw_morphemes = segment_word(mw_word, morphemes_data)
+                # Tag last non-affix morpheme (root head) with POS
+                head_idx = -1
+                for k in range(len(mw_morphemes) - 1, -1, -1):
+                    m = mw_morphemes[k]
+                    if not m.startswith("-") and not m.endswith("-"):
+                        head_idx = k
+                        break
                 for j, morph in enumerate(mw_morphemes):
-                    if j == len(mw_morphemes) - 1:
+                    if j == head_idx:
                         result.append(f"{morph}|{mw_pos}")
                     else:
                         result.append(morph)
@@ -607,23 +614,30 @@ def factorize_glb(sentence):
         # For UNK words, try to resolve POS from WordClass via segment_word
         if pos == "UNK":
             parts = segment_word(core, morphemes_data)
-            # If segmentation found morphemes, infer POS from the last morpheme
             if len(parts) > 1:
-                last = parts[-1]
+                last = parts[-1].lstrip("-").rstrip("-")
                 all_words = morphemes_data.get("__all_words__", set())
                 if last in all_words:
                     pos = _infer_pos_from_wordclass(last)
             elif core in morphemes_data.get("__all_words__", set()):
                 pos = _infer_pos_from_wordclass(core)
         else:
-            # Segment the surface form into morphemes
             parts = segment_word(core, morphemes_data)
 
-        # Emit morphemes without POS factors (LEX/FERF/FERR/HMM priors
-        # provide POS-like constraints; factoring would prevent priors from
-        # matching the corpus tokens).
-        for morph in parts:
-            result.append(morph)
+        # Tag the last NON-AFFIX morpheme (root head) with POS
+        # Affix markers (with leading or trailing hyphen) stay untagged
+        head_idx = -1
+        for i in range(len(parts) - 1, -1, -1):
+            morph = parts[i]
+            if not morph.startswith("-") and not morph.endswith("-"):
+                head_idx = i
+                break
+
+        for i, morph in enumerate(parts):
+            if i == head_idx:
+                result.append(f"{morph}|{pos}")
+            else:
+                result.append(morph)
 
         # Append trailing punctuation as separate token
         if trail:
@@ -651,7 +665,11 @@ def factorize_target(sentence, lang):
         if token.is_punct:
             result.append(token.text)
         else:
-            result.append(token.lemma_.lower())
+            # Use coarse POS (UPOS) for factor — fewer values, easier to
+            # match in priors. Falls back to the fine-grained tag if UPOS
+            # is unavailable.
+            tag = token.pos_ or token.tag_
+            result.append(f"{token.lemma_.lower()}|{tag}")
     return result
 
 
@@ -1216,8 +1234,11 @@ def apply_funcword_rules(alignments):
         for s_pos in range(len(src_tokens)):
             stok = src_tokens[s_pos]
 
+            # Helper: strip POS factor from token
+            base = stok.split("|")[0] if "|" in stok else stok
+
             # Rule 1: le before passive be- → transfer le's target to be
-            if stok == "le" and s_pos + 1 < len(src_tokens):
+            if base == "le" and s_pos + 1 < len(src_tokens):
                 if src_tokens[s_pos + 1] == "be-":
                     le_targets = src_to_tgt.get(s_pos, set())
                     for t in list(le_targets):
@@ -1226,26 +1247,26 @@ def apply_funcword_rules(alignments):
                     stats["le_fixed"] += 1
 
             # Rule 2: na — keep only links to "to" (English infinitive marker)
-            if stok == "na":
+            if base == "na":
                 na_targets = src_to_tgt.get(s_pos, set())
                 has_to = any(
-                    t < len(tgt_tokens) and tgt_tokens[t] == "to"
+                    t < len(tgt_tokens) and tgt_tokens[t].split("|")[0] == "to"
                     for t in na_targets
                 )
                 if has_to:
                     for t in list(na_targets):
-                        if t < len(tgt_tokens) and tgt_tokens[t] != "to":
+                        if t < len(tgt_tokens) and tgt_tokens[t].split("|")[0] != "to":
                             new_pairs.discard((s_pos, t))
                             stats["na_fixed"] += 1
 
             # Rule 3: da (resumptive pronoun) → NULL
-            if stok == "da":
+            if base == "da":
                 for t in list(src_to_tgt.get(s_pos, set())):
                     new_pairs.discard((s_pos, t))
                 stats["da_nulled"] += 1
 
             # Rule 4: kam (question marker) → NULL
-            if stok == "kam":
+            if base == "kam":
                 for t in list(src_to_tgt.get(s_pos, set())):
                     new_pairs.discard((s_pos, t))
                 stats["kam_nulled"] += 1
@@ -1344,15 +1365,81 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
     fert_count = 0
     hmm_count = 0
 
+    morphemes_data = _load_morphemes()
+
+    # Factored LEX priors: emit each (glb, tgt) prior in the same factored
+    # form the corpus uses. For glb side, derive POS from WordClass; for
+    # target side, emit common POS-factored variants (since we don't know
+    # which POS spaCy will assign in context).
+    glb_pos_cache = {}
+
+    def factor_glb(word):
+        """Get factored form: word|POS using WordClass-derived POS."""
+        if word in glb_pos_cache:
+            return glb_pos_cache[word]
+        parts = segment_word(word, morphemes_data)
+        # Find head morpheme (last non-affix)
+        head = None
+        for p in reversed(parts):
+            if not p.startswith("-") and not p.endswith("-"):
+                head = p
+                break
+        if head is None:
+            glb_pos_cache[word] = parts  # all affixes (rare)
+            return parts
+        pos = _infer_pos_from_wordclass(head)
+        if pos == "UNK":
+            glb_pos_cache[word] = parts
+            return parts
+        # Emit parts with head tagged
+        factored = []
+        head_marked = False
+        for p in reversed(parts):
+            if not head_marked and p == head:
+                factored.insert(0, f"{p}|{pos}")
+                head_marked = True
+            else:
+                factored.insert(0, p)
+        glb_pos_cache[word] = factored
+        return factored
+
+    # POS variants to emit per target word (covers spaCy UPOS values)
+    tgt_pos_variants = {
+        "n": ["NOUN", "PROPN"],     # nouns
+        "v": ["VERB", "AUX"],        # verbs (incl. auxiliaries)
+        "a": ["ADJ", "ADV"],         # adjectives/adverbs
+        "x": ["ADJ", "ADV", "NOUN"], # ambiguous content words
+    }
+
+    def emit_target_variants(tgt, alpha, write_fn):
+        """Emit factored LEX priors with multiple plausible target POS factors."""
+        # Heuristic: use morphology to guess likely POS
+        # Emit a small number of variants to maximize match probability
+        n = 0
+        for pos in ["NOUN", "VERB", "ADJ", "ADV", "PROPN", "ADP", "DET"]:
+            write_fn(f"{tgt}|{pos}", alpha / 3.0)  # split alpha across variants
+            n += 1
+        return n
+
     with open(priors_file, "w") as f:
-        # LEX priors from dictionary pairs
+        # LEX priors from dictionary pairs (factored)
         seen = set()
         for glb, tgt in word_pairs:
             key = (glb, tgt)
-            if key not in seen:
-                seen.add(key)
-                f.write(f"LEX\t{glb}\t{tgt}\t1.0\n")
+            if key in seen:
+                continue
+            seen.add(key)
+            # Factor the source: use the head morpheme + POS
+            glb_factored = factor_glb(glb)
+            # The "primary" form is the head with POS
+            head_factored = next((p for p in glb_factored if "|" in p), glb)
+            # Emit factored LEX prior with multiple target POS variants
+            for pos in ["NOUN", "VERB", "ADJ", "ADV", "PROPN"]:
+                f.write(f"LEX\t{head_factored}\t{tgt}|{pos}\t0.4\n")
                 lex_count += 1
+            # Also emit unfactored prior as fallback
+            f.write(f"LEX\t{glb}\t{tgt}\t1.0\n")
+            lex_count += 1
 
         # Decomposition LEX priors:
         # When a Globasa derived word (e.g., huruya) maps to a target word
@@ -1378,16 +1465,27 @@ def _build_eflomal_priors(lang2, priors_file, word_pairs):
         lex_count += decomp_count
 
         # Function word fertility priors (Globasa-specific)
+        # Provide both factored and unfactored forms for robustness
         funcword_fert = {
+            "le|PAR": [(0, 5.0), (1, 1.0)],
             "le": [(0, 5.0), (1, 1.0)],
+            "xa|PAR": [(0, 3.0), (1, 2.0)],
             "xa": [(0, 3.0), (1, 2.0)],
+            "nun|PAR": [(0, 5.0)],
             "nun": [(0, 5.0)],
+            "am|PAR": [(0, 5.0)],
             "am": [(0, 5.0)],
+            "ger|PAR": [(0, 5.0)],
             "ger": [(0, 5.0)],
+            "da|PRON": [(0, 10.0)],
             "da": [(0, 10.0)],
+            "kam|PAR": [(0, 10.0)],
             "kam": [(0, 10.0)],
+            "na|PAR": [(1, 5.0)],
             "na": [(1, 5.0)],
+            "cel|PREP": [(1, 5.0)],
             "cel": [(1, 5.0)],
+            "fe|PREP": [(1, 3.0), (0, 2.0)],
             "fe": [(1, 3.0), (0, 2.0)],
             "be-": [(1, 5.0)],
             # Derivational suffixes: strongly encourage fertility 1 so the
@@ -1800,6 +1898,34 @@ def _get_distortion_priors(lang2):
     return _DISTORTION_PROFILES.get(profile_key, _DISTORTION_PROFILES["svo"])
 
 
+# Target suffix length for eflomal's morphology-aware alignment.
+# Setting target_suffix_len=N causes eflomal to use the last N characters of
+# target words as auxiliary evidence, helping with inflectional morphology.
+# 0 = disabled (analytic languages where word forms don't carry much morphology)
+# 3-4 = light inflection (English, Spanish, French)
+# 4-5 = medium inflection (German, Russian)
+# 5+ = rich inflection / agglutination (Turkish, Hindi, Finnish)
+_MORPH_SUFFIX_LEN = {
+    "en": 3,    # plurals, past tense, -ing
+    "eo": 2,    # very regular: -j, -n, -as, -is
+    "id": 0,    # analytic, no inflection
+    "zh": 0,    # analytic, no inflection
+    "da": 3,    # plurals, definite suffix
+    "sw": 3,    # noun class agreement
+    "es": 4,    # rich verbal/adjectival inflection
+    "fr": 4,    # gender/number/verb agreement
+    "pt": 4,    # similar to Spanish
+    "nl": 3,    # plurals, comparative
+    "de": 4,    # case + gender + number marking
+    "ru": 5,    # rich case morphology
+    "ar": 4,    # root-and-pattern + clitics
+    "tr": 6,    # agglutinative (case stacks)
+    "hi": 5,    # case + gender + number
+    "ja": 0,    # particle-marked, separate clitics
+    "ko": 0,    # particle-marked, separate clitics
+}
+
+
 # Target-side article fertility priors (factored as lemma|POS to match spaCy output)
 # Globasa has no articles, so articles in European languages typically map to NULL
 # (fertility 0). Exception: definite article often corresponds to demonstrative
@@ -1945,8 +2071,15 @@ def run_eflomal(lang1, lang2, pairs, work_dir, concordance_pairs=None):
     _build_eflomal_priors(lang2, priors_file, all_word_pairs)
     print(f"  Priors: {priors_file.name}")
 
-    # Run eflomal with priors
-    aligner = eflomal.Aligner(model=3, n_samplers=3)
+    # Run eflomal with priors and morphology-aware suffix learning.
+    # Setting target_suffix_len causes eflomal to use the last N characters
+    # of target words as auxiliary alignment evidence, helping with
+    # inflectional morphology in Turkish, Russian, German, Hindi, etc.
+    sfx_len = _MORPH_SUFFIX_LEN.get(lang2, 0)
+    aligner = eflomal.Aligner(
+        model=3, n_samplers=3,
+        target_suffix_len=sfx_len,
+    )
     with open(src_file) as sf, open(tgt_file) as tf, open(priors_file) as pf:
         aligner.align(
             sf, tf,
