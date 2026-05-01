@@ -73,7 +73,11 @@ def _load_gold(lang):
                     "links": links,
                 })
 
-    return [v for _, v in sorted(latest.values(), key=lambda x: x[1]["sentence_id"])]
+    # Filter out tombstones (links is null) — these are bulk-reset markers
+    # that revert a sentence back to auto. Their latest record has no
+    # alignment data to contribute to priors.
+    return [v for _, v in sorted(latest.values(), key=lambda x: x[1]["sentence_id"])
+            if v["links"] is not None]
 
 
 def append_gold_priors(lang, priors_file):

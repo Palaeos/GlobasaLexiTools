@@ -934,6 +934,21 @@ main {
     });
     actions.appendChild(confirmBtn);
 
+    /* "Reset following" button: clears all gold annotations after this
+       sentence within the same corpus, useful for cleaning up over-
+       saved auto-state from a previous annotation phase. */
+    if (entry.context) {
+      const resetFollowingBtn = document.createElement("button");
+      resetFollowingBtn.textContent = "↺ Reset following in corpus";
+      resetFollowingBtn.title =
+        "Erase all gold annotations after this sentence in '" +
+        entry.context + "', reverting them back to auto-alignment";
+      resetFollowingBtn.addEventListener("click", () => {
+        bulkResetFollowing(globalIdx, entry.context);
+      });
+      actions.appendChild(resetFollowingBtn);
+    }
+
     card.appendChild(actions);
 
     /* Wire up focus mode: hover or click a token to dim others and
@@ -1059,6 +1074,54 @@ main {
     setStatus(cardKey, "edited");
     applyColors(card, cardKey);
     scheduleSave(cardKey);
+  }
+
+  /* ── Bulk reset: clear all gold annotations AFTER the given
+        sentence within the same corpus (with confirm dialog) ── */
+  function bulkResetFollowing(globalIdx, context) {
+    if (!currentLang || !context) return;
+
+    /* Count how many annotations would be affected (client-side
+       estimate from annotatedIds; the server gives the authoritative
+       answer in the response). */
+    let estCount = 0;
+    annotatedIds.forEach(sid => { if (sid > globalIdx) estCount++; });
+
+    const msg =
+      "Reset all gold annotations AFTER sentence #" + (globalIdx + 1) + "\n" +
+      "in corpus: \"" + context + "\"\n" +
+      "(language: glb-" + currentLang + ")\n\n" +
+      "Up to " + estCount + " annotation(s) may be affected " +
+      "(only those in this corpus will actually be reset).\n\n" +
+      "This action records tombstone markers — older records remain in " +
+      "the TSV history but the affected sentences will revert to the " +
+      "auto-alignment for priors and display.\n\n" +
+      "Are you sure?";
+    if (!confirm(msg)) return;
+
+    fetch("/api/bulk_reset_gold", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lang: currentLang,
+        context: context,
+        sid_from: globalIdx,
+        annotator: "anonymous",
+      }),
+    })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.status === "ok") {
+        /* Update local annotatedIds set to reflect the reset */
+        (resp.sids || []).forEach(sid => annotatedIds.delete(sid));
+        showToast("Reset " + resp.reset_count + " annotation(s)");
+        /* Re-render to refresh the ✓ checkmarks on cards */
+        loadAlignments();
+      } else {
+        showToast("Reset failed: " + (resp.error || "unknown"), true);
+      }
+    })
+    .catch(err => showToast("Reset request failed: " + err.message, true));
   }
 
   /* ── Set card status pill ───────────────────────────────── */

@@ -1667,7 +1667,11 @@ def _gold_tsv_path(lang):
 
 
 def _load_gold_annotation(lang, sentence_id):
-    """Return the latest gold annotation for (lang, sentence_id), or None."""
+    """Return the latest gold annotation for (lang, sentence_id), or None.
+
+    Records with `links == null` are tombstones (bulk-reset markers) and
+    cause this function to return None even if earlier records existed.
+    """
     path = _gold_tsv_path(lang)
     if not os.path.isfile(path):
         return None
@@ -1698,24 +1702,41 @@ def _load_gold_annotation(lang, sentence_id):
                     "annotator": parts[4],
                     "timestamp": timestamp,
                 }
+    if best is None or best["links"] is None:
+        return None
     return best
 
 
 def _load_all_annotated_ids(lang):
-    """Return a set of sentence_ids that have at least one gold annotation."""
+    """Return a set of sentence_ids whose LATEST gold record is non-tombstone.
+
+    A tombstone (links == null) effectively un-annotates the sentence.
+    Newer non-tombstone records over a tombstone re-annotate it.
+    """
     path = _gold_tsv_path(lang)
     if not os.path.isfile(path):
         return set()
-    ids = set()
+    # Track the latest record per sid (timestamp + tombstone flag)
+    latest = {}  # sid -> (timestamp, is_tombstone)
     with open(path, encoding="utf-8") as f:
         for line in f:
             parts = line.rstrip("\n").split("\t")
-            if len(parts) >= 1:
-                try:
-                    ids.add(int(parts[0]))
-                except ValueError:
-                    pass
-    return ids
+            if len(parts) < 6:
+                continue
+            try:
+                sid = int(parts[0])
+            except ValueError:
+                continue
+            timestamp = parts[5]
+            try:
+                links = json.loads(parts[3])
+            except json.JSONDecodeError:
+                links = []
+            is_tomb = links is None
+            prev = latest.get(sid)
+            if prev is None or timestamp > prev[0]:
+                latest[sid] = (timestamp, is_tomb)
+    return {sid for sid, (_, is_tomb) in latest.items() if not is_tomb}
 
 
 @app.route("/annotate")
@@ -1793,6 +1814,70 @@ def api_annotated_ids():
         return jsonify({"error": f"Unknown language: {lang}"}), 400
     ids = sorted(_load_all_annotated_ids(lang))
     return jsonify({"lang": lang, "annotated_ids": ids})
+
+
+@app.route("/api/bulk_reset_gold", methods=["POST"])
+def api_bulk_reset_gold():
+    """Append tombstone records to revert a batch of gold annotations
+    back to the auto-alignment.
+
+    Body JSON:
+      lang     (required) target language code
+      context  (required) corpus section name — only sentences from this
+                          context are affected
+      sid_from (required, int) reset annotations with sentence_id > sid_from
+                               (i.e., all entries AFTER the given one)
+
+    Use case: "I've over-annotated this corpus by saving auto-state.
+    Erase all annotations in [corpus] that come after sentence #N so I
+    can re-do them properly." The card-level button passes the card's
+    own sentence_id as sid_from, scoping the reset to its corpus.
+
+    Returns {status, lang, reset_count, sids: [int,...]}.
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    lang = data.get("lang", "")
+    context_filter = (data.get("context") or "").strip()
+    sid_from = data.get("sid_from")
+    annotator = data.get("annotator", "anonymous")
+
+    if lang not in ALIGN_LANGS:
+        return jsonify({"status": "error", "error": f"Unknown language: {lang}"}), 400
+    if not context_filter:
+        return jsonify({"status": "error", "error": "context is required"}), 400
+    try:
+        sid_from = int(sid_from)
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "error": "sid_from must be an integer"}), 400
+
+    annotated = _load_all_annotated_ids(lang)
+    if not annotated:
+        return jsonify({"status": "ok", "lang": lang, "reset_count": 0, "sids": []})
+
+    # Restrict to sentences in the given context with sid > sid_from
+    align_data = _load_alignments(lang, "gdfa")
+    ctx_match = {i for i, e in enumerate(align_data)
+                 if e.get("context", "") == context_filter}
+    matching = {sid for sid in annotated if sid > sid_from and sid in ctx_match}
+
+    if not matching:
+        return jsonify({"status": "ok", "lang": lang, "reset_count": 0, "sids": []})
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    path = _gold_tsv_path(lang)
+    with open(path, "a", encoding="utf-8") as f:
+        for sid in sorted(matching):
+            row = "\t".join([str(sid), "", "", "null", annotator, timestamp])
+            f.write(row + "\n")
+
+    return jsonify({
+        "status": "ok",
+        "lang": lang,
+        "context": context_filter,
+        "sid_from": sid_from,
+        "reset_count": len(matching),
+        "sids": sorted(matching),
+    })
 
 
 @app.route("/api/rebuild_alignment", methods=["POST"])
