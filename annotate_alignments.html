@@ -682,27 +682,101 @@ main {
     rebuildStatus.className = "";
     rebuildStatus.innerHTML = "";
 
-    /* Status text + elapsed counter + animated progress bar */
-    const statusLine = document.createElement("div");
-    statusLine.textContent = "Running eflomal for glb-" + currentLang +
-      " (using " + goldCount + " gold annotation(s))…";
-    rebuildStatus.appendChild(statusLine);
+    /* Build live status panel: header + progress bar + log tail */
+    const headerLine = document.createElement("div");
+    headerLine.style.fontWeight = "600";
+    headerLine.textContent = "Running eflomal for glb-" + currentLang;
+    rebuildStatus.appendChild(headerLine);
 
-    const elapsedSpan = document.createElement("span");
-    elapsedSpan.className = "elapsed";
-    elapsedSpan.textContent = "elapsed: 0.0s";
-    statusLine.appendChild(elapsedSpan);
+    const metricsLine = document.createElement("div");
+    metricsLine.style.fontSize = "0.78rem";
+    metricsLine.style.color = "var(--color-muted)";
+    metricsLine.style.marginTop = "0.2rem";
+    metricsLine.textContent = "Starting…";
+    rebuildStatus.appendChild(metricsLine);
 
     const progressBar = document.createElement("div");
     progressBar.className = "progress-bar";
     rebuildStatus.appendChild(progressBar);
 
-    /* Tick the elapsed counter every 100 ms */
-    const startTime = performance.now();
-    const elapsedTimer = setInterval(() => {
-      const sec = (performance.now() - startTime) / 1000;
-      elapsedSpan.textContent = "elapsed: " + sec.toFixed(1) + "s";
-    }, 100);
+    const logPre = document.createElement("pre");
+    logPre.style.marginTop = "0.4rem";
+    logPre.style.fontSize = "0.72rem";
+    logPre.style.color = "var(--color-muted)";
+    logPre.style.maxHeight = "8rem";
+    logPre.style.overflow = "auto";
+    logPre.style.whiteSpace = "pre-wrap";
+    logPre.style.background = "transparent";
+    logPre.textContent = "";
+    rebuildStatus.appendChild(logPre);
+
+    let pollTimer = null;
+
+    function fmtSec(sec) {
+      if (sec < 60) return sec.toFixed(1) + "s";
+      const m = Math.floor(sec / 60);
+      const s = (sec - m * 60).toFixed(0);
+      return m + "m " + s + "s";
+    }
+
+    function updateMetrics(data) {
+      const parts = [];
+      parts.push("elapsed: " + fmtSec(data.elapsed_sec || 0));
+      if (typeof data.iteration === "number") {
+        parts.push("iter: " + data.iteration);
+      }
+      if (typeof data.error_value === "number") {
+        parts.push("error: " + data.error_value.toFixed(4));
+      }
+      if (data.gold_count !== undefined) {
+        parts.push("gold: " + data.gold_count);
+      }
+      metricsLine.textContent = parts.join("  ·  ");
+      if (data.log_tail && data.log_tail.length) {
+        logPre.textContent = data.log_tail.join("\n");
+        logPre.scrollTop = logPre.scrollHeight;
+      }
+    }
+
+    function pollOnce() {
+      fetch("/api/rebuild_status?lang=" + encodeURIComponent(currentLang))
+        .then(r => r.json())
+        .then(data => {
+          updateMetrics(data);
+          if (data.status === "done") {
+            stopPolling();
+            rebuildStatus.className = "success";
+            const ok = document.createElement("div");
+            ok.style.marginTop = "0.4rem";
+            ok.style.fontWeight = "600";
+            ok.textContent = "✓ Rebuilt glb-" + currentLang +
+              " in " + fmtSec(data.duration_sec || data.elapsed_sec || 0) +
+              " · gold priors used: " + (data.gold_count || 0) +
+              " · reloading alignments…";
+            rebuildStatus.appendChild(ok);
+            setTimeout(() => loadAlignments(), 300);
+          } else if (data.status === "error") {
+            stopPolling();
+            rebuildStatus.className = "error";
+            const errEl = document.createElement("div");
+            errEl.style.marginTop = "0.4rem";
+            errEl.style.fontWeight = "600";
+            errEl.textContent = "✗ Rebuild failed: " + (data.error || "Unknown error");
+            rebuildStatus.appendChild(errEl);
+          }
+        })
+        .catch(() => { /* transient — keep polling */ });
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+      rebuildBtn.disabled = false;
+      rebuildBtn.textContent = "⟲ Rebuild alignments";
+      progressBar.style.display = "none";
+    }
 
     fetch("/api/rebuild_alignment", {
       method: "POST",
@@ -711,42 +785,25 @@ main {
     })
     .then(r => r.json())
     .then(resp => {
-      if (resp.status === "ok") {
-        rebuildStatus.className = "success";
-        rebuildStatus.innerHTML = "";
-        const ok = document.createElement("div");
-        ok.textContent = "✓ Rebuilt glb-" + currentLang +
-          " in " + resp.duration_sec.toFixed(1) + "s. " +
-          "Gold priors used: " + (resp.gold_count || 0) + ". " +
-          "Re-loading alignments…";
-        rebuildStatus.appendChild(ok);
-        /* Force a fresh load (server-side cache for this lang has been
-           invalidated). */
-        setTimeout(() => loadAlignments(), 300);
+      if (resp.status === "started" || resp.status === "already_running") {
+        /* Begin polling */
+        pollTimer = setInterval(pollOnce, 800);
+        pollOnce();  // immediate first poll
       } else {
         rebuildStatus.className = "error";
-        rebuildStatus.innerHTML = "";
-        const err = document.createElement("div");
-        err.textContent = "✗ Rebuild failed: " + (resp.error || "Unknown error");
-        rebuildStatus.appendChild(err);
-        if (resp.stderr) {
-          const pre = document.createElement("pre");
-          pre.style.marginTop = "0.4rem";
-          pre.style.fontSize = "0.75rem";
-          pre.textContent = resp.stderr;
-          rebuildStatus.appendChild(pre);
-        }
+        rebuildStatus.textContent = "✗ Could not start rebuild: " +
+          (resp.error || resp.status);
+        rebuildBtn.disabled = false;
+        rebuildBtn.textContent = "⟲ Rebuild alignments";
+        progressBar.style.display = "none";
       }
     })
     .catch(err => {
       rebuildStatus.className = "error";
-      rebuildStatus.innerHTML = "";
       rebuildStatus.textContent = "✗ Rebuild request failed: " + err.message;
-    })
-    .finally(() => {
-      clearInterval(elapsedTimer);
       rebuildBtn.disabled = false;
       rebuildBtn.textContent = "⟲ Rebuild alignments";
+      progressBar.style.display = "none";
     });
   });
 

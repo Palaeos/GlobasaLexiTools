@@ -13,6 +13,7 @@ import re
 import csv
 import json
 import subprocess
+import threading
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 import lmdb
@@ -1880,28 +1881,16 @@ def api_bulk_reset_gold():
     })
 
 
-@app.route("/api/rebuild_alignment", methods=["POST"])
-def api_rebuild_alignment():
-    """Re-run eflomal alignment for one language using gold annotations
-    as priors. The merge_gold_priors hook in run_giza_improved.py picks
-    up gold_alignments/{lang}.tsv automatically and appends derived
-    LEX/FERF/FERR/HMMF/HMMR priors with high alpha.
+_rebuild_jobs = {}  # lang -> {"status", "started_at", "duration_sec", "log",
+                    #          "error", "gold_count", "thread"}
+_rebuild_lock = threading.Lock()
+_LOG_TAIL_MAX = 60  # keep last N lines for streaming to client
 
-    Body JSON: {lang}
-    Returns {status, duration_sec, gold_count} on success,
-            {status:"error", error, stderr?} on failure.
-    """
+
+def _run_eflomal_for(lang, gold_count):
+    """Background thread target: runs eflomal for one language pair,
+    capturing stderr line by line into the job log."""
     import time
-    data = request.get_json(force=True, silent=True) or {}
-    lang = data.get("lang", "en")
-    if lang not in ALIGN_LANGS:
-        return jsonify({"status": "error", "error": f"Unknown language: {lang}"}), 400
-
-    # Count gold annotations available for this language
-    gold_count = len(_load_all_annotated_ids(lang))
-
-    # Run the eflomal pipeline for just this language pair via a Python
-    # one-liner that imports the helpers and invokes them directly.
     snippet = (
         "from run_giza_improved import extract_parallel, run_eflomal, "
         "multiway_concordance, TMX_FILE, OUT_DIR\n"
@@ -1916,37 +1905,168 @@ def api_rebuild_alignment():
 
     start = time.time()
     try:
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             [py, "-u", "-c", snippet],
             cwd=BASE_DIR,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # merge stderr into stdout for unified stream
             text=True,
-            timeout=600,
+            bufsize=1,
         )
+        for line in iter(proc.stdout.readline, ""):
+            line = line.rstrip("\n")
+            if not line:
+                continue
+            with _rebuild_lock:
+                job = _rebuild_jobs.get(lang)
+                if job is not None:
+                    job["log"].append(line)
+                    if len(job["log"]) > _LOG_TAIL_MAX:
+                        del job["log"][:-_LOG_TAIL_MAX]
+        proc.wait(timeout=600)
     except subprocess.TimeoutExpired:
-        return jsonify({"status": "error", "error": "Alignment timed out (>10 min)"}), 500
+        try:
+            proc.kill()
+        except Exception:
+            pass
+        with _rebuild_lock:
+            job = _rebuild_jobs.get(lang)
+            if job is not None:
+                job["status"] = "error"
+                job["error"] = "Alignment timed out (>10 min)"
+                job["duration_sec"] = time.time() - start
+        return
     except Exception as e:
-        return jsonify({"status": "error", "error": str(e)}), 500
+        with _rebuild_lock:
+            job = _rebuild_jobs.get(lang)
+            if job is not None:
+                job["status"] = "error"
+                job["error"] = str(e)
+                job["duration_sec"] = time.time() - start
+        return
+
     duration = time.time() - start
+    with _rebuild_lock:
+        job = _rebuild_jobs.get(lang)
+        if job is None:
+            return
+        if proc.returncode != 0:
+            job["status"] = "error"
+            job["error"] = f"eflomal exited with code {proc.returncode}"
+        else:
+            job["status"] = "done"
+            # Invalidate alignment cache for this language so next /api/alignments
+            # re-reads from disk.
+            for src in ("fwd", "rev", "gdfa"):
+                _alignment_cache.pop((lang, src), None)
+        job["duration_sec"] = duration
+        job["gold_count"] = gold_count
 
-    if proc.returncode != 0:
-        return jsonify({
-            "status": "error",
-            "error": f"eflomal exited with code {proc.returncode}",
-            "stderr": (proc.stderr or "")[-2000:],
-        }), 500
 
-    # Invalidate the alignment cache for this language so the next
-    # /api/alignments call re-reads from disk.
-    for src in ("fwd", "rev", "gdfa"):
-        _alignment_cache.pop((lang, src), None)
+@app.route("/api/rebuild_alignment", methods=["POST"])
+def api_rebuild_alignment():
+    """Start an eflomal rebuild for one language as a background thread.
 
-    return jsonify({
-        "status": "ok",
-        "lang": lang,
-        "duration_sec": duration,
-        "gold_count": gold_count,
-    })
+    Use GET /api/rebuild_status?lang=X to poll progress.
+    """
+    import time
+    data = request.get_json(force=True, silent=True) or {}
+    lang = data.get("lang", "en")
+    if lang not in ALIGN_LANGS:
+        return jsonify({"status": "error", "error": f"Unknown language: {lang}"}), 400
+
+    with _rebuild_lock:
+        job = _rebuild_jobs.get(lang)
+        if job and job["status"] == "running":
+            return jsonify({
+                "status": "already_running",
+                "lang": lang,
+                "started_at": job["started_at"],
+            })
+        gold_count = len(_load_all_annotated_ids(lang))
+        _rebuild_jobs[lang] = {
+            "status": "running",
+            "started_at": time.time(),
+            "duration_sec": None,
+            "log": [],
+            "error": None,
+            "gold_count": gold_count,
+        }
+        t = threading.Thread(target=_run_eflomal_for, args=(lang, gold_count),
+                             daemon=True)
+        _rebuild_jobs[lang]["thread"] = t
+        t.start()
+
+    return jsonify({"status": "started", "lang": lang, "gold_count": gold_count})
+
+
+# Regex to parse eflomal iteration progress lines from its stderr.
+# eflomal prints lines like "Iter 5  log-likelihood: -1234.567" or similar.
+_EFLOMAL_ITER_RE = re.compile(
+    r"(?:Iter(?:ation)?\s*[:=]?\s*(\d+)|^(\d+)\s+([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?))"
+    r"(?:.*?(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?))?",
+    re.IGNORECASE,
+)
+
+
+def _parse_eflomal_progress(log_lines):
+    """Scan log lines (most recent first) for the latest iteration + error."""
+    iteration = None
+    error = None
+    for line in reversed(log_lines):
+        # Look for "Iter N" or "Iteration N"
+        m = re.search(r"Iter(?:ation)?\s*[:=]?\s*(\d+)", line, re.IGNORECASE)
+        if m and iteration is None:
+            try:
+                iteration = int(m.group(1))
+            except ValueError:
+                pass
+        # Look for log-likelihood or perplexity numbers
+        m2 = re.search(
+            r"(?:log-likelihood|perplexity|loglik|ll)[:=\s]+([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)",
+            line, re.IGNORECASE,
+        )
+        if m2 and error is None:
+            try:
+                error = float(m2.group(1))
+            except ValueError:
+                pass
+        if iteration is not None and error is not None:
+            break
+    return iteration, error
+
+
+@app.route("/api/rebuild_status")
+def api_rebuild_status():
+    """Poll the status of an in-progress rebuild for a language."""
+    import time
+    lang = request.args.get("lang", "")
+    with _rebuild_lock:
+        job = _rebuild_jobs.get(lang)
+        if not job:
+            return jsonify({"status": "idle", "lang": lang})
+        elapsed = (job["duration_sec"]
+                   if job["duration_sec"] is not None
+                   else time.time() - job["started_at"])
+        log_tail = list(job["log"][-20:])
+        result = {
+            "status": job["status"],
+            "lang": lang,
+            "elapsed_sec": elapsed,
+            "log_tail": log_tail,
+            "gold_count": job.get("gold_count", 0),
+        }
+        if job["status"] == "error":
+            result["error"] = job.get("error")
+        if job["status"] == "done":
+            result["duration_sec"] = job.get("duration_sec")
+        # Parse iteration/error from latest log
+        it, err = _parse_eflomal_progress(log_tail)
+        if it is not None:
+            result["iteration"] = it
+        if err is not None:
+            result["error_value"] = err
+    return jsonify(result)
 
 
 # ---------------------------------------------------------------------------
