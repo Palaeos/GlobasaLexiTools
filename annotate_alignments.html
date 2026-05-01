@@ -370,6 +370,75 @@ main {
 
 /* Annotated checkmark in page info area */
 .annot-check { color: #2a8a3a; margin-left: 0.2rem; font-size: 0.8em; }
+
+/* Rebuild button */
+.rebuild-btn {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.7rem;
+  margin-left: 0.5rem;
+  border: 1px solid var(--color-search-btn);
+  border-radius: var(--radius);
+  background: var(--color-search-btn);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rebuild-btn:hover { opacity: 0.9; }
+.rebuild-btn:disabled { opacity: 0.5; cursor: wait; }
+
+#rebuild-status {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  max-height: 12rem;
+  overflow: auto;
+}
+#rebuild-status.success { border-color: #4a8c3f; }
+#rebuild-status.error { border-color: #b54040; color: #b54040; }
+
+/* Indeterminate progress bar that animates while rebuild is in flight.
+   eflomal doesn't expose a progress %, so we show a sliding gradient
+   to indicate work is happening. */
+.progress-bar {
+  height: 6px;
+  width: 100%;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+.progress-bar::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -40%;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-search-btn),
+    transparent
+  );
+  animation: progress-slide 1.4s ease-in-out infinite;
+}
+@keyframes progress-slide {
+  0%   { left: -40%; }
+  100% { left: 100%; }
+}
+.elapsed {
+  display: inline-block;
+  margin-left: 0.4rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
 </style>
 </head>
 <body>
@@ -411,14 +480,22 @@ main {
       <span class="page-info" id="page-info">Page 1 of 1</span>
       <button id="next-btn" disabled>Next &rarr;</button>
     </div>
+
+    <button id="rebuild-btn" class="rebuild-btn"
+      title="Re-run eflomal alignment for the current language using all gold annotations as priors">
+      ⟲ Rebuild alignments
+    </button>
   </div>
 
   <p style="font-size:0.82rem;color:var(--color-muted);margin-bottom:0.75rem;">
     <strong>How to annotate:</strong>
     Click a GLB token to select it, then click a TGT token to create a link (click again to remove).
     Right-click or Alt-click a token to mark it as aligning to NULL.
-    Changes auto-save after 500 ms.
+    Edits auto-save (500&nbsp;ms debounce) only if they differ from the auto-alignment.
+    Use <em>✓ Confirm as gold</em> on a card to mark the auto-alignment as correct as-is.
   </p>
+
+  <div id="rebuild-status" style="display:none;"></div>
 
   <div id="entries">
     <div class="status-msg" id="status-msg">Loading...</div>
@@ -478,6 +555,8 @@ main {
   const pageInfo      = document.getElementById("page-info");
   const showGroup     = document.querySelector(".show-group");
   const toast         = document.getElementById("toast");
+  const rebuildBtn    = document.getElementById("rebuild-btn");
+  const rebuildStatus = document.getElementById("rebuild-status");
 
   /* ── Toast ──────────────────────────────────────────────── */
   let toastTimer = null;
@@ -587,6 +666,90 @@ main {
   prevBtn.addEventListener("click", () => { if (currentPage > 1) { currentPage--; loadAlignments(); } });
   nextBtn.addEventListener("click", () => { if (currentPage < totalPages) { currentPage++; loadAlignments(); } });
 
+  /* ── Rebuild eflomal alignments using gold annotations as priors ─── */
+  rebuildBtn.addEventListener("click", () => {
+    if (!currentLang) return;
+    const goldCount = annotatedIds.size;
+    const msg = "Re-run eflomal alignment for glb-" + currentLang +
+                " using " + goldCount + " gold annotation(s) as priors?\n\n" +
+                "This will take ~30–90 seconds. The alignment data on this page " +
+                "will be reloaded when complete.";
+    if (!confirm(msg)) return;
+
+    rebuildBtn.disabled = true;
+    rebuildBtn.textContent = "⟲ Rebuilding…";
+    rebuildStatus.style.display = "";
+    rebuildStatus.className = "";
+    rebuildStatus.innerHTML = "";
+
+    /* Status text + elapsed counter + animated progress bar */
+    const statusLine = document.createElement("div");
+    statusLine.textContent = "Running eflomal for glb-" + currentLang +
+      " (using " + goldCount + " gold annotation(s))…";
+    rebuildStatus.appendChild(statusLine);
+
+    const elapsedSpan = document.createElement("span");
+    elapsedSpan.className = "elapsed";
+    elapsedSpan.textContent = "elapsed: 0.0s";
+    statusLine.appendChild(elapsedSpan);
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+    rebuildStatus.appendChild(progressBar);
+
+    /* Tick the elapsed counter every 100 ms */
+    const startTime = performance.now();
+    const elapsedTimer = setInterval(() => {
+      const sec = (performance.now() - startTime) / 1000;
+      elapsedSpan.textContent = "elapsed: " + sec.toFixed(1) + "s";
+    }, 100);
+
+    fetch("/api/rebuild_alignment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang: currentLang }),
+    })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp.status === "ok") {
+        rebuildStatus.className = "success";
+        rebuildStatus.innerHTML = "";
+        const ok = document.createElement("div");
+        ok.textContent = "✓ Rebuilt glb-" + currentLang +
+          " in " + resp.duration_sec.toFixed(1) + "s. " +
+          "Gold priors used: " + (resp.gold_count || 0) + ". " +
+          "Re-loading alignments…";
+        rebuildStatus.appendChild(ok);
+        /* Force a fresh load (server-side cache for this lang has been
+           invalidated). */
+        setTimeout(() => loadAlignments(), 300);
+      } else {
+        rebuildStatus.className = "error";
+        rebuildStatus.innerHTML = "";
+        const err = document.createElement("div");
+        err.textContent = "✗ Rebuild failed: " + (resp.error || "Unknown error");
+        rebuildStatus.appendChild(err);
+        if (resp.stderr) {
+          const pre = document.createElement("pre");
+          pre.style.marginTop = "0.4rem";
+          pre.style.fontSize = "0.75rem";
+          pre.textContent = resp.stderr;
+          rebuildStatus.appendChild(pre);
+        }
+      }
+    })
+    .catch(err => {
+      rebuildStatus.className = "error";
+      rebuildStatus.innerHTML = "";
+      rebuildStatus.textContent = "✗ Rebuild request failed: " + err.message;
+    })
+    .finally(() => {
+      clearInterval(elapsedTimer);
+      rebuildBtn.disabled = false;
+      rebuildBtn.textContent = "⟲ Rebuild alignments";
+    });
+  });
+
   /* ── Load alignment data (always uses gdfa source) ─────── */
   const PER_PAGE = 20;
 
@@ -668,15 +831,20 @@ main {
   function buildCard(entry, globalIdx, lang) {
     const cardKey = currentLang + ":" + globalIdx;
 
-    /* Init card state from gdfa links */
+    /* Init card state from gdfa links. Also remember the AUTO state
+       (the eflomal output) so we can detect when the user's edits
+       actually differ from auto — saves only happen if there's a real
+       difference, and reverting to auto deletes any prior saved record. */
     if (!cardState[cardKey]) {
+      const autoLinks = (entry.links || []).map(l => [l[0], l[1]]);
       cardState[cardKey] = {
-        links: (entry.links || []).map(l => [l[0], l[1]]),
+        links: autoLinks.map(l => [l[0], l[1]]),
         nullGlb: new Set(),
         nullTgt: new Set(),
         status: "auto",
         glbTokens: entry.glb_tokens,
         tgtTokens: entry.target_tokens,
+        autoLinks: autoLinks,  // frozen reference state
       };
     }
 
@@ -757,6 +925,14 @@ main {
     eraseBtn.title = "Clear all links and NULL marks from this sentence (start from scratch)";
     eraseBtn.addEventListener("click", () => eraseAllLinks(card, cardKey));
     actions.appendChild(eraseBtn);
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.textContent = "✓ Confirm as gold";
+    confirmBtn.title = "Save the current alignment as gold even if no edits were made (use when the auto-alignment is correct as-is)";
+    confirmBtn.addEventListener("click", () => {
+      saveAnnotation(cardKey, /*manual=*/true);
+    });
+    actions.appendChild(confirmBtn);
 
     card.appendChild(actions);
 
@@ -1082,10 +1258,25 @@ main {
       .catch(() => {});
   }
 
+  /* ── Compare current state to auto state ────────────────── */
+  function isAtAutoState(cs) {
+    if (!cs) return true;
+    if (cs.nullGlb.size > 0 || cs.nullTgt.size > 0) return false;
+    if (cs.links.length !== cs.autoLinks.length) return false;
+    const norm = ls => ls.map(l => l[0] + "-" + l[1]).sort().join("|");
+    return norm(cs.links) === norm(cs.autoLinks);
+  }
+
   /* ── Save annotation to server ──────────────────────────── */
-  function saveAnnotation(cardKey) {
+  /* manual=true → save even when state matches auto (used for the
+     "Confirm auto" button when the user verifies the auto-alignment
+     is correct as-is). manual=false (default) skips saving when the
+     state matches auto, so passing through a sentence without edits
+     does NOT persist anything. */
+  function saveAnnotation(cardKey, manual) {
     const cs = cardState[cardKey];
     if (!cs) return;
+    if (!manual && isAtAutoState(cs)) return;  // no edit → no save
 
     const [lang, sidxStr] = cardKey.split(":");
     const sentence_id = parseInt(sidxStr, 10);

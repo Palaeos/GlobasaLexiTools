@@ -1795,6 +1795,75 @@ def api_annotated_ids():
     return jsonify({"lang": lang, "annotated_ids": ids})
 
 
+@app.route("/api/rebuild_alignment", methods=["POST"])
+def api_rebuild_alignment():
+    """Re-run eflomal alignment for one language using gold annotations
+    as priors. The merge_gold_priors hook in run_giza_improved.py picks
+    up gold_alignments/{lang}.tsv automatically and appends derived
+    LEX/FERF/FERR/HMMF/HMMR priors with high alpha.
+
+    Body JSON: {lang}
+    Returns {status, duration_sec, gold_count} on success,
+            {status:"error", error, stderr?} on failure.
+    """
+    import time
+    data = request.get_json(force=True, silent=True) or {}
+    lang = data.get("lang", "en")
+    if lang not in ALIGN_LANGS:
+        return jsonify({"status": "error", "error": f"Unknown language: {lang}"}), 400
+
+    # Count gold annotations available for this language
+    gold_count = len(_load_all_annotated_ids(lang))
+
+    # Run the eflomal pipeline for just this language pair via a Python
+    # one-liner that imports the helpers and invokes them directly.
+    snippet = (
+        "from run_giza_improved import extract_parallel, run_eflomal, "
+        "multiway_concordance, TMX_FILE, OUT_DIR\n"
+        "OUT_DIR.mkdir(exist_ok=True)\n"
+        "conc = multiway_concordance(TMX_FILE)\n"
+        f"pairs = extract_parallel(TMX_FILE, 'glb', '{lang}')\n"
+        f"run_eflomal('glb', '{lang}', pairs, OUT_DIR / 'glb_{lang}', "
+        "concordance_pairs=conc)\n"
+    )
+    venv_py = os.path.join(BASE_DIR, "venv", "bin", "python3")
+    py = venv_py if os.path.isfile(venv_py) else "python3"
+
+    start = time.time()
+    try:
+        proc = subprocess.run(
+            [py, "-u", "-c", snippet],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=600,
+        )
+    except subprocess.TimeoutExpired:
+        return jsonify({"status": "error", "error": "Alignment timed out (>10 min)"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+    duration = time.time() - start
+
+    if proc.returncode != 0:
+        return jsonify({
+            "status": "error",
+            "error": f"eflomal exited with code {proc.returncode}",
+            "stderr": (proc.stderr or "")[-2000:],
+        }), 500
+
+    # Invalidate the alignment cache for this language so the next
+    # /api/alignments call re-reads from disk.
+    for src in ("fwd", "rev", "gdfa"):
+        _alignment_cache.pop((lang, src), None)
+
+    return jsonify({
+        "status": "ok",
+        "lang": lang,
+        "duration_sec": duration,
+        "gold_count": gold_count,
+    })
+
+
 # ---------------------------------------------------------------------------
 # Translation Aide (Apertium)
 # ---------------------------------------------------------------------------
