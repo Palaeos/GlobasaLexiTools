@@ -1773,18 +1773,90 @@ def _load_tmx_raw(lang):
     return entries
 
 
+def _detect_mwes(morphs, lex):
+    """Find multi-word expressions in a tokenized sentence.
+
+    Returns a list of {"start_word": int, "end_word": int, "text": str}, where
+    start_word and end_word are word_index values (inclusive). Punctuation
+    between candidate words breaks the run — a phrase will only be reported if
+    its constituent words appear adjacent in the source text with no punct
+    between them.
+
+    The lookup uses lex.phrases (Category=phrase rows from word-list.csv).
+    """
+    if not lex or not getattr(lex, "phrases", None):
+        return []
+
+    # Build runs of consecutive non-punct words: [(word_index, lowercased_text), ...]
+    runs = []
+    current = []
+    last_wi = None
+    for m in morphs:
+        if m["kind"] == "punct":
+            if current:
+                runs.append(current)
+                current = []
+            last_wi = None
+            continue
+        wi = m["word_index"]
+        if wi == last_wi:
+            # Same word, append morpheme surface to the in-progress word text
+            idx, text = current[-1]
+            current[-1] = (idx, text + m["surface"].lower())
+        else:
+            current.append((wi, m["surface"].lower()))
+            last_wi = wi
+    if current:
+        runs.append(current)
+
+    out = []
+    for run in runs:
+        i = 0
+        while i < len(run):
+            first_wi, first_word = run[i]
+            candidates = lex.phrases.get(first_word)
+            if candidates:
+                # Try longest phrases first.
+                for phrase_len, full_phrase in sorted(candidates, key=lambda c: -c[0]):
+                    if i + phrase_len > len(run):
+                        continue
+                    slice_words = [run[i + k][1] for k in range(phrase_len)]
+                    if " ".join(slice_words) == full_phrase:
+                        out.append({
+                            "start_word": run[i][0],
+                            "end_word": run[i + phrase_len - 1][0],
+                            "text": full_phrase,
+                        })
+                        i += phrase_len
+                        break
+                else:
+                    i += 1
+            else:
+                i += 1
+    return out
+
+
 def _tokenize_page(raw_entries, decompose: bool = False):
     """Build the response payload from raw entries, tokenizing the Globasa side
     on the fly. The output is the only allocation that lives past the request;
     each per-entry morpheme dict list is released after Flask serializes the
-    response."""
+    response.
+
+    Each entry also carries a ``mwes`` list of phrase spans (start_word /
+    end_word inclusive) so the frontend can draw a faint envelope around the
+    contained words.
+    """
+    tok = _get_glb_tokenizer(decompose=decompose)
+    lex = tok._get_impl().lex if tok is not None else None
     out = []
     for e in raw_entries:
+        morphs = _morphs_to_dicts(e["glb_text"], decompose=decompose)
         out.append({
             "id": e["id"],
             "context": e["context"],
             "glb_text": e["glb_text"],
-            "glb_morphs": _morphs_to_dicts(e["glb_text"], decompose=decompose),
+            "glb_morphs": morphs,
+            "mwes": _detect_mwes(morphs, lex),
             "target_text": e["target_text"],
         })
     return out

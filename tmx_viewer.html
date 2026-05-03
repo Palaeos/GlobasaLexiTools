@@ -317,6 +317,29 @@ main {
 }
 
 /* ============================================================
+   Multi-word-expression envelope
+   ============================================================
+   Faint dashed border + tinted background grouping consecutive .word
+   chips that form a known phrase (e.g. 'cel na', 'fe of'). The phrase
+   text appears in a tooltip. Each constituent word still renders as
+   its own chip — the envelope only adds a visual grouping. */
+.mwe-envelope {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0 0.2rem;
+  padding: 0.05rem 0.2rem;
+  border: 1px dashed rgba(0, 0, 0, 0.22);
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.03);
+}
+@media (prefers-color-scheme: dark) {
+  .mwe-envelope {
+    border-color: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+/* ============================================================
    Words & morphemes
    ============================================================
    Affixes are distinguished from free words by the LACK of space:
@@ -656,11 +679,21 @@ main {
       glbLabel.textContent = "GLB";
       glbRow.appendChild(glbLabel);
 
+      // MWE phrase spans: indexed by start_word for fast lookup, plus an
+      // end-word set to know when to close the envelope.
+      const mwes = entry.mwes || [];
+      const mweByStart = new Map();
+      mwes.forEach(p => mweByStart.set(p.start_word, p));
+
       let currentWord = null;
       let currentWordIdx = -1;
+      let currentEnvelope = null;     // active .mwe-envelope span, if any
+      let envelopeEnd = -1;           // word_index that closes the envelope
       (entry.glb_morphs || []).forEach(m => {
         if (m.kind === "punct") {
           // Punctuation: emit as its own bare span so it doesn't pad inside a word group.
+          // Punct also breaks any open MWE envelope (phrases shouldn't span punct).
+          if (currentEnvelope) { currentEnvelope = null; envelopeEnd = -1; }
           const p = document.createElement("span");
           p.className = "morph";
           p.dataset.kind = "punct";
@@ -671,9 +704,23 @@ main {
           return;
         }
         if (m.word_index !== currentWordIdx) {
+          // Closing the previous word — check if envelope just ended.
+          if (currentEnvelope && currentWordIdx === envelopeEnd) {
+            currentEnvelope = null;
+            envelopeEnd = -1;
+          }
+          // Opening a new word — check if it starts an MWE envelope.
+          const startsHere = mweByStart.get(m.word_index);
+          if (startsHere && !currentEnvelope) {
+            currentEnvelope = document.createElement("span");
+            currentEnvelope.className = "mwe-envelope";
+            currentEnvelope.title = "Phrase: " + startsHere.text;
+            glbRow.appendChild(currentEnvelope);
+            envelopeEnd = startsHere.end_word;
+          }
           currentWord = document.createElement("span");
           currentWord.className = "word";
-          glbRow.appendChild(currentWord);
+          (currentEnvelope || glbRow).appendChild(currentWord);
           currentWordIdx = m.word_index;
         }
         const span = document.createElement("span");
