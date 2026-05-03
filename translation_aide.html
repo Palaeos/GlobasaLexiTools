@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globasa Translation Aide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-sans: 'Open Sans', system-ui, sans-serif;
+  --body-size: 18px;
+  --lh: 1.45;
+  --color-text: #333;
+  --color-muted: #666;
+  --color-bg: #fafafa;
+  --color-surface: #fff;
+  --color-border: #e0e0e0;
+  --color-link: #1a5fb4;
+  --radius: 6px;
+  --max-width: 90ch;
+  --color-header-bg: #d5edcf;
+  --color-header-text: #2a5a1e;
+  --color-footer-bg: #1a3a6b;
+  --color-footer-text: #fff;
+  --color-search-btn: #4a8c3f;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e8e8e8;
+    --color-muted: #aaa;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-border: #444;
+    --color-link: #7cb4f8;
+    --color-header-bg: #1e3318;
+    --color-header-text: #b0d8a8;
+    --color-footer-bg: #0e1f3d;
+    --color-footer-text: #ccc;
+    --color-search-btn: #3a6c30;
+  }
+}
+
+html { font-size: var(--body-size); }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: var(--lh);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a { color: var(--color-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Site Header (menalari-style)
+   ============================================================ */
+.site-header {
+  background: var(--color-header-bg);
+  text-align: center;
+  padding: 1rem 1rem 0;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+.site-brand svg { height: 28px; width: 28px; }
+.site-title {
+  font-family: var(--font-sans);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-header-text);
+  letter-spacing: 0.01em;
+}
+.site-nav {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  color: var(--color-header-text);
+  margin-bottom: 0.7rem;
+  letter-spacing: 0.02em;
+}
+.site-nav a {
+  color: var(--color-header-text);
+  text-decoration: none;
+}
+.site-nav a:hover { text-decoration: underline; }
+.nav-sep { margin: 0 0.25em; }
+
+/* ============================================================
+   Site Footer (menalari-style)
+   ============================================================ */
+.site-footer {
+  background: var(--color-footer-bg);
+  text-align: center;
+  padding: 0.6rem 1rem;
+}
+.site-footer .footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  color: var(--color-footer-text);
+  font-size: 0.85rem;
+}
+
+/* ============================================================
+   Main content
+   ============================================================ */
+.container {
+  max-width: 70ch;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+  flex: 1;
+  width: 100%;
+}
+
+h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* ============================================================
+   Direction toggle
+   ============================================================ */
+.direction-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.2rem;
+}
+.direction-toggle button {
+  flex: 1;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.direction-toggle button:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
+}
+.direction-toggle button:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+.direction-toggle button.active {
+  background: var(--color-search-btn);
+  color: #fff;
+  border-color: var(--color-search-btn);
+}
+
+/* ============================================================
+   Input area
+   ============================================================ */
+.input-area {
+  margin-bottom: 0.8rem;
+}
+.input-area textarea {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: var(--lh);
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  resize: vertical;
+  outline: none;
+}
+.input-area textarea:focus {
+  border-color: var(--color-search-btn);
+  box-shadow: 0 0 0 2px rgba(74, 140, 63, 0.15);
+}
+
+/* ============================================================
+   Translate button
+   ============================================================ */
+.translate-btn {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.55rem 2rem;
+  background: var(--color-search-btn);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  margin-bottom: 1.5rem;
+}
+.translate-btn:hover { opacity: 0.9; }
+.translate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   Output area
+   ============================================================ */
+.output-area {
+  min-height: 3rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+.output-area:empty::before {
+  content: 'Translation will appear here...';
+  color: var(--color-muted);
+  font-style: italic;
+}
+.output-area .token {
+  display: inline;
+  position: relative;
+  cursor: default;
+}
+.output-area .token + .token::before {
+  content: ' ';
+}
+.token-polysemy {
+  border-bottom: 1.5px dotted var(--color-link);
+  background: rgba(26, 95, 180, 0.06);
+  cursor: pointer !important;
+  padding: 0.05em 0.1em;
+  border-radius: 2px;
+}
+.token-polysemy .indicator {
+  font-size: 0.7em;
+  color: var(--color-muted);
+  margin-left: 0.1em;
+  vertical-align: baseline;
+}
+.token-unknown {
+  color: #c0392b;
+}
+.token-untranslated {
+  color: #e67e22;
+}
+
+/* un toggle */
+.un-toggle {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-link);
+  background: rgba(26, 95, 180, 0.08);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  padding: 0 0.25em;
+  margin-left: 0.2em;
+  cursor: pointer;
+  vertical-align: middle;
+  line-height: 1.4;
+  user-select: none;
+}
+.un-toggle:hover {
+  background: rgba(26, 95, 180, 0.18);
+}
+.un-toggle.active {
+  background: var(--color-search-btn);
+  color: #fff;
+  border-color: var(--color-search-btn);
+}
+
+/* article selector (glb->eng) */
+.article-selector {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  border-bottom: 1px dashed var(--color-muted);
+  cursor: pointer;
+  margin-right: 0.15em;
+  user-select: none;
+}
+.article-selector:hover {
+  color: var(--color-link);
+}
+
+/* ============================================================
+   Dropdown
+   ============================================================ */
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  min-width: 14rem;
+  max-width: 22rem;
+  margin-top: 0.25rem;
+  padding: 0.25rem 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.dropdown-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  color: var(--color-text);
+}
+.dropdown-item:hover {
+  background: rgba(74, 140, 63, 0.1);
+}
+.dropdown-item .bullet {
+  flex-shrink: 0;
+  width: 1em;
+  text-align: center;
+  color: var(--color-search-btn);
+  font-size: 0.8em;
+}
+.dropdown-item .lemma {
+  font-weight: 600;
+}
+.dropdown-item .gloss {
+  color: var(--color-muted);
+  font-size: 0.92em;
+}
+
+/* ============================================================
+   Pipeline stages
+   ============================================================ */
+.pipeline-toggle {
+  margin-bottom: 0.8rem;
+}
+.pipeline-toggle label {
+  font-size: 0.88rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.pipeline-toggle input[type="checkbox"] {
+  margin-right: 0.35em;
+  vertical-align: middle;
+}
+.pipeline-stages {
+  margin-bottom: 1.5rem;
+}
+.pipeline-stages details {
+  margin-bottom: 0.5rem;
+}
+.pipeline-stages summary {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+.pipeline-stages pre {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.6rem 0.75rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* ============================================================
+   Loading indicator
+   ============================================================ */
+.loading {
+  color: var(--color-muted);
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 0 100 75" width="28" height="28">
+      <circle cx="78.75" cy="37.5" r="32.48" fill="#fff"/>
+      <g fill="#008113"><path d="M62.5 9.37a18.78 18.78 0 0 1 32.5 0c-6.7 0-12.9 3.58-16.25 9.37a18.78 18.78 0 0 0-16.24-9.37"/><path d="M95 9.37a18.85 18.85 0 0 1 18.74 18.76c0 3.3-.86 6.52-2.5 9.37a18.79 18.79 0 0 0-16.25-9.37 18.78 18.78 0 0 0 0-18.76"/><path d="M111.23 37.5a18.77 18.77 0 0 1 2.51 9.37 18.85 18.85 0 0 1-18.75 18.76 18.78 18.78 0 0 0 0-18.76c6.7 0 12.9-3.58 16.24-9.37"/><path d="M95 65.63a18.78 18.78 0 0 1-32.5 0c6.7 0 12.9-3.57 16.25-9.37a18.78 18.78 0 0 0 16.24 9.37"/><path d="M62.5 65.63a18.85 18.85 0 0 1-18.74-18.76c0-3.3.86-6.52 2.5-9.37a18.79 18.79 0 0 0 16.25 9.37 18.78 18.78 0 0 0 0 18.76"/><path d="M46.27 37.5a18.77 18.77 0 0 1-2.51-9.37A18.85 18.85 0 0 1 62.51 9.37a18.78 18.78 0 0 0 0 18.76c-6.7 0-12.9 3.58-16.25 9.37"/></g>
+      <g fill="#0040a9"><path d="M78.75 18.74c6.7 0 12.9 3.6 16.24 9.4-6.69 0-12.89 3.57-16.24 9.36a18.78 18.78 0 0 0 0-18.76"/><path d="M95 28.13a18.78 18.78 0 0 1 0 18.74 18.78 18.78 0 0 0-16.25-9.37c6.69 0 12.9-3.58 16.24-9.37"/><path d="M95 46.87a18.78 18.78 0 0 1-16.25 9.4 18.78 18.78 0 0 0 0-18.77 18.79 18.79 0 0 0 16.24 9.37"/><path d="M78.75 56.26c-6.7 0-12.9-3.6-16.24-9.4 6.69 0 12.89-3.57 16.24-9.36a18.78 18.78 0 0 0 0 18.76"/><path d="M62.5 46.87a18.78 18.78 0 0 1 0-18.74 18.78 18.78 0 0 0 16.25 9.37c-6.69 0-12.9 3.58-16.24 9.37"/><path d="M62.5 28.13c3.35-5.8 9.55-9.39 16.25-9.4a18.78 18.78 0 0 0 0 18.77 18.79 18.79 0 0 0-16.24-9.37"/></g>
+    </svg>
+    <span class="site-title">Globasa</span>
+  </div>
+  <nav class="site-nav">
+    <a href="/">Dictionary</a><span class="nav-sep"> &bull; </span><a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Direction toggle -->
+  <div class="direction-toggle">
+    <button id="btn-eng-glb" class="active" onclick="setDirection('eng-glb')">English &rarr; Globasa</button>
+    <button id="btn-glb-eng" onclick="setDirection('glb-eng')">Globasa &rarr; English</button>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <textarea id="source-text" rows="5" placeholder="Enter text to translate..."></textarea>
+  </div>
+
+  <!-- Translate button -->
+  <button class="translate-btn" id="translate-btn" onclick="doTranslate()">Translate</button>
+
+  <!-- Output -->
+  <div class="output-area" id="output-area"></div>
+
+  <!-- Pipeline stages toggle -->
+  <div class="pipeline-toggle">
+    <label><input type="checkbox" id="show-stages"> Show pipeline stages</label>
+  </div>
+  <div class="pipeline-stages" id="pipeline-stages"></div>
+
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">Globasa Translation Aide</div>
+</footer>
+
+<script>
+/* ============================================================
+   State
+   ============================================================ */
+let direction = 'eng-glb';
+let overrides = {};
+let articles = {};
+let lastTokens = [];
+let lastResponse = null;
+
+/* ============================================================
+   Direction toggle
+   ============================================================ */
+function setDirection(dir) {
+  direction = dir;
+  document.getElementById('btn-eng-glb').classList.toggle('active', dir === 'eng-glb');
+  document.getElementById('btn-glb-eng').classList.toggle('active', dir === 'glb-eng');
+}
+
+/* ============================================================
+   Translate (fresh, clears overrides)
+   ============================================================ */
+function doTranslate() {
+  const text = document.getElementById('source-text').value.trim();
+  if (!text) return;
+  overrides = {};
+  articles = {};
+  sendTranslate(text);
+}
+
+/* ============================================================
+   Send translate request
+   ============================================================ */
+function sendTranslate(text) {
+  const btn = document.getElementById('translate-btn');
+  const out = document.getElementById('output-area');
+  const showStages = document.getElementById('show-stages').checked;
+
+  btn.disabled = true;
+  out.innerHTML = '<span class="loading">Translating...</span>';
+
+  fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      text: text || document.getElementById('source-text').value.trim(),
+      direction: direction,
+      overrides: overrides,
+      articles: articles,
+      stages: showStages
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('Server error ' + r.status);
+    return r.json();
+  })
+  .then(function(data) {
+    lastResponse = data;
+    renderOutput(data);
+    renderStages(data.stages);
+  })
+  .catch(function(err) {
+    out.innerHTML = '<span class="loading">Error: ' + escapeHtml(err.message) + '</span>';
+  })
+  .finally(function() {
+    btn.disabled = false;
+  });
+}
+
+/* ============================================================
+   Retranslate (preserves overrides/articles)
+   ============================================================ */
+function retranslate() {
+  sendTranslate(document.getElementById('source-text').value.trim());
+}
+
+/* ============================================================
+   Render output with interactive elements
+   ============================================================ */
+function renderOutput(data) {
+  const out = document.getElementById('output-area');
+  out.innerHTML = '';
+  closeDropdown();
+
+  const words = data.output_words || [];
+  const interactions = data.interactions || [];
+  const dir = data.direction;
+
+  if (words.length === 0) {
+    out.textContent = data.output || '';
+    return;
+  }
+
+  // Build lookup: output word index -> interaction info
+  const wordInteraction = {};  // output_idx -> interaction
+  // Build lookup: biltrans_idx -> interaction (for articles/un)
+  const biltransInteraction = {};
+
+  for (let k = 0; k < interactions.length; k++) {
+    const ix = interactions[k];
+    if (ix.type === 'suppressed_article') {
+      biltransInteraction[ix.biltrans_idx] = ix;
+    } else if (ix.output_idx != null) {
+      wordInteraction[ix.output_idx] = ix;
+    }
+  }
+
+  // Find which output word indices are nouns that follow suppressed articles
+  // A suppressed_article at biltrans_idx N means the next noun in interactions
+  // should have un toggle. We match by finding the noun interaction that immediately
+  // follows the suppressed article in biltrans index order.
+  const unToggleOutputIdxs = new Set();
+  for (let k = 0; k < interactions.length; k++) {
+    const ix = interactions[k];
+    if (ix.type === 'suppressed_article') {
+      // Find next word interaction that is a noun
+      for (let j = k + 1; j < interactions.length; j++) {
+        if (interactions[j].type === 'word' && interactions[j].is_noun && interactions[j].output_idx != null) {
+          unToggleOutputIdxs.add(interactions[j].output_idx);
+          break;
+        }
+      }
+    }
+  }
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const span = document.createElement('span');
+    span.classList.add('token');
+    span.dataset.outputIdx = i;
+
+    let displayText = word;
+
+    // Handle unknown/untranslated markers
+    if (displayText.startsWith('*')) {
+      span.classList.add('token-unknown');
+      span.title = 'Unknown word';
+      displayText = displayText.substring(1);
+    } else if (displayText.startsWith('@')) {
+      span.classList.add('token-untranslated');
+      span.title = 'Untranslated';
+      displayText = displayText.substring(1);
+    } else if (displayText.startsWith('#')) {
+      displayText = displayText.substring(1);
+    }
+
+    const ix = wordInteraction[i];
+
+    // A. Lexical polysemy (both directions)
+    if (ix && ix.alternatives && ix.alternatives.length > 0) {
+      span.classList.add('token-polysemy');
+      span.innerHTML = escapeHtml(displayText) + '<span class="indicator">\u25be</span>';
+      span.addEventListener('click', makePolysemyHandler(ix));
+    }
+    // B. eng->glb: un toggle on nouns that follow suppressed articles
+    else if (dir === 'eng-glb' && ix && ix.is_noun && unToggleOutputIdxs.has(i)) {
+      span.textContent = displayText;
+      const artIdx = findSuppressedArticleIdx(interactions, ix.biltrans_idx);
+      if (artIdx != null) {
+        const toggle = document.createElement('span');
+        toggle.classList.add('un-toggle');
+        toggle.textContent = 'un';
+        if (articles[artIdx] === 'un') {
+          toggle.classList.add('active');
+        }
+        toggle.addEventListener('click', makeUnToggleHandler(artIdx));
+        span.appendChild(toggle);
+      }
+    }
+    // C. glb->eng: article insertion on bare nouns
+    else if (dir === 'glb-eng' && ix && ix.is_noun) {
+      const currentArticle = articles[ix.biltrans_idx] || '';
+      const artSpan = document.createElement('span');
+      artSpan.classList.add('article-selector');
+      artSpan.textContent = currentArticle || '\u2205';
+      artSpan.addEventListener('click', makeArticleHandler(ix.biltrans_idx));
+      span.appendChild(artSpan);
+      span.appendChild(document.createTextNode(displayText));
+    }
+    else {
+      span.textContent = displayText;
+    }
+
+    out.appendChild(span);
+  }
+}
+
+// Find the suppressed_article biltrans_idx that precedes a given noun biltrans_idx
+function findSuppressedArticleIdx(interactions, nounBiltransIdx) {
+  for (let k = 0; k < interactions.length; k++) {
+    if (interactions[k].type === 'suppressed_article' && interactions[k].biltrans_idx < nounBiltransIdx) {
+      // Check that no other noun is between this article and our noun
+      let found = true;
+      for (let j = k + 1; j < interactions.length; j++) {
+        if (interactions[j].type === 'word' && interactions[j].is_noun) {
+          if (interactions[j].biltrans_idx === nounBiltransIdx) break;
+          found = false;
+          break;
+        }
+      }
+      if (found) return interactions[k].biltrans_idx;
+    }
+  }
+  return null;
+}
+
+/* ============================================================
+   Polysemy dropdown handler
+   ============================================================ */
+function makePolysemyHandler(ix) {
+  return function(e) {
+    e.stopPropagation();
+    closeDropdown();
+
+    const span = e.currentTarget;
+    const dropdown = document.createElement('div');
+    dropdown.classList.add('dropdown');
+    dropdown.id = 'active-dropdown';
+
+    const currentLemma = overrides[ix.biltrans_idx] || ix.alternatives[0].lemma;
+
+    ix.alternatives.forEach(function(alt) {
+      const item = document.createElement('div');
+      item.classList.add('dropdown-item');
+
+      const bullet = document.createElement('span');
+      bullet.classList.add('bullet');
+      bullet.textContent = alt.lemma === currentLemma ? '\u25cf' : '';
+
+      const lemmaSpan = document.createElement('span');
+      lemmaSpan.classList.add('lemma');
+      lemmaSpan.textContent = alt.lemma;
+
+      const gloss = document.createElement('span');
+      gloss.classList.add('gloss');
+      gloss.textContent = alt.gloss ? '— ' + alt.gloss : '';
+
+      item.appendChild(bullet);
+      item.appendChild(lemmaSpan);
+      item.appendChild(gloss);
+
+      item.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        overrides[ix.biltrans_idx] = alt.lemma;
+        closeDropdown();
+        retranslate();
+      });
+
+      dropdown.appendChild(item);
+    });
+
+    span.style.position = 'relative';
+    span.appendChild(dropdown);
+  };
+}
+
+/* ============================================================
+   Un toggle handler (eng->glb)
+   ============================================================ */
+function makeUnToggleHandler(idx) {
+  return function(e) {
+    e.stopPropagation();
+    if (articles[idx] === 'un') {
+      articles[idx] = '';
+    } else {
+      articles[idx] = 'un';
+    }
+    retranslate();
+  };
+}
+
+/* ============================================================
+   Article dropdown handler (glb->eng)
+   ============================================================ */
+function makeArticleHandler(idx) {
+  return function(e) {
+    e.stopPropagation();
+    closeDropdown();
+
+    const span = e.currentTarget;
+    const dropdown = document.createElement('div');
+    dropdown.classList.add('dropdown');
+    dropdown.id = 'active-dropdown';
+
+    const currentArticle = articles[idx] || '';
+    const options = [
+      { value: '', label: '\u2205 (no article)' },
+      { value: 'a', label: 'a' },
+      { value: 'the', label: 'the' }
+    ];
+
+    options.forEach(function(opt) {
+      const item = document.createElement('div');
+      item.classList.add('dropdown-item');
+
+      const bullet = document.createElement('span');
+      bullet.classList.add('bullet');
+      bullet.textContent = opt.value === currentArticle ? '\u25cf' : '';
+
+      const lemma = document.createElement('span');
+      lemma.classList.add('lemma');
+      lemma.textContent = opt.label;
+
+      item.appendChild(bullet);
+      item.appendChild(lemma);
+
+      item.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        articles[idx] = opt.value;
+        closeDropdown();
+        retranslate();
+      });
+
+      dropdown.appendChild(item);
+    });
+
+    // Position relative to the article-selector span
+    const parent = span.closest('.token');
+    parent.style.position = 'relative';
+    parent.appendChild(dropdown);
+  };
+}
+
+/* ============================================================
+   Dropdown management
+   ============================================================ */
+function closeDropdown() {
+  const existing = document.getElementById('active-dropdown');
+  if (existing) existing.remove();
+}
+
+document.addEventListener('click', function() {
+  closeDropdown();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeDropdown();
+});
+
+/* ============================================================
+   Render pipeline stages
+   ============================================================ */
+function renderStages(stages) {
+  const container = document.getElementById('pipeline-stages');
+  container.innerHTML = '';
+
+  if (!stages || typeof stages !== 'object') return;
+
+  const stageNames = {
+    morph: 'Morphological analysis',
+    biltrans: 'Bilingual transfer',
+    transfer: 'Structural transfer'
+  };
+
+  Object.keys(stages).forEach(function(key) {
+    if (!stages[key]) return;
+    const details = document.createElement('details');
+    const summary = document.createElement('summary');
+    summary.textContent = stageNames[key] || key;
+    const pre = document.createElement('pre');
+    pre.textContent = stages[key];
+    details.appendChild(summary);
+    details.appendChild(pre);
+    container.appendChild(details);
+  });
+}
+
+/* ============================================================
+   Keyboard: Enter in textarea triggers translate
+   ============================================================ */
+document.getElementById('source-text').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    doTranslate();
+  }
+});
+
+/* ============================================================
+   Utility
+   ============================================================ */
+function escapeHtml(str) {
+  var el = document.createElement('span');
+  el.textContent = str;
+  return el.innerHTML;
+}
+</script>
+</body>
+</html>

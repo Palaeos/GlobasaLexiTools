@@ -46,6 +46,7 @@ APERTIUM_DIR = "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-e
 GIZA_IMPROVED_DIR = os.path.join(BASE_DIR, "giza_output_improved")
 ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
 GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
+TMX_VIEWER_HTML = os.path.join(BASE_DIR, "tmx_viewer.html")
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -1658,6 +1659,246 @@ def api_alignments():
 
 
 # ---------------------------------------------------------------------------
+# TMX Viewer (morpheme-coloured)
+# ---------------------------------------------------------------------------
+
+_glb_tokenizer_fast = None  # lazy-init GlobasaTokenizer (no pseudo-morpheme decomposition)
+_glb_tokenizer_full = None  # lazy-init GlobasaTokenizer (with pseudo-morpheme decomposition)
+_glb_tokenizer_err = None   # populated if import/init fails
+_tmx_raw_cache = {}         # lang -> [{id, context, glb_text, target_text}]
+
+
+def _get_glb_tokenizer(decompose: bool = False):
+    """Lazy-load the morphology-aware tokenizer. Returns None on failure
+    (in which case TMX entries fall back to whitespace tokens with all
+    morphemes typed as ROOT).
+
+    Two singletons: a "fast" tokenizer (no pseudo-morpheme decomposition; LexiliAsel
+    breakdown for derived words and single tokens for roots) and a "full" tokenizer
+    (also tiles Sinitic / Romance pseudo-morphemes inside lexicon roots). The full
+    tokenizer is significantly heavier per-call; default to fast.
+    """
+    global _glb_tokenizer_fast, _glb_tokenizer_full, _glb_tokenizer_err
+    if _glb_tokenizer_err is not None:
+        return None
+    cached = _glb_tokenizer_full if decompose else _glb_tokenizer_fast
+    if cached is not None:
+        return cached
+    try:
+        from globasa_tokenizer import GlobasaTokenizer
+        tok = GlobasaTokenizer(decompose_pseudo_morphemes=decompose)
+        if decompose:
+            _glb_tokenizer_full = tok
+        else:
+            _glb_tokenizer_fast = tok
+        return tok
+    except Exception as e:
+        _glb_tokenizer_err = e
+        print(f"  Warning: globasa_tokenizer unavailable, TMX viewer falls back to whitespace tokens: {e}")
+        return None
+
+
+def _morphs_to_dicts(text, decompose: bool = False):
+    """Run the morphology-aware tokenizer on `text` and emit a flat list of
+    morpheme dicts. Each Globasa word becomes one or more morpheme spans;
+    punctuation becomes its own span. Falls back to whitespace tokens if
+    the tokenizer is unavailable."""
+    tok = _get_glb_tokenizer(decompose=decompose)
+    if tok is None:
+        # Naive fallback: whitespace + punctuation peel, all marked as root.
+        out, pos, word_idx = [], 0, 0
+        for chunk in re.findall(r"\S+", text):
+            ofs = text.find(chunk, pos)
+            out.append({
+                "surface": chunk, "lemma": chunk.lower(), "kind": "root",
+                "start": ofs, "end": ofs + len(chunk), "word_index": word_idx,
+            })
+            pos = ofs + len(chunk)
+            word_idx += 1
+        return out
+    morphs = []
+    for word_morphs in tok.tokenize(text):
+        for m in word_morphs:
+            morphs.append({
+                "surface": m.surface,
+                "lemma": m.lemma,
+                "kind": m.kind.value,
+                "start": m.start,
+                "end": m.end,
+                "word_index": m.word_index,
+            })
+    return morphs
+
+
+def _load_tmx_raw(lang):
+    """Parse the TMX once for `lang` and cache RAW per-entry rows (no morpheme
+    analysis). Each row: {id, context, glb_text, target_text}.
+
+    Morpheme decomposition is *not* done here — that happens lazily, per-request,
+    on just the visible page. Pre-tokenizing the entire corpus would pin tens of
+    thousands of Morpheme dicts in memory; tokenizing 50 sentences per request
+    is cheap and the allocations are released after the response flush.
+    """
+    if lang in _tmx_raw_cache:
+        return _tmx_raw_cache[lang]
+    entries = []
+    try:
+        tree = ET.parse(TMX_FILE)
+        body = tree.getroot().find("body")
+        if body is None:
+            body = tree.getroot()
+        ns = "{http://www.w3.org/XML/1998/namespace}"
+        for tu in body.findall("tu"):
+            ctx = ""
+            for prop in tu.findall("prop"):
+                if prop.get("type") == "x-context":
+                    ctx = (prop.text or "").strip()
+                    break
+            segs = {}
+            for tuv in tu.findall("tuv"):
+                tv_lang = tuv.get(f"{ns}lang", "")
+                seg = tuv.find("seg")
+                if seg is not None and seg.text and seg.text.strip():
+                    segs[tv_lang] = seg.text.strip()
+            if "glb" in segs and lang in segs:
+                entries.append({
+                    "id": len(entries),
+                    "context": ctx,
+                    "glb_text": segs["glb"],
+                    "target_text": segs[lang],
+                })
+    except Exception as e:
+        print(f"  Warning: TMX entries load failed for {lang}: {e}")
+    _tmx_raw_cache[lang] = entries
+    return entries
+
+
+def _tokenize_page(raw_entries, decompose: bool = False):
+    """Build the response payload from raw entries, tokenizing the Globasa side
+    on the fly. The output is the only allocation that lives past the request;
+    each per-entry morpheme dict list is released after Flask serializes the
+    response."""
+    out = []
+    for e in raw_entries:
+        out.append({
+            "id": e["id"],
+            "context": e["context"],
+            "glb_text": e["glb_text"],
+            "glb_morphs": _morphs_to_dicts(e["glb_text"], decompose=decompose),
+            "target_text": e["target_text"],
+        })
+    return out
+
+
+def _tmx_available_langs():
+    """Scan the TMX once for the set of target languages that co-occur with
+    Globasa segments. Cheap because it short-circuits on the first 200 TUs."""
+    found = set()
+    try:
+        tree = ET.parse(TMX_FILE)
+        body = tree.getroot().find("body") or tree.getroot()
+        ns = "{http://www.w3.org/XML/1998/namespace}"
+        for i, tu in enumerate(body.findall("tu")):
+            langs = set()
+            for tuv in tu.findall("tuv"):
+                tv_lang = tuv.get(f"{ns}lang", "")
+                if tv_lang:
+                    langs.add(tv_lang)
+            if "glb" in langs:
+                found.update(langs - {"glb"})
+            if i > 5000 and len(found) >= 5:
+                break
+    except Exception as e:
+        print(f"  Warning: TMX language scan failed: {e}")
+    return sorted(found)
+
+
+@app.route("/tmx")
+def tmx_viewer():
+    return send_file(TMX_VIEWER_HTML)
+
+
+@app.route("/api/tmx/languages")
+def api_tmx_languages():
+    """Available target languages with TU counts (when the lang has been parsed)."""
+    langs = _tmx_available_langs()
+    out = []
+    for lang in langs:
+        cnt = len(_tmx_raw_cache[lang]) if lang in _tmx_raw_cache else None
+        out.append({"lang": lang, "count": cnt})
+    return jsonify(out)
+
+
+@app.route("/api/tmx/contexts")
+def api_tmx_contexts():
+    """Distinct corpus contexts for the given target language."""
+    lang = request.args.get("lang", "en")
+    raw = _load_tmx_raw(lang)
+    counts = {}
+    for e in raw:
+        c = e.get("context", "")
+        if c:
+            counts[c] = counts.get(c, 0) + 1
+    out = [{"context": c, "count": n} for c, n in counts.items()]
+    out.sort(key=lambda x: -x["count"])
+    return jsonify(out)
+
+
+@app.route("/api/tmx")
+def api_tmx():
+    """Paginated TMX entries for `lang`.
+
+    Per request: parse-cache the raw bitext for the language (one-time, ~few MB),
+    apply filters, paginate to ``per_page`` entries, then morpheme-tokenize ONLY
+    those entries on the Globasa side. Target side is plain text.
+
+    Query params:
+      lang       — target language code (default 'en')
+      page       — 1-based (default 1)
+      per_page   — default 50
+      q          — substring filter on Globasa OR target text
+      context    — exact-match corpus filter
+      decompose  — '1' to enable pseudo-morpheme decomposition on lexicon roots
+                   (slower; produces extra splits inside Sinitic loanwords like
+                   gongaw → gon+gaw). Default '0' (fast: LexiliAsel breakdown for
+                   derived words; whole roots otherwise).
+    """
+    lang = request.args.get("lang", "en")
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 50))
+    q = request.args.get("q", "").strip().lower()
+    context_filter = request.args.get("context", "").strip()
+    decompose = request.args.get("decompose", "0") == "1"
+
+    raw = _load_tmx_raw(lang)
+
+    if context_filter:
+        raw = [e for e in raw if e.get("context", "") == context_filter]
+    if q:
+        raw = [e for e in raw
+               if q in e["glb_text"].lower() or q in e["target_text"].lower()]
+
+    total = len(raw)
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_entries = raw[start:end]
+
+    # Tokenize only the visible page; the result list is released after the
+    # response is serialised, so memory stays bounded regardless of corpus size.
+    page_payload = _tokenize_page(page_entries, decompose=decompose)
+
+    return jsonify({
+        "lang": lang,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+        "decompose": decompose,
+        "tokenizer_ok": _get_glb_tokenizer(decompose=decompose) is not None,
+        "entries": page_payload,
+    })
+
+
+# ---------------------------------------------------------------------------
 # Gold Alignment Annotation
 # ---------------------------------------------------------------------------
 
@@ -2141,4 +2382,4 @@ def api_translate():
 
 
 if __name__ == "__main__" or True:
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, use_reloader=os.environ.get("WV_NO_RELOADER") != "1")

@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globasa TMX Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Reset & Base — mirrors alignment_viewer.html
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-sans: 'Open Sans', system-ui, sans-serif;
+  --body-size: 18px;
+  --lh: 1.45;
+  --color-text: #333;
+  --color-muted: #666;
+  --color-bg: #fafafa;
+  --color-surface: #fff;
+  --color-border: #e0e0e0;
+  --color-link: #1a5fb4;
+  --radius: 6px;
+  --max-width: 90ch;
+  --color-header-bg: #d5edcf;
+  --color-header-text: #2a5a1e;
+  --color-footer-bg: #1a3a6b;
+  --color-footer-text: #fff;
+  --color-search-btn: #4a8c3f;
+
+  /* Morpheme-kind colours (light)
+     Design: roots & proper nouns use the COOL family (blue / green) — they
+     carry primary lexical meaning. All bound affixes share the WARM family
+     (amber / orange / crimson) — they're morphological glue, never free
+     words. Function words and syllable fallback stay neutral grey. The
+     warm/cool dichotomy gives an instant "where are the roots?" read. */
+  --mk-root:           #1e4d8a;   /* deep blue */
+  --mk-root-bg:        #d8e4f6;   /* pale blue */
+  --mk-proper:         #1e6a3a;   /* deep green */
+  --mk-proper-bg:      #d2e8d8;   /* pale green */
+  --mk-prefix:         #8a4a08;   /* deep amber  – warm family */
+  --mk-prefix-bg:      #fde4c4;   /* pale amber  */
+  --mk-suffix:         #a13e10;   /* deep orange – warm family */
+  --mk-suffix-bg:      #fcd9c0;   /* pale orange */
+  --mk-pseudo:         #a0204a;   /* deep crimson – warm family */
+  --mk-pseudo-bg:      #fad2db;   /* pale pink   */
+  --mk-function:       #4b3a8c;   /* deep indigo – distinct from cool/warm bands */
+  --mk-function-bg:    #e3deef;   /* pale lavender */
+  --mk-foreign:        #555;      /* unadapted loanwords stay neutral grey */
+  --mk-foreign-bg:     #ececec;
+  --mk-syllable:       #777;
+  --mk-syllable-bg:    #f3f3f3;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-text: #e8e8e8;
+    --color-muted: #aaa;
+    --color-bg: #1a1a1a;
+    --color-surface: #252525;
+    --color-border: #444;
+    --color-link: #7cb4f8;
+    --color-header-bg: #1e3318;
+    --color-header-text: #b0d8a8;
+    --color-footer-bg: #0e1f3d;
+    --color-footer-text: #ccc;
+    --color-search-btn: #3a6c30;
+
+    /* Cool family: roots, proper. Warm family: all affixes. */
+    --mk-root:           #b8d2f5;   /* light blue text */
+    --mk-root-bg:        #1d2a44;   /* deep blue bg */
+    --mk-proper:         #a8d8b6;   /* light green text */
+    --mk-proper-bg:      #1d3326;   /* deep green bg */
+    --mk-prefix:         #f5cf95;   /* light amber */
+    --mk-prefix-bg:      #3a2810;   /* deep amber bg */
+    --mk-suffix:         #f4c0a0;   /* light orange */
+    --mk-suffix-bg:      #3d1f10;   /* deep orange bg */
+    --mk-pseudo:         #f5b0c0;   /* light coral */
+    --mk-pseudo-bg:      #421a26;   /* deep crimson bg */
+    --mk-function:       #c4b8e8;   /* light lavender — distinct from grey */
+    --mk-function-bg:    #2a2240;   /* deep indigo */
+    --mk-foreign:        #aaa;
+    --mk-foreign-bg:     #2c2c2c;
+    --mk-syllable:       #aaa;
+    --mk-syllable-bg:    #2a2a2a;
+  }
+}
+
+html { font-size: var(--body-size); }
+body {
+  font-family: var(--font-sans);
+  line-height: var(--lh);
+  color: var(--color-text);
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+a { color: var(--color-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ============================================================
+   Header (matches alignment_viewer.html / word_viewer.html)
+   ============================================================ */
+.site-header {
+  background: var(--color-header-bg);
+  color: var(--color-header-text);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.site-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  white-space: nowrap;
+}
+.site-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  font-size: 0.82rem;
+}
+.site-nav a { color: var(--color-header-text); }
+.nav-sep { color: var(--color-header-text); opacity: 0.5; user-select: none; }
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.site-footer {
+  background: var(--color-footer-bg);
+  text-align: center;
+  padding: 0.6rem 1rem;
+  color: var(--color-footer-text);
+}
+.site-footer .footer-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+/* ============================================================
+   Main content
+   ============================================================ */
+main {
+  flex: 1;
+  max-width: var(--max-width);
+  width: 100%;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ============================================================
+   Controls bar
+   ============================================================ */
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.controls label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+.controls select,
+.controls input[type="text"] {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+.controls select { min-width: 9rem; }
+.controls input[type="text"] { min-width: 11rem; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+.pagination button {
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.page-info {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Legend (morpheme-kind colour key)
+   ============================================================ */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.6rem;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.78rem;
+}
+.legend .swatch {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: 3px;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+.legend .legend-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+.legend .tokenizer-status {
+  margin-left: auto;
+  font-size: 0.72rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+.legend .tokenizer-status.warn {
+  color: #b07a00;
+}
+
+/* ============================================================
+   TMX entries
+   ============================================================ */
+#entries {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.entry-card {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: 0 0.6rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+.entry-idx {
+  grid-row: 1 / span 2;
+  color: var(--color-muted);
+  font-size: 0.8rem;
+  padding-top: 0.15rem;
+  text-align: right;
+  user-select: none;
+}
+.entry-ctx {
+  font-style: italic;
+  font-size: 0.75rem;
+}
+.entry-actions {
+  margin-left: 0.4rem;
+  display: inline-flex;
+  gap: 0.3rem;
+}
+.entry-actions a {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-link);
+  cursor: pointer;
+  text-decoration: none;
+}
+.entry-actions a:hover {
+  background: var(--color-search-btn);
+  color: #fff;
+  border-color: var(--color-search-btn);
+}
+.entry-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.05rem 0.25rem;
+  line-height: 1.7;
+}
+.row-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-right: 0.15rem;
+  user-select: none;
+}
+
+/* ============================================================
+   Words & morphemes
+   ============================================================
+   Affixes are distinguished from free words by the LACK of space:
+   morphemes within one source word are flush against each other so
+   their colored backgrounds touch (different MorphKind = different
+   colour does the visual splitting). Whitespace only appears between
+   distinct source words.
+   ============================================================ */
+.glb-row .word {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  /* No margin-right here; the row's own gap (0.05rem 0.25rem on .entry-row)
+     spaces words from each other. */
+}
+.morph {
+  display: inline-block;
+  /* Vertical padding only by default — horizontal padding is applied just to
+     the outer edges of a word below, so the *texts* of adjacent morphemes
+     within a word are flush (so "be"+"krea" reads as the underlying word
+     "bekrea", with the colour change marking the morpheme boundary). */
+  padding: 0.05rem 0;
+  border-radius: 0;
+  font-weight: 600;
+  cursor: default;
+  transition: filter 0.12s;
+  white-space: nowrap;
+}
+.morph + .morph { margin-left: 0; }
+.morph:hover { filter: brightness(1.15); }
+
+/* Within a multi-morpheme word, alternate brightness so adjacent components
+   are visually distinct even when they share the same MorphKind colour
+   (e.g. true compounds of two roots like acidi+hamir, adresu+kitabu, or two
+   suffixes in adola+pul+ya). The colour transition still marks kind changes;
+   the brightness shift handles same-kind compound boundaries. */
+.glb-row .word .morph:nth-child(2n) { filter: brightness(0.84); }
+.glb-row .word .morph:nth-child(4n) { filter: brightness(0.72); }
+.glb-row .word .morph:hover         { filter: brightness(1.15); }
+@media (prefers-color-scheme: dark) {
+  .glb-row .word .morph:nth-child(2n) { filter: brightness(1.25); }
+  .glb-row .word .morph:nth-child(4n) { filter: brightness(1.45); }
+  .glb-row .word .morph:hover         { filter: brightness(1.40); }
+}
+
+/* Outer-edge padding + rounded outer corners only.
+   Single-morpheme word → padding & rounding on both sides (looks like a chip).
+   Multi-morpheme word → padding only on left of first / right of last;
+   internal morpheme boundaries stay sharp and text flows continuously. */
+.glb-row .word .morph:first-child { padding-left: 0.25rem;  border-top-left-radius: 4px;  border-bottom-left-radius: 4px; }
+.glb-row .word .morph:last-child  { padding-right: 0.25rem; border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+.glb-row .word .morph:only-child  { padding: 0.05rem 0.25rem; border-radius: 4px; }
+/* Standalone punctuation morphemes (not inside a .word) still need a tiny pad. */
+.glb-row > .morph[data-kind="punct"] { padding: 0.05rem 0.05rem; }
+
+/* Per-kind colours */
+.morph[data-kind="root"]            { color: var(--mk-root);       background: var(--mk-root-bg); }
+.morph[data-kind="prefix"]          { color: var(--mk-prefix);     background: var(--mk-prefix-bg); }
+.morph[data-kind="suffix"]          { color: var(--mk-suffix);     background: var(--mk-suffix-bg); }
+.morph[data-kind="pseudo_morpheme"] { color: var(--mk-pseudo);     background: var(--mk-pseudo-bg); }
+.morph[data-kind="function"]        { color: var(--mk-function);   background: var(--mk-function-bg); }
+.morph[data-kind="proper"]          { color: var(--mk-proper);     background: var(--mk-proper-bg); }
+.morph[data-kind="foreign"]         { color: var(--mk-foreign);    background: var(--mk-foreign-bg); font-style: italic; font-weight: 400; }
+.morph[data-kind="syllable"],
+.morph[data-kind="unk"]             { color: var(--mk-syllable);   background: var(--mk-syllable-bg); font-weight: 400; }
+.morph[data-kind="punct"]           { color: var(--color-muted);   background: transparent; padding: 0.05rem 0.05rem; font-weight: 400; }
+
+/* Tooltip for lemma + canonical info */
+.morph[title] { cursor: help; }
+
+/* Cross-link: clicking a root or pseudo-morpheme jumps to /?word=lemma */
+.morph[data-link="1"] { cursor: pointer; }
+
+/* Target side: plain text */
+.tgt-row .target-text {
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+/* ============================================================
+   Status messages
+   ============================================================ */
+.status-msg {
+  text-align: center;
+  color: var(--color-muted);
+  padding: 2rem;
+  font-size: 0.95rem;
+}
+.status-msg.error { color: #c0392b; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="30 0 100 75" width="28" height="28">
+      <circle cx="78.75" cy="37.5" r="32.48" fill="#fff"/>
+      <g fill="#008113"><path d="M62.5 9.37a18.78 18.78 0 0 1 32.5 0c-6.7 0-12.9 3.58-16.25 9.37a18.78 18.78 0 0 0-16.24-9.37"/><path d="M95 9.37a18.85 18.85 0 0 1 18.74 18.76c0 3.3-.86 6.52-2.5 9.37a18.79 18.79 0 0 0-16.25-9.37 18.78 18.78 0 0 0 0-18.76"/><path d="M111.23 37.5a18.77 18.77 0 0 1 2.51 9.37 18.85 18.85 0 0 1-18.75 18.76 18.78 18.78 0 0 0 0-18.76c6.7 0 12.9-3.58 16.24-9.37"/><path d="M95 65.63a18.78 18.78 0 0 1-32.5 0c6.7 0 12.9-3.57 16.25-9.37a18.78 18.78 0 0 0 16.24 9.37"/><path d="M62.5 65.63a18.85 18.85 0 0 1-18.74-18.76c0-3.3.86-6.52 2.5-9.37a18.79 18.79 0 0 0 16.25 9.37 18.78 18.78 0 0 0 0 18.76"/><path d="M46.27 37.5a18.77 18.77 0 0 1-2.51-9.37A18.85 18.85 0 0 1 62.51 9.37a18.78 18.78 0 0 0 0 18.76c-6.7 0-12.9 3.58-16.25 9.37"/></g>
+      <g fill="#0040a9"><path d="M78.75 18.74c6.7 0 12.9 3.6 16.24 9.4-6.69 0-12.89 3.57-16.24 9.36a18.78 18.78 0 0 0 0-18.76"/><path d="M95 28.13a18.78 18.78 0 0 1 0 18.74 18.78 18.78 0 0 0-16.25-9.37c6.69 0 12.9-3.58 16.24-9.37"/><path d="M95 46.87a18.78 18.78 0 0 1-16.25 9.4 18.78 18.78 0 0 0 0-18.77 18.79 18.79 0 0 0 16.24 9.37"/><path d="M78.75 56.26c-6.7 0-12.9-3.6-16.24-9.4 6.69 0 12.89-3.57 16.24-9.36a18.78 18.78 0 0 0 0 18.76"/><path d="M62.5 46.87a18.78 18.78 0 0 1 0-18.74 18.78 18.78 0 0 0 16.25 9.37c-6.69 0-12.9 3.58-16.24 9.37"/><path d="M62.5 28.13c3.35-5.8 9.55-9.39 16.25-9.4a18.78 18.78 0 0 0 0 18.77 18.79 18.79 0 0 0-16.24-9.37"/></g>
+    </svg>
+    <span class="site-title">Globasa</span>
+  </div>
+  <nav class="site-nav">
+    <a href="/">Dictionary</a><span class="nav-sep"> &bull; </span><a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+  </nav>
+</header>
+
+<main>
+  <div class="controls">
+    <label for="lang-select">Target</label>
+    <select id="lang-select"></select>
+
+    <label for="context-select">Corpus</label>
+    <select id="context-select"><option value="">All</option></select>
+
+    <label for="search-input">Filter</label>
+    <input type="text" id="search-input" placeholder="Filter by Globasa or target text...">
+
+    <div class="pagination">
+      <button id="prev-btn" disabled>&larr; Prev</button>
+      <span class="page-info" id="page-info">Page 1 of 1</span>
+      <button id="next-btn" disabled>Next &rarr;</button>
+    </div>
+  </div>
+
+  <div class="legend" id="legend">
+    <span class="legend-item"><span class="swatch" data-kind="root">root</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="prefix">be-</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="suffix">-li</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="pseudo_morpheme">-syon</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="function">le</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="proper">Proper</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="foreign">Claude</span></span>
+    <span class="legend-item"><span class="swatch" data-kind="syllable">syl</span></span>
+    <span class="tokenizer-status" id="tokenizer-status"></span>
+  </div>
+
+  <div id="entries">
+    <div class="status-msg" id="status-msg">Loading…</div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    Globasa TMX Viewer — morpheme-coloured bitext
+  </div>
+</footer>
+
+<script>
+(function() {
+  "use strict";
+
+  /* ── Language names ─────────────────────────────────────── */
+  const LANG_NAMES = {
+    en: "English", eo: "Esperanto", es: "Spanish", de: "German", fr: "French",
+    ru: "Russian", nl: "Dutch", pt: "Portuguese", id: "Indonesian", da: "Danish",
+    ar: "Arabic", hi: "Hindi", sw: "Swahili", tr: "Turkish", zh: "Chinese",
+    ja: "Japanese", ko: "Korean", vi: "Vietnamese"
+  };
+
+  /* ── State ──────────────────────────────────────────────── */
+  let currentLang    = "";
+  let currentContext = "";
+  let currentPage    = 1;
+  let totalPages     = 1;
+  let searchQuery    = "";
+  let debounceTimer  = null;
+
+  /* ── DOM refs ───────────────────────────────────────────── */
+  const langSelect    = document.getElementById("lang-select");
+  const contextSelect = document.getElementById("context-select");
+  const searchInput   = document.getElementById("search-input");
+  const entriesDiv    = document.getElementById("entries");
+  const statusMsg     = document.getElementById("status-msg");
+  const prevBtn       = document.getElementById("prev-btn");
+  const nextBtn       = document.getElementById("next-btn");
+  const pageInfo      = document.getElementById("page-info");
+  const tokenizerStatus = document.getElementById("tokenizer-status");
+
+  /* ── Apply legend swatch colours via the same data-kind hook
+        used on the .morph spans, so the CSS stays single-source. */
+  document.querySelectorAll("#legend .swatch").forEach(sw => {
+    sw.classList.add("morph");
+  });
+
+  /* ── Init: fetch available languages ────────────────────── */
+  fetch("/api/tmx/languages")
+    .then(r => r.json())
+    .then(langs => {
+      if (!langs.length) {
+        statusMsg.textContent = "No TMX data available.";
+        return;
+      }
+      langs.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.lang;
+        const label = LANG_NAMES[item.lang] || item.lang;
+        opt.textContent = item.count == null ? label : `${label} (${item.count})`;
+        langSelect.appendChild(opt);
+      });
+      // Prefer English if available, else the first language.
+      const preferred = langs.find(l => l.lang === "en") || langs[0];
+      currentLang = preferred.lang;
+      langSelect.value = currentLang;
+      loadContexts();
+      loadEntries();
+    })
+    .catch(() => {
+      statusMsg.textContent = "Failed to load TMX languages.";
+      statusMsg.classList.add("error");
+    });
+
+  /* ── Load corpus contexts for current lang ──────────────── */
+  function loadContexts() {
+    contextSelect.innerHTML = '<option value="">All</option>';
+    fetch("/api/tmx/contexts?lang=" + encodeURIComponent(currentLang))
+      .then(r => r.json())
+      .then(contexts => {
+        contexts.forEach(c => {
+          const opt = document.createElement("option");
+          opt.value = c.context;
+          opt.textContent = `${c.context} (${c.count})`;
+          contextSelect.appendChild(opt);
+        });
+      })
+      .catch(() => {});
+  }
+
+  /* ── Event listeners ────────────────────────────────────── */
+  langSelect.addEventListener("change", () => {
+    currentLang = langSelect.value;
+    currentContext = "";
+    currentPage = 1;
+    loadContexts();
+    loadEntries();
+  });
+  contextSelect.addEventListener("change", () => {
+    currentContext = contextSelect.value;
+    currentPage = 1;
+    loadEntries();
+  });
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      searchQuery = searchInput.value.trim();
+      currentPage = 1;
+      loadEntries();
+    }, 300);
+  });
+  prevBtn.addEventListener("click", () => {
+    if (currentPage > 1) { currentPage--; loadEntries(); }
+  });
+  nextBtn.addEventListener("click", () => {
+    if (currentPage < totalPages) { currentPage++; loadEntries(); }
+  });
+
+  /* ── Click a content morpheme → jump to dictionary ──────── */
+  entriesDiv.addEventListener("click", e => {
+    const m = e.target.closest(".morph[data-link='1']");
+    if (!m) return;
+    const lemma = m.dataset.lemma;
+    if (!lemma) return;
+    const url = "/?word=" + encodeURIComponent(lemma);
+    window.open(url, "_blank");
+  });
+
+  /* ── Fetch & render ─────────────────────────────────────── */
+  function loadEntries() {
+    if (!currentLang) return;
+    const params = new URLSearchParams({
+      lang: currentLang,
+      page: currentPage,
+      per_page: 50,
+    });
+    if (searchQuery) params.set("q", searchQuery);
+    if (currentContext) params.set("context", currentContext);
+
+    statusMsg.textContent = "Loading…";
+    statusMsg.classList.remove("error");
+    statusMsg.style.display = "";
+    entriesDiv.querySelectorAll(".entry-card").forEach(c => c.remove());
+
+    fetch("/api/tmx?" + params)
+      .then(r => r.json())
+      .then(renderData)
+      .catch(() => {
+        statusMsg.textContent = "Failed to load TMX entries.";
+        statusMsg.classList.add("error");
+      });
+  }
+
+  function renderData(data) {
+    if (data.tokenizer_ok === false) {
+      tokenizerStatus.textContent = "(tokenizer unavailable — falling back to whitespace tokens)";
+      tokenizerStatus.classList.add("warn");
+    } else {
+      tokenizerStatus.textContent = "";
+      tokenizerStatus.classList.remove("warn");
+    }
+
+    const perPage = data.per_page || 50;
+    totalPages = Math.max(1, Math.ceil(data.total / perPage));
+    currentPage = data.page;
+
+    pageInfo.textContent = `Page ${currentPage} of ${totalPages} (${data.total} TUs)`;
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+
+    if (!data.entries || !data.entries.length) {
+      statusMsg.textContent = "No entries found.";
+      statusMsg.style.display = "";
+      return;
+    }
+    statusMsg.style.display = "none";
+
+    data.entries.forEach((entry, i) => {
+      const card = document.createElement("div");
+      card.className = "entry-card";
+
+      /* Index + context */
+      const idxEl = document.createElement("div");
+      idxEl.className = "entry-idx";
+      idxEl.textContent = entry.id != null ? (entry.id + 1) : ((currentPage - 1) * perPage + i + 1);
+      if (entry.context) {
+        const ctxEl = document.createElement("span");
+        ctxEl.className = "entry-ctx";
+        ctxEl.textContent = " — " + entry.context;
+        idxEl.appendChild(ctxEl);
+      }
+      card.appendChild(idxEl);
+
+      /* Globasa row: morpheme spans grouped by word_index */
+      const glbRow = document.createElement("div");
+      glbRow.className = "entry-row glb-row";
+      const glbLabel = document.createElement("span");
+      glbLabel.className = "row-label";
+      glbLabel.textContent = "GLB";
+      glbRow.appendChild(glbLabel);
+
+      let currentWord = null;
+      let currentWordIdx = -1;
+      (entry.glb_morphs || []).forEach(m => {
+        if (m.kind === "punct") {
+          // Punctuation: emit as its own bare span so it doesn't pad inside a word group.
+          const p = document.createElement("span");
+          p.className = "morph";
+          p.dataset.kind = "punct";
+          p.textContent = m.surface;
+          glbRow.appendChild(p);
+          currentWord = null;
+          currentWordIdx = -1;
+          return;
+        }
+        if (m.word_index !== currentWordIdx) {
+          currentWord = document.createElement("span");
+          currentWord.className = "word";
+          glbRow.appendChild(currentWord);
+          currentWordIdx = m.word_index;
+        }
+        const span = document.createElement("span");
+        span.className = "morph";
+        span.dataset.kind = m.kind;
+        span.dataset.lemma = m.lemma || "";
+        span.textContent = m.surface;
+        // Tooltip: lemma if it differs from the surface (suffixes/prefixes/pseudos)
+        if (m.lemma && m.lemma !== m.surface.toLowerCase()) {
+          span.title = `${m.kind}: ${m.lemma}`;
+        } else {
+          span.title = m.kind;
+        }
+        // Make root, pseudo, and proper morphemes clickable as dictionary lookups.
+        if (m.kind === "root" || m.kind === "pseudo_morpheme" || m.kind === "proper") {
+          span.dataset.link = "1";
+        }
+        currentWord.appendChild(span);
+      });
+      card.appendChild(glbRow);
+
+      /* Target row: plain text */
+      const tgtRow = document.createElement("div");
+      tgtRow.className = "entry-row tgt-row";
+      const tgtLabel = document.createElement("span");
+      tgtLabel.className = "row-label";
+      tgtLabel.textContent = (LANG_NAMES[data.lang] || data.lang).substring(0, 3).toUpperCase();
+      tgtRow.appendChild(tgtLabel);
+      const tgtText = document.createElement("span");
+      tgtText.className = "target-text";
+      tgtText.textContent = entry.target_text || "";
+      tgtRow.appendChild(tgtText);
+      card.appendChild(tgtRow);
+
+      entriesDiv.appendChild(card);
+    });
+  }
+})();
+</script>
+</body>
+</html>
