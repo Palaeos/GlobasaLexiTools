@@ -860,12 +860,18 @@ def build_db():
                     "source_page": images_store.source_page(img),
                     "kind": img.get("kind", "still"),
                 })
-            if images:
-                senses.append({
-                    "pos": sense.get("pos", "") or "",
-                    "label": sense.get("label", "") or "",
-                    "images": images,
-                })
+            out = {
+                "pos": sense.get("pos", "") or "",
+                "label": sense.get("label", "") or "",
+                "images": images,
+            }
+            # A hypernym's sense may carry no image of its own and still be
+            # worth keeping: `derive` fills it from its hyponyms at render time.
+            for key in ("derive", "exclude"):
+                if sense.get(key):
+                    out[key] = sense[key]
+            if images or out.get("derive"):
+                senses.append(out)
         if senses:
             img_rows[word] = {"senses": senses}
 
@@ -1340,6 +1346,50 @@ def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
     return {"has_verbs": has_verbs, "pos_groups": pos_groups}
 
 
+def _first_image_of(word):
+    """The lead image of another word, or None."""
+    rec = _db.get_images(word)
+    for sense in (rec or {}).get("senses") or []:
+        for img in sense.get("images") or []:
+            return img
+    return None
+
+
+def expand_derived_senses(senses, self_word):
+    """Fill a sense's `derive` spec from the images its hyponyms already have.
+
+    A hypernym like `calyo` "vehicle" or `hewan` "animal" has no photograph of
+    its own -- the honest picture of a category is its members. `derive.tag`
+    pulls every word carrying that tag (the Tags column names hyponyms with the
+    hypernym's own headword: `tren` is tagged `calyo`), `derive.words` names them
+    explicitly, and `exclude` prunes.
+
+    Resolved here rather than written into the JSONL, so the set improves by
+    itself whenever a hyponym gains an image. Hand-picked images keep their
+    place at the front. Derived entries are tagged with the hyponym's Globasa
+    word so the gallery can caption them.
+    """
+    for sense in senses:
+        spec = sense.get("derive") or {}
+        if not spec:
+            continue
+        exclude = set(spec.get("exclude") or []) | set(sense.get("exclude") or [])
+        exclude.add(self_word)
+        members = list(_tag_index.get(spec["tag"]) or []) if spec.get("tag") else []
+        members += list(spec.get("words") or [])
+
+        derived, seen = [], set()
+        for member in members:
+            if member in exclude or member in seen:
+                continue
+            seen.add(member)
+            img = _first_image_of(member)
+            if img:
+                derived.append(dict(img, word=member, derived=True))
+        sense["images"] = list(sense.get("images") or []) + derived
+    return senses
+
+
 def _pos_group_keys_for(annotation, wordclass):
     """Annotation key ("n", "v.tr") -> the (pos, verb_type) keys build_translations_payload
     would produce for it. Mirrors _parseAnnotatedEnglish, including the WordClass-driven
@@ -1533,6 +1583,7 @@ def lookup(word):
 
     # Build translations
     translations = build_translations_payload(wl_entry, ext_entry, to_exclude)
+    image_senses = expand_derived_senses(image_senses, word)
     image_senses = attach_images_to_pos_groups(
         translations, image_senses, wl_entry.get("WordClass", ""))
 

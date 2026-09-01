@@ -30,8 +30,9 @@ _WORD_RE = re.compile(r"[a-z]+")
 
 
 def load_wordlist(path):
-    """{word: {"gloss": str, "pos_keys": [...]}}"""
+    """({word: {"gloss", "pos_keys"}}, {tag: [word, ...]})"""
     out = {}
+    tags = {}
     with open(path, newline="", encoding="utf-8") as f:
         for row in csv.DictReader(f):
             word = (row.get("Word") or "").strip()
@@ -39,7 +40,11 @@ def load_wordlist(path):
                 continue
             gloss = row.get("TranslationEng") or ""
             out[word] = {"gloss": gloss, "pos_keys": S.word_pos_keys(gloss)}
-    return out
+            for tag in (row.get("Tags") or "").split(","):
+                tag = tag.strip()
+                if tag:
+                    tags.setdefault(tag, []).append(word)
+    return out, tags
 
 
 def gloss_for_pos(gloss, pos):
@@ -68,10 +73,26 @@ def report(title, rows, note=""):
 
 
 store = S.load_images()
-wl = load_wordlist(WORDLIST)
+wl, tag_index = load_wordlist(WORDLIST)
 print(f"{len(store)} words in {S.IMAGES_JSONL}; {len(wl)} headwords in {WORDLIST}")
 
-bad_pos, unassigned, odd_label, missing, absent = [], [], [], [], []
+bad_pos, unassigned, odd_label, missing, absent, thin_derive = [], [], [], [], [], []
+
+
+def check_derive(word, sense):
+    """A `derive` spec is only useful if its tag names real, illustrated words."""
+    spec = sense.get("derive") or {}
+    tag = spec.get("tag")
+    if not tag:
+        return
+    members = tag_index.get(tag)
+    if members is None:
+        thin_derive.append(f"{word:<20} derive.tag={tag!r} matches no tag in the word list")
+        return
+    imaged = [m for m in members if S.all_images(store.get(m) or {})]
+    if len(imaged) < 2:
+        thin_derive.append(f"{word:<20} derive.tag={tag!r}: {len(members)} hyponyms "
+                           f"but only {len(imaged)} illustrated")
 skipped_words = skipped_senses = 0
 n_images = n_senses = 0
 
@@ -101,6 +122,8 @@ for word in sorted(store):
         elif not pos and len(keys) > 1:
             unassigned.append(f"{word:<20} choose from: {', '.join(keys)}")
 
+        check_derive(word, sense)
+
         label = (sense.get("label") or "").strip()
         if label and pos:
             hay = gloss_for_pos(entry["gloss"], pos).lower()
@@ -119,6 +142,7 @@ problems += report("PoS not present on this word", bad_pos)
 problems += report("PoS unassigned on a multi-PoS word", unassigned,
                    "  (the curation queue)")
 problems += report("Sense label found in no gloss for its PoS", odd_label)
+problems += report("Derived galleries with too few illustrated hyponyms", thin_derive)
 problems += report("Images the API reports as gone", missing,
                    "  (kept in the store, never auto-deleted)")
 problems += report("Words no longer in the word list", absent)

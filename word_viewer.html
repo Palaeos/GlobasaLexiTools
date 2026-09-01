@@ -510,61 +510,110 @@ a:hover { text-decoration: underline; }
 .word-image-wrap a { display: inline-block; }
 
 /* Images live in the translation table, one cell per PoS row, so each gloss is
-   printed exactly once with its own pictures beside it. */
+   printed exactly once with its own pictures beside it.
+
+   However many pictures a row has, they tile into ONE fixed box the size a
+   single image would occupy, so an illustrated row is never taller than a plain
+   one and a multi-sense word does not tower over its neighbours. The whole
+   gallery is one click away. */
 .cell-images { vertical-align: middle; }
-.gallery-sense { margin-bottom: 0.45rem; }
-.gallery-sense:last-child { margin-bottom: 0; }
-.gallery-sense-label {
-  font-size: 0.78rem;
-  font-style: italic;
-  color: var(--color-muted);
-  margin-bottom: 0.2rem;
-}
-.gallery-strip {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  align-items: flex-end;
-}
-.gallery-strip img {
-  height: 120px;
-  width: auto;
+
+.img-tile {
+  display: grid;
+  gap: 2px;
+  width: 200px;
+  height: 150px;
   max-width: 100%;
   border-radius: var(--radius);
-  display: block;
+  overflow: hidden;
   cursor: zoom-in;
 }
-.gallery-strip .gallery-lead img { height: 150px; }
-.gallery-more {
-  background: none;
-  border: 1px solid var(--color-muted);
-  border-radius: var(--radius);
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.78rem;
-  padding: 0.2rem 0.55rem;
-  cursor: pointer;
-  align-self: center;
+.img-tile.n1 { grid-template-columns: 1fr; }
+.img-tile.n2 { grid-template-columns: 1fr 1fr; }
+/* Three: one large on the left, two stacked on the right. */
+.img-tile.n3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
 }
-.gallery-more:hover { opacity: 0.75; }
+.img-tile.n3 .img-tile-cell:first-child { grid-row: span 2; }
+.img-tile.n4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+.img-tile-cell {
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+.img-tile-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.img-tile:hover .img-tile-cell img { opacity: 0.85; }
+.img-tile-badge {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Expanded gallery */
 .img-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.82);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
   z-index: 1000;
   cursor: zoom-out;
+  padding: 2rem 1rem;
 }
-.img-overlay img {
-  max-width: 92vw;
-  max-height: 82vh;
+.gallery-panel {
+  background: var(--color-bg, #fff);
   border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  max-width: 92vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  cursor: default;
 }
-.img-overlay a { color: #fff; font-size: 0.85rem; }
+.gallery-panel-heading {
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+.gallery-panel-label {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--color-muted);
+  margin: 0.5rem 0 0.25rem;
+}
+.gallery-panel-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+.gallery-panel-strip figure { margin: 0; }
+.gallery-panel-caption {
+  font-size: 0.82rem;
+  text-align: center;
+  margin-top: 0.25rem;
+  color: var(--color-muted);
+}
+.gallery-panel-strip img {
+  height: 220px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--radius);
+  display: block;
+}
 details.nsfw-wrap > summary {
   cursor: pointer;
   font-size: 0.9rem;
@@ -1729,23 +1778,63 @@ function posCssClass(pos) {
 // ============================================================
 
 // Show this many images per sense before the "+N more" control.
-const GALLERY_PREVIEW = 3;
+// A row's pictures occupy a fixed box, the size one image would take, however
+// many there are — so an illustrated row never grows taller than a plain one.
+// Up to four tile into it; the rest are reachable by expanding.
+const TILE_MAX = 4;
 
-function showImageOverlay(url, sourcePage) {
+// The expanded view: every image for this row, grouped by sense, with labels
+// and attribution. This is where a word with many pictures is actually read.
+function showGalleryOverlay(senses, heading) {
   const ov = document.createElement("div");
   ov.className = "img-overlay";
-  const img = document.createElement("img");
-  img.src = url;
-  ov.appendChild(img);
-  if (sourcePage) {
-    const a = document.createElement("a");
-    a.href = sourcePage;
-    a.target = "_blank";
-    a.rel = "noopener";
-    a.textContent = "source";
-    a.addEventListener("click", e => e.stopPropagation());
-    ov.appendChild(a);
+
+  const panel = document.createElement("div");
+  panel.className = "gallery-panel";
+  panel.addEventListener("click", e => e.stopPropagation());
+
+  if (heading) {
+    const h = document.createElement("div");
+    h.className = "gallery-panel-heading";
+    h.textContent = heading;
+    panel.appendChild(h);
   }
+
+  const withImages = senses.filter(sn => (sn.images || []).length > 0);
+  const showLabels = withImages.length > 1;
+  withImages.forEach(sense => {
+    if (showLabels && sense.label) {
+      const lab = document.createElement("div");
+      lab.className = "gallery-panel-label";
+      lab.textContent = sense.label;
+      panel.appendChild(lab);
+    }
+    const strip = document.createElement("div");
+    strip.className = "gallery-panel-strip";
+    (sense.images || []).forEach(im => {
+      const fig = document.createElement("figure");
+      const a = document.createElement("a");
+      a.href = im.source_page || im.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      const img = document.createElement("img");
+      img.src = im.url;
+      img.alt = im.word || "";
+      img.loading = "lazy";
+      a.appendChild(img);
+      fig.appendChild(a);
+      if (im.word) {
+        const cap = document.createElement("figcaption");
+        cap.className = "gallery-panel-caption";
+        cap.textContent = convertScript(im.word);
+        fig.appendChild(cap);
+      }
+      strip.appendChild(fig);
+    });
+    panel.appendChild(strip);
+  });
+
+  ov.appendChild(panel);
   const close = () => ov.remove();
   ov.addEventListener("click", close);
   document.addEventListener("keydown", function esc(e) {
@@ -1754,62 +1843,41 @@ function showImageOverlay(url, sourcePage) {
   document.body.appendChild(ov);
 }
 
-// One sense's pictures: the first leads large, the rest follow smaller, and
-// anything past GALLERY_PREVIEW hides behind a "+N more" button. Image order is
-// prototypicality order, so the lead image is the most representative one.
-function buildImageStrip(images) {
-  const strip = document.createElement("div");
-  strip.className = "gallery-strip";
+// The compact tile. One image fills the box; two split it; three or more grid
+// into it, with a "+N" badge when there are more than fit. Clicking anywhere
+// opens the full gallery.
+function buildImageTile(senses, heading) {
+  const images = senses.reduce((acc, sn) => acc.concat(sn.images || []), []);
+  if (images.length === 0) return null;
 
-  const make = (im, isLead) => {
-    const holder = document.createElement("span");
-    if (isLead) holder.className = "gallery-lead";
-    const el = document.createElement("img");
-    el.src = im.url;
-    el.alt = "";
-    el.loading = "lazy";
-    el.addEventListener("click", () => showImageOverlay(im.url, im.source_page));
-    holder.appendChild(el);
-    return holder;
-  };
+  const tile = document.createElement("div");
+  const shown = Math.min(images.length, TILE_MAX);
+  tile.className = `img-tile n${shown}`;
+  tile.title = images.length > 1
+    ? `${images.length} images — click to expand`
+    : "click to expand";
 
-  images.slice(0, GALLERY_PREVIEW).forEach((im, i) => strip.appendChild(make(im, i === 0)));
-
-  const rest = images.slice(GALLERY_PREVIEW);
-  if (rest.length > 0) {
-    const btn = document.createElement("button");
-    btn.className = "gallery-more";
-    btn.type = "button";
-    btn.textContent = `+${rest.length} more`;
-    btn.addEventListener("click", () => {
-      btn.remove();
-      rest.forEach(im => strip.appendChild(make(im, false)));
-    });
-    strip.appendChild(btn);
-  }
-  return strip;
-}
-
-// senses: [{label, images}]. The label only earns a caption when the row holds
-// more than one sense — otherwise it is noise.
-function buildSenseBlocks(senses) {
-  const frag = document.createDocumentFragment();
-  const showLabels = senses.filter(s => (s.images || []).length > 0).length > 1;
-  senses.forEach(sense => {
-    const images = sense.images || [];
-    if (images.length === 0) return;
-    const block = document.createElement("div");
-    block.className = "gallery-sense";
-    if (showLabels && sense.label) {
-      const lab = document.createElement("div");
-      lab.className = "gallery-sense-label";
-      lab.textContent = sense.label;
-      block.appendChild(lab);
+  images.slice(0, TILE_MAX).forEach((im, i) => {
+    const cell = document.createElement("span");
+    cell.className = "img-tile-cell";
+    const img = document.createElement("img");
+    img.src = im.url;
+    img.alt = "";
+    img.loading = "lazy";
+    cell.appendChild(img);
+    // Any overflow is announced on the last visible cell.
+    const hidden = images.length - TILE_MAX;
+    if (hidden > 0 && i === TILE_MAX - 1) {
+      const badge = document.createElement("span");
+      badge.className = "img-tile-badge";
+      badge.textContent = `+${hidden}`;
+      cell.appendChild(badge);
     }
-    block.appendChild(buildImageStrip(images));
-    frag.appendChild(block);
+    tile.appendChild(cell);
   });
-  return frag;
+
+  tile.addEventListener("click", () => showGalleryOverlay(senses, heading));
+  return tile;
 }
 
 // Does this word have any images at all? Used to decide whether the table
@@ -1831,7 +1899,8 @@ function buildImageCell(pg, data, cssClass) {
     td.innerHTML = "<span style='color:var(--color-muted)'>—</span>";
     return td;
   }
-  const blocks = buildSenseBlocks(senses);
+  const heading = `${data.word} — ${grammarLabel(pg.pos, selectedLangs[0] || "English")}`;
+  const blocks = buildImageTile(senses, heading);
   if (data.nsfw) {
     // The cover has to hide every picture in the cell, not just the first.
     const det = document.createElement("details");
@@ -2190,7 +2259,7 @@ function renderResult(data) {
   if (loose.length > 0) {
     const wrap = document.createElement("div");
     wrap.className = "word-image-wrap";
-    wrap.appendChild(buildSenseBlocks(loose));
+    wrap.appendChild(buildImageTile(loose, data.word));
     if (data.nsfw) {
       const det = document.createElement("details");
       det.className = "nsfw-wrap";

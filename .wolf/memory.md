@@ -1874,4 +1874,6 @@
 | 19:45 | Fixed gallery row painting a full-width PoS-coloured block; tint moved to the label | word_viewer.html | verified via node DOM shim on fronta/acum/hongu/amiku | ~5k |
 | 19:50 | Fixed migration re-importing pre-rename titles (image_keys, not image_key); removed 4 dupes | migrate_images_jsonl.py, menalariImages.jsonl | image set identical to baseline; migrate + sync both report 0 new | ~8k |
 | 20:10 | Moved images from a gallery above the table into the table itself (one cell per PoS row) to stop printing each gloss twice | word_viewer.html, word_viewer_i18n.csv | verified hongu/acum/amiku/jixi/klitoris via node DOM shim; imageless words get no extra column | ~20k |
+| 20:35 | Images tile into a fixed 200x150 box (1/2/3/4+badge) and expand to a full gallery overlay | word_viewer.html | verified 1,2,3,4,5,9 image counts + multi-sense via node shim | ~18k |
+| 20:50 | Implemented hyponym-derived galleries; designated words tagged `calyo` as its hyponyms | Word Viewer.py, word_viewer.html, validate_images.py, menalariImages.jsonl | calyo shows 1 own + 17 derived, captioned in Globasa; Anki export unaffected | ~22k |
 
