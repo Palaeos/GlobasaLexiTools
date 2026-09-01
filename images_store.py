@@ -362,15 +362,35 @@ def load_images(path=IMAGES_JSONL):
     return out
 
 
+def is_empty_record(rec):
+    """True only when a record says nothing at all.
+
+    A record with no images is still worth keeping if it carries a `derive`
+    spec (a hypernym illustrated entirely by its hyponyms owns no image of its
+    own), an `illustratable: false` marker, or any hand-added key. Dropping
+    those silently loses work.
+    """
+    if all_images(rec):
+        return False
+    if not is_illustratable(rec):
+        return False
+    for sense in senses_of(rec):
+        if sense.get("derive") or not is_illustratable(sense):
+            return False
+        if set(sense) - {"pos", "label", "images"}:
+            return False
+    return not (set(rec) - {"word", "senses"})
+
+
 def save_images(mapping, path=IMAGES_JSONL):
-    """Write {word: record} sorted by word, atomically. Records with neither
-    images nor any hand-set flag are dropped so the file stays a list of things
-    that actually say something."""
+    """Write {word: record} sorted by word, atomically. Records that say nothing
+    at all are dropped so the file stays a list of things with something to
+    say — see is_empty_record for what counts."""
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         for word in sorted(mapping, key=lambda w: (w.lower(), w)):
             rec = mapping[word]
-            if not all_images(rec) and is_illustratable(rec) and len(rec) <= 2:
+            if is_empty_record(rec):
                 continue
             rec["word"] = word
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")

@@ -2974,6 +2974,24 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-01T18:27:28"
+    },
+    {
+      "id": "bug-186",
+      "timestamp": "2026-09-01T19:28:44",
+      "error_message": "New records for yamxey/flura/mamoyen vanished after save_images(); the JSONL never contained them",
+      "file": "images_store.py",
+      "root_cause": "save_images dropped any record with no images via `if not all_images(rec) and is_illustratable(rec) and len(rec) <= 2`. A hypernym illustrated entirely by its hyponyms owns no image, so a derive-only record matched the drop condition and was silently discarded. The in-memory dict still looked right, which is why the first verification pass missed it -- it printed the mapping rather than reloading the file.",
+      "fix": "Extracted is_empty_record(): a record survives if it has images, any sense with a `derive` spec, an illustratable=false marker, or any hand-added key on the record or a sense. Only a bare {word, senses} with plain empty senses is dropped. Verified by reloading from disk rather than trusting the in-memory mapping.",
+      "tags": [
+        "images",
+        "jsonl",
+        "derive",
+        "hypernym",
+        "silent-data-loss"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T19:28:44"
     }
   ]
 }
