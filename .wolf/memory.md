@@ -1876,4 +1876,5 @@
 | 20:10 | Moved images from a gallery above the table into the table itself (one cell per PoS row) to stop printing each gloss twice | word_viewer.html, word_viewer_i18n.csv | verified hongu/acum/amiku/jixi/klitoris via node DOM shim; imageless words get no extra column | ~20k |
 | 20:35 | Images tile into a fixed 200x150 box (1/2/3/4+badge) and expand to a full gallery overlay | word_viewer.html | verified 1,2,3,4,5,9 image counts + multi-sense via node shim | ~18k |
 | 20:50 | Implemented hyponym-derived galleries; designated words tagged `calyo` as its hyponyms | Word Viewer.py, word_viewer.html, validate_images.py, menalariImages.jsonl | calyo shows 1 own + 17 derived, captioned in Globasa; Anki export unaffected | ~22k |
+| 21:00 | Expanded gallery got a visible close button; backdrop-click and Escape were the only ways back | word_viewer.html | all three close paths verified; clicking the panel still keeps it open | ~5k |
 

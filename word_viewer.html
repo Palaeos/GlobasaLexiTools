@@ -585,10 +585,25 @@ a:hover { text-decoration: underline; }
   overflow-y: auto;
   cursor: default;
 }
-.gallery-panel-heading {
-  font-weight: 600;
+.gallery-panel-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 0.6rem;
 }
+.gallery-panel-heading { font-weight: 600; }
+.gallery-panel-close {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+.gallery-panel-close:hover { color: inherit; }
 .gallery-panel-label {
   font-size: 0.82rem;
   font-style: italic;
@@ -1793,12 +1808,25 @@ function showGalleryOverlay(senses, heading) {
   panel.className = "gallery-panel";
   panel.addEventListener("click", e => e.stopPropagation());
 
+  const close = () => ov.remove();
+
+  const bar = document.createElement("div");
+  bar.className = "gallery-panel-bar";
   if (heading) {
     const h = document.createElement("div");
     h.className = "gallery-panel-heading";
     h.textContent = heading;
-    panel.appendChild(h);
+    bar.appendChild(h);
   }
+  const shut = document.createElement("button");
+  shut.type = "button";
+  shut.className = "gallery-panel-close";
+  shut.textContent = "\u00d7";
+  shut.title = "Close";
+  shut.setAttribute("aria-label", "Close gallery");
+  shut.addEventListener("click", close);
+  bar.appendChild(shut);
+  panel.appendChild(bar);
 
   const withImages = senses.filter(sn => (sn.images || []).length > 0);
   const showLabels = withImages.length > 1;
@@ -1835,7 +1863,6 @@ function showGalleryOverlay(senses, heading) {
   });
 
   ov.appendChild(panel);
-  const close = () => ov.remove();
   ov.addEventListener("click", close);
   document.addEventListener("keydown", function esc(e) {
     if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
