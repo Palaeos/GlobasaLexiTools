@@ -1889,4 +1889,5 @@
 | 00:10 | Fixed finished words being unreachable in the curator (search now bypasses the done filter) | Word Viewer.py, images_curator.html | bug-189; salamandra/calyo/hongu/abakus all findable; queue still 6937 outstanding | ~6k |
 | 00:45 | Added Wikispecies + Commons-category + iNaturalist image sources for taxon words | Word Viewer.py, images_store.py, images_curator.html | 232 taxon words auto-detected; Hirundinidae 32 Commons / 7 iNat candidates; iNat licences flagged | ~35k |
 | 01:05 | Paginated candidate search across all three sources + infinite scroll in the curator | Word Viewer.py, images_curator.html | commons 188 unique over 8 pages and continuing; wikispecies terminates at 82/55; inat 7 | ~20k |
+| 01:35 | Added also_pos: one image serves a noun that is the act of its verb (awcu) | Word Viewer.py, word_viewer.html, images_curator.html | verified awcu renders one image cell with rowspan 2 across Noun/Verb; consulted xwexi on du-/-ya | ~25k |
 

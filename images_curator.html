@@ -262,6 +262,37 @@ function renderSenses() {
     });
     head.appendChild(lab);
 
+    // A noun that is simply the act of its verb -- awcu "disappearance /
+    // disappear" -- wants one picture, not two. Ticking the other part of
+    // speech here makes this sense illustrate both, and the dictionary spans a
+    // single image cell across their rows. Not every b-class word qualifies:
+    // Globasa marks the gerund with du-, and a bare b noun is normally the
+    // concrete thing (nasa = nose, verb smell), so this is per word.
+    const others = current.pos_keys.filter(k => k && k !== sn.pos);
+    if (others.length) {
+      const also = document.createElement("span");
+      also.className = "hint";
+      also.append("also illustrates: ");
+      others.forEach(k => {
+        const id = `also_${i}_${k}`;
+        const cb = document.createElement("input");
+        cb.type = "checkbox"; cb.id = id;
+        cb.checked = (sn.also_pos || []).includes(k);
+        cb.addEventListener("click", e => e.stopPropagation());
+        cb.addEventListener("change", () => {
+          const picked = others.filter(o =>
+            document.getElementById(`also_${i}_${o}`).checked);
+          post({action: "set_also_pos", index: i, also_pos: picked});
+        });
+        const lab = document.createElement("label");
+        lab.htmlFor = id;
+        lab.style.marginRight = "0.5rem";
+        lab.append(cb, " " + k);
+        also.appendChild(lab);
+      });
+      head.appendChild(also);
+    }
+
     if (sn.derive) {
       const d = document.createElement("span");
       d.className = "derive-note";

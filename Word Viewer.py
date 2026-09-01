@@ -858,7 +858,7 @@ def build_image_rows():
                 "label": sense.get("label", "") or "",
                 "images": images,
             }
-            for key in ("derive", "exclude"):
+            for key in ("derive", "exclude", "also_pos"):
                 if sense.get(key):
                     out[key] = sense[key]
             if images or out.get("derive"):
@@ -1460,11 +1460,29 @@ def attach_images_to_pos_groups(translations, senses, wordclass):
                            group.get("register")), group)
 
     unassigned = []
-    for sense in senses:
+    for index, sense in enumerate(senses):
         annotation = sense.get("pos") or ""
-        payload = {"label": sense.get("label", ""), "images": sense.get("images") or []}
-        targets = [by_key[k] for k in _pos_group_keys_for(annotation, wordclass)
-                   if k in by_key] if annotation else []
+        # `also_pos` marks a sense whose noun meaning is simply the act of the
+        # verb -- `awcu` "disappearance / disappear", `acum` "a sneeze / to
+        # sneeze". One picture serves both, so the same images are attached to
+        # every listed part of speech and the table spans one image cell across
+        # their rows rather than demanding a second photo of the same thing.
+        annotations = [annotation] + [a for a in (sense.get("also_pos") or []) if a]
+        shared = len([a for a in annotations if a]) > 1
+        payload = {"label": sense.get("label", ""),
+                   "images": sense.get("images") or []}
+        if shared:
+            payload["share"] = f"s{index}"
+
+        targets = []
+        for ann in annotations:
+            if not ann:
+                continue
+            for key in _pos_group_keys_for(ann, wordclass):
+                group = by_key.get(key)
+                if group is not None and group not in targets:
+                    targets.append(group)
+
         if targets:
             for group in targets:
                 group["image_senses"].append(payload)
@@ -2791,8 +2809,11 @@ def api_images_words():
             continue
         gloss = entry.get("TranslationEng", "") or ""
         pos_keys = images_store.word_pos_keys(gloss)
-        illustrated = {(s.get("pos") or "") for s in images_store.senses_of(rec)
-                       if s.get("images") or s.get("derive")}
+        illustrated = set()
+        for sense in images_store.senses_of(rec):
+            if sense.get("images") or sense.get("derive"):
+                illustrated.add(sense.get("pos") or "")
+                illustrated.update(sense.get("also_pos") or [])
         missing = [k for k in pos_keys
                    if k not in illustrated
                    and (all_pos or images_store.pos_kind(k) is not None)]
@@ -2829,6 +2850,7 @@ def api_images_word(word):
     for sense in images_store.senses_of(rec or {}):
         senses.append({
             "pos": sense.get("pos", ""),
+            "also_pos": sense.get("also_pos") or [],
             "label": sense.get("label", ""),
             "derive": sense.get("derive"),
             "illustratable": sense.get("illustratable", True),
@@ -3176,6 +3198,15 @@ def api_images_sense():
             sense["pos"] = data["pos"] or ""
         if "label" in data:
             sense["label"] = data["label"] or ""
+    elif action == "set_also_pos":
+        sense = sense_at()
+        if sense is None:
+            return jsonify({"error": "no such sense"}), 400
+        also = [a for a in (data.get("also_pos") or []) if a and a != sense.get("pos")]
+        if also:
+            sense["also_pos"] = also
+        else:
+            sense.pop("also_pos", None)
     elif action == "delete_sense":
         sense = sense_at()
         if sense is None:

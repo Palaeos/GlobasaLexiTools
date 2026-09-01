@@ -1991,6 +1991,22 @@ function buildTransTable(data) {
   // Body
   const tbody = table.createTBody();
 
+  // A sense marked `also_pos` illustrates several parts of speech at once --
+  // a noun that is simply the act of its verb, `awcu` "disappearance /
+  // disappear". Its images are attached to every such group, so consecutive
+  // groups carrying the same share id get ONE image cell spanning their rows
+  // rather than the same photograph printed twice.
+  const shareOf = pg => ((pg.image_senses || []).find(sn => sn.share) || {}).share;
+  const imageSpan = pos_groups.map(() => 1);
+  const imageSkip = pos_groups.map(() => false);
+  for (let a = 0; a < pos_groups.length; a++) {
+    const id = shareOf(pos_groups[a]);
+    if (!id || imageSkip[a]) continue;
+    let b = a + 1;
+    while (b < pos_groups.length && shareOf(pos_groups[b]) === id) { imageSkip[b] = true; b++; }
+    imageSpan[a] = b - a;
+  }
+
   // Group consecutive rows sharing a part of speech so the PoS cell can rowspan
   // them, exactly as the verb rows have always done. A noun's registers are
   // sub-rows of "Noun" the way transitive/intransitive are sub-rows of "Verb".
@@ -2000,7 +2016,9 @@ function buildTransTable(data) {
   while (i < pos_groups.length) {
     const key = runKey(pos_groups[i].pos);
     const run = [];
+    const runAt = [];
     while (i < pos_groups.length && runKey(pos_groups[i].pos) === key) {
+      runAt.push(i);
       run.push(pos_groups[i]);
       i++;
     }
@@ -2033,7 +2051,11 @@ function buildTransTable(data) {
       langs.forEach(lang => {
         tr.appendChild(buildLangCell(pg, lang, cssClass));
       });
-      if (showImages) tr.appendChild(buildImageCell(pg, data, cssClass));
+      if (showImages && !imageSkip[runAt[k]]) {
+        const td = buildImageCell(pg, data, cssClass);
+        if (imageSpan[runAt[k]] > 1) td.rowSpan = imageSpan[runAt[k]];
+        tr.appendChild(td);
+      }
     });
   }
 
