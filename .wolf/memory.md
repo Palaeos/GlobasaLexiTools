@@ -1870,4 +1870,7 @@
 | 18:35 | Word Viewer gallery: one row per PoS showing its gloss beside its own images, 3 + "+N more" | Word Viewer.py, word_viewer.html | PoS join done server-side (_refine_verb_type makes the annotation key insufficient); verified via node DOM shim | ~30k |
 | 18:50 | AnkiMaker3 fills both still slots from PoS groups; DuayumImaje reachable for the first time | AnkiMaker3.py, images_store.py | 48 cols intact, 1722 stills / 46 gifs, 0 dead URLs exported | ~12k |
 | 19:05 | Rewrote apkg_image_sync against the JSONL; fixed hardcoded field ordinals + rename-dedupe | apkg_image_sync.py, resolve_commons_images.py, images_store.py, .wolf/buglog.json | round-trip reports 0 new images; bug-184/185 logged | ~20k |
+| 19:40 | Applied user's gif->verb / still->noun (+adj/adv) rule; curation queue 198 -> 0 | images_store.py, migrate_images_jsonl.py, menalariImages.jsonl | 1774/1797 words have pos assigned; 23 blanks are words retired from word-list.csv | ~18k |
+| 19:45 | Fixed gallery row painting a full-width PoS-coloured block; tint moved to the label | word_viewer.html | verified via node DOM shim on fronta/acum/hongu/amiku | ~5k |
+| 19:50 | Fixed migration re-importing pre-rename titles (image_keys, not image_key); removed 4 dupes | migrate_images_jsonl.py, menalariImages.jsonl | image set identical to baseline; migrate + sync both report 0 new | ~8k |
 

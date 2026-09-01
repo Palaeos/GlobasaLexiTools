@@ -207,6 +207,54 @@ def word_pos_keys(english_gloss):
     return keys
 
 
+def pos_kind(annotation):
+    """`nominal`, `verbal`, `adjectival`, `adverbial`, or None.
+
+    Derived from `Lexilista_parser.ANNOTATION_MAP` rather than a hand-written
+    list, so it tracks the annotation vocabulary as it grows.
+    """
+    from Lexilista_parser import ANNOTATION_MAP, GlossPoS
+
+    groups = [
+        ("nominal", {GlossPoS.NOUN, GlossPoS.PROPER_NOUN, GlossPoS.NOUN_PHRASE}),
+        ("verbal", {GlossPoS.VERB, GlossPoS.VERB_PHRASE}),
+        ("adjectival", {GlossPoS.ADJECTIVE, GlossPoS.PROPER_ADJECTIVE,
+                        GlossPoS.ADJECTIVE_PHRASE}),
+        ("adverbial", {GlossPoS.ADVERB, GlossPoS.VERBAL_ADVERB,
+                       GlossPoS.PHRASAL_ADVERB}),
+    ]
+    for pos, _vtype, _afx in ANNOTATION_MAP.get(annotation) or []:
+        for name, members in groups:
+            if pos in members:
+                return name
+    return None
+
+
+# A still shows a thing or a property; an animation shows an action or a manner.
+# Each image kind prefers its own column, falling back to the second entry when
+# the word has no group of the first kind — which is how adjective/adverb pairs
+# (`amiku` = "deep; deeply") get their photo onto the adjective.
+_KIND_PREFERENCE = {
+    "still": ("nominal", "adjectival"),
+    "gif": ("verbal", "adverbial"),
+}
+
+
+def infer_pos_for_image(img, pos_keys):
+    """Which PoS an image most likely illustrates, or "" if undecidable.
+
+    Settles most of what the migration cannot: a b-class word's photo is nearly
+    always its noun and its GIF nearly always its verb. Returns "" when the word
+    has no group of any preferred kind, leaving that for a human rather than
+    forcing a guess.
+    """
+    for want in _KIND_PREFERENCE.get(img.get("kind"), _KIND_PREFERENCE["still"]):
+        for key in pos_keys:
+            if pos_kind(key) == want:
+                return key
+    return ""
+
+
 # ---------- reading a record ----------
 
 def senses_of(record):

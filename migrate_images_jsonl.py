@@ -127,6 +127,39 @@ def load_pos_keys(path):
     return out
 
 
+def split_senses_by_inferred_pos(rec, keys):
+    """Apply the GIF->verb / still->noun rule to senses with no `pos` yet.
+
+    A sense whose images fall on different parts of speech is split in two, so a
+    word carrying both a photo and an animation ends up with a noun sense and a
+    verb sense. Senses that already have a `pos` are never touched — a human's
+    assignment always wins. Returns the number of images placed.
+    """
+    if len(keys) < 2:
+        return 0
+    placed = 0
+    out = []
+    for sense in rec["senses"]:
+        images = sense.get("images") or []
+        if sense.get("pos") or not images:
+            out.append(sense)
+            continue
+        buckets = {}
+        for img in images:
+            buckets.setdefault(S.infer_pos_for_image(img, keys), []).append(img)
+        if set(buckets) == {""}:
+            out.append(sense)
+            continue
+        # Keep PoS-group order so it matches the word list's segment order.
+        for pos in sorted(buckets, key=lambda p: keys.index(p) if p in keys else len(keys)):
+            # dict(sense, ...) keeps any hand-added keys on the sense.
+            out.append(dict(sense, pos=pos, images=buckets[pos]))
+            if pos:
+                placed += len(buckets[pos])
+    rec["senses"] = out
+    return placed
+
+
 def to_image(url, src_page, unparsed):
     """Canonical image record, or a literal-URL one for what can't be resolved."""
     parsed = S.parse_commons_url(url)
@@ -159,7 +192,7 @@ print(f"  {len(pos_keys)} headwords")
 
 unparsed = []
 added = merged = 0
-auto_pos = blank_pos = 0
+auto_pos = blank_pos = inferred = 0
 queue = []
 
 for word in sorted(sources):
@@ -181,7 +214,9 @@ for word in sorted(sources):
     if not target.get("pos") and pos:
         target["pos"] = pos
 
-    have = {S.image_key(i) for i in S.all_images(rec)}
+    have = set()
+    for existing in S.all_images(rec):
+        have |= S.image_keys(existing)
     for url, src_page in sources[word]:
         img = to_image(url, src_page, unparsed)
         key = S.image_key(img)
@@ -190,7 +225,9 @@ for word in sorted(sources):
         have.add(key)
         target.setdefault("images", []).append(img)
 
-    if target.get("pos"):
+    inferred += split_senses_by_inferred_pos(rec, keys)
+
+    if all(s.get("pos") for s in rec["senses"] if s.get("images")):
         auto_pos += 1
     else:
         blank_pos += 1
@@ -212,6 +249,7 @@ with open(QUEUE_REPORT, "w", newline="", encoding="utf-8") as f:
 print()
 print(f"wrote {OUT_PATH}: {len(store)} words "
       f"({added} new, {merged} merged into existing)")
-print(f"  pos auto-assigned: {auto_pos}   left blank: {blank_pos}")
+print(f"  pos assigned: {auto_pos} word(s)   still blank: {blank_pos}")
+print(f"  images placed by the gif->verb / still->noun rule: {inferred}")
 print(f"  unresolvable URLs kept verbatim: {len(set(unparsed))} -> {UNPARSED_REPORT}")
 print(f"  multi-PoS curation queue: {len(queue)} -> {QUEUE_REPORT}")

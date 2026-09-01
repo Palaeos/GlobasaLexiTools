@@ -519,7 +519,11 @@ a:hover { text-decoration: underline; }
   color: var(--color-muted);
   margin-bottom: 0.3rem;
 }
-.gallery-caption .gallery-pos { font-weight: 600; }
+.gallery-caption .gallery-pos {
+  font-weight: 600;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius);
+}
 .gallery-caption .gallery-gloss { font-style: italic; }
 .gallery-sense { margin-bottom: 0.45rem; }
 .gallery-sense-label {
@@ -1869,14 +1873,16 @@ function buildGallery(data) {
     if (!hasImages && groupsWithImages.length === 0) return;
 
     const row = document.createElement("div");
-    row.className = "gallery-row " + posCssClass(pg.pos);
+    row.className = "gallery-row";
 
     if (!bare) {
       const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : "English";
       const cap = document.createElement("div");
       cap.className = "gallery-caption";
       const posSpan = document.createElement("span");
-      posSpan.className = "gallery-pos";
+      // The .pos-* classes are bare selectors carrying a background, so this
+      // must sit on the small label, never on the row (which painted a block).
+      posSpan.className = "gallery-pos " + posCssClass(pg.pos);
       let posText = grammarLabel(pg.pos, firstLang);
       if (pg.verb_type) posText += ` (${verbTypeLabel(pg.verb_type, firstLang)})`;
       posSpan.textContent = posText;
