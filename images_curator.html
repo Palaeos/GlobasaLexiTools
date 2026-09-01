@@ -193,6 +193,13 @@ function firstGlossWord(gloss) {
   return seg.replace(/^[a-z./ ()-]+:\s*/, "").split(",")[0].replace(/_/g, "").trim();
 }
 
+function setActive(i) {
+  if (i === activeSense) return;
+  activeSense = i;
+  document.querySelectorAll("#senses .sense").forEach((el, k) =>
+    el.classList.toggle("active", k === activeSense));
+}
+
 function renderSenses() {
   const box = $("#senses");
   box.innerHTML = "";
@@ -202,7 +209,7 @@ function renderSenses() {
   current.senses.forEach((sn, i) => {
     const el = document.createElement("div");
     el.className = "sense" + (i === activeSense ? " active" : "");
-    el.addEventListener("click", () => { activeSense = i; renderSenses(); });
+    el.addEventListener("click", () => setActive(i));
 
     const head = document.createElement("div");
     head.className = "sense-head";
@@ -214,12 +221,21 @@ function renderSenses() {
       if (k === sn.pos) o.selected = true;
       sel.appendChild(o);
     });
-    sel.addEventListener("change", () => post({action: "set_sense", index: i, pos: sel.value}));
+    sel.addEventListener("focus", () => setActive(i));
+    sel.addEventListener("change", () => {
+      if (sel.value === sn.pos) return;
+      post({action: "set_sense", index: i, pos: sel.value});
+    });
     head.appendChild(sel);
 
     const lab = document.createElement("input");
     lab.type = "text"; lab.value = sn.label; lab.placeholder = "label (optional)";
-    lab.addEventListener("change", () => post({action: "set_sense", index: i, label: lab.value}));
+    lab.addEventListener("focus", () => setActive(i));
+    lab.addEventListener("keydown", e => { if (e.key === "Enter") lab.blur(); });
+    lab.addEventListener("change", () => {
+      if (lab.value === sn.label) return;
+      post({action: "set_sense", index: i, label: lab.value});
+    });
     head.appendChild(lab);
 
     if (sn.derive) {

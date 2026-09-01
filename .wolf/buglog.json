@@ -3012,6 +3012,24 @@
       ],
       "occurrences": 1,
       "last_seen": "2026-09-01T22:05:01"
+    },
+    {
+      "id": "bug-188",
+      "timestamp": "2026-09-01T22:19:59",
+      "error_message": "Editing a sense label in the image curator kicks you out of the field the moment you click into it",
+      "file": "images_curator.html",
+      "root_cause": "The .sense container's click handler ran renderSenses(), which rebuilds the whole sense list. Clicking the label input bubbles up to that handler, so the input you just clicked into was destroyed and replaced mid-click.",
+      "fix": "Selecting a sense no longer rebuilds the DOM: setActive(i) just toggles the .active class on the existing elements. The label input and PoS select also set the active sense on focus, and their change handlers return early when the value is unchanged, so tabbing through a field no longer triggers a save-and-rebuild.",
+      "tags": [
+        "curator",
+        "ui",
+        "focus",
+        "rerender",
+        "images"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T22:19:59"
     }
   ]
 }
