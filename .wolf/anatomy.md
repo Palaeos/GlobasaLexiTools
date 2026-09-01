@@ -71,6 +71,7 @@
 - `ingest_tmx_qdrant.py` — parse_tmx, main (~1010 tok)
 - `JSONL parser non-English.py` — Parameterized JSONL parser for non-English Wiktionary dumps from kaikki.org. (~2473 tok)
 - `Lexilista_parser.py` — Declares import (~6780 tok)
+- `images_curator.html` — Commons image curation UI served at /images: course-ranked queue of words whose gloss has an unillustrated content PoS, per-sense image editing (add/remove/reorder/label/set-pos), Commons search grid, one-click "can't be pictured" (~2600 tok)
 - `images_store.py` — Shared per-sense image store (menalariImages.jsonl): word -> PoS -> sense -> images. parse_commons_url (4 URL forms -> canonical file title), best_url/filepath_url (Special:FilePath fallback), image_keys (canonical + `aka` former titles), anki_slots (one still per PoS group), word_pos_keys, JSONL I/O that round-trips unknown keys (~2400 tok)
 - `migrate_images_jsonl.py` — One-shot, idempotent: seeds menalariImages.jsonl from menalariImages_edited.csv + Globasa__Vocabulary.apkg; assigns `pos` only for single-PoS words; reports unparsed URLs + the multi-PoS queue (~1700 tok)
 - `resolve_commons_images.py` — Refills direct_url from the MediaWiki API (50 titles/request, redirects=1, iiurlwidth=500); records former titles in `aka` on rename; flags deleted files as status=missing (~1800 tok)

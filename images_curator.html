@@ -1,0 +1,331 @@
+<meta charset="utf-8">
+<title>Globasa Image Curator</title>
+<style>
+:root {
+  --green: #2e7d32; --green-light: #d8ecd9; --muted: #6b6b6b;
+  --line: #dcdcdc; --radius: 6px; --bg: #fafafa; --panel: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.45 "Open Sans", system-ui, sans-serif;
+       background: var(--bg); color: #222; }
+header { background: var(--green-light); padding: 0.6rem 1rem; }
+header h1 { margin: 0; font-size: 1.1rem; color: var(--green); }
+header nav { font-size: 0.85rem; margin-top: 0.2rem; }
+header nav a { color: var(--green); text-decoration: none; }
+main { display: grid; grid-template-columns: 320px 1fr; gap: 1rem;
+       padding: 1rem; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line);
+         border-radius: var(--radius); padding: 0.75rem; }
+h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+     color: var(--muted); margin: 0 0 0.5rem; }
+input[type=text] { width: 100%; padding: 0.4rem 0.5rem; font: inherit;
+                   border: 1px solid var(--line); border-radius: var(--radius); }
+button { font: inherit; border: 1px solid var(--line); background: #fff;
+         border-radius: var(--radius); padding: 0.25rem 0.6rem; cursor: pointer; }
+button:hover { background: #f0f0f0; }
+button.primary { background: var(--green); color: #fff; border-color: var(--green); }
+button.danger { color: #a33; }
+
+/* queue */
+#queue { max-height: 74vh; overflow-y: auto; margin-top: 0.5rem; }
+.qitem { padding: 0.35rem 0.4rem; border-radius: var(--radius); cursor: pointer;
+         border: 1px solid transparent; }
+.qitem:hover { background: #f2f2f2; }
+.qitem.sel { background: var(--green-light); border-color: var(--green); }
+.qitem .w { font-weight: 600; }
+.qitem .g { color: var(--muted); font-size: 0.82rem;
+            display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qitem .n { float: right; color: var(--muted); font-size: 0.78rem; }
+
+/* word detail */
+#wordTitle { font-size: 1.5rem; font-weight: 700; }
+#wordGloss { color: var(--muted); margin-bottom: 0.6rem; }
+.sense { border: 1px solid var(--line); border-radius: var(--radius);
+         padding: 0.5rem; margin-bottom: 0.5rem; }
+.sense.active { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-light); }
+.sense-head { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap;
+              margin-bottom: 0.4rem; }
+.sense-head select, .sense-head input { font: inherit; padding: 0.2rem 0.3rem;
+              border: 1px solid var(--line); border-radius: var(--radius); }
+.derive-note { font-size: 0.8rem; color: var(--green); }
+.imgs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.imgs figure { margin: 0; width: 128px; }
+.imgs img { width: 128px; height: 96px; object-fit: cover;
+            border-radius: var(--radius); display: block; }
+.imgs figcaption { font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem;
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imgs .ctl { display: flex; gap: 0.15rem; margin-top: 0.15rem; }
+.imgs .ctl button { padding: 0 0.35rem; font-size: 0.75rem; }
+.lead-badge { background: var(--green); color: #fff; font-size: 0.65rem;
+              border-radius: 3px; padding: 0 0.25rem; }
+
+/* candidates */
+.cands { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+         gap: 0.6rem; margin-top: 0.5rem; }
+.cand { border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 0.35rem; cursor: pointer; background: #fff; }
+.cand:hover { border-color: var(--green); }
+.cand img { width: 100%; height: 130px; object-fit: contain; background: #f4f4f4;
+            border-radius: 3px; display: block; }
+.cand .t { font-size: 0.72rem; margin-top: 0.2rem; overflow: hidden;
+           text-overflow: ellipsis; white-space: nowrap; }
+.cand .l { font-size: 0.68rem; color: var(--muted); }
+.hint { color: var(--muted); font-size: 0.82rem; }
+#status { font-size: 0.82rem; color: var(--green); min-height: 1.2em; }
+</style>
+
+<header>
+  <h1>Globasa Image Curator</h1>
+  <nav>
+    <a href="/">Dictionary</a> &bull; <a href="/alignments">Alignments</a> &bull;
+    <a href="/tmx">TMX</a> &bull; <a href="/pos">PoS</a> &bull;
+    <a href="/translate">Translation Aide</a>
+  </nav>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Queue <span id="qcount" class="hint"></span></h2>
+    <input type="text" id="qfilter" placeholder="filter by word or gloss">
+    <label class="hint" style="display:block;margin-top:.35rem">
+      <input type="checkbox" id="showDone"> include words already done
+    </label>
+    <label class="hint" style="display:block">
+      <input type="checkbox" id="allPos"> include function words (prepositions,
+      particles, pronouns &mdash; rarely picturable)
+    </label>
+    <div id="queue"></div>
+  </section>
+
+  <section class="panel">
+    <div id="wordTitle">Pick a word</div>
+    <div id="wordGloss" class="hint">
+      The queue lists words whose gloss has a part of speech with no picture yet,
+      commonest first. Images are stored by their Commons file name, so they
+      cannot rot.
+    </div>
+    <div id="status"></div>
+    <div id="senses"></div>
+    <div style="margin:.5rem 0">
+      <button id="addSense">+ sense</button>
+      <button id="cantPicture" class="danger">can't be pictured</button>
+    </div>
+    <h2>Search Wikimedia Commons</h2>
+    <div style="display:flex;gap:.4rem">
+      <input type="text" id="cq" placeholder="search terms">
+      <button id="csearch" class="primary">Search</button>
+    </div>
+    <p class="hint" style="margin:.4rem 0 0">
+      Click a result to add it to the selected sense. Judge whether the picture
+      alone would teach the word — search returns things that merely mention it.
+      The first image of a sense is the one Anki and the gallery lead with.
+    </p>
+    <div class="cands" id="cands"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+let current = null;      // word detail
+let activeSense = 0;
+let queue = [];
+
+function status(msg) { $("#status").textContent = msg || ""; }
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.json();
+}
+
+async function post(body) {
+  const res = await api("/api/images/sense", {
+    method: "POST", headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({word: current.word, ...body}),
+  });
+  if (res.unresolved) status(`saved — ${res.unresolved} image(s) awaiting resolve_commons_images.py`);
+  else status("saved");
+  await loadWord(current.word, true);
+  return res;
+}
+
+// ---- queue ----
+async function loadQueue() {
+  const q = encodeURIComponent($("#qfilter").value.trim());
+  const done = $("#showDone").checked ? "1" : "0";
+  const all = $("#allPos").checked ? "1" : "0";
+  const d = await api(`/api/images/words?q=${q}&done=${done}&all=${all}&limit=300`);
+  queue = d.words;
+  $("#qcount").textContent = `${d.words.length} of ${d.total}`;
+  const box = $("#queue");
+  box.innerHTML = "";
+  d.words.forEach(w => {
+    const el = document.createElement("div");
+    el.className = "qitem" + (current && current.word === w.word ? " sel" : "");
+    el.innerHTML = `<span class="n">${w.n_images || ""}</span>` +
+      `<span class="w"></span><span class="g"></span>`;
+    el.querySelector(".w").textContent = w.word;
+    el.querySelector(".g").textContent =
+      (w.missing_pos.length ? `needs ${w.missing_pos.join(", ")} — ` : "") + w.gloss;
+    el.addEventListener("click", () => loadWord(w.word));
+    box.appendChild(el);
+  });
+}
+
+// ---- word ----
+async function loadWord(word, keepSense) {
+  current = await api(`/api/images/word/${encodeURIComponent(word)}`);
+  if (!keepSense) activeSense = 0;
+  $("#wordTitle").textContent = current.word;
+  $("#wordGloss").textContent = current.gloss;
+  renderSenses();
+  document.querySelectorAll(".qitem").forEach(el =>
+    el.classList.toggle("sel", el.querySelector(".w").textContent === word));
+  if (!keepSense) {
+    $("#cq").value = firstGlossWord(current.gloss);
+    searchCommons();
+  }
+}
+
+// Seed the search from the gloss of the part of speech that still needs one.
+function firstGlossWord(gloss) {
+  const seg = (gloss || "").split(";")[0] || "";
+  return seg.replace(/^[a-z./ ()-]+:\s*/, "").split(",")[0].replace(/_/g, "").trim();
+}
+
+function renderSenses() {
+  const box = $("#senses");
+  box.innerHTML = "";
+  if (current.illustratable === false) {
+    box.innerHTML = `<p class="hint">Marked as not illustratable.</p>`;
+  }
+  current.senses.forEach((sn, i) => {
+    const el = document.createElement("div");
+    el.className = "sense" + (i === activeSense ? " active" : "");
+    el.addEventListener("click", () => { activeSense = i; renderSenses(); });
+
+    const head = document.createElement("div");
+    head.className = "sense-head";
+
+    const sel = document.createElement("select");
+    ["", ...current.pos_keys].forEach(k => {
+      const o = document.createElement("option");
+      o.value = k; o.textContent = k || "(no PoS)";
+      if (k === sn.pos) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener("change", () => post({action: "set_sense", index: i, pos: sel.value}));
+    head.appendChild(sel);
+
+    const lab = document.createElement("input");
+    lab.type = "text"; lab.value = sn.label; lab.placeholder = "label (optional)";
+    lab.addEventListener("change", () => post({action: "set_sense", index: i, label: lab.value}));
+    head.appendChild(lab);
+
+    if (sn.derive) {
+      const d = document.createElement("span");
+      d.className = "derive-note";
+      d.textContent = `derives from tag "${sn.derive.tag || ""}"`;
+      head.appendChild(d);
+    }
+
+    const del = document.createElement("button");
+    del.className = "danger"; del.textContent = "delete sense";
+    del.addEventListener("click", e => {
+      e.stopPropagation();
+      if (confirm(`Delete this sense of ${current.word} and its ${sn.images.length} image(s)?`))
+        post({action: "delete_sense", index: i});
+    });
+    head.appendChild(del);
+    el.appendChild(head);
+
+    const imgs = document.createElement("div");
+    imgs.className = "imgs";
+    sn.images.forEach((im, j) => {
+      const fig = document.createElement("figure");
+      const a = document.createElement("a");
+      a.href = im.source_page; a.target = "_blank"; a.rel = "noopener";
+      const img = document.createElement("img");
+      img.src = im.url; img.alt = ""; img.loading = "lazy";
+      a.appendChild(img); fig.appendChild(a);
+      const cap = document.createElement("figcaption");
+      cap.textContent = (j === 0 ? "★ " : "") + (im.file || im.url);
+      cap.title = im.file || im.url;
+      fig.appendChild(cap);
+      const ctl = document.createElement("div");
+      ctl.className = "ctl";
+      const mk = (t, d) => { const b = document.createElement("button");
+        b.textContent = t;
+        b.addEventListener("click", e => { e.stopPropagation();
+          post({action: "move_image", index: i, image_index: j, delta: d}); });
+        return b; };
+      ctl.appendChild(mk("←", -1)); ctl.appendChild(mk("→", 1));
+      const rm = document.createElement("button");
+      rm.className = "danger"; rm.textContent = "✕";
+      rm.addEventListener("click", e => { e.stopPropagation();
+        post({action: "remove_image", index: i, image_index: j}); });
+      ctl.appendChild(rm);
+      fig.appendChild(ctl);
+      imgs.appendChild(fig);
+    });
+    if (sn.images.length === 0 && !sn.derive) {
+      const p = document.createElement("span");
+      p.className = "hint"; p.textContent = "no images yet";
+      imgs.appendChild(p);
+    }
+    el.appendChild(imgs);
+    box.appendChild(el);
+  });
+}
+
+// ---- candidates ----
+async function searchCommons() {
+  const q = $("#cq").value.trim();
+  const box = $("#cands");
+  if (!q) { box.innerHTML = ""; return; }
+  box.innerHTML = `<p class="hint">searching…</p>`;
+  let d;
+  try { d = await api(`/api/images/candidates?q=${encodeURIComponent(q)}`); }
+  catch (e) { box.innerHTML = `<p class="hint">${e.message}</p>`; return; }
+  box.innerHTML = "";
+  if (!d.candidates.length) { box.innerHTML = `<p class="hint">nothing found</p>`; return; }
+  d.candidates.forEach(c => {
+    const el = document.createElement("div");
+    el.className = "cand";
+    const img = document.createElement("img");
+    img.src = c.thumb; img.alt = ""; img.loading = "lazy";
+    el.appendChild(img);
+    const t = document.createElement("div");
+    t.className = "t"; t.textContent = c.file.replace(/_/g, " "); t.title = c.file;
+    el.appendChild(t);
+    const l = document.createElement("div");
+    l.className = "l"; l.textContent = [c.license, c.artist].filter(Boolean).join(" · ");
+    el.appendChild(l);
+    el.addEventListener("click", () => {
+      if (!current) { status("pick a word first"); return; }
+      if (!current.senses.length) { status("add a sense first"); return; }
+      post({action: "add_image", index: activeSense, file: c.file});
+    });
+    box.appendChild(el);
+  });
+}
+
+// ---- wiring ----
+$("#qfilter").addEventListener("input", () => { clearTimeout(window._t);
+  window._t = setTimeout(loadQueue, 250); });
+$("#showDone").addEventListener("change", loadQueue);
+$("#allPos").addEventListener("change", loadQueue);
+$("#csearch").addEventListener("click", searchCommons);
+$("#cq").addEventListener("keydown", e => { if (e.key === "Enter") searchCommons(); });
+$("#addSense").addEventListener("click", () => {
+  if (!current) return;
+  const missing = current.senses.length ? "" : (current.pos_keys[0] || "");
+  post({action: "add_sense", pos: missing, label: ""});
+});
+$("#cantPicture").addEventListener("click", () => {
+  if (!current) return;
+  if (confirm(`Mark ${current.word} as not illustratable? It leaves the queue.`))
+    post({action: "set_illustratable", value: false}).then(loadQueue);
+});
+loadQueue();
+</script>

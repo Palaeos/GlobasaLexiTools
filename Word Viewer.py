@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 import lmdb
 import msgpack
 import pandas as pd
+import requests
 from flask import Flask, jsonify, send_file, abort, request
 
 from Lexilista_parser import (parseWordEntry, GlossPoS, VerbType,
@@ -56,6 +57,8 @@ ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
 GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
 TMX_VIEWER_HTML = os.path.join(BASE_DIR, "tmx_viewer.html")
 POS_VIEWER_HTML = os.path.join(BASE_DIR, "pos_viewer.html")
+IMAGES_CURATOR_HTML = os.path.join(BASE_DIR, "images_curator.html")
+COURSE_RANKING_CSV = os.path.join(BASE_DIR, "Doxo_course_ranking.csv")
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -1111,6 +1114,9 @@ for _, row in wl_df.iterrows():
     if word:
         _all_entries[word] = {
             "WordClass": str(row.get("WordClass", "")).strip(),
+            # The curator needs every word's gloss to work out which parts of
+            # speech still lack a picture.
+            "TranslationEng": str(row.get("TranslationEng", "")).strip(),
             "Synonyms": str(row.get("Synonyms", "")).strip(),
             "Antonyms": str(row.get("Antonyms", "")).strip(),
             "Category": str(row.get("Category", "")).strip(),
@@ -2719,6 +2725,256 @@ def api_translate():
         "stages": stages,
     })
 
+
+# ---------------------------------------------------------------------------
+# Image curator — pick Commons images for words that lack them
+# ---------------------------------------------------------------------------
+
+COMMONS_UA = "GlobasaLexiTools/images_curator (paleos@paleos.me)"
+_course_rank = None
+
+
+def _load_course_rank():
+    """{word: rank}. Row order in Doxo_course_ranking.csv IS the course order,
+    so the words a learner meets first sort to the top of the queue."""
+    global _course_rank
+    if _course_rank is None:
+        rank = {}
+        try:
+            with open(COURSE_RANKING_CSV, newline="", encoding="utf-8") as f:
+                for i, row in enumerate(csv.reader(f, delimiter="\t")):
+                    if row and row[0].strip() and row[0].strip() not in rank:
+                        rank[row[0].strip()] = i
+        except OSError:
+            pass
+        _course_rank = rank
+    return _course_rank
+
+
+def _curator_store():
+    return images_store.load_images(IMAGES_JSONL)
+
+
+@app.route("/images")
+def images_curator():
+    return send_file(IMAGES_CURATOR_HTML)
+
+
+@app.route("/api/images/words")
+def api_images_words():
+    """The curation queue: words with no image, and words whose gloss has more
+    PoS groups than the store illustrates. Anything marked illustratable=false
+    is skipped — much of the vocabulary simply cannot be pictured, and a queue
+    full of those is a queue nobody works."""
+    store = _curator_store()
+    rank = _load_course_rank()
+    show_done = request.args.get("done") == "1"
+    # Function words -- particles, prepositions, conjunctions, pronouns,
+    # determiners -- have no picture and never will, and they sit at the very
+    # top of the course ranking. Queue only the content parts of speech unless
+    # asked otherwise, or the first screen is nothing but `sen`, `te`, `le`.
+    all_pos = request.args.get("all") == "1"
+    query = (request.args.get("q") or "").strip().lower()
+
+    out = []
+    for word, entry in _all_entries.items():
+        rec = store.get(word) or {}
+        if not images_store.is_illustratable(rec):
+            continue
+        gloss = entry.get("TranslationEng", "") or ""
+        pos_keys = images_store.word_pos_keys(gloss)
+        illustrated = {(s.get("pos") or "") for s in images_store.senses_of(rec)
+                       if s.get("images") or s.get("derive")}
+        missing = [k for k in pos_keys
+                   if k not in illustrated
+                   and (all_pos or images_store.pos_kind(k) is not None)]
+        n_images = len(images_store.all_images(rec))
+        if not show_done and not missing:
+            continue
+        if query and query not in word.lower() and query not in gloss.lower():
+            continue
+        out.append({
+            "word": word,
+            "gloss": gloss,
+            "wordclass": entry.get("WordClass", ""),
+            "pos_keys": pos_keys,
+            "missing_pos": missing,
+            "n_images": n_images,
+            "rank": rank.get(word, 10 ** 9),
+        })
+    out.sort(key=lambda r: (r["rank"], r["word"].lower()))
+    total = len(out)
+    return jsonify({"total": total, "words": out[:int(request.args.get("limit", 200))]})
+
+
+@app.route("/api/images/word/<word>")
+def api_images_word(word):
+    """One word's stored senses, as held in the JSONL (not render-resolved)."""
+    store = _curator_store()
+    rec = store.get(word)
+    entry = _all_entries.get(word) or {}
+    gloss = entry.get("TranslationEng", "") or ""
+    senses = []
+    for sense in images_store.senses_of(rec or {}):
+        senses.append({
+            "pos": sense.get("pos", ""),
+            "label": sense.get("label", ""),
+            "derive": sense.get("derive"),
+            "illustratable": sense.get("illustratable", True),
+            "images": [{
+                "file": img.get("file"),
+                "url": images_store.best_url(img),
+                "source_page": images_store.source_page(img),
+                "kind": img.get("kind", "still"),
+                "status": img.get("status", ""),
+                "license": img.get("license", ""),
+                "artist": img.get("artist", ""),
+            } for img in sense.get("images") or []],
+        })
+    return jsonify({
+        "word": word,
+        "gloss": gloss,
+        "pos_keys": images_store.word_pos_keys(gloss),
+        "illustratable": (rec or {}).get("illustratable", True),
+        "senses": senses,
+    })
+
+
+@app.route("/api/images/candidates")
+def api_images_candidates():
+    """Commons file search, proxied so the User-Agent stays policy-compliant.
+
+    Deliberately returns candidates for a human to choose from: a search for
+    "forehead" yields two good anatomy photos and four portraits that merely
+    mention the word, so nothing here can be auto-adopted.
+    """
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"candidates": []})
+    params = {
+        "action": "query", "format": "json", "formatversion": "2",
+        "generator": "search", "gsrsearch": query,
+        "gsrnamespace": "6", "gsrlimit": request.args.get("limit", "24"),
+        "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
+        "iiurlwidth": "260",
+        "iiextmetadatafilter": "LicenseShortName|Artist",
+        "maxlag": "5",
+    }
+    try:
+        r = requests.get(images_store.api_endpoint("commons"), params=params,
+                         headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+        r.raise_for_status()
+        pages = (r.json().get("query") or {}).get("pages") or []
+    except (requests.RequestException, ValueError) as e:
+        return jsonify({"error": f"Commons search failed: {type(e).__name__}"}), 502
+
+    out = []
+    for page in pages:
+        info = (page.get("imageinfo") or [{}])[0]
+        thumb = info.get("thumburl")
+        mime = info.get("mime", "")
+        if not thumb or not mime.startswith("image/"):
+            continue
+        meta = info.get("extmetadata") or {}
+        plain = lambda v: re.sub(r"<[^>]+>", "", (v or {}).get("value", "")).strip()
+        out.append({
+            "file": (page.get("title") or "").split("File:", 1)[-1].replace(" ", "_"),
+            "thumb": re.sub(r"[?&]utm_[^&]*", "", thumb).rstrip("?&"),
+            "mime": mime,
+            "width": info.get("width"), "height": info.get("height"),
+            "license": plain(meta.get("LicenseShortName")),
+            "artist": plain(meta.get("Artist")),
+        })
+    return jsonify({"candidates": out})
+
+
+@app.route("/api/images/sense", methods=["POST"])
+def api_images_sense():
+    """Edit one word's senses in menalariImages.jsonl.
+
+    Body: {word, action, ...}. Actions:
+      add_sense    {pos, label}
+      set_sense    {index, pos?, label?}
+      delete_sense {index}
+      add_image    {index, file}          — stores the canonical title, never a
+                                            thumbnail URL, so it cannot rot
+      remove_image {index, image_index}
+      move_image   {index, image_index, delta}  — order is prototypicality
+      set_illustratable {value, index?, note?}
+    """
+    data = request.get_json(force=True, silent=True) or {}
+    word = (data.get("word") or "").strip()
+    action = data.get("action")
+    if not word:
+        return jsonify({"error": "word is required"}), 400
+
+    store = _curator_store()
+    rec = store.setdefault(word, {"word": word, "senses": []})
+    senses = rec.setdefault("senses", [])
+
+    def sense_at(key="index"):
+        try:
+            return senses[int(data.get(key))]
+        except (TypeError, ValueError, IndexError):
+            return None
+
+    if action == "add_sense":
+        senses.append(images_store.make_sense(data.get("pos", ""), data.get("label", "")))
+    elif action == "set_sense":
+        sense = sense_at()
+        if sense is None:
+            return jsonify({"error": "no such sense"}), 400
+        if "pos" in data:
+            sense["pos"] = data["pos"] or ""
+        if "label" in data:
+            sense["label"] = data["label"] or ""
+    elif action == "delete_sense":
+        sense = sense_at()
+        if sense is None:
+            return jsonify({"error": "no such sense"}), 400
+        senses.remove(sense)
+    elif action == "add_image":
+        sense = sense_at()
+        file = (data.get("file") or "").strip()
+        if sense is None or not file:
+            return jsonify({"error": "sense and file are required"}), 400
+        img = images_store.make_image(file=file, wiki=data.get("wiki", "commons"))
+        existing = {images_store.image_key(i) for i in images_store.all_images(rec)}
+        if images_store.image_key(img) not in existing:
+            sense.setdefault("images", []).append(img)
+    elif action == "remove_image":
+        sense = sense_at()
+        try:
+            sense["images"].pop(int(data.get("image_index")))
+        except (TypeError, ValueError, IndexError, KeyError):
+            return jsonify({"error": "no such image"}), 400
+    elif action == "move_image":
+        sense = sense_at()
+        try:
+            imgs = sense["images"]
+            i = int(data.get("image_index"))
+            j = max(0, min(len(imgs) - 1, i + int(data.get("delta", 0))))
+            imgs.insert(j, imgs.pop(i))
+        except (TypeError, ValueError, IndexError, KeyError):
+            return jsonify({"error": "cannot move"}), 400
+    elif action == "set_illustratable":
+        target = sense_at() if data.get("index") is not None else rec
+        if target is None:
+            return jsonify({"error": "no such sense"}), 400
+        if data.get("value") is False:
+            target["illustratable"] = False
+            if data.get("note"):
+                target["note"] = data["note"]
+        else:
+            target.pop("illustratable", None)
+            target.pop("note", None)
+    else:
+        return jsonify({"error": f"unknown action: {action}"}), 400
+
+    images_store.save_images(store, IMAGES_JSONL)
+    return jsonify({"ok": True, "word": word,
+                    "unresolved": sum(1 for i in images_store.all_images(rec)
+                                      if i.get("status") == "unresolved")})
 
 if __name__ == "__main__" or True:
     app.run(debug=True, port=5000, use_reloader=os.environ.get("WV_NO_RELOADER") != "1")

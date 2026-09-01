@@ -1881,4 +1881,6 @@
 | 21:45 | Slang/vulgar/sexual noun senses split into their own table rows; register normalised across languages | Lexilista_parser.py, Word Viewer.py, word_viewer.html, AnkiMaker3.py | 19 words affected; 419-word sweep shows no false positives; extension-language alignment preserved via ext_slot | ~30k |
 | 22:05 | Registers moved into the verb-type column; PoS cell rowspans its register sub-rows | word_viewer.html | verified flura/banana/gigi/oko/baytu/estuf/lil row shapes via node shim | ~10k |
 | 22:15 | Column header renamed Verb type -> Type; new i18n key across 45 languages | word_viewer.html, word_viewer_i18n.csv | /i18n serves Type/Tipo/Typ/Тип/種類/Aina | ~4k |
+| 22:40 | Closed out plan verification: derive specs survive resolver+sync, store byte-identical, validator clean | menalariImages.jsonl | 1770 ok / 22 unresolvable / 6 gone; 29 flagged = 6 gone + 23 retired words | ~10k |
+| 23:05 | Built the Commons image curator (/images) — plan step 9 | images_curator.html, Word Viewer.py, 6 nav links | queue 6939 content-PoS words course-ranked; all 8 write actions exercised, store reverted byte-identical | ~45k |
 
