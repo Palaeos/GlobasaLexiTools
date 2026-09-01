@@ -255,6 +255,8 @@ main {
 .status-pill.auto    { background: #e0e0e0; color: #555; }
 .status-pill.edited  { background: #fff3cd; color: #7a5c00; }
 .status-pill.saved   { background: #d4edda; color: #1a5a2a; }
+.status-pill.gold    { background: #f5d76e; color: #6b4a00;
+                       border: 1px solid #d4a900; }
 
 /* Token rows */
 .entry-row {
@@ -453,7 +455,7 @@ main {
     <span>Globasa</span>
   </div>
   <nav class="site-nav">
-    <a href="/">Dictionary</a><span class="nav-sep"> &bull; </span><a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/annotate">Annotate</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a>
+    <a href="/">Dictionary</a><span class="nav-sep"> &bull; </span><a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/pos">PoS</a><span class="nav-sep"> &bull; </span><a href="/annotate">Annotate</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a>
   </nav>
 </header>
 
@@ -491,8 +493,9 @@ main {
     <strong>How to annotate:</strong>
     Click a GLB token to select it, then click a TGT token to create a link (click again to remove).
     Right-click or Alt-click a token to mark it as aligning to NULL.
-    Edits auto-save (500&nbsp;ms debounce) only if they differ from the auto-alignment.
-    Use <em>✓ Confirm as gold</em> on a card to mark the auto-alignment as correct as-is.
+    Edits auto-save as <em>saved</em> (work-in-progress, 500&nbsp;ms debounce) only if they differ from the auto-alignment.
+    Click <em>✓ Confirm as gold</em> to promote a record to <em>gold</em> tier — only gold rows feed into eflomal priors.
+    Editing a gold record drops it back to <em>saved</em> until reconfirmed.
   </p>
 
   <div id="rebuild-status" style="display:none;"></div>
@@ -833,11 +836,14 @@ main {
   function renderAllEntries(data) {
     let all = data.entries || [];
 
-    /* Client-side show filter using annotatedIds */
+    /* Client-side show filter using annotatedIds. Filter by the entry's
+       stable sentence_id (server now attaches it), NOT array position —
+       array position is invalid as a sid because the server has already
+       applied corpus/query filters to the data. */
     if (showFilter === "annotated") {
-      all = all.filter((e, i) => annotatedIds.has(i));
+      all = all.filter(e => annotatedIds.has(e.sentence_id));
     } else if (showFilter === "unannotated") {
-      all = all.filter((e, i) => !annotatedIds.has(i));
+      all = all.filter(e => !annotatedIds.has(e.sentence_id));
     }
 
     totalPages = Math.max(1, Math.ceil(all.length / PER_PAGE));
@@ -845,7 +851,6 @@ main {
 
     const start = (currentPage - 1) * PER_PAGE;
     const page_entries = all.slice(start, start + PER_PAGE);
-    const globalOffsets = all.slice(start, start + PER_PAGE).map((_, i) => start + i);
 
     pageInfo.textContent = "Page " + currentPage + " of " + totalPages +
       " (" + all.length + " sentences)";
@@ -859,14 +864,15 @@ main {
     }
     statusMsg.style.display = "none";
 
-    /* Build cards */
-    page_entries.forEach((entry, i) => {
-      const globalIdx = globalOffsets[i];
-      const card = buildCard(entry, globalIdx, data.lang);
+    /* Build cards. Use the server-supplied sentence_id (stable across
+       any client-side or server-side filter) as the persistent key. */
+    page_entries.forEach((entry) => {
+      const sid = entry.sentence_id;
+      const card = buildCard(entry, sid, data.lang);
       entriesDiv.appendChild(card);
 
       /* Overlay saved gold annotation if available */
-      loadGoldAnnotation(currentLang, globalIdx, card, entry);
+      loadGoldAnnotation(currentLang, sid, card, entry);
     });
 
     /* If we arrived via ?sid=N, scroll the target card into view */
@@ -885,13 +891,15 @@ main {
   }
 
   /* ── Build one annotation card ──────────────────────────── */
-  function buildCard(entry, globalIdx, lang) {
-    const cardKey = currentLang + ":" + globalIdx;
+  function buildCard(entry, sid, lang) {
+    const cardKey = currentLang + ":" + sid;
 
     /* Init card state from gdfa links. Also remember the AUTO state
        (the eflomal output) so we can detect when the user's edits
        actually differ from auto — saves only happen if there's a real
-       difference, and reverting to auto deletes any prior saved record. */
+       difference, and reverting to auto deletes any prior saved record.
+       `tier` tracks whether the latest persisted record is "saved" or
+       "gold" (or null when nothing has been persisted yet). */
     if (!cardState[cardKey]) {
       const autoLinks = (entry.links || []).map(l => [l[0], l[1]]);
       cardState[cardKey] = {
@@ -899,6 +907,7 @@ main {
         nullGlb: new Set(),
         nullTgt: new Set(),
         status: "auto",
+        tier: null,
         glbTokens: entry.glb_tokens,
         tgtTokens: entry.target_tokens,
         autoLinks: autoLinks,  // frozen reference state
@@ -908,15 +917,15 @@ main {
     const card = document.createElement("div");
     card.className = "entry-card";
     card.dataset.cardKey = cardKey;
-    card.dataset.globalIdx = globalIdx;
+    card.dataset.sid = sid;
 
     /* Header */
     const hdr = document.createElement("div");
     hdr.className = "card-header";
     const idxEl = document.createElement("span");
     idxEl.className = "card-idx";
-    idxEl.textContent = "#" + (globalIdx + 1);
-    if (annotatedIds.has(globalIdx)) {
+    idxEl.textContent = "#" + (sid + 1);
+    if (annotatedIds.has(sid)) {
       const chk = document.createElement("span");
       chk.className = "annot-check";
       chk.textContent = " ✓";
@@ -985,9 +994,9 @@ main {
 
     const confirmBtn = document.createElement("button");
     confirmBtn.textContent = "✓ Confirm as gold";
-    confirmBtn.title = "Save the current alignment as gold even if no edits were made (use when the auto-alignment is correct as-is)";
+    confirmBtn.title = "Promote this annotation to the gold tier — only gold rows are used as eflomal priors. Save the current alignment even if no edits were made (use when the auto-alignment is correct as-is).";
     confirmBtn.addEventListener("click", () => {
-      saveAnnotation(cardKey, /*manual=*/true);
+      saveAnnotation(cardKey, /*manual=*/true, /*tier=*/"gold");
     });
     actions.appendChild(confirmBtn);
 
@@ -1001,7 +1010,7 @@ main {
         "Erase all gold annotations after this sentence in '" +
         entry.context + "', reverting them back to auto-alignment";
       resetFollowingBtn.addEventListener("click", () => {
-        bulkResetFollowing(globalIdx, entry.context);
+        bulkResetFollowing(sid, entry.context);
       });
       actions.appendChild(resetFollowingBtn);
     }
@@ -1108,12 +1117,49 @@ main {
     cs.links = (entry.links || []).map(l => [l[0], l[1]]);
     cs.nullGlb.clear();
     cs.nullTgt.clear();
+    cs.tier = null;
     clearAllSelected();
     pendingSelect = null;
     card.querySelectorAll(".tok.null-marked").forEach(t => t.classList.remove("null-marked"));
     setStatus(cardKey, "auto");
     applyColors(card, cardKey);
-    scheduleSave(cardKey);
+
+    /* If a gold/saved record exists on the server, tombstone it so the
+       sentence is no longer counted as annotated. Auto-save alone won't
+       do this — it bails out when state matches auto. */
+    const [lang, sidStr] = cardKey.split(":");
+    const sid = parseInt(sidStr, 10);
+    if (annotatedIds.has(sid)) {
+      fetch("/api/reset_gold", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lang, sentence_id: sid, annotator: "anonymous",
+        }),
+      })
+      .then(r => r.json())
+      .then(resp => {
+        if (resp.status === "ok") {
+          annotatedIds.delete(sid);
+          /* Remove the ✓ check next to the card index */
+          const chk = card.querySelector(".annot-check");
+          if (chk) chk.remove();
+          /* Drop from view if user is filtering to annotated only */
+          if (showFilter === "annotated") {
+            card.remove();
+            const remaining = entriesDiv.querySelectorAll(".entry-card").length;
+            if (remaining === 0) {
+              statusMsg.textContent = "No entries found.";
+              statusMsg.style.display = "";
+            }
+          }
+          showToast("Reset #" + (sid + 1) + " to auto");
+        } else {
+          showToast("Reset failed", true);
+        }
+      })
+      .catch(() => showToast("Reset failed", true));
+    }
   }
 
   /* ── Erase all links: clear annotation entirely ─────────── */
@@ -1135,17 +1181,17 @@ main {
 
   /* ── Bulk reset: clear all gold annotations AFTER the given
         sentence within the same corpus (with confirm dialog) ── */
-  function bulkResetFollowing(globalIdx, context) {
+  function bulkResetFollowing(fromSid, context) {
     if (!currentLang || !context) return;
 
     /* Count how many annotations would be affected (client-side
        estimate from annotatedIds; the server gives the authoritative
        answer in the response). */
     let estCount = 0;
-    annotatedIds.forEach(sid => { if (sid > globalIdx) estCount++; });
+    annotatedIds.forEach(sid => { if (sid > fromSid) estCount++; });
 
     const msg =
-      "Reset all gold annotations AFTER sentence #" + (globalIdx + 1) + "\n" +
+      "Reset all gold annotations AFTER sentence #" + (fromSid + 1) + "\n" +
       "in corpus: \"" + context + "\"\n" +
       "(language: glb-" + currentLang + ")\n\n" +
       "Up to " + estCount + " annotation(s) may be affected " +
@@ -1162,7 +1208,7 @@ main {
       body: JSON.stringify({
         lang: currentLang,
         context: context,
-        sid_from: globalIdx,
+        sid_from: fromSid,
         annotator: "anonymous",
       }),
     })
@@ -1343,10 +1389,10 @@ main {
   }
 
   /* ── Load and apply existing gold annotation (if any) ────── */
-  function loadGoldAnnotation(lang, globalIdx, card, entry) {
-    const cardKey = lang + ":" + globalIdx;
+  function loadGoldAnnotation(lang, sid, card, entry) {
+    const cardKey = lang + ":" + sid;
     fetch("/api/gold_alignment?lang=" + encodeURIComponent(lang) +
-          "&sentence_id=" + globalIdx)
+          "&sentence_id=" + sid)
       .then(r => {
         if (r.status === 404) return null;
         return r.json();
@@ -1364,8 +1410,10 @@ main {
           if (i >= 0 && j === -1) cs.nullGlb.add(i);
           if (i === -1 && j >= 0) cs.nullTgt.add(j);
         });
-        cs.status = "saved";
-        setStatus(cardKey, "saved");
+        const tier = ann.tier === "gold" ? "gold" : "saved";
+        cs.tier = tier;
+        cs.status = tier;
+        setStatus(cardKey, tier);
         applyColors(card, cardKey);
         /* Apply null-marked visually */
         card.querySelectorAll(".tok").forEach(span => {
@@ -1389,14 +1437,18 @@ main {
 
   /* ── Save annotation to server ──────────────────────────── */
   /* manual=true → save even when state matches auto (used for the
-     "Confirm auto" button when the user verifies the auto-alignment
+     "Confirm as gold" button when the user verifies the auto-alignment
      is correct as-is). manual=false (default) skips saving when the
      state matches auto, so passing through a sentence without edits
-     does NOT persist anything. */
-  function saveAnnotation(cardKey, manual) {
+     does NOT persist anything.
+     tier: "saved" (default, work-in-progress) or "gold" (user-confirmed,
+     fed into eflomal priors). */
+  function saveAnnotation(cardKey, manual, tier) {
     const cs = cardState[cardKey];
     if (!cs) return;
     if (!manual && isAtAutoState(cs)) return;  // no edit → no save
+
+    const effectiveTier = tier === "gold" ? "gold" : "saved";
 
     const [lang, sidxStr] = cardKey.split(":");
     const sentence_id = parseInt(sidxStr, 10);
@@ -1416,14 +1468,30 @@ main {
         tgt_tokens: cs.tgtTokens,
         links: allLinks,
         annotator: "anonymous",
+        tier: effectiveTier,
       }),
     })
     .then(r => r.json())
     .then(resp => {
       if (resp.status === "saved") {
-        setStatus(cardKey, "saved");
+        cs.tier = effectiveTier;
+        setStatus(cardKey, effectiveTier);
         annotatedIds.add(sentence_id);
-        showToast("Saved #" + (sentence_id + 1));
+        /* Add the ✓ check next to the card index if it isn't there yet */
+        const card = getCardElement(cardKey);
+        if (card) {
+          const idxEl = card.querySelector(".card-idx");
+          if (idxEl && !idxEl.querySelector(".annot-check")) {
+            const chk = document.createElement("span");
+            chk.className = "annot-check";
+            chk.textContent = " ✓";
+            idxEl.appendChild(chk);
+          }
+        }
+        showToast(
+          (effectiveTier === "gold" ? "Confirmed gold #" : "Saved #") +
+          (sentence_id + 1)
+        );
       } else {
         showToast("Save failed", true);
       }
