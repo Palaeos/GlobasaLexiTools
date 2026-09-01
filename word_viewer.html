@@ -6,7 +6,7 @@
 <title>Globasa Word Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Devanagari:wght@400;600;700&family=Noto+Sans+Telugu:wght@400;600;700&family=Noto+Sans+Bengali:wght@400;600;700&family=Noto+Sans+Tamil:wght@400;600;700&family=Noto+Sans+Kannada:wght@400;600;700&family=Noto+Sans+Malayalam:wght@400;600;700&family=Noto+Sans+Gujarati:wght@400;600;700&family=Noto+Sans+Gurmukhi:wght@400;600;700&family=Noto+Serif+Devanagari:wght@400;500;700&family=Noto+Serif+Bengali:wght@400;500;700&family=Noto+Serif+Tamil:wght@400;500;700&family=Noto+Serif+Telugu:wght@400;500;700&family=Noto+Serif+Kannada:wght@400;500;700&family=Noto+Serif+Malayalam:wght@400;500;700&family=Noto+Serif+Gujarati:wght@400;500;700&family=Noto+Serif+Gurmukhi:wght@400;500;700&family=Noto+Sans+JP:wght@400;600;700&family=Noto+Sans+SC:wght@400;600;700&family=Noto+Sans+TC:wght@400;600;700&family=Noto+Sans+KR:wght@400;600;700&family=Noto+Serif+JP:wght@400;500;700&family=Noto+Serif+SC:wght@400;500;700&family=Noto+Serif+TC:wght@400;500;700&family=Noto+Serif+KR:wght@400;500;700&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 /* Source Sans 3 — self-hosted variable font with true OpenType smcp/c2sc glyphs.
    Google Fonts strips smcp during subsetting, so we serve the full font locally. */
@@ -61,11 +61,35 @@
   /* Noto Sans for Greek — polytonic diacritics preserved; Greek small caps
      inherently drop diacritics (standard convention), so we use bold instead */
   --font-greek: 'Noto Sans', system-ui, sans-serif;
-  /* CJK fallbacks appended when lang-cjk class is active */
-  --font-cjk-ja: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  /* CJK sans-serif — UI elements, labels, headings */
+  --font-cjk-ja: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', 'Noto Sans JP', sans-serif;
   --font-cjk-zh-hans: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-cjk-zh-hant: 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
   --font-cjk-ko: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+  /* CJK serif (Ming/Song) — translations, examples, etymology (matches Libre Baskerville) */
+  --font-cjk-ja-serif: 'Hiragino Mincho ProN', 'Yu Mincho', 'MS PMincho', 'Noto Serif JP', serif;
+  --font-cjk-zh-hans-serif: 'Songti SC', 'SimSun', 'Noto Serif SC', serif;
+  --font-cjk-zh-hant-serif: 'Songti TC', 'PMingLiU', 'Noto Serif TC', serif;
+  --font-cjk-ko-serif: 'Batang', 'AppleMyungjo', 'Noto Serif KR', serif;
+  /* Indic sans-serif — UI elements, labels, headings
+     (Noto Sans per script + OS system fallbacks: Nirmala UI on Windows, *Sangam MN on macOS) */
+  --font-indic-deva: 'Noto Sans Devanagari', 'Nirmala UI', 'Devanagari Sangam MN', sans-serif;
+  --font-indic-telu: 'Noto Sans Telugu', 'Nirmala UI', 'Telugu Sangam MN', sans-serif;
+  --font-indic-beng: 'Noto Sans Bengali', 'Nirmala UI', 'Bangla Sangam MN', sans-serif;
+  --font-indic-taml: 'Noto Sans Tamil', 'Nirmala UI', 'Tamil Sangam MN', sans-serif;
+  --font-indic-knda: 'Noto Sans Kannada', 'Nirmala UI', 'Kannada Sangam MN', sans-serif;
+  --font-indic-mlym: 'Noto Sans Malayalam', 'Nirmala UI', 'Malayalam Sangam MN', sans-serif;
+  --font-indic-gujr: 'Noto Sans Gujarati', 'Nirmala UI', 'Gujarati Sangam MN', sans-serif;
+  --font-indic-guru: 'Noto Sans Gurmukhi', 'Nirmala UI', 'Gurmukhi Sangam MN', sans-serif;
+  /* Indic serif — translations, examples, etymology (matches Libre Baskerville) */
+  --font-indic-deva-serif: 'Noto Serif Devanagari', serif;
+  --font-indic-telu-serif: 'Noto Serif Telugu', serif;
+  --font-indic-beng-serif: 'Noto Serif Bengali', serif;
+  --font-indic-taml-serif: 'Noto Serif Tamil', serif;
+  --font-indic-knda-serif: 'Noto Serif Kannada', serif;
+  --font-indic-mlym-serif: 'Noto Serif Malayalam', serif;
+  --font-indic-gujr-serif: 'Noto Serif Gujarati', serif;
+  --font-indic-guru-serif: 'Noto Serif Gurmukhi', serif;
   --body-size: 18px;
   --lh: 1.45;
   --color-text: #333;
@@ -484,6 +508,71 @@ a:hover { text-decoration: underline; }
   display: block;
 }
 .word-image-wrap a { display: inline-block; }
+
+/* Gallery: one row per part of speech — its gloss, then its pictures.
+   The images are meant to carry the meaning for a learner who can't lean on
+   the gloss, so they sit above the translation table and lead large. */
+.gallery-row { margin-bottom: 0.9rem; }
+.gallery-row:last-child { margin-bottom: 0; }
+.gallery-caption {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin-bottom: 0.3rem;
+}
+.gallery-caption .gallery-pos { font-weight: 600; }
+.gallery-caption .gallery-gloss { font-style: italic; }
+.gallery-sense { margin-bottom: 0.45rem; }
+.gallery-sense-label {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-muted);
+  margin-bottom: 0.2rem;
+}
+.gallery-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+.gallery-strip img {
+  height: 120px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--radius);
+  display: block;
+  cursor: zoom-in;
+}
+.gallery-strip .gallery-lead img { height: 200px; }
+.gallery-more {
+  background: none;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  align-self: center;
+}
+.gallery-more:hover { opacity: 0.75; }
+.img-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  z-index: 1000;
+  cursor: zoom-out;
+}
+.img-overlay img {
+  max-width: 92vw;
+  max-height: 82vh;
+  border-radius: var(--radius);
+}
+.img-overlay a { color: #fff; font-size: 0.85rem; }
 details.nsfw-wrap > summary {
   cursor: pointer;
   font-size: 0.9rem;
@@ -602,13 +691,16 @@ td[dir="rtl"], td[dir="ltr"] { unicode-bidi: embed; }
 body.lang-cjk {
   --lh: 1.7;
   text-autospace: ideograph-alpha ideograph-numeric;
+  line-break: strict;
+  text-spacing-trim: space-first allow-end;
 }
 body.lang-ja { font-family: 'Open Sans', var(--font-cjk-ja); }
 body.lang-zh-hans { font-family: 'Open Sans', var(--font-cjk-zh-hans); }
 body.lang-zh-hant { font-family: 'Open Sans', var(--font-cjk-zh-hant); }
-body.lang-ko { font-family: 'Open Sans', var(--font-cjk-ko); }
+body.lang-ko { font-family: 'Open Sans', var(--font-cjk-ko); word-break: keep-all; }
 
-/* CJK: no letter-spacing or small-caps (no case distinction) */
+/* CJK: no letter-spacing or small-caps (no case distinction);
+   semibold (600) instead of bold (700) — dense CJK strokes look heavy at 700 */
 body.lang-cjk .section-heading,
 body.lang-cjk .meta-label,
 body.lang-cjk .cell-pos,
@@ -621,13 +713,56 @@ body.lang-cjk .site-nav {
   letter-spacing: normal;
   font-variant-caps: normal;
   font-feature-settings: normal;
+  font-weight: 600;
 }
 
-/* CJK translation cells: serif fallback to system CJK fonts */
-body.lang-ja .cell-trans { font-family: var(--font-serif), var(--font-cjk-ja); }
-body.lang-zh-hans .cell-trans { font-family: var(--font-serif), var(--font-cjk-zh-hans); }
-body.lang-zh-hant .cell-trans { font-family: var(--font-serif), var(--font-cjk-zh-hant); }
-body.lang-ko .cell-trans { font-family: var(--font-serif), var(--font-cjk-ko); }
+/* CJK content: 5% size boost — ideographs pack more strokes per em than Latin,
+   appearing visually smaller at the same nominal size.
+   Weight 500 — CJK serif (Ming/Song) has high stroke contrast; thin horizontals
+   get wispy at screen sizes, so nudge above regular (400) for legibility */
+body.lang-cjk .cell-trans,
+body.lang-cjk .meta-value,
+body.lang-cjk .construction-trans,
+body.lang-cjk .example-trans {
+  font-size: 1.05em;
+  font-weight: 500;
+}
+
+/* CJK mixed content: prevent long Latin words/URLs from overflowing */
+body.lang-cjk .cell-trans,
+body.lang-cjk .example-glb {
+  overflow-wrap: anywhere;
+}
+
+/* CJK content: serif CJK (Ming/Song) for translations, examples, etymology
+   — matches Libre Baskerville used for Latin content text */
+body.lang-ja .cell-trans,
+body.lang-ja .example-glb,
+body.lang-ja .example-trans,
+body.lang-ja .etymology-table,
+body.lang-ja .construction-item,
+body.lang-ja .meta-value { font-family: var(--font-serif), var(--font-cjk-ja-serif); }
+
+body.lang-zh-hans .cell-trans,
+body.lang-zh-hans .example-glb,
+body.lang-zh-hans .example-trans,
+body.lang-zh-hans .etymology-table,
+body.lang-zh-hans .construction-item,
+body.lang-zh-hans .meta-value { font-family: var(--font-serif), var(--font-cjk-zh-hans-serif); }
+
+body.lang-zh-hant .cell-trans,
+body.lang-zh-hant .example-glb,
+body.lang-zh-hant .example-trans,
+body.lang-zh-hant .etymology-table,
+body.lang-zh-hant .construction-item,
+body.lang-zh-hant .meta-value { font-family: var(--font-serif), var(--font-cjk-zh-hant-serif); }
+
+body.lang-ko .cell-trans,
+body.lang-ko .example-glb,
+body.lang-ko .example-trans,
+body.lang-ko .etymology-table,
+body.lang-ko .construction-item,
+body.lang-ko .meta-value { font-family: var(--font-serif), var(--font-cjk-ko-serif); }
 
 /* ============================================================
    Greek typography (Ancient Greek / polytonic)
@@ -652,6 +787,124 @@ body.lang-grc .site-nav {
   font-variant-caps: normal;
   font-feature-settings: normal;
 }
+
+/* ============================================================
+   Indic typography: Devanagari, Telugu, Bengali, Tamil, etc.
+   — Higher line-height for tall conjuncts, matras, and vowel marks
+   — Suppress letter-spacing (breaks Devanagari shirorekha / headline
+     bar; unnecessary for other Indic scripts) and small-caps (no
+     case distinction in any Indic script)
+   — Noto Sans per-script font stacks via Google Fonts
+   ============================================================ */
+body.lang-indic {
+  --lh: 1.7;
+}
+/* Telugu and Kannada have tall stacking conjuncts — need extra height */
+body.lang-telu, body.lang-knda {
+  --lh: 1.8;
+}
+
+body.lang-deva { font-family: 'Open Sans', var(--font-indic-deva); }
+body.lang-telu { font-family: 'Open Sans', var(--font-indic-telu); }
+body.lang-beng { font-family: 'Open Sans', var(--font-indic-beng); }
+body.lang-taml { font-family: 'Open Sans', var(--font-indic-taml); }
+body.lang-knda { font-family: 'Open Sans', var(--font-indic-knda); }
+body.lang-mlym { font-family: 'Open Sans', var(--font-indic-mlym); }
+body.lang-gujr { font-family: 'Open Sans', var(--font-indic-gujr); }
+body.lang-guru { font-family: 'Open Sans', var(--font-indic-guru); }
+
+/* Indic: no letter-spacing or small-caps (no case distinction;
+   letter-spacing breaks Devanagari shirorekha);
+   semibold (600) — complex Indic conjuncts look heavy at 700 */
+body.lang-indic .section-heading,
+body.lang-indic .meta-label,
+body.lang-indic .cell-pos,
+body.lang-indic .cell-verbtype,
+body.lang-indic .trans-table th,
+body.lang-indic .lang-selector .label,
+body.lang-indic .script-selector-wrap .label,
+body.lang-indic .search-btn-row button,
+body.lang-indic .site-nav {
+  letter-spacing: normal;
+  font-variant-caps: normal;
+  font-feature-settings: normal;
+  font-weight: 600;
+}
+
+/* Indic content: 5% size boost — complex conjuncts and matras need
+   more pixels than Latin to remain legible.
+   Weight 500 — Indic serif fonts share the high-contrast stroke issue */
+body.lang-indic .cell-trans,
+body.lang-indic .meta-value,
+body.lang-indic .construction-trans,
+body.lang-indic .example-trans {
+  font-size: 1.05em;
+  font-weight: 500;
+}
+
+/* Indic mixed content: prevent long Latin words from overflowing */
+body.lang-indic .cell-trans,
+body.lang-indic .example-glb {
+  overflow-wrap: anywhere;
+}
+
+/* Indic content: Noto Serif per script for translations, examples, etymology
+   — matches Libre Baskerville used for Latin content text */
+body.lang-deva .cell-trans,
+body.lang-deva .example-glb,
+body.lang-deva .example-trans,
+body.lang-deva .etymology-table,
+body.lang-deva .construction-item,
+body.lang-deva .meta-value { font-family: var(--font-serif), var(--font-indic-deva-serif); }
+
+body.lang-telu .cell-trans,
+body.lang-telu .example-glb,
+body.lang-telu .example-trans,
+body.lang-telu .etymology-table,
+body.lang-telu .construction-item,
+body.lang-telu .meta-value { font-family: var(--font-serif), var(--font-indic-telu-serif); }
+
+body.lang-beng .cell-trans,
+body.lang-beng .example-glb,
+body.lang-beng .example-trans,
+body.lang-beng .etymology-table,
+body.lang-beng .construction-item,
+body.lang-beng .meta-value { font-family: var(--font-serif), var(--font-indic-beng-serif); }
+
+body.lang-taml .cell-trans,
+body.lang-taml .example-glb,
+body.lang-taml .example-trans,
+body.lang-taml .etymology-table,
+body.lang-taml .construction-item,
+body.lang-taml .meta-value { font-family: var(--font-serif), var(--font-indic-taml-serif); }
+
+body.lang-knda .cell-trans,
+body.lang-knda .example-glb,
+body.lang-knda .example-trans,
+body.lang-knda .etymology-table,
+body.lang-knda .construction-item,
+body.lang-knda .meta-value { font-family: var(--font-serif), var(--font-indic-knda-serif); }
+
+body.lang-mlym .cell-trans,
+body.lang-mlym .example-glb,
+body.lang-mlym .example-trans,
+body.lang-mlym .etymology-table,
+body.lang-mlym .construction-item,
+body.lang-mlym .meta-value { font-family: var(--font-serif), var(--font-indic-mlym-serif); }
+
+body.lang-gujr .cell-trans,
+body.lang-gujr .example-glb,
+body.lang-gujr .example-trans,
+body.lang-gujr .etymology-table,
+body.lang-gujr .construction-item,
+body.lang-gujr .meta-value { font-family: var(--font-serif), var(--font-indic-gujr-serif); }
+
+body.lang-guru .cell-trans,
+body.lang-guru .example-glb,
+body.lang-guru .example-trans,
+body.lang-guru .etymology-table,
+body.lang-guru .construction-item,
+body.lang-guru .meta-value { font-family: var(--font-serif), var(--font-indic-guru-serif); }
 
 /* ============================================================
    Tag browser
@@ -943,7 +1196,7 @@ body.script-musa .sug-word {
     <span class="site-title">Globasa</span>
   </div>
   <nav class="site-nav">
-    <a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/aide" target="_blank" rel="noopener">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+    <a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/pos">PoS</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
   </nav>
   <div class="header-search">
     <div class="search-wrap">
@@ -1086,9 +1339,26 @@ const CJK_LANG_CLASS = {
   "Korean": "ko",
 };
 
+// Indic language detection — maps display name to script class suffix
+const INDIC_LANG_CLASS = {
+  "Hindi": "deva",
+  "Sanskrit": "deva",
+  "Bengali": "beng",
+  "Tamil": "taml",
+  "Telugu": "telu",
+  "Kannada": "knda",
+  "Malayalam": "mlym",
+  "Gujarati": "gujr",
+  "Panjabi": "guru",
+};
+
 // Map display language names to TMX language codes
 const LANG_TO_TMX = {
   "English": "en", "Esperanto": "eo", "Spanish": "es",
+  "German": "de", "French": "fr", "Russian": "ru",
+  "Dutch": "nl", "Portuguese": "pt", "Indonesian": "id",
+  "Danish": "da", "Arabic": "ar", "Hindi": "hi",
+  "Swahili": "sw", "Turkish": "tr", "Mandarin Chinese": "zh",
 };
 // Reverse: TMX code to display name
 const TMX_TO_LANG = Object.fromEntries(Object.entries(LANG_TO_TMX).map(([k,v]) => [v, k]));
@@ -1316,8 +1586,13 @@ function updateDocDirection() {
   const isRTL = RTL_LANGS.has(firstLang);
   document.documentElement.dir = isRTL ? "rtl" : "ltr";
 
-  // CJK body classes for typography (line-height, font stacks, letter-spacing)
-  document.body.classList.remove("lang-cjk", "lang-ja", "lang-zh-hans", "lang-zh-hant", "lang-ko", "lang-grc");
+  // Script-specific body classes for typography (line-height, font stacks, letter-spacing)
+  document.body.classList.remove(
+    "lang-cjk", "lang-ja", "lang-zh-hans", "lang-zh-hant", "lang-ko",
+    "lang-grc",
+    "lang-indic", "lang-deva", "lang-telu", "lang-beng", "lang-taml",
+    "lang-knda", "lang-mlym", "lang-gujr", "lang-guru"
+  );
   const cjkClass = CJK_LANG_CLASS[firstLang];
   if (cjkClass) {
     document.body.classList.add("lang-cjk", "lang-" + cjkClass);
@@ -1325,6 +1600,11 @@ function updateDocDirection() {
   // Ancient Greek: use Noto Sans, suppress smcp (Greek small caps drop diacritics)
   if (firstLang === "Ancient Greek") {
     document.body.classList.add("lang-grc");
+  }
+  // Indic scripts: Noto Sans per script, suppress smcp/letter-spacing, taller line-height
+  const indicClass = INDIC_LANG_CLASS[firstLang];
+  if (indicClass) {
+    document.body.classList.add("lang-indic", "lang-" + indicClass);
   }
 }
 
@@ -1455,6 +1735,168 @@ function posCssClass(pos) {
 // ============================================================
 // Translation table builder
 // ============================================================
+
+// Show this many images per sense before the "+N more" control.
+const GALLERY_PREVIEW = 3;
+
+function showImageOverlay(url, sourcePage) {
+  const ov = document.createElement("div");
+  ov.className = "img-overlay";
+  const img = document.createElement("img");
+  img.src = url;
+  ov.appendChild(img);
+  if (sourcePage) {
+    const a = document.createElement("a");
+    a.href = sourcePage;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = "source";
+    a.addEventListener("click", e => e.stopPropagation());
+    ov.appendChild(a);
+  }
+  const close = () => ov.remove();
+  ov.addEventListener("click", close);
+  document.addEventListener("keydown", function esc(e) {
+    if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+  });
+  document.body.appendChild(ov);
+}
+
+// One sense's pictures: the first leads large, the rest follow smaller, and
+// anything past GALLERY_PREVIEW hides behind a "+N more" button. Image order is
+// prototypicality order, so the lead image is the most representative one.
+function buildImageStrip(images) {
+  const strip = document.createElement("div");
+  strip.className = "gallery-strip";
+
+  const make = (im, isLead) => {
+    const holder = document.createElement("span");
+    if (isLead) holder.className = "gallery-lead";
+    const el = document.createElement("img");
+    el.src = im.url;
+    el.alt = "";
+    el.loading = "lazy";
+    el.addEventListener("click", () => showImageOverlay(im.url, im.source_page));
+    holder.appendChild(el);
+    return holder;
+  };
+
+  images.slice(0, GALLERY_PREVIEW).forEach((im, i) => strip.appendChild(make(im, i === 0)));
+
+  const rest = images.slice(GALLERY_PREVIEW);
+  if (rest.length > 0) {
+    const btn = document.createElement("button");
+    btn.className = "gallery-more";
+    btn.type = "button";
+    btn.textContent = `+${rest.length} more`;
+    btn.addEventListener("click", () => {
+      btn.remove();
+      rest.forEach(im => strip.appendChild(make(im, false)));
+    });
+    strip.appendChild(btn);
+  }
+  return strip;
+}
+
+// senses: [{label, images}]. The label only earns a caption when the row holds
+// more than one sense — otherwise it is noise.
+function buildSenseBlocks(senses) {
+  const frag = document.createDocumentFragment();
+  const showLabels = senses.filter(s => (s.images || []).length > 0).length > 1;
+  senses.forEach(sense => {
+    const images = sense.images || [];
+    if (images.length === 0) return;
+    const block = document.createElement("div");
+    block.className = "gallery-sense";
+    if (showLabels && sense.label) {
+      const lab = document.createElement("div");
+      lab.className = "gallery-sense-label";
+      lab.textContent = sense.label;
+      block.appendChild(lab);
+    }
+    block.appendChild(buildImageStrip(images));
+    frag.appendChild(block);
+  });
+  return frag;
+}
+
+// The gloss for a PoS group, in the selected display languages — the same text
+// the translation table prints, so the two always agree.
+function galleryGlossText(pg) {
+  const langs = (selectedLangs.length > 0 ? selectedLangs : ["English"]).filter(l => l !== "Globasa");
+  const parts = [];
+  (langs.length > 0 ? langs : ["English"]).forEach(lang => {
+    const items = (pg.languages && pg.languages[lang]) || [];
+    const text = items.map(it => it.text).filter(Boolean).join(", ");
+    if (text) parts.push(text);
+  });
+  return parts.join(" · ");
+}
+
+// The gallery: one row per PoS group, each showing its gloss beside its own
+// images. Rows with no images still render, so you can see that the noun is
+// illustrated and the verb isn't. Only built when the word has some image
+// somewhere -- otherwise every abstract word would grow a block duplicating the
+// translation table.
+function buildGallery(data) {
+  const groups = (data.translations && data.translations.pos_groups) || [];
+  const ungrouped = data.image_senses || [];
+  const groupsWithImages = groups.filter(g =>
+    (g.image_senses || []).some(s => (s.images || []).length > 0));
+  const anyImages = ungrouped.some(s => (s.images || []).length > 0) ||
+                    groupsWithImages.length > 0;
+  if (!anyImages) return null;
+
+  const wrap = document.createElement("div");
+  wrap.className = "word-image-wrap";
+
+  // Images whose PoS hasn't been assigned yet render first, uncaptioned —
+  // exactly how a word-level image looked before senses existed.
+  if (ungrouped.length > 0) {
+    const row = document.createElement("div");
+    row.className = "gallery-row";
+    row.appendChild(buildSenseBlocks(ungrouped));
+    wrap.appendChild(row);
+  }
+
+  // A single PoS row with a single sense needs no caption at all.
+  const bare = ungrouped.length === 0 && groupsWithImages.length === 1 &&
+               groups.length === 1;
+
+  groups.forEach(pg => {
+    const senses = pg.image_senses || [];
+    const hasImages = senses.some(s => (s.images || []).length > 0);
+    if (!hasImages && groupsWithImages.length === 0) return;
+
+    const row = document.createElement("div");
+    row.className = "gallery-row " + posCssClass(pg.pos);
+
+    if (!bare) {
+      const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : "English";
+      const cap = document.createElement("div");
+      cap.className = "gallery-caption";
+      const posSpan = document.createElement("span");
+      posSpan.className = "gallery-pos";
+      let posText = grammarLabel(pg.pos, firstLang);
+      if (pg.verb_type) posText += ` (${verbTypeLabel(pg.verb_type, firstLang)})`;
+      posSpan.textContent = posText;
+      cap.appendChild(posSpan);
+      const gloss = galleryGlossText(pg);
+      if (gloss) {
+        const g = document.createElement("span");
+        g.className = "gallery-gloss";
+        g.textContent = " — " + gloss;
+        cap.appendChild(g);
+      }
+      row.appendChild(cap);
+    }
+
+    row.appendChild(buildSenseBlocks(senses));
+    wrap.appendChild(row);
+  });
+
+  return wrap;
+}
 
 function buildTransTable(data) {
   const { has_verbs, pos_groups } = data.translations;
@@ -1784,34 +2226,23 @@ function renderResult(data) {
     headDiv.appendChild(btn);
   }
 
-  // --- 2. Image ---
+  // --- 2. Images ---
   const imgSection = document.getElementById("imageSection");
   imgSection.innerHTML = "";
-  if (data.image && data.image.direct_url) {
-    const imgWrap = document.createElement("div");
-    imgWrap.className = "word-image-wrap";
-    const imgEl = document.createElement("img");
-    imgEl.src = data.image.direct_url;
-    imgEl.alt = data.word;
-    imgEl.loading = "lazy";
-    const link = document.createElement("a");
-    link.href = data.image.source_page || data.image.direct_url;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.appendChild(imgEl);
-
+  const gallery = buildGallery(data);
+  if (gallery) {
     if (data.nsfw) {
+      // The NSFW cover has to hide the whole gallery, not just its first image.
       const det = document.createElement("details");
       det.className = "nsfw-wrap";
       const sum = document.createElement("summary");
       sum.textContent = "⚠ NSFW image — click to reveal";
       det.appendChild(sum);
-      det.appendChild(link);
-      imgWrap.appendChild(det);
+      det.appendChild(gallery);
+      imgSection.appendChild(det);
     } else {
-      imgWrap.appendChild(link);
+      imgSection.appendChild(gallery);
     }
-    imgSection.appendChild(imgWrap);
   }
 
   // --- 3. Translation table ---
@@ -2060,9 +2491,11 @@ function renderResult(data) {
       .map(l => LANG_TO_TMX[l])
       .filter(c => c);
 
-    // Sort: examples with a translation in a selected language first
-    const hasTranslation = ex => prefCodes.some(c => (ex.translations || {})[c]);
-    const sorted = [...examples].sort((a, b) => hasTranslation(b) - hasTranslation(a));
+    // Sort: favor examples with translations in selected display languages.
+    // Score = count of selected languages that have a translation for this example.
+    // Higher score (both languages) ranks above lower (one language) ranks above zero.
+    const transScore = ex => prefCodes.reduce((n, c) => n + ((ex.translations || {})[c] ? 1 : 0), 0);
+    const sorted = [...examples].sort((a, b) => transScore(b) - transScore(a));
 
     const MAX_EXAMPLES = 5;
     const sliced = sorted.slice(0, MAX_EXAMPLES);

@@ -21,7 +21,14 @@ import msgpack
 import pandas as pd
 from flask import Flask, jsonify, send_file, abort, request
 
-from Lexilista_parser import parseWordEntry, GlossPoS, VerbType
+from Lexilista_parser import (parseWordEntry, GlossPoS, VerbType,
+                              ANNOTATION_MAP, _refine_verb_type)
+import images_store
+from globasa_pos import (
+    tokenize as pos_tokenize,
+    assign_pos as pos_assign,
+    POS_NAMES as POS_TAG_NAMES,
+)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -33,7 +40,7 @@ AUDIO_DIR = "/media/paleos/Warehouse2/Applications/Segmentation/Ektor_su_Lafuzu_
 WORDLIST_CSV = os.path.join(BASE_DIR, "word-list.csv")
 EXTENSION_TSV = os.path.join(BASE_DIR, "menalariExtension.tsv")
 PRONOUNS_TSV = os.path.join(BASE_DIR, "menalariPronouns_edited.tsv")
-IMAGES_TSV = os.path.join(BASE_DIR, "menalariImages_edited.csv")
+IMAGES_JSONL = os.path.join(BASE_DIR, images_store.IMAGES_JSONL)
 SOTI_TSV = os.path.join(BASE_DIR, "Soti.tsv")
 GRAPHIC_BLACKLIST = os.path.join(BASE_DIR, "graphic_blacklist")
 CONSTRUCTIONS_XLSX = os.path.join(BASE_DIR, "Constructions.xlsx")
@@ -47,6 +54,7 @@ GIZA_IMPROVED_DIR = os.path.join(BASE_DIR, "giza_output_improved")
 ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
 GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
 TMX_VIEWER_HTML = os.path.join(BASE_DIR, "tmx_viewer.html")
+POS_VIEWER_HTML = os.path.join(BASE_DIR, "pos_viewer.html")
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -181,8 +189,18 @@ class WordViewerDB:
     def get_tmx(self, word):
         return self._get("tmx", word)
 
-    def get_image(self, word):
+    def get_images(self, word):
+        """{"senses": [{"pos", "label", "images": [...]}, ...]} or None."""
         return self._get("images", word)
+
+    def get_image(self, word):
+        """Legacy single-image shape: the first image of the first PoS group.
+        Kept so anything still reading `image` kept working."""
+        rec = self._get("images", word)
+        for sense in (rec or {}).get("senses") or []:
+            for img in sense.get("images") or []:
+                return {"direct_url": img["url"], "source_page": img["source_page"]}
+        return None
 
     def get_sound_effect(self, word):
         return self._get("sound_effects", word)
@@ -822,17 +840,34 @@ def build_db():
     # -- Load pronouns TSV --
     pron_df = pd.read_csv(PRONOUNS_TSV, sep="\t", index_col=0, dtype=str).fillna("")
 
-    # -- Load images TSV (is actually tab-separated despite .csv) --
+    # -- Load images JSONL (word -> PoS -> sense -> images) --
+    # URLs are resolved to render-ready form here so the frontend never has to
+    # know about Special:FilePath fallbacks. Images the API reported as gone are
+    # dropped: a 404 in the gallery is worse than a gap.
     img_rows = {}
-    with open(IMAGES_TSV, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter="\t")
-        next(reader)  # skip header
-        for row in reader:
-            if len(row) >= 4 and row[0] and row[2].strip():
-                img_rows[row[0].strip()] = {
-                    "direct_url": row[2].strip(),
-                    "source_page": row[3].strip() if len(row) > 3 else "",
-                }
+    for word, rec in images_store.load_images(IMAGES_JSONL).items():
+        senses = []
+        for sense in images_store.senses_of(rec):
+            images = []
+            for img in sense.get("images") or []:
+                if img.get("status") == "missing":
+                    continue
+                url = images_store.best_url(img)
+                if not url:
+                    continue
+                images.append({
+                    "url": url,
+                    "source_page": images_store.source_page(img),
+                    "kind": img.get("kind", "still"),
+                })
+            if images:
+                senses.append({
+                    "pos": sense.get("pos", "") or "",
+                    "label": sense.get("label", "") or "",
+                    "images": images,
+                })
+        if senses:
+            img_rows[word] = {"senses": senses}
 
     # -- Load Soti.tsv (sound effects) --
     soti_rows = {}
@@ -1305,6 +1340,45 @@ def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
     return {"has_verbs": has_verbs, "pos_groups": pos_groups}
 
 
+def _pos_group_keys_for(annotation, wordclass):
+    """Annotation key ("n", "v.tr") -> the (pos, verb_type) keys build_translations_payload
+    would produce for it. Mirrors _parseAnnotatedEnglish, including the WordClass-driven
+    verb-type refinement, so the gallery and the translation table always agree."""
+    keys = []
+    for pos, vtype, _afx in ANNOTATION_MAP.get(annotation, []):
+        if vtype is not None:
+            vtype = _refine_verb_type(vtype, wordclass, annotation)
+        keys.append((_POS_NAMES.get(pos, "phrase"),
+                     _VERB_TYPE_NAMES.get(vtype) if vtype else None))
+    return keys
+
+
+def attach_images_to_pos_groups(translations, senses, wordclass):
+    """Hang each sense's images on its PoS group, so every group renders its own
+    gloss beside its own pictures. Returns the senses that belong to no group --
+    those with an unassigned `pos`, which render ungrouped ahead of the rest."""
+    groups = translations.get("pos_groups") or []
+    for group in groups:
+        group["image_senses"] = []
+
+    by_key = {}
+    for group in groups:
+        by_key.setdefault((group.get("pos"), group.get("verb_type")), group)
+
+    unassigned = []
+    for sense in senses:
+        annotation = sense.get("pos") or ""
+        payload = {"label": sense.get("label", ""), "images": sense.get("images") or []}
+        targets = [by_key[k] for k in _pos_group_keys_for(annotation, wordclass)
+                   if k in by_key] if annotation else []
+        if targets:
+            for group in targets:
+                group["image_senses"].append(payload)
+        else:
+            unassigned.append(payload)
+    return unassigned
+
+
 @app.route("/")
 def index():
     return send_file(HTML_FILE)
@@ -1436,6 +1510,7 @@ def lookup(word):
     ext_entry = _db.get_extensions(word) or {}
     pronoun = _db.get_pronoun(word)
     image = _db.get_image(word)
+    image_senses = (_db.get_images(word) or {}).get("senses") or []
     sound_effect = _db.get_sound_effect(word)
     nsfw = _db.is_nsfw(word)
     constructions = _db.get_constructions(word) or []
@@ -1458,6 +1533,8 @@ def lookup(word):
 
     # Build translations
     translations = build_translations_payload(wl_entry, ext_entry, to_exclude)
+    image_senses = attach_images_to_pos_groups(
+        translations, image_senses, wl_entry.get("WordClass", ""))
 
     # Build word glossary for tooltip (all Globasa words in examples)
     # Returns {word_or_phrase: {lang_display_name: short_gloss}}
@@ -1527,6 +1604,7 @@ def lookup(word):
         "tags": [t.strip() for t in wl_entry.get("Tags", "").split(",") if t.strip()],
         "category": wl_entry.get("Category", ""),
         "image": image,
+        "image_senses": image_senses,
         "nsfw": nsfw,
         "has_pronunciation": has_pronunciation,
         "sound_effect": sound_effect,
@@ -1966,6 +2044,114 @@ def api_tmx():
         "per_page": per_page,
         "decompose": decompose,
         "tokenizer_ok": _get_glb_tokenizer(decompose=decompose) is not None,
+        "entries": page_payload,
+    })
+
+
+# ---------------------------------------------------------------------------
+# PoS Viewer (analogue of /tmx; whole-word PoS tagging instead of morphemes)
+# ---------------------------------------------------------------------------
+
+def _pos_tokenize_page(raw_entries):
+    """Run the PoS tagger over each Globasa sentence in the page slice and
+    emit the per-entry payload. Each token is a whole word (the tagger uses
+    its own whitespace-split tokenizer; multi-word lexicon hits collapse to a
+    single token). Trailing punctuation rides on the token's `trail` field
+    so the subscript stays attached to the word."""
+    out = []
+    for e in raw_entries:
+        toks = pos_tokenize(e["glb_text"])
+        ps = pos_assign(toks)
+        glb_pos_tokens = []
+        for (surface, lem, trail), p in zip(toks, ps):
+            # Strip the trailing punctuation off the surface so the rendered
+            # word doesn't double-print the punctuation; the frontend emits
+            # `trail` as a separate text node after the subscript.
+            word = surface[:-len(trail)] if trail and surface.endswith(trail) else surface
+            glb_pos_tokens.append({
+                "surface": word,
+                "lemma": lem,
+                "pos": p,
+                "trail": trail,
+            })
+        out.append({
+            "id": e["id"],
+            "context": e["context"],
+            "glb_text": e["glb_text"],
+            "glb_pos_tokens": glb_pos_tokens,
+            "target_text": e["target_text"],
+        })
+    return out
+
+
+@app.route("/pos")
+def pos_viewer():
+    return send_file(POS_VIEWER_HTML)
+
+
+@app.route("/api/pos/languages")
+def api_pos_languages():
+    """Available target languages — same source as /api/tmx/languages."""
+    langs = _tmx_available_langs()
+    out = []
+    for lang in langs:
+        cnt = len(_tmx_raw_cache[lang]) if lang in _tmx_raw_cache else None
+        out.append({"lang": lang, "count": cnt})
+    return jsonify(out)
+
+
+@app.route("/api/pos/contexts")
+def api_pos_contexts():
+    """Distinct corpus contexts for the given target language."""
+    lang = request.args.get("lang", "en")
+    raw = _load_tmx_raw(lang)
+    counts = {}
+    for e in raw:
+        c = e.get("context", "")
+        if c:
+            counts[c] = counts.get(c, 0) + 1
+    out = [{"context": c, "count": n} for c, n in counts.items()]
+    out.sort(key=lambda x: -x["count"])
+    return jsonify(out)
+
+
+@app.route("/api/pos/tags")
+def api_pos_tags():
+    """The PoS tag inventory + human-readable names (used by the legend)."""
+    return jsonify([{"tag": tag, "name": name}
+                    for tag, name in POS_TAG_NAMES.items()])
+
+
+@app.route("/api/pos")
+def api_pos():
+    """Paginated PoS-tagged entries for `lang`. Mirrors /api/tmx pagination
+    and filtering; swaps morpheme tokenisation for whole-word PoS tagging."""
+    lang = request.args.get("lang", "en")
+    page = int(request.args.get("page", 1))
+    per_page = int(request.args.get("per_page", 50))
+    q = request.args.get("q", "").strip().lower()
+    context_filter = request.args.get("context", "").strip()
+
+    raw = _load_tmx_raw(lang)
+
+    if context_filter:
+        raw = [e for e in raw if e.get("context", "") == context_filter]
+    if q:
+        raw = [e for e in raw
+               if q in e["glb_text"].lower() or q in e["target_text"].lower()]
+
+    total = len(raw)
+    start = (page - 1) * per_page
+    end = start + per_page
+    page_entries = raw[start:end]
+
+    page_payload = _pos_tokenize_page(page_entries)
+
+    return jsonify({
+        "lang": lang,
+        "total": total,
+        "page": page,
+        "per_page": per_page,
         "entries": page_payload,
     })
 
