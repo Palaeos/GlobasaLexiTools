@@ -1873,4 +1873,5 @@
 | 19:40 | Applied user's gif->verb / still->noun (+adj/adv) rule; curation queue 198 -> 0 | images_store.py, migrate_images_jsonl.py, menalariImages.jsonl | 1774/1797 words have pos assigned; 23 blanks are words retired from word-list.csv | ~18k |
 | 19:45 | Fixed gallery row painting a full-width PoS-coloured block; tint moved to the label | word_viewer.html | verified via node DOM shim on fronta/acum/hongu/amiku | ~5k |
 | 19:50 | Fixed migration re-importing pre-rename titles (image_keys, not image_key); removed 4 dupes | migrate_images_jsonl.py, menalariImages.jsonl | image set identical to baseline; migrate + sync both report 0 new | ~8k |
+| 20:10 | Moved images from a gallery above the table into the table itself (one cell per PoS row) to stop printing each gloss twice | word_viewer.html, word_viewer_i18n.csv | verified hongu/acum/amiku/jixi/klitoris via node DOM shim; imageless words get no extra column | ~20k |
 

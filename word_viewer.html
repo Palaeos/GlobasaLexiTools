@@ -509,23 +509,11 @@ a:hover { text-decoration: underline; }
 }
 .word-image-wrap a { display: inline-block; }
 
-/* Gallery: one row per part of speech — its gloss, then its pictures.
-   The images are meant to carry the meaning for a learner who can't lean on
-   the gloss, so they sit above the translation table and lead large. */
-.gallery-row { margin-bottom: 0.9rem; }
-.gallery-row:last-child { margin-bottom: 0; }
-.gallery-caption {
-  font-size: 0.85rem;
-  color: var(--color-muted);
-  margin-bottom: 0.3rem;
-}
-.gallery-caption .gallery-pos {
-  font-weight: 600;
-  padding: 0.05rem 0.4rem;
-  border-radius: var(--radius);
-}
-.gallery-caption .gallery-gloss { font-style: italic; }
+/* Images live in the translation table, one cell per PoS row, so each gloss is
+   printed exactly once with its own pictures beside it. */
+.cell-images { vertical-align: middle; }
 .gallery-sense { margin-bottom: 0.45rem; }
+.gallery-sense:last-child { margin-bottom: 0; }
 .gallery-sense-label {
   font-size: 0.78rem;
   font-style: italic;
@@ -546,7 +534,7 @@ a:hover { text-decoration: underline; }
   display: block;
   cursor: zoom-in;
 }
-.gallery-strip .gallery-lead img { height: 200px; }
+.gallery-strip .gallery-lead img { height: 150px; }
 .gallery-more {
   background: none;
   border: 1px solid var(--color-muted);
@@ -1824,84 +1812,39 @@ function buildSenseBlocks(senses) {
   return frag;
 }
 
-// The gloss for a PoS group, in the selected display languages — the same text
-// the translation table prints, so the two always agree.
-function galleryGlossText(pg) {
-  const langs = (selectedLangs.length > 0 ? selectedLangs : ["English"]).filter(l => l !== "Globasa");
-  const parts = [];
-  (langs.length > 0 ? langs : ["English"]).forEach(lang => {
-    const items = (pg.languages && pg.languages[lang]) || [];
-    const text = items.map(it => it.text).filter(Boolean).join(", ");
-    if (text) parts.push(text);
-  });
-  return parts.join(" · ");
+// Does this word have any images at all? Used to decide whether the table
+// grows an image column -- most words have none and must look untouched.
+function hasAnyImages(data) {
+  const groups = (data.translations && data.translations.pos_groups) || [];
+  return groups.some(g => (g.image_senses || []).some(sn => (sn.images || []).length > 0)) ||
+         (data.image_senses || []).some(sn => (sn.images || []).length > 0);
 }
 
-// The gallery: one row per PoS group, each showing its gloss beside its own
-// images. Rows with no images still render, so you can see that the noun is
-// illustrated and the verb isn't. Only built when the word has some image
-// somewhere -- otherwise every abstract word would grow a block duplicating the
-// translation table.
-function buildGallery(data) {
-  const groups = (data.translations && data.translations.pos_groups) || [];
-  const ungrouped = data.image_senses || [];
-  const groupsWithImages = groups.filter(g =>
-    (g.image_senses || []).some(s => (s.images || []).length > 0));
-  const anyImages = ungrouped.some(s => (s.images || []).length > 0) ||
-                    groupsWithImages.length > 0;
-  if (!anyImages) return null;
-
-  const wrap = document.createElement("div");
-  wrap.className = "word-image-wrap";
-
-  // Images whose PoS hasn't been assigned yet render first, uncaptioned —
-  // exactly how a word-level image looked before senses existed.
-  if (ungrouped.length > 0) {
-    const row = document.createElement("div");
-    row.className = "gallery-row";
-    row.appendChild(buildSenseBlocks(ungrouped));
-    wrap.appendChild(row);
+// The image cell for one PoS row. The gloss is not repeated here -- it is in
+// the English cell of this same row, which is the whole point of putting the
+// pictures in the table.
+function buildImageCell(pg, data, cssClass) {
+  const td = document.createElement("td");
+  td.className = `cell-images ${cssClass}`;
+  const senses = (pg.image_senses || []).filter(sn => (sn.images || []).length > 0);
+  if (senses.length === 0) {
+    td.innerHTML = "<span style='color:var(--color-muted)'>—</span>";
+    return td;
   }
-
-  // A single PoS row with a single sense needs no caption at all.
-  const bare = ungrouped.length === 0 && groupsWithImages.length === 1 &&
-               groups.length === 1;
-
-  groups.forEach(pg => {
-    const senses = pg.image_senses || [];
-    const hasImages = senses.some(s => (s.images || []).length > 0);
-    if (!hasImages && groupsWithImages.length === 0) return;
-
-    const row = document.createElement("div");
-    row.className = "gallery-row";
-
-    if (!bare) {
-      const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : "English";
-      const cap = document.createElement("div");
-      cap.className = "gallery-caption";
-      const posSpan = document.createElement("span");
-      // The .pos-* classes are bare selectors carrying a background, so this
-      // must sit on the small label, never on the row (which painted a block).
-      posSpan.className = "gallery-pos " + posCssClass(pg.pos);
-      let posText = grammarLabel(pg.pos, firstLang);
-      if (pg.verb_type) posText += ` (${verbTypeLabel(pg.verb_type, firstLang)})`;
-      posSpan.textContent = posText;
-      cap.appendChild(posSpan);
-      const gloss = galleryGlossText(pg);
-      if (gloss) {
-        const g = document.createElement("span");
-        g.className = "gallery-gloss";
-        g.textContent = " — " + gloss;
-        cap.appendChild(g);
-      }
-      row.appendChild(cap);
-    }
-
-    row.appendChild(buildSenseBlocks(senses));
-    wrap.appendChild(row);
-  });
-
-  return wrap;
+  const blocks = buildSenseBlocks(senses);
+  if (data.nsfw) {
+    // The cover has to hide every picture in the cell, not just the first.
+    const det = document.createElement("details");
+    det.className = "nsfw-wrap";
+    const sum = document.createElement("summary");
+    sum.textContent = "⚠ NSFW image — click to reveal";
+    det.appendChild(sum);
+    det.appendChild(blocks);
+    td.appendChild(det);
+  } else {
+    td.appendChild(blocks);
+  }
+  return td;
 }
 
 function buildTransTable(data) {
@@ -1932,11 +1875,15 @@ function buildTransTable(data) {
   const posHeaderLabel = makeHeader(uiLabel("pos"));
   const vtHeaderLabel = makeHeader(uiLabel("verb_type"));
 
-  // Always append in logical order: PoS, VerbType, Lang(s)
+  // Only illustrated words grow an image column; everything else is unchanged.
+  const showImages = hasAnyImages(data);
+
+  // Always append in logical order: PoS, VerbType, Lang(s), Image
   // dir="rtl" on the table handles visual reversal for RTL languages
   hrow.appendChild(posHeaderLabel);
   if (has_verbs) hrow.appendChild(vtHeaderLabel);
   langHeaders.forEach(h => hrow.appendChild(h));
+  if (showImages) hrow.appendChild(makeHeader(uiLabel("image")));
 
   // Body
   const tbody = table.createTBody();
@@ -1979,6 +1926,7 @@ function buildTransTable(data) {
         langs.forEach(lang => {
           tr.appendChild(buildLangCell(vg, lang, cssClass));
         });
+        if (showImages) tr.appendChild(buildImageCell(vg, data, cssClass));
       });
       i = j;
     } else {
@@ -1994,6 +1942,7 @@ function buildTransTable(data) {
       langs.forEach(lang => {
         tr.appendChild(buildLangCell(pg, lang, cssClass));
       });
+      if (showImages) tr.appendChild(buildImageCell(pg, data, cssClass));
       i++;
     }
   }
@@ -2232,22 +2181,26 @@ function renderResult(data) {
     headDiv.appendChild(btn);
   }
 
-  // --- 2. Images ---
+  // --- 2. Images with no part of speech to sit on ---
+  // Illustrated PoS rows carry their pictures inside the translation table, so
+  // each gloss is printed once. Only images whose `pos` is unassigned land here.
   const imgSection = document.getElementById("imageSection");
   imgSection.innerHTML = "";
-  const gallery = buildGallery(data);
-  if (gallery) {
+  const loose = (data.image_senses || []).filter(sn => (sn.images || []).length > 0);
+  if (loose.length > 0) {
+    const wrap = document.createElement("div");
+    wrap.className = "word-image-wrap";
+    wrap.appendChild(buildSenseBlocks(loose));
     if (data.nsfw) {
-      // The NSFW cover has to hide the whole gallery, not just its first image.
       const det = document.createElement("details");
       det.className = "nsfw-wrap";
       const sum = document.createElement("summary");
       sum.textContent = "⚠ NSFW image — click to reveal";
       det.appendChild(sum);
-      det.appendChild(gallery);
+      det.appendChild(wrap);
       imgSection.appendChild(det);
     } else {
-      imgSection.appendChild(gallery);
+      imgSection.appendChild(wrap);
     }
   }
 
