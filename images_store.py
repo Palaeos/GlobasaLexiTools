@@ -183,6 +183,24 @@ def make_sense(pos="", label="", images=None):
     return {"pos": pos, "label": label, "images": list(images or [])}
 
 
+# A scientific name in a gloss is italicised and capitalised: `bird (_Aves_)`,
+# `swallow (_bird_), martin, _Hirundinidae_`, `alpaca, _Lama pacos_`. Requiring
+# four letters keeps out the chemical elements, whose glosses italicise a one-
+# or two-letter symbol (_Al_, _Sb_, _Ar_) in exactly the same way.
+_TAXON_RE = re.compile(r"_([A-Z][a-z]{3,}(?:\s+[a-z][a-z-]+)?)_")
+
+
+def extract_taxon(english_gloss):
+    """The scientific name in a gloss, or None.
+
+    232 words carry one — birds, mammals, insects, fruit, trees, fungi — and
+    they are the words for which Wikispecies and iNaturalist have far better
+    pictures than a plain Commons text search.
+    """
+    m = _TAXON_RE.search(english_gloss or "")
+    return m.group(1) if m else None
+
+
 def word_pos_keys(english_gloss):
     """The annotation keys of a word's English gloss, in order, deduplicated.
 

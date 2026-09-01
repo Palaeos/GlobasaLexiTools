@@ -112,9 +112,14 @@ button.danger { color: #a33; }
       <button id="publish" class="primary" style="float:right">Update dictionary</button>
     </div>
     <div id="publishNote" class="hint" style="clear:both"></div>
-    <h2>Search Wikimedia Commons</h2>
+    <h2>Find images <span id="taxonNote" class="hint"></span></h2>
     <div style="display:flex;gap:.4rem">
-      <input type="text" id="cq" placeholder="search terms">
+      <select id="csource">
+        <option value="commons">Wikimedia Commons</option>
+        <option value="wikispecies">Wikispecies (taxon page)</option>
+        <option value="inaturalist">iNaturalist (taxon)</option>
+      </select>
+      <input type="text" id="cq" placeholder="search terms" style="flex:1">
       <button id="csearch" class="primary">Search</button>
     </div>
     <p class="hint" style="margin:.4rem 0 0">
@@ -185,7 +190,17 @@ async function loadWord(word, keepSense) {
   document.querySelectorAll(".qitem").forEach(el =>
     el.classList.toggle("sel", el.querySelector(".w").textContent === word));
   if (!keepSense) {
-    $("#cq").value = firstGlossWord(current.gloss);
+    // A word with a scientific name gets far better pictures from its
+    // Wikispecies taxon page than from a Commons text search.
+    if (current.taxon) {
+      $("#csource").value = "wikispecies";
+      $("#cq").value = current.taxon;
+      $("#taxonNote").textContent = `— ${current.taxon}`;
+    } else {
+      $("#csource").value = "commons";
+      $("#cq").value = firstGlossWord(current.gloss);
+      $("#taxonNote").textContent = "";
+    }
     searchCommons();
   }
 }
@@ -303,8 +318,9 @@ async function searchCommons() {
   const box = $("#cands");
   if (!q) { box.innerHTML = ""; return; }
   box.innerHTML = `<p class="hint">searching…</p>`;
+  const src = $("#csource").value;
   let d;
-  try { d = await api(`/api/images/candidates?q=${encodeURIComponent(q)}`); }
+  try { d = await api(`/api/images/candidates?q=${encodeURIComponent(q)}&source=${src}`); }
   catch (e) { box.innerHTML = `<p class="hint">${e.message}</p>`; return; }
   box.innerHTML = "";
   if (!d.candidates.length) { box.innerHTML = `<p class="hint">nothing found</p>`; return; }
@@ -315,15 +331,29 @@ async function searchCommons() {
     img.src = c.thumb; img.alt = ""; img.loading = "lazy";
     el.appendChild(img);
     const t = document.createElement("div");
-    t.className = "t"; t.textContent = c.file.replace(/_/g, " "); t.title = c.file;
+    t.className = "t";
+    t.textContent = (c.file || c.taxon || c.url || "").replace(/_/g, " ");
+    t.title = c.file || c.url || "";
     el.appendChild(t);
     const l = document.createElement("div");
-    l.className = "l"; l.textContent = [c.license, c.artist].filter(Boolean).join(" · ");
+    l.className = "l";
+    l.textContent = [c.license, c.artist].filter(Boolean).join(" · ").slice(0, 90);
+    // A non-Commons photo cannot be re-resolved if it moves, and iNaturalist
+    // licences are often NC. Say so where the choice is made.
+    if (!c.file) {
+      // Off-Commons: no canonical title to re-resolve from if it moves, and
+      // iNaturalist licences are almost always NC or ND.
+      l.textContent = `⚠ off-Commons · ${l.textContent}`;
+      if (c.restricted) { l.style.color = "#a33"; l.title = "non-commercial / no-derivatives licence"; }
+    }
     el.appendChild(l);
     el.addEventListener("click", () => {
       if (!current) { status("pick a word first"); return; }
       if (!current.senses.length) { status("add a sense first"); return; }
-      post({action: "add_image", index: activeSense, file: c.file});
+      post(c.file
+        ? {action: "add_image", index: activeSense, file: c.file}
+        : {action: "add_image", index: activeSense, url: c.url,
+           license: c.license, artist: c.artist});
     });
     box.appendChild(el);
   });
@@ -335,6 +365,7 @@ $("#qfilter").addEventListener("input", () => { clearTimeout(window._t);
 $("#showDone").addEventListener("change", loadQueue);
 $("#allPos").addEventListener("change", loadQueue);
 $("#csearch").addEventListener("click", searchCommons);
+$("#csource").addEventListener("change", searchCommons);
 $("#cq").addEventListener("keydown", e => { if (e.key === "Enter") searchCommons(); });
 $("#addSense").addEventListener("click", () => {
   if (!current) return;

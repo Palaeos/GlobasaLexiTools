@@ -2846,9 +2846,167 @@ def api_images_word(word):
         "word": word,
         "gloss": gloss,
         "pos_keys": images_store.word_pos_keys(gloss),
+        "taxon": images_store.extract_taxon(gloss),
         "illustratable": (rec or {}).get("illustratable", True),
         "senses": senses,
     })
+
+
+# Wikispecies pages carry site chrome alongside the actual organism photos.
+_CHROME_RE = re.compile(
+    r"(logo|icon|disambig|ambox|question[_ ]book|padlock|wiki(species|data|media)|"
+    r"open[_ ]access|commons-|edit-|symbol[_ ])", re.IGNORECASE)
+
+
+def _commons_thumbs(titles, width=260):
+    """Commons file titles -> candidate dicts. Used by the Wikispecies source,
+    which yields titles rather than URLs."""
+    if not titles:
+        return []
+    params = {
+        "action": "query", "format": "json", "formatversion": "2",
+        "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
+        "iiurlwidth": str(width),
+        "iiextmetadatafilter": "LicenseShortName|Artist",
+        "redirects": "1", "maxlag": "5",
+        "titles": "|".join(titles[:50]),
+    }
+    r = requests.get(images_store.api_endpoint("commons"), params=params,
+                     headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+    r.raise_for_status()
+    out = []
+    plain = lambda v: re.sub(r"<[^>]+>", "", (v or {}).get("value", "")).strip()
+    for page in (r.json().get("query") or {}).get("pages") or []:
+        info = (page.get("imageinfo") or [{}])[0]
+        thumb, mime = info.get("thumburl"), info.get("mime", "")
+        if not thumb or not mime.startswith("image/"):
+            continue
+        meta = info.get("extmetadata") or {}
+        out.append({
+            "file": (page.get("title") or "").split("File:", 1)[-1].replace(" ", "_"),
+            "thumb": re.sub(r"[?&]utm_[^&]*", "", thumb).rstrip("?&"),
+            "mime": mime, "width": info.get("width"), "height": info.get("height"),
+            "license": plain(meta.get("LicenseShortName")),
+            "artist": plain(meta.get("Artist")),
+            "source": "commons",
+        })
+    return out
+
+
+def _commons_category_titles(taxon, limit=40):
+    """File titles in Commons' category for a taxon.
+
+    The Wikispecies page usually carries a single lead image, which is too thin
+    to choose from; the category has many. Not every taxon has one — `Lama
+    pacos` is a synonym of the accepted `Vicugna pacos` and has no category —
+    so this is additive, never the only source.
+    """
+    params = {
+        "action": "query", "format": "json", "formatversion": "2",
+        "list": "categorymembers", "cmtitle": f"Category:{taxon}",
+        "cmtype": "file", "cmlimit": str(limit), "maxlag": "5",
+    }
+    r = requests.get(images_store.api_endpoint("commons"), params=params,
+                     headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+    r.raise_for_status()
+    return [m.get("title", "")
+            for m in (r.json().get("query") or {}).get("categorymembers") or []]
+
+
+def _wikispecies_candidates(taxon):
+    """Images for a taxon: its Wikispecies page, plus Commons' category for it.
+
+    Wikispecies hosts no files of its own — every image on a taxon page is a
+    Commons file — so these come back as canonical titles, as rot-proof as
+    anything from a Commons search but far better targeted: the page for
+    Hirundinidae shows swallows, not everything that mentions them.
+
+    _commons_thumbs drops anything that is not an image, which is what keeps the
+    category's audio recordings and scanned journals out.
+    """
+    params = {
+        "action": "query", "format": "json", "formatversion": "2",
+        "titles": taxon, "prop": "images", "imlimit": "50", "redirects": "1",
+    }
+    r = requests.get(images_store.api_endpoint("species"), params=params,
+                     headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+    r.raise_for_status()
+    titles = []
+    for page in (r.json().get("query") or {}).get("pages") or []:
+        for img in page.get("images") or []:
+            titles.append(img.get("title", ""))
+    try:
+        titles += _commons_category_titles(taxon)
+    except (requests.RequestException, ValueError):
+        pass  # no category, or Commons hiccuped; the page images still stand
+
+    seen, keep = set(), []
+    for title in titles:
+        if title and title not in seen and not _CHROME_RE.search(title):
+            seen.add(title)
+            keep.append(title)
+    return _commons_thumbs(keep)
+
+
+# iNaturalist photo licences, best first. Anything not listed -- most often a
+# null license_code, meaning all rights reserved -- is not offered at all: it
+# cannot be reused, so putting it in front of a curator only invites a mistake.
+_INAT_LICENCES = {
+    "cc0": "CC0", "cc-by": "CC BY", "cc-by-sa": "CC BY-SA",
+    "cc-by-nc": "CC BY-NC", "cc-by-nc-sa": "CC BY-NC-SA",
+    "cc-by-nd": "CC BY-ND", "cc-by-nc-nd": "CC BY-NC-ND",
+}
+_INAT_RESTRICTED = {"CC BY-NC", "CC BY-NC-SA", "CC BY-ND", "CC BY-NC-ND"}
+
+
+def _inaturalist_candidates(taxon):
+    """Photos from iNaturalist's record for a taxon.
+
+    Two calls: /v1/taxa?q= only returns a lean record whose taxon_photos list is
+    empty, so the id it yields is then fetched from /v1/taxa/<id>, which carries
+    the photos.
+
+    These are NOT Commons files. They live on iNaturalist's CDN, so they are
+    stored as literal URLs, cannot be re-resolved if they move, and are mostly
+    licensed CC BY-NC or stricter -- Hirundinidae offers 5 all-rights-reserved,
+    5 CC BY-NC and 2 CC BY-NC-ND, and no freely reusable licence at all. Photos
+    with no licence are dropped; the rest carry their licence and a `restricted`
+    flag so the constraint is visible at the moment of choosing.
+    """
+    search = requests.get("https://api.inaturalist.org/v1/taxa",
+                          params={"q": taxon, "per_page": 3},
+                          headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+    search.raise_for_status()
+    results = search.json().get("results") or []
+    if not results:
+        return []
+
+    out = []
+    for stub in results[:2]:
+        detail = requests.get(f"https://api.inaturalist.org/v1/taxa/{stub['id']}",
+                              headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+        detail.raise_for_status()
+        for record in detail.json().get("results") or []:
+            for entry in record.get("taxon_photos") or []:
+                photo = entry.get("photo") or {}
+                licence = _INAT_LICENCES.get((photo.get("license_code") or "").lower())
+                url = photo.get("medium_url") or photo.get("url")
+                if not licence or not url:
+                    continue
+                out.append({
+                    "file": None,
+                    "url": photo.get("large_url") or url,
+                    "thumb": url,
+                    "mime": "image/jpeg",
+                    "license": licence,
+                    "restricted": licence in _INAT_RESTRICTED,
+                    "artist": (photo.get("attribution") or "").replace("(c) ", ""),
+                    "source": "inaturalist",
+                    "taxon": record.get("name"),
+                })
+        if out:
+            break
+    return out
 
 
 @app.route("/api/images/candidates")
@@ -2860,8 +3018,18 @@ def api_images_candidates():
     mention the word, so nothing here can be auto-adopted.
     """
     query = (request.args.get("q") or "").strip()
+    source = request.args.get("source", "commons")
     if not query:
         return jsonify({"candidates": []})
+
+    if source in ("wikispecies", "inaturalist"):
+        fetch = (_wikispecies_candidates if source == "wikispecies"
+                 else _inaturalist_candidates)
+        try:
+            return jsonify({"candidates": fetch(query), "source": source})
+        except (requests.RequestException, ValueError) as e:
+            return jsonify({"error": f"{source} lookup failed: {type(e).__name__}"}), 502
+
     params = {
         "action": "query", "format": "json", "formatversion": "2",
         "generator": "search", "gsrsearch": query,
@@ -3000,8 +3168,22 @@ def api_images_sense():
     elif action == "add_image":
         sense = sense_at()
         file = (data.get("file") or "").strip()
-        if sense is None or not file:
-            return jsonify({"error": "sense and file are required"}), 400
+        url = (data.get("url") or "").strip()
+        if sense is None or not (file or url):
+            return jsonify({"error": "sense and a file or url are required"}), 400
+        if not file:
+            # A non-Commons photo (iNaturalist). Stored verbatim: there is no
+            # canonical title to re-resolve it from, so record what we know.
+            img = images_store.make_image(url=url)
+            for key in ("license", "artist"):
+                if data.get(key):
+                    img[key] = data[key]
+            img["status"] = "external"
+            existing = {images_store.image_key(i) for i in images_store.all_images(rec)}
+            if images_store.image_key(img) not in existing:
+                sense.setdefault("images", []).append(img)
+            images_store.save_images(store, IMAGES_JSONL)
+            return jsonify({"ok": True, "word": word, "unresolved": 0})
         img = images_store.make_image(file=file, wiki=data.get("wiki", "commons"))
         existing = {images_store.image_key(i) for i in images_store.all_images(rec)}
         if images_store.image_key(img) not in existing:

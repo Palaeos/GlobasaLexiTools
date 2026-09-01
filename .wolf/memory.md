@@ -1887,4 +1887,5 @@
 | 23:40 | Fixed sense-label field losing focus on click (container re-render); no-op edits no longer write | images_curator.html, .wolf/buglog.json | bug-188; verified input identity survives click, unchanged label/PoS write nothing | ~8k |
 | 23:55 | Added /api/images/publish + "Update dictionary" button; extracted build_image_rows from build_db | Word Viewer.py, images_curator.html | resolved 45 of the user's curated images and pushed 1837 into the LMDB without a full rebuild | ~15k |
 | 00:10 | Fixed finished words being unreachable in the curator (search now bypasses the done filter) | Word Viewer.py, images_curator.html | bug-189; salamandra/calyo/hongu/abakus all findable; queue still 6937 outstanding | ~6k |
+| 00:45 | Added Wikispecies + Commons-category + iNaturalist image sources for taxon words | Word Viewer.py, images_store.py, images_curator.html | 232 taxon words auto-detected; Hirundinidae 32 Commons / 7 iNat candidates; iNat licences flagged | ~35k |
 
