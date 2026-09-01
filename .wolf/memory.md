@@ -1880,4 +1880,5 @@
 | 21:20 | Added derived galleries for futru, yamxey, flura, hewan, mamoyen; fixed save_images dropping derive-only records | menalariImages.jsonl, images_store.py, .wolf/buglog.json | 5+55+17+20+60 hyponym images; bug-186 logged | ~15k |
 | 21:45 | Slang/vulgar/sexual noun senses split into their own table rows; register normalised across languages | Lexilista_parser.py, Word Viewer.py, word_viewer.html, AnkiMaker3.py | 19 words affected; 419-word sweep shows no false positives; extension-language alignment preserved via ext_slot | ~30k |
 | 22:05 | Registers moved into the verb-type column; PoS cell rowspans its register sub-rows | word_viewer.html | verified flura/banana/gigi/oko/baytu/estuf/lil row shapes via node shim | ~10k |
+| 22:15 | Column header renamed Verb type -> Type; new i18n key across 45 languages | word_viewer.html, word_viewer_i18n.csv | /i18n serves Type/Tipo/Typ/Тип/種類/Aina | ~4k |
 

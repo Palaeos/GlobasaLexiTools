@@ -1970,7 +1970,7 @@ function buildTransTable(data) {
 
   const langHeaders = langs.map(l => makeHeader(langName(l)));
   const posHeaderLabel = makeHeader(uiLabel("pos"));
-  const vtHeaderLabel = makeHeader(uiLabel("verb_type"));
+  const typeHeaderLabel = makeHeader(uiLabel("type"));
 
   // Only illustrated words grow an image column; everything else is unchanged.
   const showImages = hasAnyImages(data);
@@ -1984,7 +1984,7 @@ function buildTransTable(data) {
   // Always append in logical order: PoS, Type, Lang(s), Image
   // dir="rtl" on the table handles visual reversal for RTL languages
   hrow.appendChild(posHeaderLabel);
-  if (showTypeCol) hrow.appendChild(vtHeaderLabel);
+  if (showTypeCol) hrow.appendChild(typeHeaderLabel);
   langHeaders.forEach(h => hrow.appendChild(h));
   if (showImages) hrow.appendChild(makeHeader(uiLabel("image")));
 
