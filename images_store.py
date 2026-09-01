@@ -167,6 +167,18 @@ def image_key(img):
     return ("url", img.get("url", ""))
 
 
+def image_keys(img):
+    """Every identity this image answers to: the canonical one plus any title it
+    was renamed away from (`aka`). Matching against an outside source that has
+    not caught up -- the Anki deck still holding a pre-rename URL -- needs these,
+    or the same picture is adopted twice under two names."""
+    keys = {image_key(img)}
+    wiki = img.get("wiki", "commons")
+    for old in img.get("aka") or []:
+        keys.add(("file", wiki, old))
+    return keys
+
+
 def make_sense(pos="", label="", images=None):
     return {"pos": pos, "label": label, "images": list(images or [])}
 

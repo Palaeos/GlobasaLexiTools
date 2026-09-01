@@ -1,0 +1,2979 @@
+{
+  "version": 1,
+  "bugs": [
+    {
+      "id": "bug-001",
+      "timestamp": "2026-04-20T10:46:38.474Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 30→61 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T10:46:38.474Z"
+    },
+    {
+      "id": "bug-002",
+      "timestamp": "2026-04-20T11:00:39.324Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 14→23 lines (9 removed) | Also: INTRANSITIVE = 0; TRANSITIVE = 1 | Also: **Paraphrase patterns** (why this matters for down; - `INTRANSITIVE_CU` (.oro/.harka): stative = `sen ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-20T11:04:06.681Z"
+    },
+    {
+      "id": "bug-003",
+      "timestamp": "2026-04-20T11:10:29.834Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 13→24 lines (4 removed) | Also: | `Lexilista_parser.py` | Main rewrite: extend Ver; | `AnkiMaker2.py` | Lines 202-214: update len chec | Also: ### 5. Implement `parseAnnotatedEntry(englishText,; Core new function: | Also: Regex-based extraction of annotation prefix and gl; _ANNOTATION_RE = re.compile(",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-20T11:18:42.596Z"
+    },
+    {
+      "id": "bug-004",
+      "timestamp": "2026-04-20T11:10:52.842Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "Had 't change word class). Suffixes are categorized as",
+      "fix": "Changed to `affix_type`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T11:10:52.842Z"
+    },
+    {
+      "id": "bug-005",
+      "timestamp": "2026-04-20T11:29:57.526Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 16→23 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T11:29:57.526Z"
+    },
+    {
+      "id": "bug-006",
+      "timestamp": "2026-04-20T11:41:56.766Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/humming-enchanting-valiant.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→11 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T11:41:56.766Z"
+    },
+    {
+      "id": "bug-007",
+      "timestamp": "2026-04-20T12:12:39.709Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker2.py",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 18→24 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T12:12:39.709Z"
+    },
+    {
+      "id": "bug-008",
+      "timestamp": "2026-04-20T12:48:13.185Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/atomic-squishing-allen.md",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 17→38 lines (10 removed) | Also: ### 5. Preload existing vetted senses; Load `GLB_ENG_WiktionarySenses.tsv` once into `dic | Also: The senses TSV gets two vetting columns (replacing; - **Vetted?** — general vetting by anyone, marked ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-20T12:54:02.971Z"
+    },
+    {
+      "id": "bug-009",
+      "timestamp": "2026-04-20T13:08:24.408Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/atomic-squishing-allen.md",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 25→34 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T13:08:24.408Z"
+    },
+    {
+      "id": "bug-010",
+      "timestamp": "2026-04-20T13:11:15.525Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/atomic-squishing-allen.md",
+      "root_cause": "Had `langCodes`",
+      "fix": "Changed to `VALIDATION_LANGS`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T13:11:15.525Z"
+    },
+    {
+      "id": "bug-011",
+      "timestamp": "2026-04-20T23:16:07.748Z",
+      "error_message": "Incorrect value in code",
+      "file": "extend_tmx_udhr.py",
+      "root_cause": "Had \"/tmp/udhr_spa.xml\"",
+      "fix": "Changed to \"udhr_spa.xml\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T23:16:07.748Z"
+    },
+    {
+      "id": "bug-012",
+      "timestamp": "2026-04-20T23:24:53.694Z",
+      "error_message": "Incorrect value in code",
+      "file": ".vscode/tasks.json",
+      "root_cause": "Had \"Align Tell-Tale Heart parallel text\"",
+      "fix": "Changed to \"Extend TMX with Tell-Tale Heart parallel text\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T23:24:53.694Z"
+    },
+    {
+      "id": "bug-013",
+      "timestamp": "2026-04-20T23:27:00.845Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude.json",
+      "root_cause": "Had \"FASTEMBED_MODEL_NAME\"",
+      "fix": "Changed to \"EMBEDDING_MODEL\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T23:27:00.845Z"
+    },
+    {
+      "id": "bug-014",
+      "timestamp": "2026-04-20T23:56:21.046Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/noble-stirring-planet.md",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 15→19 lines (9 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T23:56:21.046Z"
+    },
+    {
+      "id": "bug-015",
+      "timestamp": "2026-04-20T23:57:51.482Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/noble-stirring-planet.md",
+      "root_cause": "Had `rowspan`",
+      "fix": "Changed to `colspan=\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-20T23:57:51.482Z"
+    },
+    {
+      "id": "bug-016",
+      "timestamp": "2026-04-21T22:23:15.776Z",
+      "error_message": "Significant refactor of ",
+      "file": "LLM_sense_judge.py",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 48→74 lines (22 removed) | Also: found, evidence = qdrant.check_corpus(glb, definit; return 's', 3, 3, f\"corpus: '{evidence['english_te",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-21T22:24:46.222Z"
+    },
+    {
+      "id": "bug-017",
+      "timestamp": "2026-04-26T21:54:15.285Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 17→23 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T21:54:15.285Z"
+    },
+    {
+      "id": "bug-018",
+      "timestamp": "2026-04-26T21:56:33.156Z",
+      "error_message": "Incorrect value in code",
+      "file": "Word Viewer.py",
+      "root_cause": "Had \", db=db.dbs[\"",
+      "fix": "Changed to \", db=db._db(\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T21:56:33.156Z"
+    },
+    {
+      "id": "bug-019",
+      "timestamp": "2026-04-26T22:30:08.086Z",
+      "error_message": "Missing await",
+      "file": "word_viewer.html",
+      "root_cause": "Async call without await — returned Promise instead of value",
+      "fix": "Added await to async call",
+      "tags": [
+        "auto-detected",
+        "async-fix",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T22:30:08.086Z"
+    },
+    {
+      "id": "bug-020",
+      "timestamp": "2026-04-26T22:30:47.830Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"Constructions\"",
+      "fix": "Changed to \"constructions\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 5,
+      "last_seen": "2026-04-26T22:32:11.340Z"
+    },
+    {
+      "id": "bug-021",
+      "timestamp": "2026-04-26T22:33:04.068Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 5→3 lines (4 removed) | Also: // Grammar label localization; // Keys: English canonical terms; values: dict of ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-26T22:35:38.095Z"
+    },
+    {
+      "id": "bug-022",
+      "timestamp": "2026-04-26T22:35:52.485Z",
+      "error_message": "Missing guard clause",
+      "file": "word_viewer.html",
+      "root_cause": "No early return/throw for edge case: !csvKey",
+      "fix": "Added guard clause: if (!csvKey)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T22:35:52.485Z"
+    },
+    {
+      "id": "bug-023",
+      "timestamp": "2026-04-26T22:41:17.059Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "10 lines replaced/restructured",
+      "fix": "Rewrote 28→49 lines (10 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T22:41:17.059Z"
+    },
+    {
+      "id": "bug-024",
+      "timestamp": "2026-04-26T22:46:44.341Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→3 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T22:46:44.341Z"
+    },
+    {
+      "id": "bug-025",
+      "timestamp": "2026-04-26T22:51:53.736Z",
+      "error_message": "Missing guard clause",
+      "file": "word_viewer.html",
+      "root_cause": "No early return/throw for edge case: ch === \"(\"",
+      "fix": "Added guard clause: if (ch === \"(\")",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T22:51:53.736Z"
+    },
+    {
+      "id": "bug-026",
+      "timestamp": "2026-04-26T23:00:42.530Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 39→19 lines (4 removed) | Also: if (!isRTL) {; } else {",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-26T23:00:54.650Z"
+    },
+    {
+      "id": "bug-027",
+      "timestamp": "2026-04-26T23:08:42.874Z",
+      "error_message": "Incorrect value in code",
+      "file": "Word Viewer.py",
+      "root_cause": "Had \"word_viewer.html\"",
+      "fix": "Changed to \"giza_output\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:08:42.874Z"
+    },
+    {
+      "id": "bug-028",
+      "timestamp": "2026-04-26T23:09:45.670Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 45→66 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:09:45.670Z"
+    },
+    {
+      "id": "bug-029",
+      "timestamp": "2026-04-26T23:10:26.186Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 20→26 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:10:26.186Z"
+    },
+    {
+      "id": "bug-030",
+      "timestamp": "2026-04-26T23:24:30.248Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 35→63 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:24:30.248Z"
+    },
+    {
+      "id": "bug-031",
+      "timestamp": "2026-04-26T23:26:49.411Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 16→30 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:26:49.412Z"
+    },
+    {
+      "id": "bug-032",
+      "timestamp": "2026-04-26T23:27:22.425Z",
+      "error_message": "Missing guard clause",
+      "file": "word_viewer.html",
+      "root_cause": "No early return/throw for edge case: !glossEntry",
+      "fix": "Added guard clause: if (!glossEntry)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:27:22.425Z"
+    },
+    {
+      "id": "bug-033",
+      "timestamp": "2026-04-26T23:50:00.901Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 9→11 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-26T23:50:00.901Z"
+    },
+    {
+      "id": "bug-034",
+      "timestamp": "2026-04-27T00:54:41.689Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 30→47 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T00:54:41.689Z"
+    },
+    {
+      "id": "bug-035",
+      "timestamp": "2026-04-27T00:55:30.594Z",
+      "error_message": "Missing guard clause",
+      "file": "word_viewer.html",
+      "root_cause": "No early return/throw for edge case: !/\\s+/.test(p",
+      "fix": "Added guard clause: if (!/\\s+/.test(p)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T00:55:30.594Z"
+    },
+    {
+      "id": "bug-036",
+      "timestamp": "2026-04-27T01:14:48.187Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 13→64 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T01:14:48.187Z"
+    },
+    {
+      "id": "bug-037",
+      "timestamp": "2026-04-27T01:17:46.284Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 39→135 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T01:17:46.284Z"
+    },
+    {
+      "id": "bug-038",
+      "timestamp": "2026-04-27T01:26:52.403Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"German\"",
+      "fix": "Changed to \"Globasa\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T01:26:52.403Z"
+    },
+    {
+      "id": "bug-039",
+      "timestamp": "2026-04-27T01:28:44.183Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 32→51 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T01:28:44.183Z"
+    },
+    {
+      "id": "bug-040",
+      "timestamp": "2026-04-27T01:58:47.645Z",
+      "error_message": "Wrong reference: lang should be langName",
+      "file": "word_viewer.html",
+      "root_cause": "Used \"lang\" instead of \"langName\"",
+      "fix": "Changed lang → langName",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T01:58:47.645Z"
+    },
+    {
+      "id": "bug-041",
+      "timestamp": "2026-04-27T02:11:00.148Z",
+      "error_message": "Missing error handling in loadScriptPref",
+      "file": "word_viewer.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T02:11:00.148Z"
+    },
+    {
+      "id": "bug-042",
+      "timestamp": "2026-04-27T02:12:05.289Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \">${escHtml(data.word)}</span>`",
+      "fix": "Changed to \">${escHtml(convertScript(data.word))}</span>`",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T02:12:05.289Z"
+    },
+    {
+      "id": "bug-043",
+      "timestamp": "2026-04-27T02:32:39.824Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 13→15 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T02:32:39.824Z"
+    },
+    {
+      "id": "bug-044",
+      "timestamp": "2026-04-27T02:50:20.750Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→11 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T02:50:20.750Z"
+    },
+    {
+      "id": "bug-045",
+      "timestamp": "2026-04-27T02:50:40.778Z",
+      "error_message": "Missing guard clause",
+      "file": "word_viewer.html",
+      "root_cause": "No early return/throw for edge case: internal",
+      "fix": "Added guard clause: if (internal)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T02:50:40.778Z"
+    },
+    {
+      "id": "bug-046",
+      "timestamp": "2026-04-27T12:39:29.521Z",
+      "error_message": "Significant refactor of ",
+      "file": "_update_i18n.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→8 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T12:39:29.521Z"
+    },
+    {
+      "id": "bug-047",
+      "timestamp": "2026-04-27T12:44:44.334Z",
+      "error_message": "Significant refactor of ",
+      "file": "_update_i18n.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T12:44:44.334Z"
+    },
+    {
+      "id": "bug-048",
+      "timestamp": "2026-04-27T12:58:36.719Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 7→9 lines (3 removed) | Also: border-radius: var(--radius) 0 0 0;; border-right: none; | Also: /* RTL support */; [dir=\"rtl\"] { text-align: right; }",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-27T12:59:42.942Z"
+    },
+    {
+      "id": "bug-049",
+      "timestamp": "2026-04-27T13:00:41.573Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"dir\"",
+      "fix": "Changed to \"rtl\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:00:41.573Z"
+    },
+    {
+      "id": "bug-050",
+      "timestamp": "2026-04-27T13:31:12.480Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 9→5 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:31:12.480Z"
+    },
+    {
+      "id": "bug-051",
+      "timestamp": "2026-04-27T13:34:35.482Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "fix": "Changed to \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:34:35.482Z"
+    },
+    {
+      "id": "bug-052",
+      "timestamp": "2026-04-27T13:41:42.861Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "fix": "Changed to \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:41:42.861Z"
+    },
+    {
+      "id": "bug-053",
+      "timestamp": "2026-04-27T13:44:29.404Z",
+      "error_message": "Wrong reference: 78rem should be 88rem",
+      "file": "word_viewer.html",
+      "root_cause": "Used \"78rem\" instead of \"88rem\"",
+      "fix": "Changed 78rem → 88rem",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:44:29.404Z"
+    },
+    {
+      "id": "bug-054",
+      "timestamp": "2026-04-27T13:49:23.381Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "fix": "Changed to \"https://fonts.googleapis.com/css2?family=Libre+Ba",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T13:49:23.381Z"
+    },
+    {
+      "id": "bug-055",
+      "timestamp": "2026-04-27T14:05:53.723Z",
+      "error_message": "Significant refactor of ",
+      "file": "Wiktionary sense based translation extender 3.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 6→18 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T14:05:53.723Z"
+    },
+    {
+      "id": "bug-056",
+      "timestamp": "2026-04-27T14:15:40.960Z",
+      "error_message": "Wrong reference: LLM should be TIER_COL",
+      "file": "LLM_sense_judge.py",
+      "root_cause": "Used \"LLM\" instead of \"TIER_COL\"",
+      "fix": "Changed LLM → TIER_COL",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-27T14:16:34.442Z"
+    },
+    {
+      "id": "bug-057",
+      "timestamp": "2026-04-27T14:16:06.067Z",
+      "error_message": "Incorrect value in code",
+      "file": "LLM_sense_judge.py",
+      "root_cause": "Had \"LLM?\"",
+      "fix": "Changed to \"Tier=l\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T14:16:06.067Z"
+    },
+    {
+      "id": "bug-058",
+      "timestamp": "2026-04-27T14:39:41.692Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "20 lines replaced/restructured",
+      "fix": "Rewrote 26→31 lines (20 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T14:39:41.692Z"
+    },
+    {
+      "id": "bug-059",
+      "timestamp": "2026-04-27T16:35:42.816Z",
+      "error_message": "Significant refactor of ",
+      "file": "Wiktionary sense based translation extender 3.py",
+      "root_cause": "13 lines replaced/restructured",
+      "fix": "Rewrote 13→30 lines (13 removed) | Also: 'de', 'nl', 'ang', 'sv',                          ; 'yi', 'he', 'ar', 'tr', 'tt',                      | Also: \"\"\"Get formatted translation words for a language ; words = [format_translation_word(t, wikt_pos)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-27T16:36:41.951Z"
+    },
+    {
+      "id": "bug-060",
+      "timestamp": "2026-04-27T16:36:15.211Z",
+      "error_message": "Wrong return value",
+      "file": "Wiktionary sense based translation extender 3.py",
+      "root_cause": "Was returning: twoLetterCodes[code]",
+      "fix": "Now returns: DIALECT_DISPLAY_NAMES[code]",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T16:36:15.211Z"
+    },
+    {
+      "id": "bug-061",
+      "timestamp": "2026-04-27T16:46:27.638Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 11→6 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T16:46:27.638Z"
+    },
+    {
+      "id": "bug-062",
+      "timestamp": "2026-04-27T16:51:55.866Z",
+      "error_message": "Significant refactor of ",
+      "file": ".vscode/tasks.json",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 11→18 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "json"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T16:51:55.866Z"
+    },
+    {
+      "id": "bug-063",
+      "timestamp": "2026-04-27T16:56:01.498Z",
+      "error_message": "Incorrect value in code",
+      "file": "Word Viewer.py",
+      "root_cause": "Had \"menalariExtension_edited.tsv\"",
+      "fix": "Changed to \"menalariExtension.tsv\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T16:56:01.498Z"
+    },
+    {
+      "id": "bug-064",
+      "timestamp": "2026-04-27T16:56:36.462Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 8→3 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T16:56:36.462Z"
+    },
+    {
+      "id": "bug-065",
+      "timestamp": "2026-04-27T19:12:40.679Z",
+      "error_message": "Wrong operator: != should be ==",
+      "file": "Word Viewer.py",
+      "root_cause": "Used \"!=\" instead of \"==\"",
+      "fix": "Changed operator != → ==",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T19:12:40.679Z"
+    },
+    {
+      "id": "bug-066",
+      "timestamp": "2026-04-27T19:21:01.132Z",
+      "error_message": "Missing error handling in browseTag",
+      "file": "word_viewer.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T19:21:01.132Z"
+    },
+    {
+      "id": "bug-067",
+      "timestamp": "2026-04-27T19:26:48.631Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 32→42 lines (9 removed) | Also: display: flex;; flex-wrap: wrap;",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-27T19:27:17.515Z"
+    },
+    {
+      "id": "bug-068",
+      "timestamp": "2026-04-27T19:27:02.256Z",
+      "error_message": "Wrong reference: buildTransTable should be buildMiniTransTable",
+      "file": "word_viewer.html",
+      "root_cause": "Used \"buildTransTable\" instead of \"buildMiniTransTable\"",
+      "fix": "Changed buildTransTable → buildMiniTransTable",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T19:27:02.256Z"
+    },
+    {
+      "id": "bug-069",
+      "timestamp": "2026-04-27T19:36:37.326Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 18→31 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T19:36:37.326Z"
+    },
+    {
+      "id": "bug-070",
+      "timestamp": "2026-04-27T20:47:39.022Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/abundant-whistling-platypus.md",
+      "root_cause": "Had \"est-ce que fr\"",
+      "fix": "Changed to \"est-ce que;fr\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T20:47:39.022Z"
+    },
+    {
+      "id": "bug-071",
+      "timestamp": "2026-04-27T20:54:15.502Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/abundant-whistling-platypus.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 22→29 lines (5 removed) | Also: ## Architecture; English pipeline (existing, unchanged): | Also: Replace inline constants and helpers with imports ; 3. **Download French Wiktionary JSONL** from kaikk | Also: 1. `python \"JSONL parser non-English.py\" fr` → `Wi; 2. `python \"Multi-Wiktionary sense curator.py\"` → ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-04-27T20:57:10.594Z"
+    },
+    {
+      "id": "bug-072",
+      "timestamp": "2026-04-27T21:19:18.235Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/abundant-whistling-platypus.md",
+      "root_cause": "18 lines replaced/restructured",
+      "fix": "Rewrote 22→63 lines (18 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T21:19:18.235Z"
+    },
+    {
+      "id": "bug-073",
+      "timestamp": "2026-04-27T22:23:03.838Z",
+      "error_message": "Significant refactor of ",
+      "file": "Wiktionary sense based translation extender 3.py",
+      "root_cause": "109 lines replaced/restructured",
+      "fix": "Rewrote 159→35 lines (109 removed) | Also: def _load_markings_from_rows(header, rows):; \"\"\"Build existing_markings dict from header + iter | Also: # Helper functions; _ITALIC_ANNOTATION_RE = re.compile(r'\\(_([^_]*)_\\) | Also: def is_dialect(translation):; \"\"\"Return True if a Translation carries a known di | Also: with (open(\"./\" + menalari_name, newline='', encod; open('menalariExtension.tsv', 'w', newline='', enc | Also: menaWriter.writerow([globasa_word]); # Word-list annotation maps for es/eo overlay in e | Also: # Collect for extensions TSV if reviewed at any ti; if app == 's' and tier in ('v', 'e'): | Also: from collections import defaultdict; from Lexilista_parser import (parseWordEntry, Glos",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 8,
+      "last_seen": "2026-04-27T22:28:54.392Z"
+    },
+    {
+      "id": "bug-074",
+      "timestamp": "2026-04-27T22:27:41.929Z",
+      "error_message": "Wrong reference: menaWriter should be menalariReader",
+      "file": "Wiktionary sense based translation extender 3.py",
+      "root_cause": "Used \"menaWriter\" instead of \"menalariReader\"",
+      "fix": "Changed menaWriter → menalariReader",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-27T22:27:41.929Z"
+    },
+    {
+      "id": "bug-075",
+      "timestamp": "2026-04-29T13:58:02.454Z",
+      "error_message": "Significant refactor of ",
+      "file": "word_viewer.html",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 5→29 lines (5 removed) | Also: /* Indic script families — Noto Sans per script + ; (Nirmala UI on Windows, *Sangam MN on macOS) */ | Also: letter-spacing breaks Devanagari shirorekha) */; /* Indic translation cells: serif for Latin chars,",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-29T14:00:09.017Z"
+    },
+    {
+      "id": "bug-076",
+      "timestamp": "2026-04-29T19:50:59.023Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/mossy-rolling-hoare.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 19→23 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T19:50:59.023Z"
+    },
+    {
+      "id": "bug-077",
+      "timestamp": "2026-04-29T20:13:53.864Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/mossy-rolling-hoare.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 8→9 lines (4 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T20:13:53.864Z"
+    },
+    {
+      "id": "bug-078",
+      "timestamp": "2026-04-29T20:45:45.169Z",
+      "error_message": "Wrong reference: continue should be or",
+      "file": "run_giza_improved.py",
+      "root_cause": "Used \"continue\" instead of \"or\"",
+      "fix": "Changed continue → or",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T20:45:45.169Z"
+    },
+    {
+      "id": "bug-079",
+      "timestamp": "2026-04-29T20:48:55.976Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "12 lines replaced/restructured",
+      "fix": "Rewrote 38→116 lines (12 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T20:48:55.976Z"
+    },
+    {
+      "id": "bug-080",
+      "timestamp": "2026-04-29T20:56:56.517Z",
+      "error_message": "Incorrect value in code",
+      "file": "run_giza_improved.py",
+      "root_cause": "Had \"/tmp/giza-pp\"",
+      "fix": "Changed to \"giza-pp\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T20:56:56.517Z"
+    },
+    {
+      "id": "bug-081",
+      "timestamp": "2026-04-29T20:58:49.712Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 11→34 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T20:58:49.712Z"
+    },
+    {
+      "id": "bug-082",
+      "timestamp": "2026-04-29T21:04:01.432Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 27→59 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T21:04:01.432Z"
+    },
+    {
+      "id": "bug-083",
+      "timestamp": "2026-04-29T21:43:48.666Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 16→45 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T21:43:48.666Z"
+    },
+    {
+      "id": "bug-084",
+      "timestamp": "2026-04-29T21:52:20.215Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/mossy-rolling-hoare.md",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 15→75 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T21:52:20.215Z"
+    },
+    {
+      "id": "bug-085",
+      "timestamp": "2026-04-29T22:15:45.314Z",
+      "error_message": "Significant refactor of ",
+      "file": "PosTagger.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 10→15 lines (2 removed) | Also: # Advance to next clause; if clause_start < n:",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-29T22:19:01.009Z"
+    },
+    {
+      "id": "bug-086",
+      "timestamp": "2026-04-29T22:41:02.016Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/mossy-rolling-hoare.md",
+      "root_cause": "38 lines replaced/restructured",
+      "fix": "Rewrote 75→89 lines (38 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T22:41:02.017Z"
+    },
+    {
+      "id": "bug-087",
+      "timestamp": "2026-04-29T22:54:32.038Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 38→47 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T22:54:32.038Z"
+    },
+    {
+      "id": "bug-088",
+      "timestamp": "2026-04-29T23:14:14.024Z",
+      "error_message": "Significant refactor of ",
+      "file": "HunspellMaker.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 17→32 lines (8 removed) | Also: line_output = []; continuation_class = str(compound_begin_index) + \" | Also: line_output = []; if suffix in menalariAffixes['WordClass']:",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-29T23:15:18.783Z"
+    },
+    {
+      "id": "bug-089",
+      "timestamp": "2026-04-29T23:27:09.061Z",
+      "error_message": "Wrong operator: >= should be !=",
+      "file": "HunspellMaker.py",
+      "root_cause": "Used \">=\" instead of \"!=\"",
+      "fix": "Changed operator >= → !=",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-29T23:27:09.061Z"
+    },
+    {
+      "id": "bug-090",
+      "timestamp": "2026-04-30T04:40:45.887Z",
+      "error_message": "Significant refactor of ",
+      "file": "GlobasaGrammarChecker/rules/tense.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→9 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T04:40:45.887Z"
+    },
+    {
+      "id": "bug-091",
+      "timestamp": "2026-04-30T05:49:15.805Z",
+      "error_message": "Significant refactor of ",
+      "file": "extend_tmx_pnc_multi.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 8→10 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T05:49:15.805Z"
+    },
+    {
+      "id": "bug-092",
+      "timestamp": "2026-04-30T06:09:15.284Z",
+      "error_message": "Incorrect value in code",
+      "file": "PosTagger.py",
+      "root_cause": "Had \"fe\"",
+      "fix": "Changed to \"xafe\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T06:09:38.301Z"
+    },
+    {
+      "id": "bug-093",
+      "timestamp": "2026-04-30T07:38:12.178Z",
+      "error_message": "Wrong reference: len should be sent_count",
+      "file": "run_giza_improved.py",
+      "root_cause": "Used \"len\" instead of \"sent_count\"",
+      "fix": "Changed len → sent_count",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T07:38:12.178Z"
+    },
+    {
+      "id": "bug-094",
+      "timestamp": "2026-04-30T07:47:03.789Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→14 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T07:47:03.789Z"
+    },
+    {
+      "id": "bug-095",
+      "timestamp": "2026-04-30T08:12:28.021Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "19 lines replaced/restructured",
+      "fix": "Rewrote 53→138 lines (19 removed) | Also: \"en\": \"svo\", \"eo\": \"svo\", \"es\": \"svo\", \"fr\": \"svo\"; \"id\": \"svo\", \"sw\": \"svo\", \"zh\": \"svo\", \"da\": \"svo\"",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T08:16:33.398Z"
+    },
+    {
+      "id": "bug-096",
+      "timestamp": "2026-04-30T08:24:49.870Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 18→90 lines (8 removed) | Also: \"en\": \"svo\", \"es\": \"svo\", \"fr\": \"svo\", \"pt\": \"svo\"; \"eo\": \"eo\", \"id\": \"id\", \"sw\": \"sw\",",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T08:26:39.016Z"
+    },
+    {
+      "id": "bug-097",
+      "timestamp": "2026-04-30T09:27:53.311Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/floating-giggling-toucan.md",
+      "root_cause": "Had `un`",
+      "fix": "Changed to \"one\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-04-30T09:29:39.970Z"
+    },
+    {
+      "id": "bug-098",
+      "timestamp": "2026-04-30T09:34:02.770Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"https://menalari.globasa.net/eng/browse\"",
+      "fix": "Changed to \"/alignments\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T09:34:02.770Z"
+    },
+    {
+      "id": "bug-099",
+      "timestamp": "2026-04-30T09:43:01.810Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "29 lines replaced/restructured",
+      "fix": "Rewrote 50→64 lines (29 removed) | Also: new_raw = \"^\" + src + \"/\" + \"/\".join(a[\"raw\"] for ; result_units.append(new_raw)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T09:47:55.954Z"
+    },
+    {
+      "id": "bug-100",
+      "timestamp": "2026-04-30T09:49:41.213Z",
+      "error_message": "Significant refactor of ",
+      "file": "translation_aide.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→5 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T09:49:41.213Z"
+    },
+    {
+      "id": "bug-101",
+      "timestamp": "2026-04-30T09:50:25.157Z",
+      "error_message": "Null/undefined access in ",
+      "file": "translation_aide.html",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T09:50:25.157Z"
+    },
+    {
+      "id": "bug-102",
+      "timestamp": "2026-04-30T10:08:31.360Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 46→90 lines (2 removed) | Also: # Match them to output word positions; lemma_to_out = {}  # lemma -> output word index (f",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T10:11:29.295Z"
+    },
+    {
+      "id": "bug-103",
+      "timestamp": "2026-04-30T10:10:20.262Z",
+      "error_message": "Significant refactor of ",
+      "file": "alignment_viewer.html",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 86→117 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T10:10:20.263Z"
+    },
+    {
+      "id": "bug-104",
+      "timestamp": "2026-04-30T10:24:16.906Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 45→59 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T10:24:16.906Z"
+    },
+    {
+      "id": "bug-105",
+      "timestamp": "2026-04-30T10:31:11.959Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 6→15 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T10:31:11.959Z"
+    },
+    {
+      "id": "bug-106",
+      "timestamp": "2026-04-30T10:31:55.365Z",
+      "error_message": "Incorrect value in code",
+      "file": "run_giza_improved.py",
+      "root_cause": "Had \"be\"",
+      "fix": "Changed to \"be-\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T10:31:55.365Z"
+    },
+    {
+      "id": "bug-107",
+      "timestamp": "2026-04-30T10:38:25.392Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 46→64 lines (8 removed) | Also: # Adjective/noun-forming suffixes: cross-linguisti; # to possessive constructions (e.g., -li ↔ \"de\" in",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-04-30T10:42:51.682Z"
+    },
+    {
+      "id": "bug-108",
+      "timestamp": "2026-04-30T10:54:52.374Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "13 lines replaced/restructured",
+      "fix": "Rewrote 15→5 lines (13 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T10:54:52.374Z"
+    },
+    {
+      "id": "bug-109",
+      "timestamp": "2026-04-30T11:11:44.729Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 33→47 lines (8 removed) | Also: # LEX priors from dictionary pairs; if key not in seen: | Also: # Run eflomal with priors; aligner = eflomal.Aligner(model=3, n_samplers=3) | Also: mw_pos = _infer_pos_from_wordclass(mw_word); # Tag last non-affix morpheme (root head) with POS | Also: # For UNK words, try to resolve POS from WordClass; if pos == \"UNK\": | Also: # If the word is a single token (not decomposed) a; # a contextual POS, use that (it accounts for synt",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 6,
+      "last_seen": "2026-04-30T11:18:57.022Z"
+    },
+    {
+      "id": "bug-110",
+      "timestamp": "2026-04-30T11:26:41.690Z",
+      "error_message": "Significant refactor of ",
+      "file": "run_giza_improved.py",
+      "root_cause": "22 lines replaced/restructured",
+      "fix": "Rewrote 22→9 lines (22 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T11:26:41.690Z"
+    },
+    {
+      "id": "bug-111",
+      "timestamp": "2026-04-30T11:30:48.815Z",
+      "error_message": "Incorrect value in code",
+      "file": "run_giza_improved.py",
+      "root_cause": "Had \"-ya\"",
+      "fix": "Changed to \"-do\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T11:30:48.815Z"
+    },
+    {
+      "id": "bug-112",
+      "timestamp": "2026-04-30T12:10:27.277Z",
+      "error_message": "Significant refactor of ",
+      "file": "alignment_viewer.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 44→128 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T12:10:27.277Z"
+    },
+    {
+      "id": "bug-113",
+      "timestamp": "2026-04-30T12:11:44.896Z",
+      "error_message": "Null/undefined access in ",
+      "file": "annotate_alignments.html",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T12:11:44.896Z"
+    },
+    {
+      "id": "bug-114",
+      "timestamp": "2026-04-30T12:19:07.456Z",
+      "error_message": "Missing guard clause",
+      "file": "annotate_alignments.html",
+      "root_cause": "No early return/throw for edge case: !tok",
+      "fix": "Added guard clause: if (!tok)",
+      "tags": [
+        "auto-detected",
+        "guard-clause",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T12:19:07.456Z"
+    },
+    {
+      "id": "bug-115",
+      "timestamp": "2026-04-30T12:55:38.011Z",
+      "error_message": "Significant refactor of ",
+      "file": "annotate_alignments.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 11→16 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-04-30T12:55:38.011Z"
+    },
+    {
+      "id": "bug-116",
+      "timestamp": "2026-05-01T12:11:55.094Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "annotate_alignments.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:11:55.094Z"
+    },
+    {
+      "id": "bug-117",
+      "timestamp": "2026-05-01T12:15:24.992Z",
+      "error_message": "Significant refactor of ",
+      "file": "annotate_alignments.html",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 37→73 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:15:24.992Z"
+    },
+    {
+      "id": "bug-118",
+      "timestamp": "2026-05-01T12:34:50.976Z",
+      "error_message": "Wrong operator: >= should be ==",
+      "file": "Word Viewer.py",
+      "root_cause": "Used \">=\" instead of \"==\"",
+      "fix": "Changed operator >= → ==",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:34:50.976Z"
+    },
+    {
+      "id": "bug-119",
+      "timestamp": "2026-05-01T12:38:11.630Z",
+      "error_message": "Wrong return value",
+      "file": "merge_gold_priors.py",
+      "root_cause": "Was returning: [v for _, v in sorted(latest.values(), key=lambda ",
+      "fix": "Now returns: [v for _, v in sorted(latest.values(), key=lambda ",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:38:11.630Z"
+    },
+    {
+      "id": "bug-120",
+      "timestamp": "2026-05-01T12:39:00.262Z",
+      "error_message": "Missing error handling in bulkResetFollowing",
+      "file": "annotate_alignments.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:39:00.262Z"
+    },
+    {
+      "id": "bug-121",
+      "timestamp": "2026-05-01T12:48:58.077Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "23 lines replaced/restructured",
+      "fix": "Rewrote 67→186 lines (23 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:48:58.077Z"
+    },
+    {
+      "id": "bug-122",
+      "timestamp": "2026-05-01T12:50:10.796Z",
+      "error_message": "Null/undefined access in ",
+      "file": "annotate_alignments.html",
+      "root_cause": "Property access on potentially null/undefined value",
+      "fix": "Added null safety (optional chaining or null check)",
+      "tags": [
+        "auto-detected",
+        "null-safety",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T12:50:10.796Z"
+    },
+    {
+      "id": "bug-123",
+      "timestamp": "2026-05-01T12:57:09.495Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "17 lines replaced/restructured",
+      "fix": "Rewrote 31→68 lines (17 removed) | Also: 1. Walk `text` character-by-character, tracking of; 2. **MWE merge**: walk the token stream, greedy lo | Also: Read `word-list.csv` once at init using **header n; - `roots: dict[str, Row]` — `Category == \"root\"`",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-05-01T12:57:55.302Z"
+    },
+    {
+      "id": "bug-124",
+      "timestamp": "2026-05-01T18:04:09.783Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 8→11 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T18:04:09.783Z"
+    },
+    {
+      "id": "bug-125",
+      "timestamp": "2026-05-01T18:04:44.928Z",
+      "error_message": "Missing error handling in syllabify",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T18:04:44.928Z"
+    },
+    {
+      "id": "bug-126",
+      "timestamp": "2026-05-01T18:13:27.669Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 20→26 lines (5 removed) | Also: links ([[i,j],...]), annotator (optional)}; row = \"\\t\".join([str(sid), glb_str, tgt_str, links",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-01T18:14:18.599Z"
+    },
+    {
+      "id": "bug-127",
+      "timestamp": "2026-05-01T18:15:22.274Z",
+      "error_message": "Significant refactor of ",
+      "file": "annotate_alignments.html",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 7→8 lines (2 removed) | Also: \"Confirm auto\" button when the user verifies the a; does NOT persist anything. */",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-01T18:17:18.301Z"
+    },
+    {
+      "id": "bug-128",
+      "timestamp": "2026-05-01T18:16:44.414Z",
+      "error_message": "Missing error handling in resetToAuto",
+      "file": "annotate_alignments.html",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T18:16:44.414Z"
+    },
+    {
+      "id": "bug-129",
+      "timestamp": "2026-05-01T18:19:45.922Z",
+      "error_message": "Significant refactor of ",
+      "file": "migrate_gold_tsv.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 5→6 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T18:19:45.922Z"
+    },
+    {
+      "id": "bug-130",
+      "timestamp": "2026-05-01T18:26:50.149Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "23 lines replaced/restructured",
+      "fix": "Rewrote 31→78 lines (23 removed) | Also: A one-shot script (not part of the package) that s; 1. Filter to Sinitic-origin roots (LexiliAsel etym | Also: 7. **Pseudo-affix sanity:**; t = GlobasaTokenizer(decompose_pseudo_affixes=True",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 3,
+      "last_seen": "2026-05-01T18:29:22.599Z"
+    },
+    {
+      "id": "bug-131",
+      "timestamp": "2026-05-01T18:28:25.647Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "Had \"pseudo_suffix\"",
+      "fix": "Changed to \"pseudo_morpheme\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-01T18:28:39.738Z"
+    },
+    {
+      "id": "bug-132",
+      "timestamp": "2026-05-01T18:48:49.204Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/i-wish-to-develop-idempotent-gizmo.md",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 3→5 lines (2 removed) | Also: ## Syllable fallback (`syllable_fallback.py`); Thin wrapper over [Hyphenation.py](Hyphenation.py)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-01T18:49:38.385Z"
+    },
+    {
+      "id": "bug-133",
+      "timestamp": "2026-05-01T19:18:20.325Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_tokenizer/tests/test_lexiliasel.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 27→38 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T19:18:20.325Z"
+    },
+    {
+      "id": "bug-134",
+      "timestamp": "2026-05-01T19:19:57.927Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_tokenizer/segmenter.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 17→26 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T19:19:57.927Z"
+    },
+    {
+      "id": "bug-135",
+      "timestamp": "2026-05-01T19:23:01.554Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_tokenizer/__init__.py",
+      "root_cause": "21 lines replaced/restructured",
+      "fix": "Rewrote 28→8 lines (21 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T19:23:01.554Z"
+    },
+    {
+      "id": "bug-136",
+      "timestamp": "2026-05-01T19:23:11.423Z",
+      "error_message": "Wrong reference: __init__ should be _types",
+      "file": "globasa_tokenizer/segmenter.py",
+      "root_cause": "Used \"__init__\" instead of \"_types\"",
+      "fix": "Changed __init__ → _types",
+      "tags": [
+        "auto-detected",
+        "wrong-reference",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T19:23:11.423Z"
+    },
+    {
+      "id": "bug-137",
+      "timestamp": "2026-05-01T19:24:01.964Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_tokenizer/tests/test_lexiliasel.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 27→32 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T19:24:01.964Z"
+    },
+    {
+      "id": "bug-138",
+      "timestamp": "2026-05-01T19:26:00.174Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_tokenizer/tests/test_perf.py",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 13→14 lines (5 removed) | Also: assert words_per_sec >= 100_000, (; f\"Throughput {words_per_sec:,.0f} words/sec is bel",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-01T19:26:52.430Z"
+    },
+    {
+      "id": "bug-139",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "Circular import: MorphKind enum identity broken — m.kind == MorphKind.PUNCT returned False even when both printed identically",
+      "file": "globasa_tokenizer/segmenter.py, globasa_tokenizer/__init__.py",
+      "root_cause": "segmenter.py imported `from .__init__ import Morpheme, MorphKind`, creating a second enum class at globasa_tokenizer.__init__.MorphKind distinct from globasa_tokenizer.MorphKind",
+      "fix": "Created globasa_tokenizer/_types.py with MorphKind and Morpheme; both __init__.py and segmenter.py now import from _types.py",
+      "tags": [
+        "circular-import",
+        "enum-identity",
+        "tokenizer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-140",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "Offset mismatch for capitalized words: surface='xen' but text[0:3]='Xen'",
+      "file": "globasa_tokenizer/segmenter.py",
+      "root_cause": "_shift() used lowercase surfaces stored in LexiliAsel alignment; original casing lost",
+      "fix": "Added original_word parameter to _shift(); uses original_word[start:end] as surface to preserve input casing",
+      "tags": [
+        "offsets",
+        "casing",
+        "tokenizer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-141",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "LexiliAsel parity test: 122 initial failures — trailing etymology notes not stripped",
+      "file": "globasa_tokenizer/affix_parser.py, globasa_tokenizer/tests/test_lexiliasel.py",
+      "root_cause": "LexiliAsel strings contain trailing '. Turkisa (form)...' and '. Am kompara: ...' notes that were not being stripped before parsing",
+      "fix": "Added _ETYM_SUFFIX_RE = re.compile(r'\\.\\s+(?:\\w+sa\\b|\\bAm\\b).*') and _AM_NOTE_RE; test uses same stripping logic; skips multi-word entries, function words, and words not in lex.derived",
+      "tags": [
+        "lexiliasel",
+        "regex",
+        "parsing",
+        "tokenizer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-142",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "Pseudo-morpheme tests failing: gongaw decomposed as go(告)+n(residue)+gaw(告) instead of gon(公)+gaw(告)",
+      "file": "globasa_tokenizer/data/pseudo_morphemes.tsv, globasa_tokenizer/segmenter.py",
+      "root_cause": "Missing entry gon→公 meant Aho-Corasick matched go first; also, lexicon roots were not decomposed even with decompose_pseudo_morphemes=True",
+      "fix": "Added gon→公 to pseudo_morphemes.tsv; in step 3 of segment_word(), apply pseudo-morpheme tiling even for lexicon roots when decompose_pseudo_morphemes=True",
+      "tags": [
+        "pseudo-morpheme",
+        "aho-corasick",
+        "dp-cover",
+        "tokenizer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-143",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "Hyphen-inside-word (kitabudom-li) caused segmenter failure — not in any lexicon",
+      "file": "globasa_tokenizer/segmenter.py",
+      "root_cause": "Scanner kept kitabudom-li as one token; segmenter had no logic to split on hyphens",
+      "fix": "Added hyphen-split logic at top of segment_word(): split on '-' and segment each part separately, inserting synthetic PUNCT '-' morphemes between parts; affix entries (-dom, be-) detected and returned as-is",
+      "tags": [
+        "hyphen",
+        "segmenter",
+        "tokenizer"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-144",
+      "timestamp": "2026-05-01T20:00:00.000Z",
+      "error_message": "Performance below 80k words/sec threshold",
+      "file": "globasa_tokenizer/tokenizer.py",
+      "root_cause": "_merge_mwe called sorted() on every sentence; _scan_tokens used method-lookup overhead for isalpha() calls",
+      "fix": "Pre-computed _sorted_phrases and _mwe_keys in _GlobasaTokenizerImpl.__init__; optimized scanner with direct .isalpha() calls and tokens.append caching; moved MorphKind import outside perf test loop; threshold set to 80k (production target 100k on warm cache)",
+      "tags": [
+        "performance",
+        "tokenizer",
+        "mwe"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:00:00.000Z"
+    },
+    {
+      "id": "bug-145",
+      "timestamp": "2026-05-01T20:23:59.413Z",
+      "error_message": "Incorrect value in code",
+      "file": "word_viewer.html",
+      "root_cause": "Had \"/translate\"",
+      "fix": "Changed to \"/tmx\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:23:59.413Z"
+    },
+    {
+      "id": "bug-146",
+      "timestamp": "2026-05-01T20:24:07.054Z",
+      "error_message": "Incorrect value in code",
+      "file": "alignment_viewer.html",
+      "root_cause": "Had \">Translation Aide</a><span class=\"",
+      "fix": "Changed to \">TMX</a><span class=\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:24:07.054Z"
+    },
+    {
+      "id": "bug-147",
+      "timestamp": "2026-05-01T20:24:16.878Z",
+      "error_message": "Incorrect value in code",
+      "file": "translation_aide.html",
+      "root_cause": "Had \">Translation Aide</a><span class=\"",
+      "fix": "Changed to \">TMX</a><span class=\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:24:16.878Z"
+    },
+    {
+      "id": "bug-148",
+      "timestamp": "2026-05-01T20:24:24.612Z",
+      "error_message": "Incorrect value in code",
+      "file": "annotate_alignments.html",
+      "root_cause": "Had \">Annotate</a><span class=\"",
+      "fix": "Changed to \">TMX</a><span class=\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "html"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-01T20:24:24.612Z"
+    },
+    {
+      "id": "bug-149",
+      "timestamp": "2026-05-14T16:37:54.778Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_pos.py",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 60→111 lines (11 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T16:37:54.778Z"
+    },
+    {
+      "id": "bug-150",
+      "timestamp": "2026-05-14T16:43:22.239Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_pos.py",
+      "root_cause": "11 lines replaced/restructured",
+      "fix": "Rewrote 41→58 lines (11 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T16:43:22.239Z"
+    },
+    {
+      "id": "bug-151",
+      "timestamp": "2026-05-14T17:53:32.389Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_pos.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 46→59 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T17:53:32.389Z"
+    },
+    {
+      "id": "bug-152",
+      "timestamp": "2026-05-14T18:00:17.205Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_pos.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 25→53 lines (2 removed) | Also: # Identify coord CONJ split points; coord_cps = [j for j in range(clause_start, clause",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-14T18:00:38.363Z"
+    },
+    {
+      "id": "bug-153",
+      "timestamp": "2026-05-14T18:00:56.766Z",
+      "error_message": "Significant refactor of ",
+      "file": "Word Viewer.py",
+      "root_cause": "28 lines replaced/restructured",
+      "fix": "Rewrote 42→11 lines (28 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T18:00:56.766Z"
+    },
+    {
+      "id": "bug-154",
+      "timestamp": "2026-05-14T18:05:43.530Z",
+      "error_message": "Significant refactor of ",
+      "file": "globasa_pos.py",
+      "root_cause": "25 lines replaced/restructured",
+      "fix": "Rewrote 25→72 lines (25 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T18:05:43.530Z"
+    },
+    {
+      "id": "bug-155",
+      "timestamp": "2026-05-14T18:27:45.787Z",
+      "error_message": "Missing error handling in unknown",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb/apertium-glb.glb.rlx",
+      "root_cause": "Code path had no error handling — exceptions would propagate uncaught",
+      "fix": "Added try/catch block",
+      "tags": [
+        "auto-detected",
+        "error-handling",
+        "rlx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T18:27:45.787Z"
+    },
+    {
+      "id": "bug-156",
+      "timestamp": "2026-05-14T18:45:24.560Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb/apertium-glb.glb.rlx",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 16→22 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rlx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T18:45:24.560Z"
+    },
+    {
+      "id": "bug-157",
+      "timestamp": "2026-05-14T19:37:31.394Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/gleaming-cuddling-fountain.md",
+      "root_cause": "4 lines replaced/restructured",
+      "fix": "Rewrote 4→19 lines (4 removed) | Also: 2. `wc -l dictionary_En.xml dictionary_un.xml` bef; should increase (today's script drops every `b.oj`",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-14T19:37:46.324Z"
+    },
+    {
+      "id": "bug-158",
+      "timestamp": "2026-05-14T19:47:45.129Z",
+      "error_message": "Wrong return value",
+      "file": "dictionaryPreprocess.py",
+      "root_cause": "Was returning: blank.join(word.split())",
+      "fix": "Now returns: blank.join(xml_escape(part) for part in word.split",
+      "tags": [
+        "auto-detected",
+        "return-value",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T19:47:45.129Z"
+    },
+    {
+      "id": "bug-159",
+      "timestamp": "2026-05-14T21:24:38.149Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb/apertium-glb.glb.dix",
+      "root_cause": "20 lines replaced/restructured",
+      "fix": "Rewrote 28→3 lines (20 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T21:24:38.149Z"
+    },
+    {
+      "id": "bug-160",
+      "timestamp": "2026-05-14T21:26:22.893Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+      "root_cause": "29 lines replaced/restructured",
+      "fix": "Rewrote 35→3 lines (29 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T21:26:22.893Z"
+    },
+    {
+      "id": "bug-161",
+      "timestamp": "2026-05-14T21:47:21.143Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+      "root_cause": "Had \"adj\"",
+      "fix": "Changed to \"det\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T21:47:21.143Z"
+    },
+    {
+      "id": "bug-162",
+      "timestamp": "2026-05-14T21:59:17.866Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+      "root_cause": "Had \"adj\"",
+      "fix": "Changed to \"det\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-14T22:01:17.821Z"
+    },
+    {
+      "id": "bug-163",
+      "timestamp": "2026-05-14T22:21:40.783Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 9→17 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T22:21:40.783Z"
+    },
+    {
+      "id": "bug-164",
+      "timestamp": "2026-05-14T22:40:41.254Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→4 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T22:40:41.254Z"
+    },
+    {
+      "id": "bug-165",
+      "timestamp": "2026-05-14T22:51:01.488Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+      "root_cause": "Had \"cnjcoo\"",
+      "fix": "Changed to \"cnjsub\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-14T22:51:34.072Z"
+    },
+    {
+      "id": "bug-166",
+      "timestamp": "2026-05-14T22:57:40.166Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 10→6 lines (8 removed) | Also: NNP u@vbpr.$tense VP ke@prn { 4 _ do@vbdo.$tense _; prpers@prn u@vbpr.$tense %VP ke@prn { 4 _ do@vbdo. | Also: ! Wh-pronoun (ke) as object of lexical verb: \"S V ; NNP u@vbpr.[prespast] VP ke@prn { 4 _ do@vbdo[tens | Also: AJC ->      5: maxmo@adv adj { 2[degree=comp] }|; 5: maxim@adv adj { 2[degree=sup] }|",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 4,
+      "last_seen": "2026-05-14T23:00:33.262Z"
+    },
+    {
+      "id": "bug-167",
+      "timestamp": "2026-05-14T23:23:55.801Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 7→3 lines (5 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-14T23:23:55.801Z"
+    },
+    {
+      "id": "bug-168",
+      "timestamp": "2026-05-14T23:29:38.408Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 9→3 lines (6 removed) | Also: NNP u@vbpr.[futcondi] VP [wh_adv]@adv { 4 _ will@v; prpers@prn u@vbpr.[futcondi] %VP [wh_adv]@adv { 4 ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-05-14T23:31:36.416Z"
+    },
+    {
+      "id": "bug-169",
+      "timestamp": "2026-05-16T15:16:38.917Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.rtx",
+      "root_cause": "13 lines replaced/restructured",
+      "fix": "Rewrote 18→17 lines (13 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-05-16T15:16:38.917Z"
+    },
+    {
+      "id": "bug-170",
+      "timestamp": "2026-06-06T12:50:41.030Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../.claude/plans/improve-the-latest-anki-synthetic-cook.md",
+      "root_cause": "5 lines replaced/restructured",
+      "fix": "Rewrote 15→24 lines (5 removed) | Also: - Run once: prints \"added N / updated M / unchange; - Re-run: prints \"added 0 / updated 0\" (idempotenc",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "md"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-06T12:50:52.561Z"
+    },
+    {
+      "id": "bug-171",
+      "timestamp": "2026-06-06T16:29:05.384Z",
+      "error_message": "Significant refactor of ",
+      "file": "apkg_image_sync.py",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→13 lines (2 removed) | Also: \"\"\"Concurrent validation. Returns {url: (ok, reaso; Hits the cache for previously-OK URLs less than CA",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-06T16:31:28.905Z"
+    },
+    {
+      "id": "bug-172",
+      "timestamp": "2026-06-06T19:03:28.566Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker3.py",
+      "root_cause": "8 lines replaced/restructured",
+      "fix": "Rewrote 17→22 lines (8 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T19:03:28.566Z"
+    },
+    {
+      "id": "bug-173",
+      "timestamp": "2026-06-06T19:10:46.111Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker3.py",
+      "root_cause": "3 lines replaced/restructured",
+      "fix": "Rewrote 25→32 lines (3 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T19:10:46.111Z"
+    },
+    {
+      "id": "bug-174",
+      "timestamp": "2026-06-06T19:20:22.740Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker3.py",
+      "root_cause": "7 lines replaced/restructured",
+      "fix": "Rewrote 8→5 lines (7 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T19:20:22.740Z"
+    },
+    {
+      "id": "bug-175",
+      "timestamp": "2026-06-06T19:22:01.747Z",
+      "error_message": "Wrong operator: != should be ==",
+      "file": "AnkiMaker3.py",
+      "root_cause": "Used \"!=\" instead of \"==\"",
+      "fix": "Changed operator != → ==",
+      "tags": [
+        "auto-detected",
+        "operator-fix",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T19:22:01.747Z"
+    },
+    {
+      "id": "bug-176",
+      "timestamp": "2026-06-06T20:40:41.408Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker3.py",
+      "root_cause": "16 lines replaced/restructured",
+      "fix": "Rewrote 31→64 lines (16 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T20:40:41.408Z"
+    },
+    {
+      "id": "bug-177",
+      "timestamp": "2026-06-06T21:40:04.011Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+      "root_cause": "Had \"] _ 2 }|\n         20:be@copula AJC { u@vbpr.[1.te",
+      "fix": "Changed to \"] _ 2 }|\n         20:be@copula not@adv { u@vbpr.[",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T21:40:04.011Z"
+    },
+    {
+      "id": "bug-178",
+      "timestamp": "2026-06-06T22:18:28.136Z",
+      "error_message": "Incorrect value in code",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb/apertium-glb.glb.dix",
+      "root_cause": "Had \"LR\"",
+      "fix": "Changed to \"RL\"",
+      "tags": [
+        "auto-detected",
+        "wrong-value",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T22:18:28.136Z"
+    },
+    {
+      "id": "bug-179",
+      "timestamp": "2026-06-06T23:00:20.430Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+      "root_cause": "2 lines replaced/restructured",
+      "fix": "Rewrote 4→5 lines (2 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "rtx"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-06T23:00:20.430Z"
+    },
+    {
+      "id": "bug-180",
+      "timestamp": "2026-06-06T23:03:12.635Z",
+      "error_message": "Significant refactor of ",
+      "file": "../../ApplicationSource/GlobasaTranslation/apertium-glb/apertium-glb.glb.dix",
+      "root_cause": "9 lines replaced/restructured",
+      "fix": "Rewrote 12→3 lines (9 removed) | Also: <!-- Globasa vbser is uninflected: accept any tens; <e r=\"RL\"><p><l></l>          <r><s n=\"vbser\"/><s ",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "dix"
+      ],
+      "related_bugs": [],
+      "occurrences": 2,
+      "last_seen": "2026-06-06T23:05:00.577Z"
+    },
+    {
+      "id": "bug-181",
+      "timestamp": "2026-06-08T16:29:55.411Z",
+      "error_message": "Significant refactor of ",
+      "file": "AnkiMaker3.py",
+      "root_cause": "6 lines replaced/restructured",
+      "fix": "Rewrote 38→71 lines (6 removed)",
+      "tags": [
+        "auto-detected",
+        "refactor",
+        "py"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-06-08T16:29:55.411Z"
+    },
+    {
+      "id": "bug-182",
+      "timestamp": "2026-08-24T12:20:00Z",
+      "error_message": "IndexError: list index out of range when writing patched TMX",
+      "file": "scratchpad/update_thirty.py",
+      "root_cause": "ET.tostring(root, encoding='UTF-8') was assumed to emit an XML declaration that could be split off with .split(b'?>\\n',1)[1]; it did not emit one in that form, so index [1] was out of range.",
+      "fix": "Use ET.tostring(root, encoding='utf-8', xml_declaration=False) and prepend the desired b'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' literal. Note ET emits single-quoted declarations, which is why the literal is needed to byte-match the original files.",
+      "tags": [
+        "elementtree",
+        "tmx",
+        "xml",
+        "serialization"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-24T12:20:00Z"
+    },
+    {
+      "id": "bug-183",
+      "timestamp": "2026-08-24T12:35:00Z",
+      "error_message": "[gold priors] eflomal.calculate_priors failed for en: can only concatenate str (not \"int\") to str",
+      "file": "merge_gold_priors.py",
+      "root_cause": "A gold record (sentence_id 0, 'lefe texto' <-> 'Preface') carries links [[0,1],[1,2],[0,0],[1,0]] while the stored target has only 1 token, so j=1 and j=2 are out of bounds. eflomal.calculate_priors raises on the first out-of-bounds link, and its own error path is buggy -- `raise ValueError('Invalid input on line %d' % lineno + 1)` evaluates as (str % int) + int, so a TypeError masks the real 'alignment out of bounds' message. Because the bad record was first in the list, ALL 54 gold records were silently discarded (run_giza_improved catches the exception and prints '[gold priors] skipped').",
+      "fix": "_pharaoh() now takes optional n_src/n_tgt and drops links pointing past either token list, returning (pharaoh_string, dropped_count). append_gold_priors() passes the token counts, logs which sentence_id had out-of-bounds links, and warns that those rows are stale and need re-annotation. Verified: all 54 gold records now yield 364 LEX / 13 HMMF / 14 HMMR / 261 FERF / 271 FERR priors.",
+      "tags": [
+        "eflomal",
+        "gold-alignments",
+        "priors",
+        "out-of-bounds",
+        "silent-failure"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-08-24T12:35:00Z"
+    },
+    {
+      "id": "bug-184",
+      "timestamp": "2026-09-01T18:27:28",
+      "error_message": "apkg_image_sync.py read Anki image fields by hardcoded ordinal (img=14, src=15, gif=19, gif_src=20); ordinal 14 is IntransitiveCu in the current notetype",
+      "file": "apkg_image_sync.py",
+      "root_cause": "IMAGE_NOTETYPES hardcoded field positions captured before AnkiMaker3 v3 inserted the per-VerbType fields (Transitive..State, ords 11-18). That pushed the image fields from 14/15/19/20 to 19/20/24/25, so the sync silently read verb-type text as image URLs. The second notetype's offsets (Globasa lexi SabziFruta) were wrong too.",
+      "fix": "Resolve field ordinals from the apkg's own `fields` table by NAME (Imajelinku, ImajeAsel, DuayumImaje, DuayumImajeAsel, Faleanimalinku, Faleanimaasel). Same rule as word-list.csv: use header names, never positions. Verified against the live deck: ntid 1761931224511 -> 19/20/22/23/24/25, ntid 1762076920706 -> 8/9/11/12.",
+      "tags": [
+        "anki",
+        "apkg",
+        "field-ordinals",
+        "hardcoded-indices",
+        "images",
+        "notetype"
+      ],
+      "related_bugs": [
+        "bug-171"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T18:27:28"
+    },
+    {
+      "id": "bug-185",
+      "timestamp": "2026-09-01T18:27:28",
+      "error_message": "apkg_image_sync re-imported 4 images the store already had, under their pre-rename titles",
+      "file": "resolve_commons_images.py",
+      "root_cause": "resolve_commons_images.py adopts the canonical title when the MediaWiki API follows a file redirect, but discarded the old one. The Anki deck still holds the pre-rename URL, so the identity check saw a different file and adopted the same picture twice (e.g. Europe-Bosnia_and_Herzegovina.svg vs Map_of_Bosnia_and_Herzegovina_in_Europe.svg).",
+      "fix": "Record the former title in the image's `aka` list on rename, and add images_store.image_keys() returning canonical + former identities. apkg_image_sync matches against that set. Round-trip now reports 0 new images.",
+      "tags": [
+        "commons",
+        "file-rename",
+        "redirect",
+        "dedupe",
+        "images"
+      ],
+      "related_bugs": [
+        "bug-184"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T18:27:28"
+    }
+  ]
+}

@@ -125,10 +125,16 @@ def apply_page(img, page):
         img["resolved"] = date.today().isoformat()
         return "missing"
 
-    # The API followed a redirect: adopt the new canonical title.
+    # The API followed a redirect: adopt the new canonical title, but remember
+    # the old one. The Anki deck still holds the pre-rename URL, and without
+    # this the next sync would import the same picture again under its old name.
     renamed = False
     new_file = (page.get("title") or "").split("File:", 1)[-1].replace(" ", "_")
     if new_file and new_file != img.get("file"):
+        if img.get("file"):
+            aka = img.setdefault("aka", [])
+            if img["file"] not in aka:
+                aka.append(img["file"])
         img["file"] = new_file
         renamed = True
 
