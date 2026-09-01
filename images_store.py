@@ -206,12 +206,18 @@ def all_images(record):
     return [img for sense in senses_of(record) for img in sense.get("images") or []]
 
 
+def usable(images):
+    """Images worth showing. Drops the ones the API reported as gone — a dead
+    URL on a card or in a gallery is worse than an empty slot."""
+    return [i for i in images or [] if i.get("status") != "missing"]
+
+
 def stills(images):
-    return [i for i in images or [] if i.get("kind") != "gif"]
+    return [i for i in usable(images) if i.get("kind") != "gif"]
 
 
 def gifs(images):
-    return [i for i in images or [] if i.get("kind") == "gif"]
+    return [i for i in usable(images) if i.get("kind") == "gif"]
 
 
 def pos_groups(record):
