@@ -1886,4 +1886,5 @@
 | 23:25 | Fixed curator add_sense not persisting for imageless words (salamandra); root cause in is_empty_record | images_store.py, .wolf/buglog.json | bug-187; 6 persistence cases tested; salamandra add/fill/delete round-trips clean | ~10k |
 | 23:40 | Fixed sense-label field losing focus on click (container re-render); no-op edits no longer write | images_curator.html, .wolf/buglog.json | bug-188; verified input identity survives click, unchanged label/PoS write nothing | ~8k |
 | 23:55 | Added /api/images/publish + "Update dictionary" button; extracted build_image_rows from build_db | Word Viewer.py, images_curator.html | resolved 45 of the user's curated images and pushed 1837 into the LMDB without a full rebuild | ~15k |
+| 00:10 | Fixed finished words being unreachable in the curator (search now bypasses the done filter) | Word Viewer.py, images_curator.html | bug-189; salamandra/calyo/hongu/abakus all findable; queue still 6937 outstanding | ~6k |
 

@@ -2797,9 +2797,12 @@ def api_images_words():
                    if k not in illustrated
                    and (all_pos or images_store.pos_kind(k) is not None)]
         n_images = len(images_store.all_images(rec))
-        if not show_done and not missing:
-            continue
         if query and query not in word.lower() and query not in gloss.lower():
+            continue
+        # A search is a request for that word, finished or not. Without this a
+        # fully-curated word drops out of the queue and becomes unreachable --
+        # there is no other way to open one.
+        if not show_done and not missing and not query:
             continue
         out.append({
             "word": word,

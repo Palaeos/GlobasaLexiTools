@@ -3030,6 +3030,24 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-09-01T22:19:59"
+    },
+    {
+      "id": "bug-189",
+      "timestamp": "2026-09-01T22:32:11",
+      "error_message": "A fully-curated word (salamandra) could no longer be opened in the image curator",
+      "file": "Word Viewer.py",
+      "root_cause": "/api/images/words dropped any word with no unillustrated PoS before applying the search filter, and the queue is the only way to open a word. So finishing a word made it unreachable -- you could not revisit it to fix, reorder or extend the curation.",
+      "fix": "The search filter is applied first and a non-empty query bypasses the done-filter entirely: typing a word's name is a request for that word, finished or not. The unfiltered queue still lists only outstanding work.",
+      "tags": [
+        "curator",
+        "queue",
+        "search",
+        "ui",
+        "images"
+      ],
+      "related_bugs": [],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T22:32:11"
     }
   ]
 }

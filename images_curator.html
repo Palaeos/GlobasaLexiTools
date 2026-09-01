@@ -86,9 +86,9 @@ button.danger { color: #a33; }
 <main>
   <section class="panel">
     <h2>Queue <span id="qcount" class="hint"></span></h2>
-    <input type="text" id="qfilter" placeholder="filter by word or gloss">
+    <input type="text" id="qfilter" placeholder="search any word or gloss — including finished ones">
     <label class="hint" style="display:block;margin-top:.35rem">
-      <input type="checkbox" id="showDone"> include words already done
+      <input type="checkbox" id="showDone"> list finished words too (search always finds them)
     </label>
     <label class="hint" style="display:block">
       <input type="checkbox" id="allPos"> include function words (prepositions,
@@ -168,7 +168,8 @@ async function loadQueue() {
       `<span class="w"></span><span class="g"></span>`;
     el.querySelector(".w").textContent = w.word;
     el.querySelector(".g").textContent =
-      (w.missing_pos.length ? `needs ${w.missing_pos.join(", ")} — ` : "") + w.gloss;
+      (w.missing_pos.length ? `needs ${w.missing_pos.join(", ")} — `
+                            : (w.n_images ? "done — " : "")) + w.gloss;
     el.addEventListener("click", () => loadWord(w.word));
     box.appendChild(el);
   });
