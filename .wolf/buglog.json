@@ -2992,6 +2992,26 @@
       "related_bugs": [],
       "occurrences": 1,
       "last_seen": "2026-09-01T19:28:44"
+    },
+    {
+      "id": "bug-187",
+      "timestamp": "2026-09-01T22:05:01",
+      "error_message": "Adding a sense in the image curator was a placebo: the POST reported ok, the sense never persisted (reported on salamandra)",
+      "file": "images_store.py",
+      "root_cause": "is_empty_record dropped any record with no images. A word with no pictures that gains a freshly-created empty sense is exactly that, so save_images discarded it; the UI then re-read the store and honestly showed nothing. Same root cause as bug-186 (derive-only records) -- that was patched by special-casing `derive` instead of fixing the rule.",
+      "fix": "is_empty_record now returns True only for a bare {word, senses:[]} with no hand-set keys. Any sense at all is intent, as is any unrecognised key on the record. Deleting the last sense still decays the record and cleans it up.",
+      "tags": [
+        "images",
+        "curator",
+        "jsonl",
+        "silent-data-loss",
+        "save_images"
+      ],
+      "related_bugs": [
+        "bug-186"
+      ],
+      "occurrences": 1,
+      "last_seen": "2026-09-01T22:05:01"
     }
   ]
 }

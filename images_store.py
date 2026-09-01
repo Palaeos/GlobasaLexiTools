@@ -363,23 +363,19 @@ def load_images(path=IMAGES_JSONL):
 
 
 def is_empty_record(rec):
-    """True only when a record says nothing at all.
+    """True only when a record says nothing at all: no senses and no hand-set
+    keys on the record itself.
 
-    A record with no images is still worth keeping if it carries a `derive`
-    spec (a hypernym illustrated entirely by its hyponyms owns no image of its
-    own), an `illustratable: false` marker, or any hand-added key. Dropping
-    those silently loses work.
+    Deliberately generous. A sense with no images yet is still intent -- someone
+    created it to hang pictures on, and dropping it makes the curator look
+    broken. So is a `derive` spec, an `illustratable` marker, or any key this
+    module does not recognise. The only thing worth dropping is a bare
+    {"word": ..., "senses": []}, which is what a record decays to once its last
+    sense is deleted.
     """
-    if all_images(rec):
+    if set(rec) - {"word", "senses"}:
         return False
-    if not is_illustratable(rec):
-        return False
-    for sense in senses_of(rec):
-        if sense.get("derive") or not is_illustratable(sense):
-            return False
-        if set(sense) - {"pos", "label", "images"}:
-            return False
-    return not (set(rec) - {"word", "senses"})
+    return not senses_of(rec)
 
 
 def save_images(mapping, path=IMAGES_JSONL):
