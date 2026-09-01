@@ -2893,8 +2893,8 @@ def _commons_thumbs(titles, width=260):
     return out
 
 
-def _commons_category_titles(taxon, limit=40):
-    """File titles in Commons' category for a taxon.
+def _commons_category_titles(taxon, limit=40, cont=None):
+    """(file titles, next cont) from Commons' category for a taxon.
 
     The Wikispecies page usually carries a single lead image, which is too thin
     to choose from; the category has many. Not every taxon has one — `Lama
@@ -2906,14 +2906,18 @@ def _commons_category_titles(taxon, limit=40):
         "list": "categorymembers", "cmtitle": f"Category:{taxon}",
         "cmtype": "file", "cmlimit": str(limit), "maxlag": "5",
     }
+    if cont:
+        params["cmcontinue"] = cont
     r = requests.get(images_store.api_endpoint("commons"), params=params,
                      headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
     r.raise_for_status()
-    return [m.get("title", "")
-            for m in (r.json().get("query") or {}).get("categorymembers") or []]
+    data = r.json()
+    titles = [m.get("title", "")
+              for m in (data.get("query") or {}).get("categorymembers") or []]
+    return titles, (data.get("continue") or {}).get("cmcontinue")
 
 
-def _wikispecies_candidates(taxon):
+def _wikispecies_candidates(taxon, cont=None):
     """Images for a taxon: its Wikispecies page, plus Commons' category for it.
 
     Wikispecies hosts no files of its own — every image on a taxon page is a
@@ -2924,19 +2928,24 @@ def _wikispecies_candidates(taxon):
     _commons_thumbs drops anything that is not an image, which is what keeps the
     category's audio recordings and scanned journals out.
     """
-    params = {
-        "action": "query", "format": "json", "formatversion": "2",
-        "titles": taxon, "prop": "images", "imlimit": "50", "redirects": "1",
-    }
-    r = requests.get(images_store.api_endpoint("species"), params=params,
-                     headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
-    r.raise_for_status()
     titles = []
-    for page in (r.json().get("query") or {}).get("pages") or []:
-        for img in page.get("images") or []:
-            titles.append(img.get("title", ""))
+    if not cont:
+        # The taxon page's own images, once, on the first page of results.
+        params = {
+            "action": "query", "format": "json", "formatversion": "2",
+            "titles": taxon, "prop": "images", "imlimit": "50", "redirects": "1",
+        }
+        r = requests.get(images_store.api_endpoint("species"), params=params,
+                         headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
+        r.raise_for_status()
+        for page in (r.json().get("query") or {}).get("pages") or []:
+            for img in page.get("images") or []:
+                titles.append(img.get("title", ""))
+
+    next_cont = None
     try:
-        titles += _commons_category_titles(taxon)
+        more, next_cont = _commons_category_titles(taxon, cont=cont)
+        titles += more
     except (requests.RequestException, ValueError):
         pass  # no category, or Commons hiccuped; the page images still stand
 
@@ -2945,7 +2954,7 @@ def _wikispecies_candidates(taxon):
         if title and title not in seen and not _CHROME_RE.search(title):
             seen.add(title)
             keep.append(title)
-    return _commons_thumbs(keep)
+    return _commons_thumbs(keep), next_cont
 
 
 # iNaturalist photo licences, best first. Anything not listed -- most often a
@@ -2959,7 +2968,7 @@ _INAT_LICENCES = {
 _INAT_RESTRICTED = {"CC BY-NC", "CC BY-NC-SA", "CC BY-ND", "CC BY-NC-ND"}
 
 
-def _inaturalist_candidates(taxon):
+def _inaturalist_candidates(taxon, cont=None):
     """Photos from iNaturalist's record for a taxon.
 
     Two calls: /v1/taxa?q= only returns a lean record whose taxon_photos list is
@@ -2979,7 +2988,7 @@ def _inaturalist_candidates(taxon):
     search.raise_for_status()
     results = search.json().get("results") or []
     if not results:
-        return []
+        return [], None
 
     out = []
     for stub in results[:2]:
@@ -3006,7 +3015,7 @@ def _inaturalist_candidates(taxon):
                 })
         if out:
             break
-    return out
+    return out, None
 
 
 @app.route("/api/images/candidates")
@@ -3022,11 +3031,13 @@ def api_images_candidates():
     if not query:
         return jsonify({"candidates": []})
 
+    cont = request.args.get("cont") or None
     if source in ("wikispecies", "inaturalist"):
         fetch = (_wikispecies_candidates if source == "wikispecies"
                  else _inaturalist_candidates)
         try:
-            return jsonify({"candidates": fetch(query), "source": source})
+            found, next_cont = fetch(query, cont)
+            return jsonify({"candidates": found, "cont": next_cont, "source": source})
         except (requests.RequestException, ValueError) as e:
             return jsonify({"error": f"{source} lookup failed: {type(e).__name__}"}), 502
 
@@ -3034,6 +3045,7 @@ def api_images_candidates():
         "action": "query", "format": "json", "formatversion": "2",
         "generator": "search", "gsrsearch": query,
         "gsrnamespace": "6", "gsrlimit": request.args.get("limit", "24"),
+        "gsroffset": cont or "0",
         "prop": "imageinfo", "iiprop": "url|size|mime|extmetadata",
         "iiurlwidth": "260",
         "iiextmetadatafilter": "LicenseShortName|Artist",
@@ -3043,7 +3055,11 @@ def api_images_candidates():
         r = requests.get(images_store.api_endpoint("commons"), params=params,
                          headers={"User-Agent": COMMONS_UA}, timeout=(5, 25))
         r.raise_for_status()
-        pages = (r.json().get("query") or {}).get("pages") or []
+        payload = r.json()
+        pages = (payload.get("query") or {}).get("pages") or []
+        # Search results come back unordered; index preserves relevance rank.
+        pages.sort(key=lambda p: p.get("index", 0))
+        next_cont = (payload.get("continue") or {}).get("gsroffset")
     except (requests.RequestException, ValueError) as e:
         return jsonify({"error": f"Commons search failed: {type(e).__name__}"}), 502
 
@@ -3064,7 +3080,7 @@ def api_images_candidates():
             "license": plain(meta.get("LicenseShortName")),
             "artist": plain(meta.get("Artist")),
         })
-    return jsonify({"candidates": out})
+    return jsonify({"candidates": out, "cont": next_cont, "source": "commons"})
 
 
 @app.route("/api/images/publish", methods=["POST"])

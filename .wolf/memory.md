@@ -1888,4 +1888,5 @@
 | 23:55 | Added /api/images/publish + "Update dictionary" button; extracted build_image_rows from build_db | Word Viewer.py, images_curator.html | resolved 45 of the user's curated images and pushed 1837 into the LMDB without a full rebuild | ~15k |
 | 00:10 | Fixed finished words being unreachable in the curator (search now bypasses the done filter) | Word Viewer.py, images_curator.html | bug-189; salamandra/calyo/hongu/abakus all findable; queue still 6937 outstanding | ~6k |
 | 00:45 | Added Wikispecies + Commons-category + iNaturalist image sources for taxon words | Word Viewer.py, images_store.py, images_curator.html | 232 taxon words auto-detected; Hirundinidae 32 Commons / 7 iNat candidates; iNat licences flagged | ~35k |
+| 01:05 | Paginated candidate search across all three sources + infinite scroll in the curator | Word Viewer.py, images_curator.html | commons 188 unique over 8 pages and continuing; wikispecies terminates at 82/55; inat 7 | ~20k |
 

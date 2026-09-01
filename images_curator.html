@@ -71,6 +71,9 @@ button.danger { color: #a33; }
            text-overflow: ellipsis; white-space: nowrap; }
 .cand .l { font-size: 0.68rem; color: var(--muted); }
 .hint { color: var(--muted); font-size: 0.82rem; }
+/* Results scroll on their own so the page does not grow without bound as more
+   pages are pulled in. */
+#candsWrap { max-height: 62vh; overflow-y: auto; margin-top: 0.5rem; }
 #status { font-size: 0.82rem; color: var(--green); min-height: 1.2em; }
 </style>
 
@@ -127,7 +130,10 @@ button.danger { color: #a33; }
       alone would teach the word — search returns things that merely mention it.
       The first image of a sense is the one Anki and the gallery lead with.
     </p>
-    <div class="cands" id="cands"></div>
+    <div id="candsWrap">
+      <div class="cands" id="cands"></div>
+      <div id="candsMore" class="hint" style="padding:.6rem 0;text-align:center"></div>
+    </div>
   </section>
 </main>
 
@@ -313,18 +319,55 @@ function renderSenses() {
 }
 
 // ---- candidates ----
-async function searchCommons() {
+let candCont = null;       // continuation token for the next page
+let candBusy = false;      // guards against overlapping fetches while scrolling
+let candSeen = new Set();  // a file can appear in both a taxon page and its category
+let candQuery = null;
+
+async function searchCommons(more) {
   const q = $("#cq").value.trim();
   const box = $("#cands");
-  if (!q) { box.innerHTML = ""; return; }
-  box.innerHTML = `<p class="hint">searching…</p>`;
+  const foot = $("#candsMore");
   const src = $("#csource").value;
+
+  if (!more) {
+    candCont = null; candBusy = false; candSeen = new Set();
+    candQuery = src + "\u0000" + q;
+    box.innerHTML = ""; foot.textContent = "";
+    if (!q) return;
+    box.innerHTML = `<p class="hint">searching…</p>`;
+  } else {
+    if (candBusy || candCont == null) return;
+    foot.textContent = "loading more…";
+  }
+  candBusy = true;
+
+  const token = candQuery;
   let d;
-  try { d = await api(`/api/images/candidates?q=${encodeURIComponent(q)}&source=${src}`); }
-  catch (e) { box.innerHTML = `<p class="hint">${e.message}</p>`; return; }
-  box.innerHTML = "";
-  if (!d.candidates.length) { box.innerHTML = `<p class="hint">nothing found</p>`; return; }
-  d.candidates.forEach(c => {
+  try {
+    d = await api(`/api/images/candidates?q=${encodeURIComponent(q)}&source=${src}` +
+                  (more && candCont != null ? `&cont=${encodeURIComponent(candCont)}` : ""));
+  } catch (e) {
+    candBusy = false;
+    if (more) foot.textContent = e.message; else box.innerHTML = `<p class="hint">${e.message}</p>`;
+    return;
+  }
+  candBusy = false;
+  if (token !== candQuery) return;    // a newer search superseded this one
+  if (!more) box.innerHTML = "";
+
+  candCont = (d.cont === undefined || d.cont === null) ? null : d.cont;
+  const fresh = (d.candidates || []).filter(c => {
+    const k = c.file || c.url;
+    if (candSeen.has(k)) return false;
+    candSeen.add(k);
+    return true;
+  });
+  if (!candSeen.size) { box.innerHTML = `<p class="hint">nothing found</p>`; foot.textContent = ""; return; }
+  foot.textContent = candCont != null ? "scroll for more"
+                                      : `${candSeen.size} result(s) — end of list`;
+
+  fresh.forEach(c => {
     const el = document.createElement("div");
     el.className = "cand";
     const img = document.createElement("img");
@@ -357,6 +400,11 @@ async function searchCommons() {
     });
     box.appendChild(el);
   });
+
+  // A page too short to overflow the panel would never fire a scroll event, so
+  // keep pulling until there is actually something to scroll.
+  const wrap = $("#candsWrap");
+  if (candCont != null && wrap.scrollHeight <= wrap.clientHeight + 40) searchCommons(true);
 }
 
 // ---- wiring ----
@@ -364,8 +412,12 @@ $("#qfilter").addEventListener("input", () => { clearTimeout(window._t);
   window._t = setTimeout(loadQueue, 250); });
 $("#showDone").addEventListener("change", loadQueue);
 $("#allPos").addEventListener("change", loadQueue);
-$("#csearch").addEventListener("click", searchCommons);
-$("#csource").addEventListener("change", searchCommons);
+$("#csearch").addEventListener("click", () => searchCommons());
+$("#csource").addEventListener("change", () => searchCommons());
+$("#candsWrap").addEventListener("scroll", () => {
+  const w = $("#candsWrap");
+  if (w.scrollTop + w.clientHeight >= w.scrollHeight - 120) searchCommons(true);
+});
 $("#cq").addEventListener("keydown", e => { if (e.key === "Enter") searchCommons(); });
 $("#addSense").addEventListener("click", () => {
   if (!current) return;
