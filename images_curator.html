@@ -109,7 +109,9 @@ button.danger { color: #a33; }
     <div style="margin:.5rem 0">
       <button id="addSense">+ sense</button>
       <button id="cantPicture" class="danger">can't be pictured</button>
+      <button id="publish" class="primary" style="float:right">Update dictionary</button>
     </div>
+    <div id="publishNote" class="hint" style="clear:both"></div>
     <h2>Search Wikimedia Commons</h2>
     <div style="display:flex;gap:.4rem">
       <input type="text" id="cq" placeholder="search terms">
@@ -343,5 +345,23 @@ $("#cantPicture").addEventListener("click", () => {
   if (confirm(`Mark ${current.word} as not illustratable? It leaves the queue.`))
     post({action: "set_illustratable", value: false}).then(loadQueue);
 });
+$("#publish").addEventListener("click", async () => {
+  // Curation writes the JSONL; the dictionary serves LMDB. This refreshes just
+  // the images sub-db (and resolves anything new) so /lookup shows the picks.
+  const btn = $("#publish");
+  btn.disabled = true;
+  $("#publishNote").textContent = "resolving new images and updating the dictionary…";
+  try {
+    const r = await api("/api/images/publish", {method: "POST"});
+    $("#publishNote").textContent =
+      `dictionary updated — ${r.images} images across ${r.words} words` +
+      (r.was_unresolved ? ` · resolve: ${r.resolve}` : "");
+  } catch (e) {
+    $("#publishNote").textContent = `update failed: ${e.message}`;
+  } finally {
+    btn.disabled = false;
+  }
+});
+
 loadQueue();
 </script>

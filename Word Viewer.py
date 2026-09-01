@@ -10,6 +10,7 @@ Then open http://localhost:5000
 
 import os
 import re
+import sys
 import csv
 import json
 import subprocess
@@ -827,28 +828,16 @@ def _get_gloss(lemma):
 # Builder
 # ---------------------------------------------------------------------------
 
-def build_db():
-    """Populate LMDB from source files. Run once (or when data changes)."""
-    print("Building WordViewerLMDB...")
+def build_image_rows():
+    """menalariImages.jsonl -> the render-ready shape stored in the `images` db.
 
-    db = WordViewerDB(LMDB_DIR, readonly=False)
-
-    # -- Load word-list.csv --
-    wl = pd.read_csv(WORDLIST_CSV, dtype=str).fillna("")
-    wl = wl.set_index("Word")
-
-    # -- Load extension TSV (direct output of Wiktionary extender) --
-    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", index_col=0, dtype=str).fillna("")
-    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
-
-    # -- Load pronouns TSV --
-    pron_df = pd.read_csv(PRONOUNS_TSV, sep="\t", index_col=0, dtype=str).fillna("")
-
-    # -- Load images JSONL (word -> PoS -> sense -> images) --
-    # URLs are resolved to render-ready form here so the frontend never has to
-    # know about Special:FilePath fallbacks. Images the API reported as gone are
-    # dropped: a 404 in the gallery is worse than a gap.
-    img_rows = {}
+    URLs are resolved here so the frontend never has to know about
+    Special:FilePath fallbacks. Images the API reported as gone are dropped: a
+    404 in the gallery is worse than a gap. A sense carrying a `derive` spec is
+    kept even with no images of its own -- it is filled from its hyponyms at
+    render time.
+    """
+    rows = {}
     for word, rec in images_store.load_images(IMAGES_JSONL).items():
         senses = []
         for sense in images_store.senses_of(rec):
@@ -869,15 +858,34 @@ def build_db():
                 "label": sense.get("label", "") or "",
                 "images": images,
             }
-            # A hypernym's sense may carry no image of its own and still be
-            # worth keeping: `derive` fills it from its hyponyms at render time.
             for key in ("derive", "exclude"):
                 if sense.get(key):
                     out[key] = sense[key]
             if images or out.get("derive"):
                 senses.append(out)
         if senses:
-            img_rows[word] = {"senses": senses}
+            rows[word] = {"senses": senses}
+    return rows
+
+
+def build_db():
+    """Populate LMDB from source files. Run once (or when data changes)."""
+    print("Building WordViewerLMDB...")
+
+    db = WordViewerDB(LMDB_DIR, readonly=False)
+
+    # -- Load word-list.csv --
+    wl = pd.read_csv(WORDLIST_CSV, dtype=str).fillna("")
+    wl = wl.set_index("Word")
+
+    # -- Load extension TSV (direct output of Wiktionary extender) --
+    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", index_col=0, dtype=str).fillna("")
+    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
+
+    # -- Load pronouns TSV --
+    pron_df = pd.read_csv(PRONOUNS_TSV, sep="\t", index_col=0, dtype=str).fillna("")
+
+    img_rows = build_image_rows()
 
     # -- Load Soti.tsv (sound effects) --
     soti_rows = {}
@@ -2886,6 +2894,59 @@ def api_images_candidates():
             "artist": plain(meta.get("Artist")),
         })
     return jsonify({"candidates": out})
+
+
+@app.route("/api/images/publish", methods=["POST"])
+def api_images_publish():
+    """Push curated images into the dictionary.
+
+    Curation writes menalariImages.jsonl, but /lookup serves the `images` LMDB
+    sub-db, so newly picked images do not appear until that is refreshed. This
+    rewrites just that one sub-db from the JSONL -- about 1800 records, a second
+    or two -- instead of the full /rebuild, which re-reads every source file.
+
+    First it runs resolve_commons_images.py for anything still `unresolved`, so
+    the dictionary gets direct CDN URLs rather than a Special:FilePath redirect
+    per image. That step is skipped when nothing needs it. Curated images still
+    render without it -- best_url falls back to Special:FilePath -- so a failed
+    or skipped resolve degrades speed, not correctness.
+    """
+    global _db
+
+    store = images_store.load_images(IMAGES_JSONL)
+    unresolved = sum(1 for rec in store.values()
+                     for img in images_store.all_images(rec)
+                     if img.get("status") == "unresolved" and img.get("file"))
+
+    resolve_log = "skipped (nothing unresolved)"
+    if unresolved and request.args.get("resolve") != "0":
+        try:
+            proc = subprocess.run(
+                [sys.executable, os.path.join(BASE_DIR, "resolve_commons_images.py")],
+                cwd=BASE_DIR, capture_output=True, text=True, timeout=600)
+            tail = [l for l in (proc.stdout or "").splitlines() if l.startswith("resolved")]
+            resolve_log = tail[-1] if tail else (proc.stderr or "").strip()[-200:] or "ran"
+        except (subprocess.SubprocessError, OSError) as e:
+            resolve_log = f"resolve failed ({type(e).__name__}); images still render via Special:FilePath"
+
+    rows = build_image_rows()
+    _db.close()
+    try:
+        with WordViewerDB(LMDB_DIR, readonly=False) as w:
+            with w.env.begin(write=True) as txn:
+                txn.drop(w._db("images"), delete=False)
+                for word, row in rows.items():
+                    w._put("images", word, row, txn)
+    finally:
+        _db = WordViewerDB(LMDB_DIR, readonly=True)
+
+    return jsonify({
+        "ok": True,
+        "words": len(rows),
+        "images": sum(len(sn["images"]) for r in rows.values() for sn in r["senses"]),
+        "was_unresolved": unresolved,
+        "resolve": resolve_log,
+    })
 
 
 @app.route("/api/images/sense", methods=["POST"])
