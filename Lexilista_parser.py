@@ -49,6 +49,37 @@ class AffixType(fastenum.Enum):
     SUFFIX = 1
 
 
+# Qualifiers that mark a NOUN gloss as belonging to a separate register rather
+# than being another synonym of the plain sense. These earn their own row in the
+# translation table, the way a verb's transitivity does, and feed the Anki
+# SlangMena field.
+SLANG_NOUN_QUALIFIERS = {"sexual", "vulgar", "informal"}
+
+# Each language writes the qualifier in its own words -- `s (obscena)` in
+# Esperanto, `n (vulgaire)` in French -- so a translation cannot be grouped by
+# the English spelling alone. This maps every spelling present in word-list.csv
+# onto its English register. An unknown spelling normalises to None, which puts
+# the gloss on the plain row: a safe failure, not a wrong one.
+_REGISTER_SYNONYMS = {
+    "informal": {"informal", "informell", "neformala", "neformale", "familier"},
+    "sexual": {"sexual", "sexuell", "sexuel", "seksa kunteksto"},
+    "vulgar": {"vulgar", "vulgär", "vulgaire", "obscena"},
+}
+_REGISTER_LOOKUP = {alias: canon
+                    for canon, aliases in _REGISTER_SYNONYMS.items()
+                    for alias in aliases}
+
+
+def normalize_register(qualifier):
+    """The English register a gloss qualifier denotes, or None.
+
+    `"vulgaire"` and `"obscena"` -> `"vulgar"`. Returns None for qualifiers that
+    are not a register at all (`"animate"`, `"optional -cu"`), which must never
+    split a row.
+    """
+    return _REGISTER_LOOKUP.get((qualifier or "").strip().lower())
+
+
 class ParsedGloss(NamedTuple):
     gloss: str
     pos: GlossPoS

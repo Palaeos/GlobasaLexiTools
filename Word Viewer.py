@@ -22,7 +22,8 @@ import pandas as pd
 from flask import Flask, jsonify, send_file, abort, request
 
 from Lexilista_parser import (parseWordEntry, GlossPoS, VerbType,
-                              ANNOTATION_MAP, _refine_verb_type)
+                              ANNOTATION_MAP, _refine_verb_type,
+                              normalize_register)
 import images_store
 from globasa_pos import (
     tokenize as pos_tokenize,
@@ -1200,6 +1201,24 @@ _POS_NAMES = {
     GlossPoS.PHRASAL_CONJUNCTION: "phrasal conjunction",
 }
 
+def _gloss_register(g):
+    """The register a noun gloss belongs to, or None for the plain sense.
+
+    Only nouns: `banana` "n (vulgar): dick" is a different sense from
+    "n: banana", whereas `adj (for animate nouns)` is a grammatical condition on
+    one sense and must not split the row.
+    """
+    if g.pos == GlossPoS.NOUN:
+        return normalize_register(g.qualifier)
+    return None
+
+
+def _pos_group_key(g):
+    return (_POS_NAMES.get(g.pos, "phrase"),
+            _VERB_TYPE_NAMES.get(g.verb_type) if g.verb_type else None,
+            _gloss_register(g))
+
+
 _VERB_TYPE_NAMES = {
     VerbType.INTRANSITIVE: "intransitive",
     VerbType.TRANSITIVE: "transitive",
@@ -1287,11 +1306,14 @@ def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
     # We align all languages by the English gloss structure.
     eng_glosses = parsed.translations.get("Eng", [])
 
-    # Deduplicate English glosses by (pos, verb_type) — keep one representative per pos group
+    # Deduplicate English glosses by (pos, verb_type, register) — one
+    # representative per group. `register` splits slang/vulgar/sexual noun
+    # glosses out of the plain noun row: they are a different sense, not another
+    # synonym, so lumping them together misreads the entry.
     pos_group_keys = []
     seen_pg = set()
     for g in eng_glosses:
-        key = (_POS_NAMES.get(g.pos, "phrase"), _VERB_TYPE_NAMES.get(g.verb_type) if g.verb_type else None)
+        key = _pos_group_key(g)
         if key not in seen_pg:
             seen_pg.add(key)
             pos_group_keys.append(key)
@@ -1301,13 +1323,21 @@ def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
     pos_groups = []
     has_verbs = any(k[0] == "verb" for k in pos_group_keys)
 
-    for idx, (pos_name, verb_type_name) in enumerate(pos_group_keys):
+    ext_slot = []          # index into the extension cell, or None for a register row
+    seen_base = {}
+    for pos_name, verb_type_name, register in pos_group_keys:
+        base = (pos_name, verb_type_name)
+        if base in seen_base:
+            ext_slot.append(None)
+        else:
+            seen_base[base] = len(seen_base)
+            ext_slot.append(seen_base[base])
+
+    for idx, (pos_name, verb_type_name, register) in enumerate(pos_group_keys):
         lang_data = {}
 
         # English
-        eng_items = [g for g in eng_glosses
-                     if _POS_NAMES.get(g.pos, "phrase") == pos_name
-                     and (_VERB_TYPE_NAMES.get(g.verb_type) if g.verb_type else None) == verb_type_name]
+        eng_items = [g for g in eng_glosses if _pos_group_key(g) == pos_group_keys[idx]]
         # Filter out to_exclude glosses from main table
         if to_exclude_glosses:
             eng_items = [g for g in eng_items if g.gloss not in to_exclude_glosses]
@@ -1316,30 +1346,28 @@ def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
 
         # Spanish (from parseWordEntry, no gender markers)
         spa_glosses = parsed.translations.get("Spa", [])
-        spa_for_pos = [g for g in spa_glosses
-                       if _POS_NAMES.get(g.pos, "phrase") == pos_name
-                       and (_VERB_TYPE_NAMES.get(g.verb_type) if g.verb_type else None) == verb_type_name]
+        spa_for_pos = [g for g in spa_glosses if _pos_group_key(g) == pos_group_keys[idx]]
         lang_data["Spanish"] = [{"text": _strip_gender(g.gloss), "gender": None} for g in spa_for_pos]
 
         # Esperanto (from parseWordEntry, no gender markers)
         epo_glosses = parsed.translations.get("Epo", [])
-        epo_for_pos = [g for g in epo_glosses
-                       if _POS_NAMES.get(g.pos, "phrase") == pos_name
-                       and (_VERB_TYPE_NAMES.get(g.verb_type) if g.verb_type else None) == verb_type_name]
+        epo_for_pos = [g for g in epo_glosses if _pos_group_key(g) == pos_group_keys[idx]]
         lang_data["Esperanto"] = [{"text": _strip_gender(g.gloss), "gender": None} for g in epo_for_pos]
 
         # Extension languages — use semicolon-grouped raw parsing
         for col in EXT_LANG_COLS:
             raw_val = ext_entry.get(col, "") if ext_entry else ""
             groups = parse_extension_cell_grouped(raw_val)
-            if idx < len(groups):
-                lang_data[LANG_DISPLAY[col]] = groups[idx]
+            slot = ext_slot[idx]
+            if slot is not None and slot < len(groups):
+                lang_data[LANG_DISPLAY[col]] = groups[slot]
             else:
                 lang_data[LANG_DISPLAY[col]] = []
 
         pos_groups.append({
             "pos": pos_name,
             "verb_type": verb_type_name,
+            "register": register,
             "languages": lang_data,
         })
 
@@ -1399,7 +1427,8 @@ def _pos_group_keys_for(annotation, wordclass):
         if vtype is not None:
             vtype = _refine_verb_type(vtype, wordclass, annotation)
         keys.append((_POS_NAMES.get(pos, "phrase"),
-                     _VERB_TYPE_NAMES.get(vtype) if vtype else None))
+                     _VERB_TYPE_NAMES.get(vtype) if vtype else None,
+                     None))
     return keys
 
 
@@ -1413,7 +1442,8 @@ def attach_images_to_pos_groups(translations, senses, wordclass):
 
     by_key = {}
     for group in groups:
-        by_key.setdefault((group.get("pos"), group.get("verb_type")), group)
+        by_key.setdefault((group.get("pos"), group.get("verb_type"),
+                           group.get("register")), group)
 
     unassigned = []
     for sense in senses:

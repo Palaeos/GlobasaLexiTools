@@ -517,6 +517,11 @@ a:hover { text-decoration: underline; }
    one and a multi-sense word does not tower over its neighbours. The whole
    gallery is one click away. */
 .cell-images { vertical-align: middle; }
+.cell-pos .pos-register {
+  font-weight: normal;
+  font-style: italic;
+  opacity: 0.75;
+}
 
 .img-tile {
   display: grid;
@@ -1926,7 +1931,8 @@ function buildImageCell(pg, data, cssClass) {
     td.innerHTML = "<span style='color:var(--color-muted)'>—</span>";
     return td;
   }
-  const heading = `${data.word} — ${grammarLabel(pg.pos, selectedLangs[0] || "English")}`;
+  const heading = `${data.word} — ${grammarLabel(pg.pos, selectedLangs[0] || "English")}` +
+    (pg.register ? ` (${pg.register})` : "");
   const blocks = buildImageTile(senses, heading);
   if (data.nsfw) {
     // The cover has to hide every picture in the cell, not just the first.
@@ -2028,7 +2034,9 @@ function buildTransTable(data) {
     } else {
       // Non-verb row
       const tr = tbody.insertRow();
-      const posLabelText = grammarLabel(pg.pos, firstLang);
+      // A slang/vulgar/sexual noun sits in its own row; say so in the PoS cell.
+      const posLabelText = grammarLabel(pg.pos, firstLang) +
+        (pg.register ? ` (${pg.register})` : "");
 
       const tdPos = document.createElement("td");
       tdPos.className = `cell-pos ${cssClass}`;

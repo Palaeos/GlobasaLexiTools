@@ -2,7 +2,8 @@ import csv
 import re
 import markdown
 
-from Lexilista_parser import GlossPoS, VerbType, parseEntry
+from Lexilista_parser import (GlossPoS, VerbType, parseEntry,
+                              SLANG_NOUN_QUALIFIERS as _SLANG_NOUN_QUALIFIERS)
 import images_store
 from GlobasaTransliterators import globasaCountSyllables, globasaStressSentence
 
@@ -222,7 +223,8 @@ def _apply_to_exclude(eng_text, exclude_text, lexi=""):
 
 PREPOSITION_HEAD_PARTS = {"p", "p jm", "jm p"}
 
-SLANG_NOUN_QUALIFIERS = {"sexual", "vulgar", "informal"}
+# Shared with Word Viewer, which gives these their own table row.
+SLANG_NOUN_QUALIFIERS = _SLANG_NOUN_QUALIFIERS
 
 
 def _is_preposition_wordclass(wc):
