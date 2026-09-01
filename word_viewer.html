@@ -517,11 +517,6 @@ a:hover { text-decoration: underline; }
    one and a multi-sense word does not tower over its neighbours. The whole
    gallery is one click away. */
 .cell-images { vertical-align: middle; }
-.cell-pos .pos-register {
-  font-weight: normal;
-  font-style: italic;
-  opacity: 0.75;
-}
 
 .img-tile {
   display: grid;
@@ -1980,75 +1975,66 @@ function buildTransTable(data) {
   // Only illustrated words grow an image column; everything else is unchanged.
   const showImages = hasAnyImages(data);
 
-  // Always append in logical order: PoS, VerbType, Lang(s), Image
+  // The second column carries a verb's transitivity AND a noun's register
+  // (slang/vulgar/sexual), so it is needed whenever either is present -- a word
+  // like `gigi`, informal-only with no verb, still needs it.
+  const hasRegisters = pos_groups.some(g => g.register);
+  const showTypeCol = has_verbs || hasRegisters;
+
+  // Always append in logical order: PoS, Type, Lang(s), Image
   // dir="rtl" on the table handles visual reversal for RTL languages
   hrow.appendChild(posHeaderLabel);
-  if (has_verbs) hrow.appendChild(vtHeaderLabel);
+  if (showTypeCol) hrow.appendChild(vtHeaderLabel);
   langHeaders.forEach(h => hrow.appendChild(h));
   if (showImages) hrow.appendChild(makeHeader(uiLabel("image")));
 
   // Body
   const tbody = table.createTBody();
 
-  // Group consecutive verb rows so we can rowspan the PoS cell
+  // Group consecutive rows sharing a part of speech so the PoS cell can rowspan
+  // them, exactly as the verb rows have always done. A noun's registers are
+  // sub-rows of "Noun" the way transitive/intransitive are sub-rows of "Verb".
+  const runKey = pos => (pos === "verb" || pos === "verb phrase") ? "verb" : pos;
+
   let i = 0;
   while (i < pos_groups.length) {
-    const pg = pos_groups[i];
-    const cssClass = posCssClass(pg.pos);
+    const key = runKey(pos_groups[i].pos);
+    const run = [];
+    while (i < pos_groups.length && runKey(pos_groups[i].pos) === key) {
+      run.push(pos_groups[i]);
+      i++;
+    }
+    const cssClass = posCssClass(run[0].pos);
+    // Nothing to say in the type column for this run: let the PoS cell span it,
+    // which is how a plain noun row has always looked.
+    const runHasType = run.some(g => g.verb_type || g.register);
 
-    if (pg.pos === "verb" || pg.pos === "verb phrase") {
-      // Collect all consecutive verb sub-rows
-      let verbRows = [];
-      let j = i;
-      while (j < pos_groups.length && (pos_groups[j].pos === "verb" || pos_groups[j].pos === "verb phrase")) {
-        verbRows.push(pos_groups[j]);
-        j++;
-      }
-      const rowCount = verbRows.length;
-
-      verbRows.forEach((vg, vi) => {
-        const tr = tbody.insertRow();
-
-        // PoS cell: only on first verb row, rowspan
-        if (vi === 0) {
-          const tdPos = document.createElement("td");
-          tdPos.className = `cell-pos ${cssClass}`;
-          tdPos.rowSpan = rowCount;
-          tdPos.textContent = grammarLabel("verb", firstLang);
-          tr.appendChild(tdPos);
-        }
-        // Verb type cell
-        if (has_verbs) {
-          const tdVt = document.createElement("td");
-          tdVt.className = `cell-verbtype ${cssClass}`;
-          tdVt.textContent = vg.verb_type ? verbTypeLabel(vg.verb_type, firstLang) : "";
-          tr.appendChild(tdVt);
-        }
-        // Language cells
-        langs.forEach(lang => {
-          tr.appendChild(buildLangCell(vg, lang, cssClass));
-        });
-        if (showImages) tr.appendChild(buildImageCell(vg, data, cssClass));
-      });
-      i = j;
-    } else {
-      // Non-verb row
+    run.forEach((pg, k) => {
       const tr = tbody.insertRow();
-      // A slang/vulgar/sexual noun sits in its own row; say so in the PoS cell.
-      const posLabelText = grammarLabel(pg.pos, firstLang) +
-        (pg.register ? ` (${pg.register})` : "");
 
-      const tdPos = document.createElement("td");
-      tdPos.className = `cell-pos ${cssClass}`;
-      if (has_verbs) tdPos.colSpan = 2;
-      tdPos.textContent = posLabelText;
-      tr.appendChild(tdPos);
+      if (k === 0) {
+        const tdPos = document.createElement("td");
+        tdPos.className = `cell-pos ${cssClass}`;
+        tdPos.textContent = grammarLabel(key, firstLang);
+        if (run.length > 1) tdPos.rowSpan = run.length;
+        if (showTypeCol && !runHasType) tdPos.colSpan = 2;
+        tr.appendChild(tdPos);
+      }
+
+      if (showTypeCol && runHasType) {
+        const tdType = document.createElement("td");
+        tdType.className = `cell-verbtype ${cssClass}`;
+        tdType.textContent = pg.verb_type
+          ? verbTypeLabel(pg.verb_type, firstLang)
+          : (pg.register || "");
+        tr.appendChild(tdType);
+      }
+
       langs.forEach(lang => {
         tr.appendChild(buildLangCell(pg, lang, cssClass));
       });
       if (showImages) tr.appendChild(buildImageCell(pg, data, cssClass));
-      i++;
-    }
+    });
   }
 
   return table;
