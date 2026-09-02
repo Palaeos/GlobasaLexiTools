@@ -1891,4 +1891,5 @@
 | 01:05 | Paginated candidate search across all three sources + infinite scroll in the curator | Word Viewer.py, images_curator.html | commons 188 unique over 8 pages and continuing; wikispecies terminates at 82/55; inat 7 | ~20k |
 | 01:35 | Added also_pos: one image serves a noun that is the act of its verb (awcu) | Word Viewer.py, word_viewer.html, images_curator.html | verified awcu renders one image cell with rowspan 2 across Noun/Verb; consulted xwexi on du-/-ya | ~25k |
 | 13:25 | Added local image upload to the curator (file/drag/paste), served at /user_images | Word Viewer.py, images_store.py, images_curator.html, AnkiMaker3.py | PIL-validated, hash-named, traversal blocked; Anki gets a bare filename + a copy reminder | ~25k |
+| 13:55 | Built /review contact sheet for spotting ill-fitting images in bulk | images_review.html, Word Viewer.py, 7 navs | 1802 words, 123 tags, filters shared 150 / gone 6 / off-commons 22 / derived 6 | ~30k |
 

@@ -1,0 +1,206 @@
+<meta charset="utf-8">
+<title>Globasa Image Review</title>
+<style>
+:root { --green:#2e7d32; --green-light:#d8ecd9; --muted:#6b6b6b;
+        --line:#dcdcdc; --radius:6px; --bg:#fafafa; }
+* { box-sizing:border-box; }
+body { margin:0; font:15px/1.4 "Open Sans",system-ui,sans-serif; background:var(--bg); color:#222; }
+header { background:var(--green-light); padding:.6rem 1rem; position:sticky; top:0; z-index:5; }
+header h1 { margin:0; font-size:1.1rem; color:var(--green); }
+header nav { font-size:.85rem; margin-top:.2rem; }
+header nav a { color:var(--green); text-decoration:none; }
+.bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem; }
+.bar select, .bar input { font:inherit; padding:.25rem .4rem; border:1px solid var(--line);
+                          border-radius:var(--radius); }
+.hint { color:var(--muted); font-size:.82rem; }
+
+.sheet { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+         gap:.75rem; padding:1rem; }
+.cell { background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+        padding:.35rem; display:flex; flex-direction:column; }
+.cell.bad { opacity:.35; }
+.shots { display:flex; gap:2px; height:110px; overflow:hidden; border-radius:4px; }
+.shots img { height:110px; width:100%; object-fit:cover; display:block; background:#f0f0f0; }
+.shots .extra { position:relative; }
+.shots .extra span { position:absolute; inset:0; background:rgba(0,0,0,.55); color:#fff;
+                     display:flex; align-items:center; justify-content:center; font-size:.8rem; }
+.w { font-weight:600; margin-top:.25rem; }
+.w a { color:inherit; text-decoration:none; }
+.w a:hover { color:var(--green); text-decoration:underline; }
+.g { font-size:.76rem; color:var(--muted); line-height:1.25;
+     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.flags { margin-top:.2rem; display:flex; flex-wrap:wrap; gap:.2rem; }
+.flag { font-size:.65rem; padding:0 .3rem; border-radius:3px; background:#eee; color:var(--muted); }
+.flag.gone { background:#fdd; color:#a33; }
+.flag.shared { background:#fde9c8; color:#8a5a00; }
+.acts { margin-top:.25rem; display:flex; gap:.25rem; }
+.acts button { font:inherit; font-size:.72rem; padding:.1rem .4rem; border:1px solid var(--line);
+               background:#fff; border-radius:var(--radius); cursor:pointer; }
+.acts button:hover { background:#f0f0f0; }
+.acts .drop { color:#a33; }
+#more { text-align:center; padding:1rem; }
+</style>
+
+<header>
+  <h1>Image Review <span id="count" class="hint"></span></h1>
+  <nav>
+    <a href="/">Dictionary</a> &bull; <a href="/images">Curator</a> &bull;
+    <a href="/alignments">Alignments</a> &bull; <a href="/tmx">TMX</a> &bull;
+    <a href="/pos">PoS</a> &bull; <a href="/translate">Translation Aide</a>
+  </nav>
+  <div class="bar">
+    <input type="text" id="q" placeholder="filter by word or gloss">
+    <select id="tag"><option value="">every tag</option></select>
+    <select id="order">
+      <option value="rank">commonest first</option>
+      <option value="word">alphabetical</option>
+      <option value="shared">most shared images first</option>
+    </select>
+    <select id="only">
+      <option value="">no filter</option>
+      <option value="shared">shares a file with another word</option>
+      <option value="gone">image gone from Commons</option>
+      <option value="off-commons">off-Commons (can rot)</option>
+      <option value="uploaded">uploaded locally</option>
+      <option value="derived">derived from hyponyms</option>
+    </select>
+    <span class="hint">Scan for pictures that don't fit. Click a word to curate it.</span>
+  </div>
+</header>
+
+<div class="sheet" id="sheet"></div>
+<div id="more" class="hint"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let offset = 0, total = 0, busy = false, done = false, token = 0;
+
+async function api(u, o) {
+  const r = await fetch(u, o);
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || r.statusText);
+  return r.json();
+}
+
+function params() {
+  return `q=${encodeURIComponent($("#q").value.trim())}` +
+         `&tag=${encodeURIComponent($("#tag").value)}` +
+         `&order=${$("#order").value}&only=${$("#only").value}`;
+}
+
+async function load(more) {
+  if (busy || (more && done)) return;
+  busy = true;
+  if (!more) { offset = 0; done = false; $("#sheet").innerHTML = ""; token++; }
+  const mine = token;
+  $("#more").textContent = "loading…";
+
+  let d;
+  try { d = await api(`/api/images/review?${params()}&offset=${offset}&limit=60`); }
+  catch (e) { busy = false; $("#more").textContent = e.message; return; }
+  busy = false;
+  if (mine !== token) return;          // a newer filter superseded this fetch
+
+  if ($("#tag").options.length === 1 && d.tags) {
+    d.tags.forEach(t => {
+      const o = document.createElement("option");
+      o.value = o.textContent = t;
+      $("#tag").appendChild(o);
+    });
+  }
+
+  total = d.total;
+  offset += d.rows.length;
+  done = offset >= total || d.rows.length === 0;
+  $("#count").textContent = `${total} illustrated word(s)`;
+  $("#more").textContent = done ? `end of list — ${offset} shown` : "scroll for more";
+  d.rows.forEach(render);
+
+  // A short page never fires a scroll, so keep pulling until it can.
+  if (!done && document.body.scrollHeight <= window.innerHeight + 60) load(true);
+}
+
+function render(row) {
+  const cell = document.createElement("div");
+  cell.className = "cell";
+
+  const shots = document.createElement("div");
+  shots.className = "shots";
+  row.images.slice(0, 3).forEach((im, i) => {
+    const holder = document.createElement("div");
+    holder.style.flex = "1";
+    if (i === 2 && row.images.length > 3) holder.className = "extra";
+    const img = document.createElement("img");
+    img.src = im.url; img.alt = ""; img.loading = "lazy";
+    img.title = im.file;
+    holder.appendChild(img);
+    if (i === 2 && row.images.length > 3) {
+      const s = document.createElement("span");
+      s.textContent = `+${row.images.length - 2}`;
+      holder.appendChild(s);
+    }
+    shots.appendChild(holder);
+  });
+  cell.appendChild(shots);
+
+  const w = document.createElement("div");
+  w.className = "w";
+  const a = document.createElement("a");
+  a.href = `/images?word=${encodeURIComponent(row.word)}`;
+  a.target = "_blank"; a.rel = "noopener";
+  a.textContent = row.word;
+  w.appendChild(a);
+  cell.appendChild(w);
+
+  const g = document.createElement("div");
+  g.className = "g"; g.textContent = row.gloss; g.title = row.gloss;
+  cell.appendChild(g);
+
+  if (row.flags.length) {
+    const f = document.createElement("div");
+    f.className = "flags";
+    row.flags.forEach(name => {
+      const s = document.createElement("span");
+      s.className = "flag " + name;
+      s.textContent = name;
+      if (name === "shared" && row.shared_with.length)
+        s.title = "same file as: " + row.shared_with.join(", ");
+      f.appendChild(s);
+    });
+    cell.appendChild(f);
+  }
+
+  const acts = document.createElement("div");
+  acts.className = "acts";
+  const drop = document.createElement("button");
+  drop.className = "drop";
+  drop.textContent = row.images.length > 1 ? "drop 1st" : "drop image";
+  drop.title = "remove the lead image from this word";
+  drop.addEventListener("click", async () => {
+    if (!confirm(`Remove the lead image from ${row.word}?`)) return;
+    try {
+      await api("/api/images/sense", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({word: row.word, action: "remove_image",
+                              index: 0, image_index: 0}),
+      });
+      cell.classList.add("bad");
+      drop.disabled = true;
+      drop.textContent = "removed";
+    } catch (e) { alert(e.message); }
+  });
+  acts.appendChild(drop);
+  cell.appendChild(acts);
+
+  $("#sheet").appendChild(cell);
+}
+
+["#q", "#tag", "#order", "#only"].forEach(sel => {
+  const el = $(sel);
+  const ev = sel === "#q" ? "input" : "change";
+  el.addEventListener(ev, () => { clearTimeout(window._t); window._t = setTimeout(() => load(), 250); });
+});
+window.addEventListener("scroll", () => {
+  if (window.scrollY + window.innerHeight >= document.body.scrollHeight - 300) load(true);
+});
+load();
+</script>

@@ -91,6 +91,7 @@ button.danger { color: #a33; }
   <nav>
     <a href="/">Dictionary</a> &bull; <a href="/alignments">Alignments</a> &bull;
     <a href="/tmx">TMX</a> &bull; <a href="/pos">PoS</a> &bull;
+    <a href="/review">Review</a> &bull;
     <a href="/translate">Translation Aide</a>
   </nav>
 </header>
@@ -544,5 +545,8 @@ document.addEventListener("paste", e => {
   if (files.length) { e.preventDefault(); uploadFiles(files); }
 });
 
-loadQueue();
+// Deep link from the review sheet: /images?word=hongu opens that word straight
+// away, without needing to find it in the queue.
+const _wanted = new URLSearchParams(location.search).get("word");
+loadQueue().then(() => { if (_wanted) loadWord(_wanted); });
 </script>

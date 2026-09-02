@@ -61,6 +61,7 @@ GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
 TMX_VIEWER_HTML = os.path.join(BASE_DIR, "tmx_viewer.html")
 POS_VIEWER_HTML = os.path.join(BASE_DIR, "pos_viewer.html")
 IMAGES_CURATOR_HTML = os.path.join(BASE_DIR, "images_curator.html")
+IMAGES_REVIEW_HTML = os.path.join(BASE_DIR, "images_review.html")
 COURSE_RANKING_CSV = os.path.join(BASE_DIR, "Doxo_course_ranking.csv")
 LOCAL_IMAGE_DIR = os.path.join(BASE_DIR, images_store.LOCAL_DIR)
 
@@ -2787,6 +2788,106 @@ def _curator_store():
 @app.route("/images")
 def images_curator():
     return send_file(IMAGES_CURATOR_HTML)
+
+
+@app.route("/review")
+def images_review():
+    return send_file(IMAGES_REVIEW_HTML)
+
+
+@app.route("/api/images/review")
+def api_images_review():
+    """A contact sheet of everything already illustrated, for spotting pictures
+    that do not fit their word.
+
+    No attempt is made to guess which images are wrong. The signals that suggest
+    themselves are all too weak: a file shared between two words is usually
+    right (`adhesiente` and `leim` are both "adhesive"), and "the filename has no
+    word in common with the gloss" fires on 845 of 1803 including correct ones
+    like `adasisupa` -> Mercimek_çorbasi.jpg. So the flags below are offered as
+    hints to sort and filter by, never as verdicts, and the real work is done by
+    showing many words at once so the eye can catch a mismatch.
+    """
+    store = _curator_store()
+    rank = _load_course_rank()
+    tag = (request.args.get("tag") or "").strip()
+    only = request.args.get("only") or ""
+    query = (request.args.get("q") or "").strip().lower()
+    offset = max(0, int(request.args.get("offset", 0)))
+    limit = min(300, max(1, int(request.args.get("limit", 60))))
+
+    # Which files are used by more than one word.
+    by_file = {}
+    for word, rec in store.items():
+        for img in images_store.all_images(rec):
+            key = img.get("file") or img.get("url") or img.get("local")
+            if key:
+                by_file.setdefault(key, set()).add(word)
+
+    tagged = set(_tag_index.get(tag) or []) if tag else None
+
+    rows = []
+    for word, rec in store.items():
+        images = list(images_store.all_images(rec))
+        derives = [sn.get("derive") for sn in images_store.senses_of(rec) if sn.get("derive")]
+        if derives:
+            # A hypernym illustrated purely by its hyponyms owns no image, but
+            # its grid is exactly the kind of thing worth eyeballing, so resolve
+            # it here the same way /lookup does.
+            senses = [{"derive": d, "images": []} for d in derives]
+            expand_derived_senses(senses, word)
+            images += [img for sn in senses for img in sn["images"]]
+        if not images:
+            continue
+        if tagged is not None and word not in tagged:
+            continue
+        entry = _all_entries.get(word) or {}
+        gloss = entry.get("TranslationEng", "") or ""
+        if query and query not in word.lower() and query not in gloss.lower():
+            continue
+
+        shared = sorted({w for img in images
+                         for w in by_file.get(img.get("file") or img.get("url")
+                                              or img.get("local") or "", set())
+                         if w != word})
+        flags = []
+        if shared:
+            flags.append("shared")
+        if any(img.get("status") == "missing" for img in images):
+            flags.append("gone")
+        if any(img.get("url") for img in images):
+            flags.append("off-commons")
+        if any(img.get("local") for img in images):
+            flags.append("uploaded")
+        if any(sn.get("derive") for sn in images_store.senses_of(rec)):
+            flags.append("derived")
+        if only and only not in flags:
+            continue
+
+        rows.append({
+            "word": word,
+            "gloss": gloss,
+            "rank": rank.get(word, 10 ** 9),
+            "flags": flags,
+            "shared_with": shared[:6],
+            "images": [{"url": images_store.best_url(img),
+                        "source_page": images_store.source_page(img),
+                        "file": img.get("file") or img.get("local") or img.get("url", ""),
+                        "status": img.get("status", "")}
+                       for img in images],
+        })
+
+    order = request.args.get("order", "rank")
+    if order == "word":
+        rows.sort(key=lambda r: r["word"].lower())
+    elif order == "shared":
+        rows.sort(key=lambda r: (-len(r["shared_with"]), r["rank"]))
+    else:
+        rows.sort(key=lambda r: (r["rank"], r["word"].lower()))
+
+    return jsonify({"total": len(rows), "offset": offset,
+                    "rows": rows[offset:offset + limit],
+                    "tags": sorted(t for t in _tag_index if t in _all_entries)})
 
 
 @app.route("/api/images/words")
