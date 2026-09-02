@@ -1893,4 +1893,5 @@
 | 13:25 | Added local image upload to the curator (file/drag/paste), served at /user_images | Word Viewer.py, images_store.py, images_curator.html, AnkiMaker3.py | PIL-validated, hash-named, traversal blocked; Anki gets a bare filename + a copy reminder | ~25k |
 | 13:55 | Built /review contact sheet for spotting ill-fitting images in bulk | images_review.html, Word Viewer.py, 7 navs | 1802 words, 123 tags, filters shared 150 / gone 6 / off-commons 22 / derived 6 | ~30k |
 | 14:20 | NSFW covers for /review and the curator; per-row covering in the dictionary | images_review.html, images_curator.html, word_viewer.html, Word Viewer.py | 9 flagged (6 blacklist + banana/flura/melon by register); baytu unaffected | ~15k |
+| 14:45 | Moved NSFW from word-level to sense-level; seeded the 6 blacklist senses | images_store.py, Word Viewer.py, word_viewer.html, images_curator.html, menalariImages.jsonl | 6 flagged; melon/banana/flura no longer covered; per-sense toggle verified | ~14k |
 

@@ -54,7 +54,8 @@ button.danger { color: #a33; }
             border-radius: var(--radius); display: block; }
 /* Cover an explicit word's pictures until asked for -- the curator is as
    likely to be open in company as anything else. */
-.veil img { filter: blur(18px); }
+.sense.veil .imgs img { filter: blur(18px); }
+#cands.veil img { filter: blur(18px); }
 .veil-note { color: #8a2b5c; font-size: 0.8rem; margin: 0.25rem 0; }
 .veil-note button { margin-left: 0.4rem; }
 .imgs figcaption { font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem;
@@ -166,10 +167,10 @@ let current = null;      // word detail
 let veiled = false;      // explicit word: cover its images and its search hits
 
 function applyVeil() {
-  ["#senses", "#cands"].forEach(sel => {
-    const el = $(sel);
-    if (el) el.classList.toggle("veil", veiled);
-  });
+  // Candidate results follow the word: searching an explicit word turns up
+  // explicit pictures. Stored images follow their own sense.
+  const el = $("#cands");
+  if (el) el.classList.toggle("veil", veiled);
 }
 let activeSense = 0;
 let queue = [];
@@ -262,7 +263,8 @@ function renderSenses() {
   if (current.nsfw) {
     const note = document.createElement("div");
     note.className = "veil-note";
-    note.textContent = veiled ? "⚠ explicit word — images hidden" : "⚠ explicit word";
+    note.textContent = veiled ? "⚠ has an explicit sense — its images hidden"
+                              : "⚠ has an explicit sense";
     if (veiled) {
       const b = document.createElement("button");
       b.textContent = "show images";
@@ -280,7 +282,8 @@ function renderSenses() {
   }
   current.senses.forEach((sn, i) => {
     const el = document.createElement("div");
-    el.className = "sense" + (i === activeSense ? " active" : "");
+    el.className = "sense" + (i === activeSense ? " active" : "") +
+                   (sn.nsfw && veiled ? " veil" : "");
     el.addEventListener("click", () => setActive(i));
 
     const head = document.createElement("div");
@@ -347,6 +350,19 @@ function renderSenses() {
       d.textContent = `derives from tag "${sn.derive.tag || ""}"`;
       head.appendChild(d);
     }
+
+    const nsfwId = `nsfw_${i}`;
+    const nsfwWrap = document.createElement("label");
+    nsfwWrap.className = "hint";
+    nsfwWrap.htmlFor = nsfwId;
+    nsfwWrap.style.marginRight = "0.5rem";
+    const nsfwBox = document.createElement("input");
+    nsfwBox.type = "checkbox"; nsfwBox.id = nsfwId; nsfwBox.checked = !!sn.nsfw;
+    nsfwBox.addEventListener("click", e => e.stopPropagation());
+    nsfwBox.addEventListener("change", () =>
+      post({action: "set_nsfw", index: i, value: nsfwBox.checked}));
+    nsfwWrap.append(nsfwBox, " NSFW");
+    head.appendChild(nsfwWrap);
 
     const del = document.createElement("button");
     del.className = "danger"; del.textContent = "delete sense";

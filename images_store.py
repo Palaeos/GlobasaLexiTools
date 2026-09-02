@@ -333,6 +333,17 @@ def pos_groups(record):
     return [(pos, groups[pos]) for pos in order]
 
 
+def is_nsfw_sense(sense):
+    """Whether a sense's images are explicit.
+
+    The flag lives on the SENSE, not the word: `melon` is a fruit and, in its
+    vulgar sense, a breast, so covering the whole word would hide a picture of a
+    melon. A blacklisted word has its one sense marked, which comes to the same
+    thing for those.
+    """
+    return bool((sense or {}).get("nsfw"))
+
+
 def is_illustratable(obj):
     """False only when explicitly marked. Applies to a word record or a sense."""
     return (obj or {}).get("illustratable", True) is not False

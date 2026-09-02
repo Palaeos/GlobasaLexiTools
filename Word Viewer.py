@@ -862,6 +862,8 @@ def build_image_rows():
                 "label": sense.get("label", "") or "",
                 "images": images,
             }
+            if images_store.is_nsfw_sense(sense):
+                out["nsfw"] = True
             for key in ("derive", "exclude", "also_pos"):
                 if sense.get(key):
                     out[key] = sense[key]
@@ -1474,6 +1476,7 @@ def attach_images_to_pos_groups(translations, senses, wordclass):
         annotations = [annotation] + [a for a in (sense.get("also_pos") or []) if a]
         shared = len([a for a in annotations if a]) > 1
         payload = {"label": sense.get("label", ""),
+                   "nsfw": bool(sense.get("nsfw")),
                    "images": sense.get("images") or []}
         if shared:
             payload["share"] = f"s{index}"
@@ -2781,25 +2784,6 @@ def _load_course_rank():
     return _course_rank
 
 
-def _word_is_sensitive(word, gloss):
-    """Should this word's pictures be covered by default?
-
-    Two sources, because neither alone is enough. `graphic_blacklist` lists six
-    words explicitly. But a word can carry an explicit sense without being on
-    it -- `flura` is "flower" and also, in its sexual register, "pussy" -- so any
-    gloss segment whose qualifier normalises to `sexual` or `vulgar` counts too.
-    """
-    if _db.is_nsfw(word):
-        return True
-    for segment in (gloss or "").split("; "):
-        if not segment.strip():
-            continue
-        _prefix, _text, qualifier = _parse_annotation_prefix(segment)
-        if normalize_register(qualifier) in ("sexual", "vulgar"):
-            return True
-    return False
-
-
 def _curator_store():
     return images_store.load_images(IMAGES_JSONL)
 
@@ -2880,7 +2864,9 @@ def api_images_review():
             flags.append("uploaded")
         if any(sn.get("derive") for sn in images_store.senses_of(rec)):
             flags.append("derived")
-        sensitive = _word_is_sensitive(word, gloss)
+        sensitive = any(images_store.is_nsfw_sense(sn)
+                        for sn in images_store.senses_of(rec)
+                        if sn.get("images"))
         if sensitive:
             flags.append("nsfw")
         # Every flag must exist before `only` filters on them.
@@ -2978,6 +2964,7 @@ def api_images_word(word):
     for sense in images_store.senses_of(rec or {}):
         senses.append({
             "pos": sense.get("pos", ""),
+            "nsfw": bool(sense.get("nsfw")),
             "also_pos": sense.get("also_pos") or [],
             "label": sense.get("label", ""),
             "derive": sense.get("derive"),
@@ -2995,7 +2982,8 @@ def api_images_word(word):
     return jsonify({
         "word": word,
         "gloss": gloss,
-        "nsfw": _word_is_sensitive(word, gloss),
+        "nsfw": any(images_store.is_nsfw_sense(sn)
+                    for sn in images_store.senses_of(rec or {})),
         "pos_keys": images_store.word_pos_keys(gloss),
         "taxon": images_store.extract_taxon(gloss),
         "illustratable": (rec or {}).get("illustratable", True),
@@ -3394,6 +3382,14 @@ def api_images_sense():
             sense["pos"] = data["pos"] or ""
         if "label" in data:
             sense["label"] = data["label"] or ""
+    elif action == "set_nsfw":
+        sense = sense_at()
+        if sense is None:
+            return jsonify({"error": "no such sense"}), 400
+        if data.get("value"):
+            sense["nsfw"] = True
+        else:
+            sense.pop("nsfw", None)
     elif action == "set_also_pos":
         sense = sense_at()
         if sense is None:
