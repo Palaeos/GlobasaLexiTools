@@ -52,6 +52,11 @@ button.danger { color: #a33; }
 .imgs figure { margin: 0; width: 128px; }
 .imgs img { width: 128px; height: 96px; object-fit: cover;
             border-radius: var(--radius); display: block; }
+/* Cover an explicit word's pictures until asked for -- the curator is as
+   likely to be open in company as anything else. */
+.veil img { filter: blur(18px); }
+.veil-note { color: #8a2b5c; font-size: 0.8rem; margin: 0.25rem 0; }
+.veil-note button { margin-left: 0.4rem; }
 .imgs figcaption { font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem;
                    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .imgs .ctl { display: flex; gap: 0.15rem; margin-top: 0.15rem; }
@@ -158,6 +163,14 @@ button.danger { color: #a33; }
 <script>
 const $ = s => document.querySelector(s);
 let current = null;      // word detail
+let veiled = false;      // explicit word: cover its images and its search hits
+
+function applyVeil() {
+  ["#senses", "#cands"].forEach(sel => {
+    const el = $(sel);
+    if (el) el.classList.toggle("veil", veiled);
+  });
+}
 let activeSense = 0;
 let queue = [];
 
@@ -210,6 +223,7 @@ async function loadWord(word, keepSense) {
   if (!keepSense) activeSense = 0;
   $("#wordTitle").textContent = current.word;
   $("#wordGloss").textContent = current.gloss;
+  veiled = !!current.nsfw;
   renderSenses();
   document.querySelectorAll(".qitem").forEach(el =>
     el.classList.toggle("sel", el.querySelector(".w").textContent === word));
@@ -245,6 +259,22 @@ function setActive(i) {
 function renderSenses() {
   const box = $("#senses");
   box.innerHTML = "";
+  if (current.nsfw) {
+    const note = document.createElement("div");
+    note.className = "veil-note";
+    note.textContent = veiled ? "⚠ explicit word — images hidden" : "⚠ explicit word";
+    if (veiled) {
+      const b = document.createElement("button");
+      b.textContent = "show images";
+      b.addEventListener("click", e => {
+        e.stopPropagation();
+        veiled = false; applyVeil();
+        note.textContent = "⚠ explicit word"; b.remove();
+      });
+      note.appendChild(b);
+    }
+    box.appendChild(note);
+  }
   if (current.illustratable === false) {
     box.innerHTML = `<p class="hint">Marked as not illustratable.</p>`;
   }
@@ -365,6 +395,7 @@ function renderSenses() {
     el.appendChild(imgs);
     box.appendChild(el);
   });
+  applyVeil();
 }
 
 // ---- candidates ----
@@ -449,6 +480,8 @@ async function searchCommons(more) {
     });
     box.appendChild(el);
   });
+
+  applyVeil();
 
   // A page too short to overflow the panel would never fire a scroll event, so
   // keep pulling until there is actually something to scroll.

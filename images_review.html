@@ -33,6 +33,18 @@ header nav a { color:var(--green); text-decoration:none; }
 .flag { font-size:.65rem; padding:0 .3rem; border-radius:3px; background:#eee; color:var(--muted); }
 .flag.gone { background:#fdd; color:#a33; }
 .flag.shared { background:#fde9c8; color:#8a5a00; }
+.flag.nsfw { background:#f3d4e4; color:#8a2b5c; }
+
+/* A dense contact sheet is the worst place for an unexpected explicit image,
+   so anything flagged is covered until asked for -- per cell, or all at once. */
+.cell.veil .shots img { filter: blur(18px); }
+.cell.veil .shots { position:relative; cursor:pointer; }
+.cell.veil .shots::after {
+  content:"NSFW — click to show";
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  text-align:center; font-size:.72rem; color:#fff; background:rgba(0,0,0,.45);
+  border-radius:4px; padding:0 .3rem;
+}
 .acts { margin-top:.25rem; display:flex; gap:.25rem; }
 .acts button { font:inherit; font-size:.72rem; padding:.1rem .4rem; border:1px solid var(--line);
                background:#fff; border-radius:var(--radius); cursor:pointer; }
@@ -63,7 +75,9 @@ header nav a { color:var(--green); text-decoration:none; }
       <option value="off-commons">off-Commons (can rot)</option>
       <option value="uploaded">uploaded locally</option>
       <option value="derived">derived from hyponyms</option>
+      <option value="nsfw">explicit (NSFW)</option>
     </select>
+    <label class="hint"><input type="checkbox" id="showNsfw"> show NSFW images</label>
     <span class="hint">Scan for pictures that don't fit. Click a word to curate it.</span>
   </div>
 </header>
@@ -121,10 +135,15 @@ async function load(more) {
 
 function render(row) {
   const cell = document.createElement("div");
-  cell.className = "cell";
+  cell.className = "cell" + (row.nsfw && !$("#showNsfw").checked ? " veil" : "");
 
   const shots = document.createElement("div");
   shots.className = "shots";
+  if (row.nsfw) {
+    shots.addEventListener("click", e => {
+      if (cell.classList.contains("veil")) { e.preventDefault(); cell.classList.remove("veil"); }
+    });
+  }
   row.images.slice(0, 3).forEach((im, i) => {
     const holder = document.createElement("div");
     holder.style.flex = "1";
@@ -154,6 +173,7 @@ function render(row) {
   const g = document.createElement("div");
   g.className = "g"; g.textContent = row.gloss; g.title = row.gloss;
   cell.appendChild(g);
+  if (row.nsfw) cell.dataset.nsfw = "1";
 
   if (row.flags.length) {
     const f = document.createElement("div");
@@ -193,6 +213,13 @@ function render(row) {
 
   $("#sheet").appendChild(cell);
 }
+
+$("#showNsfw").addEventListener("change", () => {
+  const show = $("#showNsfw").checked;
+  document.querySelectorAll(".cell").forEach(c => {
+    if (c.dataset.nsfw === "1") c.classList.toggle("veil", !show);
+  });
+});
 
 ["#q", "#tag", "#order", "#only"].forEach(sel => {
   const el = $(sel);

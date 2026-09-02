@@ -27,7 +27,7 @@ from flask import Flask, jsonify, send_file, abort, request
 
 from Lexilista_parser import (parseWordEntry, GlossPoS, VerbType,
                               ANNOTATION_MAP, _refine_verb_type,
-                              normalize_register)
+                              normalize_register, _parse_annotation_prefix)
 import images_store
 from globasa_pos import (
     tokenize as pos_tokenize,
@@ -2781,6 +2781,25 @@ def _load_course_rank():
     return _course_rank
 
 
+def _word_is_sensitive(word, gloss):
+    """Should this word's pictures be covered by default?
+
+    Two sources, because neither alone is enough. `graphic_blacklist` lists six
+    words explicitly. But a word can carry an explicit sense without being on
+    it -- `flura` is "flower" and also, in its sexual register, "pussy" -- so any
+    gloss segment whose qualifier normalises to `sexual` or `vulgar` counts too.
+    """
+    if _db.is_nsfw(word):
+        return True
+    for segment in (gloss or "").split("; "):
+        if not segment.strip():
+            continue
+        _prefix, _text, qualifier = _parse_annotation_prefix(segment)
+        if normalize_register(qualifier) in ("sexual", "vulgar"):
+            return True
+    return False
+
+
 def _curator_store():
     return images_store.load_images(IMAGES_JSONL)
 
@@ -2861,12 +2880,17 @@ def api_images_review():
             flags.append("uploaded")
         if any(sn.get("derive") for sn in images_store.senses_of(rec)):
             flags.append("derived")
+        sensitive = _word_is_sensitive(word, gloss)
+        if sensitive:
+            flags.append("nsfw")
+        # Every flag must exist before `only` filters on them.
         if only and only not in flags:
             continue
 
         rows.append({
             "word": word,
             "gloss": gloss,
+            "nsfw": sensitive,
             "rank": rank.get(word, 10 ** 9),
             "flags": flags,
             "shared_with": shared[:6],
@@ -2971,6 +2995,7 @@ def api_images_word(word):
     return jsonify({
         "word": word,
         "gloss": gloss,
+        "nsfw": _word_is_sensitive(word, gloss),
         "pos_keys": images_store.word_pos_keys(gloss),
         "taxon": images_store.extract_taxon(gloss),
         "illustratable": (rec or {}).get("illustratable", True),

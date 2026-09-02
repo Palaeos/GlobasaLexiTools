@@ -1929,7 +1929,11 @@ function buildImageCell(pg, data, cssClass) {
   const heading = `${data.word} — ${grammarLabel(pg.pos, selectedLangs[0] || "English")}` +
     (pg.register ? ` (${pg.register})` : "");
   const blocks = buildImageTile(senses, heading);
-  if (data.nsfw) {
+  // Cover the pictures when the whole word is flagged, or when this particular
+  // row is the explicit one -- banana's fruit stays visible while its vulgar
+  // row does not.
+  const explicitRow = pg.register === "sexual" || pg.register === "vulgar";
+  if (data.nsfw || explicitRow) {
     // The cover has to hide every picture in the cell, not just the first.
     const det = document.createElement("details");
     det.className = "nsfw-wrap";
