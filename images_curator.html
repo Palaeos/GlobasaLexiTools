@@ -74,6 +74,15 @@ button.danger { color: #a33; }
 /* Results scroll on their own so the page does not grow without bound as more
    pages are pulled in. */
 #candsWrap { max-height: 62vh; overflow-y: auto; margin-top: 0.5rem; }
+#drop {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+#drop.over { border-color: var(--green); background: var(--green-light); }
 #status { font-size: 0.82rem; color: var(--green); min-height: 1.2em; }
 </style>
 
@@ -115,6 +124,14 @@ button.danger { color: #a33; }
       <button id="publish" class="primary" style="float:right">Update dictionary</button>
     </div>
     <div id="publishNote" class="hint" style="clear:both"></div>
+    <h2>Upload your own</h2>
+    <div id="drop">
+      <input type="file" id="upl" accept="image/*" multiple hidden>
+      <button id="uplBtn">Choose image(s)…</button>
+      <span class="hint">or drag files here, or paste from the clipboard</span>
+    </div>
+    <div id="uplNote" class="hint"></div>
+
     <h2>Find images <span id="taxonNote" class="hint"></span></h2>
     <div style="display:flex;gap:.4rem">
       <select id="csource">
@@ -476,6 +493,55 @@ $("#publish").addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
   }
+});
+
+// ---- local uploads ----
+// A picture that exists nowhere online -- a photograph you took, a diagram you
+// drew -- is stored under Images/uploaded and named by content hash.
+async function uploadFiles(files) {
+  if (!current) { status("pick a word first"); return; }
+  if (!current.senses.length) { status("add a sense first"); return; }
+  const list = [...files].filter(f => f.type.startsWith("image/"));
+  if (!list.length) { $("#uplNote").textContent = "no image files in that drop"; return; }
+
+  let done = 0, failed = 0;
+  for (const f of list) {
+    $("#uplNote").textContent = `uploading ${f.name}… (${done + failed + 1}/${list.length})`;
+    const body = new FormData();
+    body.append("file", f);
+    try {
+      const r = await api("/api/images/upload", {method: "POST", body});
+      await post({action: "add_image", index: activeSense, local: r.local, kind: r.kind});
+      done++;
+    } catch (e) {
+      failed++;
+      $("#uplNote").textContent = `${f.name}: ${e.message}`;
+    }
+  }
+  if (!failed) {
+    $("#uplNote").textContent =
+      `${done} image(s) added — copy Images/uploaded/ into Anki's media folder for cards to show them`;
+  }
+}
+
+$("#uplBtn").addEventListener("click", () => $("#upl").click());
+$("#upl").addEventListener("change", e => { uploadFiles(e.target.files); e.target.value = ""; });
+
+const drop = $("#drop");
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, e => {
+  e.preventDefault(); drop.classList.add("over");
+}));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, e => {
+  e.preventDefault(); drop.classList.remove("over");
+}));
+drop.addEventListener("drop", e => uploadFiles(e.dataTransfer.files));
+
+// Paste a screenshot straight in, as long as you are not typing in a field.
+document.addEventListener("paste", e => {
+  const tag = (document.activeElement || {}).tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  const files = [...((e.clipboardData && e.clipboardData.files) || [])];
+  if (files.length) { e.preventDefault(); uploadFiles(files); }
 });
 
 loadQueue();

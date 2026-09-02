@@ -536,3 +536,14 @@ with open("./" + ranking_name, newline="") as ranking_file, \
         n_main += 1
 
 print(f"wrote AnkiList.csv: {n_main} rows; AnkiList_Prepositions.csv: {n_prep} rows")
+
+# Uploaded images go into the card as a bare filename, which is how Anki finds
+# media -- but only once the files are in the collection's media folder.
+_local = sorted({img["local"]
+                 for rec in image_store.values()
+                 for img in images_store.all_images(rec)
+                 if img.get("local")})
+if _local:
+    print(f"\n{len(_local)} uploaded image(s) are referenced by filename.")
+    print(f"Copy them into Anki's media folder or the cards will show nothing:")
+    print(f"  cp {images_store.LOCAL_DIR}/* ~/.local/share/Anki2/<profile>/collection.media/")

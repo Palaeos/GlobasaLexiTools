@@ -38,6 +38,12 @@ import urllib.parse
 
 IMAGES_JSONL = "menalariImages.jsonl"
 
+# Images uploaded from the curator, kept apart from the pre-existing Images/
+# set. Referenced by bare filename so the same name works as a Word Viewer URL
+# and as an Anki media reference.
+LOCAL_DIR = os.path.join("Images", "uploaded")
+LOCAL_URL_PREFIX = "/user_images/"
+
 DEFAULT_WIDTH = 500
 
 # Wikimedia project prefix (as it appears in upload.wikimedia.org paths) -> host.
@@ -124,6 +130,8 @@ def file_page_url(file, wiki="commons"):
 
 def best_url(img, width=DEFAULT_WIDTH):
     """The URL a consumer should render. Single place that decides."""
+    if img.get("local"):
+        return LOCAL_URL_PREFIX + urllib.parse.quote(img["local"])
     if img.get("direct_url"):
         return img["direct_url"]
     if img.get("file"):
@@ -134,6 +142,8 @@ def best_url(img, width=DEFAULT_WIDTH):
 def source_page(img):
     if img.get("source_page"):
         return img["source_page"]
+    if img.get("local"):
+        return LOCAL_URL_PREFIX + urllib.parse.quote(img["local"])
     if img.get("file"):
         return file_page_url(img["file"], img.get("wiki", "commons"))
     return img.get("url", "")
@@ -145,23 +155,31 @@ def guess_kind(name):
     return "gif" if base.endswith(GIF_EXTS) else "still"
 
 
-def make_image(url=None, file=None, wiki="commons", src_page=None, kind=None):
-    """Build an image record from either a canonical title or a literal URL."""
+def make_image(url=None, file=None, wiki="commons", src_page=None, kind=None,
+               local=None):
+    """Build an image record from a canonical title, a literal URL, or an
+    uploaded local file."""
     img = {}
-    if file:
+    if local:
+        img["local"] = local
+    elif file:
         img["file"] = file
         img["wiki"] = wiki
     else:
         img["url"] = url
-    img["kind"] = kind or guess_kind(file or url)
+    img["kind"] = kind or guess_kind(local or file or url)
     if src_page:
         img["source_page"] = src_page
-    img["status"] = "unresolved"
+    # A local file needs no resolving: it is already exactly where it will be
+    # served from.
+    img["status"] = "local" if local else "unresolved"
     return img
 
 
 def image_key(img):
     """Identity used to dedupe within a word."""
+    if img.get("local"):
+        return ("local", img["local"])
     if img.get("file"):
         return ("file", img.get("wiki", "commons"), img["file"])
     return ("url", img.get("url", ""))
@@ -346,13 +364,22 @@ def anki_slots(record, width=DEFAULT_WIDTH):
     out = {"Imajelinku": "", "ImajeAsel": "",
            "DuayumImaje": "", "DuayumImajeAsel": "",
            "Faleanimalinku": "", "Faleanimaasel": ""}
+    def card_src(img):
+        """What goes in the Anki field.
+
+        An uploaded file is referenced by bare filename: that is how Anki finds
+        media in collection.media, and the files must be copied there for the
+        card to render. A remote image keeps its URL.
+        """
+        return img["local"] if img.get("local") else best_url(img, width)
+
     names = [("Imajelinku", "ImajeAsel"), ("DuayumImaje", "DuayumImajeAsel")]
     for (url_field, src_field), img in zip(names, picks):
-        out[url_field] = best_url(img, width)
-        out[src_field] = source_page(img)
+        out[url_field] = card_src(img)
+        out[src_field] = "" if img.get("local") else source_page(img)
     if animation is not None:
-        out["Faleanimalinku"] = best_url(animation, width)
-        out["Faleanimaasel"] = source_page(animation)
+        out["Faleanimalinku"] = card_src(animation)
+        out["Faleanimaasel"] = "" if animation.get("local") else source_page(animation)
     return out
 
 

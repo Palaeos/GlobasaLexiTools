@@ -10,8 +10,10 @@ Then open http://localhost:5000
 
 import os
 import re
+import io
 import sys
 import csv
+import hashlib
 import json
 import subprocess
 import threading
@@ -60,6 +62,7 @@ TMX_VIEWER_HTML = os.path.join(BASE_DIR, "tmx_viewer.html")
 POS_VIEWER_HTML = os.path.join(BASE_DIR, "pos_viewer.html")
 IMAGES_CURATOR_HTML = os.path.join(BASE_DIR, "images_curator.html")
 COURSE_RANKING_CSV = os.path.join(BASE_DIR, "Doxo_course_ranking.csv")
+LOCAL_IMAGE_DIR = os.path.join(BASE_DIR, images_store.LOCAL_DIR)
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -3105,6 +3108,73 @@ def api_images_candidates():
     return jsonify({"candidates": out, "cont": next_cont, "source": "commons"})
 
 
+# Uploads are named by content hash and served only from LOCAL_IMAGE_DIR, so a
+# crafted filename cannot escape the directory or overwrite an existing file.
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+_UPLOAD_NAME_RE = re.compile(r"^[0-9a-f]{16}\.[a-z0-9]{1,5}$")
+_PIL_EXT = {"JPEG": "jpg", "PNG": "png", "GIF": "gif", "WEBP": "webp",
+            "BMP": "bmp", "TIFF": "tiff"}
+
+
+@app.route("/user_images/<name>")
+def serve_user_image(name):
+    """Serve an uploaded image. The name pattern is checked rather than trusted:
+    it must be exactly the content-hash form this server writes."""
+    if not _UPLOAD_NAME_RE.match(name or ""):
+        abort(404)
+    path = os.path.join(LOCAL_IMAGE_DIR, name)
+    if not os.path.isfile(path):
+        abort(404)
+    return send_file(path)
+
+
+@app.route("/api/images/upload", methods=["POST"])
+def api_images_upload():
+    """Take an image file from the curator and store it under Images/uploaded.
+
+    The file is verified by decoding it, not by trusting its extension or the
+    content-type the browser claims, and is stored under a content hash so the
+    same picture uploaded twice is one file.
+
+    A local image renders in the dictionary immediately. On an Anki card it is
+    referenced by bare filename, which is how Anki finds media, so the files
+    have to be copied into the collection's media folder for cards to show them
+    -- AnkiMaker3 reports how many need copying.
+    """
+    upload = request.files.get("file")
+    if upload is None or not upload.filename:
+        return jsonify({"error": "no file supplied"}), 400
+
+    blob = upload.read(MAX_UPLOAD_BYTES + 1)
+    if len(blob) > MAX_UPLOAD_BYTES:
+        return jsonify({"error": f"file exceeds {MAX_UPLOAD_BYTES // (1024*1024)} MB"}), 413
+    if not blob:
+        return jsonify({"error": "empty file"}), 400
+
+    try:
+        from PIL import Image
+        probe = Image.open(io.BytesIO(blob))
+        probe.verify()                      # raises unless it really is an image
+        fmt = (probe.format or "").upper()
+    except Exception:
+        return jsonify({"error": "not a readable image"}), 400
+    if fmt not in _PIL_EXT:
+        return jsonify({"error": f"unsupported image format: {fmt or 'unknown'}"}), 400
+
+    name = f"{hashlib.sha256(blob).hexdigest()[:16]}.{_PIL_EXT[fmt]}"
+    os.makedirs(LOCAL_IMAGE_DIR, exist_ok=True)
+    path = os.path.join(LOCAL_IMAGE_DIR, name)
+    if not os.path.exists(path):        # identical content -> reuse the file
+        with open(path, "wb") as f:
+            f.write(blob)
+
+    return jsonify({
+        "ok": True, "local": name, "format": fmt, "bytes": len(blob),
+        "url": images_store.LOCAL_URL_PREFIX + name,
+        "kind": "gif" if fmt == "GIF" else "still",
+    })
+
+
 @app.route("/api/images/publish", methods=["POST"])
 def api_images_publish():
     """Push curated images into the dictionary.
@@ -3216,8 +3286,19 @@ def api_images_sense():
         sense = sense_at()
         file = (data.get("file") or "").strip()
         url = (data.get("url") or "").strip()
-        if sense is None or not (file or url):
-            return jsonify({"error": "sense and a file or url are required"}), 400
+        local = (data.get("local") or "").strip()
+        if sense is None or not (file or url or local):
+            return jsonify({"error": "sense and a file, url or local are required"}), 400
+        if local:
+            if not _UPLOAD_NAME_RE.match(local) or not os.path.isfile(
+                    os.path.join(LOCAL_IMAGE_DIR, local)):
+                return jsonify({"error": "unknown uploaded image"}), 400
+            img = images_store.make_image(local=local, kind=data.get("kind"))
+            existing = {images_store.image_key(i) for i in images_store.all_images(rec)}
+            if images_store.image_key(img) not in existing:
+                sense.setdefault("images", []).append(img)
+            images_store.save_images(store, IMAGES_JSONL)
+            return jsonify({"ok": True, "word": word, "unresolved": 0})
         if not file:
             # A non-Commons photo (iNaturalist). Stored verbatim: there is no
             # canonical title to re-resolve it from, so record what we know.
