@@ -99,6 +99,8 @@ ANNOTATION_MAP = {
     "v.tr": [(GlossPoS.VERB, VerbType.TRANSITIVE, None)],
     "v.intr": [(GlossPoS.VERB, VerbType.INTRANSITIVE, None)],
     "v.intr (optional -cu)": [(GlossPoS.VERB, VerbType.INTRANSITIVE_CU, None)],
+    # The wordlist's spelling since 2026-10 (all 130 entries).
+    "v.intr (optional use of -cu)": [(GlossPoS.VERB, VerbType.INTRANSITIVE_CU, None)],
     "v.cop": [(GlossPoS.VERB, VerbType.COPULAR, None)],
     "v.aux": [(GlossPoS.VERB, VerbType.AUXILIARY, None)],
     "v phrs": [(GlossPoS.VERB_PHRASE, None, None)],
