@@ -1183,7 +1183,7 @@ deya	(state of) belonging; belong (to)	to	to
 deylyu	convection; convect	to	to
 deysi	daisy, _Leucanthemum_	te	te
 digita	digit		to
-dila	dill, anet, _Anethum graveolens_		te. to
+dila	dill, anet, _Anethum graveolens_		te, to
 dildo	dildo	to	to
 dimensi	dimension		to
 din	day	to	to
@@ -3886,14 +3886,7 @@ morgi	kill, murder	to	to
 morgiseza	death penalty; punish by death		
 morgiyen	killer, murderer	te	te
 morjismu	corpse, cadaver		
-Mormon	Mormon	te	"Word
-Mormon    te
-Mormon    te
-Name: Pronoun, dtype: object"
-Mormon	Mormon	te	"Word
-Mormon    te
-Mormon    te
-Name: Pronoun, dtype: object"
+Mormon	Mormon	te	te
 Mormonismo	Mormonism	to	to
 Morse	Morse	te	te
 morya	death	to	to
@@ -4817,10 +4810,7 @@ rota	rotation; rotate, turn (around)
 roti	bread	to	to
 rotidukan	bakery	to	to
 roya	dream; dream		
-royayen	dreamer	te	"Word
-royayen    Word\nroyayen    Word\nroyayen    Word\nroyaye...
-royayen                                                   te
-Name: Pronoun, dtype: object"
+royayen	dreamer	te	te
 ruaksyon	reaction; react		
 ruata	return, come back		
 rubahe	fox	te	te
@@ -6099,10 +6089,6 @@ zway	fly (_insect_), _Diptera_	te	te
 populerya	popularity		to
 radyaya	radiation		to
 raxwaya	bribery		to
-royayen	dreamer		"Word
-royayen    Word\nroyayen    Word\nroyayen    Word\nroyaye...
-royayen                                                   te
-Name: Pronoun, dtype: object"
 rugbiyne	rugby player		
 embasidom	embassy		to
 insakfu	ceiling		
