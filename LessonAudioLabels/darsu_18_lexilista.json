@@ -1,0 +1,231 @@
+{
+ "lesson": 18,
+ "not_heard": [],
+ "rows": [
+  {
+   "start": 0.688,
+   "end": 1.493,
+   "name": "ban",
+   "heard": "ba",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 2.784,
+   "end": 3.716,
+   "name": "bante",
+   "heard": "bante",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 5.065,
+   "end": 5.989,
+   "name": "banto",
+   "heard": "bano",
+   "distance": 0.2,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 7.362,
+   "end": 8.57,
+   "name": "bankwanti",
+   "heard": "bankanti",
+   "distance": 0.111,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 9.631,
+   "end": 10.837,
+   "name": "bannumer",
+   "heard": "bannumer",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 12.075,
+   "end": 12.819,
+   "name": "fe",
+   "heard": "fe",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 14.416,
+   "end": 15.139,
+   "name": "mara",
+   "heard": "mara",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 16.402,
+   "end": 17.663,
+   "name": "fe_ban_mara",
+   "heard": "febanmara",
+   "distance": 0,
+   "off_list": true,
+   "checked": true
+  },
+  {
+   "start": 19.212,
+   "end": 20.52,
+   "name": "fe_duli_mara",
+   "heard": "fedulimara",
+   "distance": 0,
+   "off_list": true,
+   "checked": true
+  },
+  {
+   "start": 22.036,
+   "end": 23.064,
+   "name": "mesaje",
+   "heard": "mesaje",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 24.337,
+   "end": 25.106,
+   "name": "neto",
+   "heard": "neto",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 26.507,
+   "end": 27.393,
+   "name": "posta",
+   "heard": "posta",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 28.879,
+   "end": 30.192,
+   "name": "netoposta",
+   "heard": "netoposta",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 31.582,
+   "end": 32.532,
+   "name": "adresu",
+   "heard": "adresu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 33.563,
+   "end": 34.962,
+   "name": "netoadresu",
+   "heard": "netoadresu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 36.291,
+   "end": 37.09,
+   "name": "eskri",
+   "heard": "eskri",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 38.358,
+   "end": 39.077,
+   "name": "gibe",
+   "heard": "gibe",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 40.585,
+   "end": 41.362,
+   "name": "tas",
+   "heard": "tas",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 42.704,
+   "end": 43.718,
+   "name": "irsal",
+   "heard": "irsal",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 45.22,
+   "end": 46.074,
+   "name": "maydo",
+   "heard": "mado",
+   "distance": 0.2,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 47.509,
+   "end": 48.361,
+   "name": "jixi",
+   "heard": "jixi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 50.074,
+   "end": 50.828,
+   "name": "kone",
+   "heard": "kone",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 52.174,
+   "end": 53.098,
+   "name": "fikir",
+   "heard": "fikir",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 54.673,
+   "end": 55.183,
+   "name": "ki",
+   "heard": "ki",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 56.816,
+   "end": 57.478,
+   "name": "kal",
+   "heard": "kal",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

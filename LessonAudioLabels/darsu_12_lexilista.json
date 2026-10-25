@@ -1,0 +1,195 @@
+{
+ "lesson": 12,
+ "not_heard": [],
+ "rows": [
+  {
+   "start": 1.64,
+   "end": 2.5,
+   "name": "kwanti",
+   "heard": "kanti",
+   "distance": 0.167,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 4.623,
+   "end": 5.692,
+   "name": "kekwanti",
+   "heard": "kekwanti",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 7.642,
+   "end": 8.8,
+   "name": "kekwanti_te",
+   "heard": "kekwantite",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 10.757,
+   "end": 12.008,
+   "name": "kekwanti_to",
+   "heard": "kekwantito",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 13.707,
+   "end": 14.6,
+   "name": "bazar",
+   "heard": "bazar",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 16.321,
+   "end": 17.232,
+   "name": "glasu",
+   "heard": "glasu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 18.804,
+   "end": 19.922,
+   "name": "fenjan",
+   "heard": "fenjan",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.591,
+   "end": 22.512,
+   "name": "milko",
+   "heard": "milko",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 23.95,
+   "end": 24.727,
+   "name": "bira",
+   "heard": "bira",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 26.532,
+   "end": 27.383,
+   "name": "vino",
+   "heard": "vino",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 29.28,
+   "end": 30.071,
+   "name": "mumu",
+   "heard": "mumu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 32.08,
+   "end": 32.805,
+   "name": "kuku",
+   "heard": "kuku",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 34.602,
+   "end": 35.472,
+   "name": "swini",
+   "heard": "suni",
+   "distance": 0.3,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 37.114,
+   "end": 37.925,
+   "name": "ovo",
+   "heard": "ovvo",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 39.298,
+   "end": 40.105,
+   "name": "pesa",
+   "heard": "pesa",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 41.746,
+   "end": 42.441,
+   "name": "kari",
+   "heard": "kari",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 43.855,
+   "end": 44.712,
+   "name": "dolar",
+   "heard": "dolar",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 46.565,
+   "end": 47.269,
+   "name": "kima",
+   "heard": "kima",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 48.885,
+   "end": 49.611,
+   "name": "kufi",
+   "heard": "kufi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 51.503,
+   "end": 52.507,
+   "name": "kufimo",
+   "heard": "kufimo",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 54.138,
+   "end": 54.95,
+   "name": "maso",
+   "heard": "maso",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

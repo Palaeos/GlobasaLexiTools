@@ -1,0 +1,218 @@
+{
+ "lesson": 10,
+ "not_heard": [
+  "misu te/to",
+  "yusu te/to",
+  "un kitabu",
+  "plu pingo"
+ ],
+ "rows": [
+  {
+   "start": 1.452,
+   "end": 2.304,
+   "name": "numer",
+   "heard": "numer",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 3.591,
+   "end": 4.559,
+   "name": "kenumer",
+   "heard": "kenumer",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 6.053,
+   "end": 7.222,
+   "name": "kenumer_te",
+   "heard": "kenumerte",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 8.957,
+   "end": 10.126,
+   "name": "kenumer_to",
+   "heard": "kenumerto",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 12.083,
+   "end": 12.748,
+   "name": "moy",
+   "heard": "mo",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 14.49,
+   "end": 15.335,
+   "name": "moyte",
+   "heard": "mte",
+   "distance": 0.4,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 16.921,
+   "end": 17.829,
+   "name": "moyto",
+   "heard": "moito",
+   "distance": 0.1,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.313,
+   "end": 20.311,
+   "name": "moyloka",
+   "heard": "moloka",
+   "distance": 0.143,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.991,
+   "end": 22.782,
+   "name": "nil",
+   "heard": "nil",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 24.594,
+   "end": 25.511,
+   "name": "nilte",
+   "heard": "nilte",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 27.113,
+   "end": 28.061,
+   "name": "nilto",
+   "heard": "nilto",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 29.387,
+   "end": 30.477,
+   "name": "nilloka",
+   "heard": "niloka",
+   "distance": 0.143,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 31.66,
+   "end": 32.331,
+   "name": "un",
+   "heard": "un",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 33.668,
+   "end": 34.384,
+   "name": "dua",
+   "heard": "dua",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 35.964,
+   "end": 36.675,
+   "name": "tiga",
+   "heard": "tiga",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 38.325,
+   "end": 39.034,
+   "name": "care",
+   "heard": "care",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 40.677,
+   "end": 41.417,
+   "name": "lima",
+   "heard": "lima",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 42.83,
+   "end": 43.781,
+   "name": "sisa",
+   "heard": "sisa",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 45.192,
+   "end": 46.091,
+   "name": "sabe",
+   "heard": "sabe",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 47.587,
+   "end": 48.309,
+   "name": "oco",
+   "heard": "oco",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 49.874,
+   "end": 50.621,
+   "name": "nue",
+   "heard": "nue",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 52.223,
+   "end": 53.219,
+   "name": "des",
+   "heard": "des",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 54.596,
+   "end": 55.202,
+   "name": "plu",
+   "heard": "plu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

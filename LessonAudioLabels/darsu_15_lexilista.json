@@ -1,0 +1,171 @@
+{
+ "lesson": 15,
+ "not_heard": [
+  "of kapi de",
+  "cel ruke de"
+ ],
+ "rows": [
+  {
+   "start": 0.706,
+   "end": 1.456,
+   "name": "am",
+   "heard": "am",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 2.458,
+   "end": 3.353,
+   "name": "okur",
+   "heard": "okur",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 4.459,
+   "end": 5.361,
+   "name": "plasi",
+   "heard": "plasi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 6.581,
+   "end": 7.409,
+   "name": "side",
+   "heard": "side",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 8.639,
+   "end": 9.478,
+   "name": "porta",
+   "heard": "porta",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 10.906,
+   "end": 11.648,
+   "name": "tem",
+   "heard": "tm",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 12.911,
+   "end": 13.947,
+   "name": "fronta",
+   "heard": "fronta",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 14.946,
+   "end": 16.347,
+   "name": "fe_fronta_de",
+   "heard": "fefrontade",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.523,
+   "end": 18.252,
+   "name": "ruke",
+   "heard": "ruke",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.147,
+   "end": 20.439,
+   "name": "fe_ruke_de",
+   "heard": "ferukede",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.805,
+   "end": 22.53,
+   "name": "kapi",
+   "heard": "kapi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 23.482,
+   "end": 24.864,
+   "name": "fe_kapi_de",
+   "heard": "fekapide",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 26.231,
+   "end": 26.916,
+   "name": "peda",
+   "heard": "peda",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 27.829,
+   "end": 29.128,
+   "name": "fe_peda_de",
+   "heard": "fepedade",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 30.408,
+   "end": 31.298,
+   "name": "comen",
+   "heard": "comen",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 32.132,
+   "end": 33.552,
+   "name": "fe_comen_de",
+   "heard": "fecomende",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 34.904,
+   "end": 35.712,
+   "name": "sofa",
+   "heard": "sofa",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 36.961,
+   "end": 37.964,
+   "name": "dixan",
+   "heard": "dixan",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

@@ -1,0 +1,235 @@
+{
+ "lesson": 19,
+ "not_heard": [
+  "fe nunya",
+  "fe leya",
+  "fe xaya"
+ ],
+ "rows": [
+  {
+   "start": 0.99,
+   "end": 1.796,
+   "name": "watu",
+   "heard": "vat",
+   "distance": 0.5,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 3.147,
+   "end": 4.122,
+   "name": "kewatu",
+   "heard": "keatu",
+   "distance": 0.167,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 5.484,
+   "end": 6.565,
+   "name": "moywatu",
+   "heard": "moywat",
+   "distance": 0.143,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 8.086,
+   "end": 9.095,
+   "name": "nilwatu",
+   "heard": "nilwatu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 10.466,
+   "end": 11.226,
+   "name": "haji",
+   "heard": "haji",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 12.629,
+   "end": 13.639,
+   "name": "no_haji",
+   "heard": "nohaji",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 15.169,
+   "end": 15.837,
+   "name": "uje",
+   "heard": "uje",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.017,
+   "end": 17.983,
+   "name": "no_uje",
+   "heard": "nouje",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.496,
+   "end": 20.183,
+   "name": "dur",
+   "heard": "dur",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.359,
+   "end": 22.185,
+   "name": "durki",
+   "heard": "durki",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 23.65,
+   "end": 24.553,
+   "name": "dur_na",
+   "heard": "durna",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 26.258,
+   "end": 27.177,
+   "name": "pimpan",
+   "heard": "pimpan",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 28.729,
+   "end": 29.591,
+   "name": "nadir",
+   "heard": "nadir",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 31.249,
+   "end": 32.071,
+   "name": "din",
+   "heard": "din",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 33.55,
+   "end": 34.575,
+   "name": "nundin",
+   "heard": "nonin",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 35.988,
+   "end": 37.042,
+   "name": "jaledin",
+   "heard": "jaledin",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 38.134,
+   "end": 39.264,
+   "name": "jaxadin",
+   "heard": "jaxadi",
+   "distance": 0.143,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 40.689,
+   "end": 41.712,
+   "name": "sabedin",
+   "heard": "sabdin",
+   "distance": 0.143,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 43.389,
+   "end": 44.136,
+   "name": "lefe",
+   "heard": "lef",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 45.663,
+   "end": 46.549,
+   "name": "xafe",
+   "heard": "xafe",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 48.121,
+   "end": 48.849,
+   "name": "soba",
+   "heard": "soba",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 50.58,
+   "end": 51.587,
+   "name": "axam",
+   "heard": "axa",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 53.345,
+   "end": 54.162,
+   "name": "noce",
+   "heard": "noce",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 55.309,
+   "end": 56.234,
+   "name": "total",
+   "heard": "total",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 57.614,
+   "end": 58.51,
+   "name": "nyan",
+   "heard": "nian",
+   "distance": 0.125,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

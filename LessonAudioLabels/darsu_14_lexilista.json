@@ -1,0 +1,141 @@
+{
+ "lesson": 14,
+ "not_heard": [],
+ "rows": [
+  {
+   "start": 0.767,
+   "end": 1.712,
+   "name": "kepul",
+   "heard": "kepul",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 2.81,
+   "end": 3.798,
+   "name": "maxim",
+   "heard": "maxim",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 4.962,
+   "end": 5.931,
+   "name": "minim",
+   "heard": "minim",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 6.969,
+   "end": 7.711,
+   "name": "of",
+   "heard": "of",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 8.707,
+   "end": 9.629,
+   "name": "bimar",
+   "heard": "bimar",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 11.01,
+   "end": 11.931,
+   "name": "seha",
+   "heard": "seha",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 13.139,
+   "end": 14.159,
+   "name": "asan",
+   "heard": "asan",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 15.209,
+   "end": 16.15,
+   "name": "katina",
+   "heard": "katina",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.374,
+   "end": 18.358,
+   "name": "muhim",
+   "heard": "muhinm",
+   "distance": 0.2,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.602,
+   "end": 20.533,
+   "name": "sahi",
+   "heard": "sahi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.816,
+   "end": 22.577,
+   "name": "mal",
+   "heard": "mal",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 23.617,
+   "end": 24.626,
+   "name": "insan",
+   "heard": "insan",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 25.843,
+   "end": 26.692,
+   "name": "fale",
+   "heard": "fale",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 27.937,
+   "end": 28.769,
+   "name": "abil",
+   "heard": "abil",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 29.984,
+   "end": 30.794,
+   "name": "musi",
+   "heard": "musi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

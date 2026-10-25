@@ -1,0 +1,171 @@
+{
+ "lesson": 20,
+ "not_heard": [
+  "samate",
+  "alote"
+ ],
+ "rows": [
+  {
+   "start": 0.981,
+   "end": 1.842,
+   "name": "kos",
+   "heard": "kos",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 3.014,
+   "end": 3.892,
+   "name": "koski",
+   "heard": "koski",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 5.393,
+   "end": 6.205,
+   "name": "seba",
+   "heard": "seba",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 7.258,
+   "end": 8.305,
+   "name": "keseba",
+   "heard": "keseba",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 10.048,
+   "end": 11.508,
+   "name": "denmo_kom",
+   "heard": "denmokom",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 13.002,
+   "end": 13.769,
+   "name": "buka",
+   "heard": "buka",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 15.06,
+   "end": 16.019,
+   "name": "klosi",
+   "heard": "klosi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.233,
+   "end": 18.229,
+   "name": "ewreka",
+   "heard": "ereka",
+   "distance": 0.167,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.706,
+   "end": 20.473,
+   "name": "xoru",
+   "heard": "xoru",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 22.088,
+   "end": 22.958,
+   "name": "fini",
+   "heard": "fini",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 24.437,
+   "end": 25.312,
+   "name": "swal",
+   "heard": "sal",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 27.268,
+   "end": 28.245,
+   "name": "jawabu",
+   "heard": "jawabu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 29.762,
+   "end": 30.64,
+   "name": "baytu",
+   "heard": "bait",
+   "distance": 0.3,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 31.875,
+   "end": 32.66,
+   "name": "dwer",
+   "heard": "der",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 34.113,
+   "end": 35.083,
+   "name": "janela",
+   "heard": "janela",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 36.749,
+   "end": 37.643,
+   "name": "satu",
+   "heard": "satu",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 39.206,
+   "end": 39.914,
+   "name": "alo",
+   "heard": "alo",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 41.421,
+   "end": 42.264,
+   "name": "sama",
+   "heard": "sma",
+   "distance": 0.25,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

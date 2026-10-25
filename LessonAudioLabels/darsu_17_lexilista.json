@@ -1,0 +1,144 @@
+{
+ "lesson": 17,
+ "not_heard": [
+  "daymo hazuni",
+  "lilmo hazuni"
+ ],
+ "rows": [
+  {
+   "start": 0.49,
+   "end": 1.465,
+   "name": "hay",
+   "heard": "a",
+   "distance": 0.667,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 2.529,
+   "end": 3.433,
+   "name": "barix",
+   "heard": "barix",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 4.529,
+   "end": 5.459,
+   "name": "taluji",
+   "heard": "taloji",
+   "distance": 0.083,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 6.552,
+   "end": 7.349,
+   "name": "intre",
+   "heard": "intra",
+   "distance": 0.2,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 8.52,
+   "end": 9.18,
+   "name": "fol",
+   "heard": "fal",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 10.251,
+   "end": 10.867,
+   "name": "wey",
+   "heard": "wa",
+   "distance": 0.667,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 11.962,
+   "end": 12.984,
+   "name": "supra",
+   "heard": "supra",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 14.089,
+   "end": 15.028,
+   "name": "infra",
+   "heard": "infra",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 16.117,
+   "end": 16.897,
+   "name": "tras",
+   "heard": "tras",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.963,
+   "end": 18.742,
+   "name": "ner",
+   "heard": "narr",
+   "distance": 0.667,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.84,
+   "end": 20.777,
+   "name": "ner_fe",
+   "heard": "narf",
+   "distance": 0.4,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.875,
+   "end": 22.612,
+   "name": "teli",
+   "heard": "talli",
+   "distance": 0.5,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 23.713,
+   "end": 24.627,
+   "name": "teli_fe",
+   "heard": "dalife",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 25.712,
+   "end": 26.65,
+   "name": "daymo",
+   "heard": "daima",
+   "distance": 0.3,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 27.748,
+   "end": 28.583,
+   "name": "lilmo",
+   "heard": "lirma",
+   "distance": 0.4,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}

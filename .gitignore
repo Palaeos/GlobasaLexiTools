@@ -1,0 +1,4 @@
+# Downloaded speech model (1.26 GB, its own git clone): see lesson_audio_labels.py
+Models/
+# Lesson recordings decoded to WAV for the /splits page
+LessonAudioLabels/.cache/

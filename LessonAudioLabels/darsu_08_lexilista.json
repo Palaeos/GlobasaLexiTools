@@ -1,0 +1,168 @@
+{
+ "lesson": 8,
+ "not_heard": [],
+ "rows": [
+  {
+   "start": 0.936,
+   "end": 1.539,
+   "name": "de",
+   "heard": "de",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 2.831,
+   "end": 3.626,
+   "name": "loka",
+   "heard": "loka",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 4.948,
+   "end": 5.902,
+   "name": "keloka",
+   "heard": "keloka",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 6.964,
+   "end": 8.114,
+   "name": "hinloka",
+   "heard": "hinloka",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 9.269,
+   "end": 10.354,
+   "name": "denloka",
+   "heard": "denloka",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 11.37,
+   "end": 11.944,
+   "name": "per",
+   "heard": "pe",
+   "distance": 0.333,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 13.05,
+   "end": 13.963,
+   "name": "bax",
+   "heard": "bax",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 15.047,
+   "end": 15.811,
+   "name": "ton",
+   "heard": "ton",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 17.324,
+   "end": 17.998,
+   "name": "fe",
+   "heard": "fe",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 19.682,
+   "end": 20.778,
+   "name": "fe_inya",
+   "heard": "feinia",
+   "distance": 0.083,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 21.922,
+   "end": 23.119,
+   "name": "fe_exya",
+   "heard": "feexia",
+   "distance": 0.083,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 24.13,
+   "end": 25.012,
+   "name": "mesa",
+   "heard": "mesa",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 26.032,
+   "end": 26.975,
+   "name": "bistar",
+   "heard": "bistar",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 28.092,
+   "end": 28.94,
+   "name": "kursi",
+   "heard": "kursi",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 30.184,
+   "end": 31.051,
+   "name": "drevo",
+   "heard": "drevo",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 32.272,
+   "end": 33.272,
+   "name": "jabal",
+   "heard": "jabal",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 34.605,
+   "end": 35.616,
+   "name": "bahari",
+   "heard": "bahari",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  },
+  {
+   "start": 37.202,
+   "end": 38.129,
+   "name": "nahir",
+   "heard": "nahir",
+   "distance": 0,
+   "off_list": false,
+   "checked": true
+  }
+ ]
+}
