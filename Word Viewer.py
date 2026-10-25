@@ -64,6 +64,8 @@ IMAGES_CURATOR_HTML = os.path.join(BASE_DIR, "images_curator.html")
 IMAGES_REVIEW_HTML = os.path.join(BASE_DIR, "images_review.html")
 COURSE_RANKING_CSV = os.path.join(BASE_DIR, "Doxo_course_ranking.csv")
 LOCAL_IMAGE_DIR = os.path.join(BASE_DIR, images_store.LOCAL_DIR)
+SPLITS_HTML = os.path.join(BASE_DIR, "splits_review.html")
+SPLITS_DIR = os.path.join(BASE_DIR, "LessonAudioLabels")
 
 MAP_SIZE = 512 * 1024 * 1024  # 512 MB
 
@@ -1635,9 +1637,15 @@ def lookup(word):
     constructions = _db.get_constructions(word) or []
     tmx_entries = _db.get_tmx(word) or []
 
-    # Pronunciation: check if file exists
-    audio_path = os.path.join(AUDIO_DIR, f"{word}.ogg")
-    has_pronunciation = os.path.isfile(audio_path)
+    # Pronunciation: AUDIO_DIR names a clip by its words, underscored (cel_na).
+    # Every clip there is Hector's except a synthesized lesson's (17), which
+    # must never be presented as his.
+    pronunciation_file = "_".join(word.split())
+    has_pronunciation = os.path.isfile(os.path.join(AUDIO_DIR, f"{pronunciation_file}.ogg"))
+    pronunciation_voice = None
+    if has_pronunciation:
+        pronunciation_voice = ("synthesized" if pronunciation_file in _synthesized_clips()
+                               else "Hector")
 
     # Derived words (prefix match)
     derived_words = find_derived_words(word)
@@ -1727,6 +1735,8 @@ def lookup(word):
         "image_senses": image_senses,
         "nsfw": nsfw,
         "has_pronunciation": has_pronunciation,
+        "pronunciation_file": pronunciation_file,
+        "pronunciation_voice": pronunciation_voice,
         "sound_effect": sound_effect,
         "constructions": constructions,
         "derived_words": derived_words,
@@ -1742,7 +1752,8 @@ def serve_audio(filename):
     if not filename.endswith(".ogg"):
         abort(404)
     word = filename[:-4]
-    if not re.fullmatch(r"[a-z_]+", word):
+    # Same rule as the clips /splits exports, so Engli.ogg and -sa.ogg play.
+    if not SPLIT_NAME_RE.fullmatch(word):
         abort(404)
     path = os.path.join(AUDIO_DIR, filename)
     if not os.path.isfile(path):
@@ -3471,6 +3482,213 @@ def api_images_sense():
     return jsonify({"ok": True, "word": word,
                     "unresolved": sum(1 for i in images_store.all_images(rec)
                                       if i.get("status") == "unresolved")})
+
+
+# ---------------------------------------------------------------------------
+# Lesson recording splits (/splits)
+#
+# lesson_audio_labels.py proposes where to cut each darsu_NN_lexilista.mp3 and
+# what each piece says. This page is where those proposals are checked by ear:
+# play a segment, fix its name or edges, tick it, and export the ticked ones as
+# clips into AUDIO_DIR -- the same folder the dictionary plays pronunciations
+# from. State lives in LessonAudioLabels/darsu_NN_lexilista.json; the .txt
+# beside it is kept in step so the lesson can also be opened in Audacity.
+# ---------------------------------------------------------------------------
+
+from xwexi_lessons import LESSONS_DIR, SYNTHESIZED_LESSONS, lesson_entries, spoken_forms
+
+# What an exported clip may be called: the clip folder's own convention
+# (doste, cel_na), proper nouns (Engli, Mexiko) and suffix entries (-ya).
+# Anything with "?" is unchecked.
+SPLIT_NAME_RE = re.compile(r"-?[A-Za-z]+(?:_[A-Za-z]+)*")
+SPLIT_MATCH_TOLERANCE = 0.3   # seconds: carry review state across an Audacity edit
+
+
+_SYNTHESIZED_CLIPS = None
+
+
+def _synthesized_clips():
+    """Clip names of the synthesized lessons' words. Their clips sit in
+    AUDIO_DIR beside Hector's, named the same way; only the lesson that lists
+    the word tells them apart."""
+    global _SYNTHESIZED_CLIPS
+    if _SYNTHESIZED_CLIPS is None:
+        _SYNTHESIZED_CLIPS = {"_".join(f.split()) for n in SYNTHESIZED_LESSONS
+                              for entry, _ in lesson_entries(n)
+                              for f in spoken_forms(entry)}
+    return _SYNTHESIZED_CLIPS
+
+
+def _split_paths(n):
+    base = os.path.join(SPLITS_DIR, f"darsu_{n:02d}_lexilista")
+    return base + ".txt", base + ".json"
+
+
+def _lesson_recording(n):
+    folder = os.path.join(LESSONS_DIR, f"{n:02d}")
+    for name in sorted(os.listdir(folder)):
+        if "lexilista" in name and name.endswith(".mp3"):
+            return os.path.join(folder, name)
+    return None
+
+
+def _read_label_track(path):
+    rows = []
+    for line in open(path, encoding="utf-8"):
+        parts = line.rstrip("\n").split("\t")
+        if len(parts) >= 3:
+            rows.append({"start": float(parts[0]), "end": float(parts[1]),
+                         "name": parts[2]})
+    return rows
+
+
+def _load_split(n):
+    """The lesson's review state. If the .txt is newer -- edited in Audacity --
+    its rows win, keeping what the .json knew (heard, checked) for any row that
+    still starts in about the same place."""
+    txt, js = _split_paths(n)
+    if not os.path.exists(js):
+        return None
+    data = json.load(open(js, encoding="utf-8"))
+    if os.path.exists(txt) and os.path.getmtime(txt) > os.path.getmtime(js) + 1:
+        old = data["rows"]
+        rows = []
+        for r in _read_label_track(txt):
+            near = min(old, key=lambda o: abs(o["start"] - r["start"]), default=None)
+            keep = near if near and abs(near["start"] - r["start"]) <= SPLIT_MATCH_TOLERANCE else {}
+            rows.append({**{"heard": "", "distance": None, "off_list": False,
+                            "checked": False},
+                         **{k: keep[k] for k in ("heard", "distance", "off_list", "checked")
+                            if k in keep},
+                         **r})
+        data["rows"] = rows
+    return data
+
+
+def _save_split(n, data):
+    txt, js = _split_paths(n)
+    with open(js + ".tmp", "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    os.replace(js + ".tmp", js)
+    with open(txt, "w", encoding="utf-8") as f:
+        for r in data["rows"]:
+            f.write(f"{r['start']:.3f}\t{r['end']:.3f}\t{r['name']}\n")
+    os.utime(js)   # the .json is the newer of the two again
+
+
+def _split_lessons():
+    if not os.path.isdir(SPLITS_DIR):
+        return []
+    return sorted(int(m.group(1)) for f in os.listdir(SPLITS_DIR)
+                  if (m := re.fullmatch(r"darsu_(\d+)_lexilista\.json", f)))
+
+
+@app.route("/splits")
+def splits_page():
+    return send_file(SPLITS_HTML)
+
+
+@app.route("/api/splits")
+def api_splits():
+    out = []
+    for n in _split_lessons():
+        rows = _load_split(n)["rows"]
+        out.append({
+            "lesson": n, "rows": len(rows), "synthesized": n in SYNTHESIZED_LESSONS,
+            "checked": sum(r["checked"] for r in rows),
+            "unsure": sum(r["name"].endswith("?") for r in rows),
+            "exported": sum(os.path.exists(os.path.join(AUDIO_DIR, r["name"] + ".ogg"))
+                            for r in rows if SPLIT_NAME_RE.fullmatch(r["name"])),
+        })
+    return jsonify(out)
+
+
+@app.route("/api/splits/<int:n>", methods=["GET", "POST"])
+def api_split(n):
+    data = _load_split(n)
+    if data is None:
+        abort(404)
+    if request.method == "POST":
+        rows = request.get_json(force=True).get("rows")
+        if not isinstance(rows, list):
+            return jsonify({"error": "rows must be a list"}), 400
+        clean = []
+        for r in rows:
+            try:
+                start, end = float(r["start"]), float(r["end"])
+            except (KeyError, TypeError, ValueError):
+                return jsonify({"error": f"bad row {r!r}"}), 400
+            if not 0 <= start < end:
+                return jsonify({"error": f"bad times in {r.get('name')!r}"}), 400
+            clean.append({"start": round(start, 3), "end": round(end, 3),
+                          "name": str(r.get("name", "")).strip(),
+                          "heard": r.get("heard", ""), "distance": r.get("distance"),
+                          "off_list": bool(r.get("off_list")),
+                          "checked": bool(r.get("checked"))})
+        data["rows"] = clean
+        _save_split(n, data)
+        return jsonify({"ok": True})
+    for r in data["rows"]:
+        r["exported"] = bool(SPLIT_NAME_RE.fullmatch(r["name"])) and \
+            os.path.exists(os.path.join(AUDIO_DIR, r["name"] + ".ogg"))
+    data["entries"] = [w for w, _ in lesson_entries(n)]
+    data["synthesized"] = n in SYNTHESIZED_LESSONS
+    return jsonify(data)
+
+
+@app.route("/api/splits/<int:n>/audio")
+def api_split_audio(n):
+    """The lesson recording decoded to WAV, cached. The files are AAC behind
+    an .mp3 name, which browsers seek unreliably; a WAV seeks to the sample."""
+    src = _lesson_recording(n)
+    if src is None:
+        abort(404)
+    cache = os.path.join(SPLITS_DIR, ".cache", f"darsu_{n:02d}.wav")
+    if not os.path.exists(cache) or os.path.getmtime(cache) < os.path.getmtime(src):
+        os.makedirs(os.path.dirname(cache), exist_ok=True)
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src, "-ac", "1",
+                        cache], check=True)
+    return send_file(cache, mimetype="audio/wav")
+
+
+@app.route("/api/splits/<int:n>/export", methods=["POST"])
+def api_split_export(n):
+    """Write every checked, named row as a clip in AUDIO_DIR, encoded like the
+    hand-cut ones (Vorbis, 48 kHz mono, ~96 kb/s). Never overwrites a clip
+    unless asked: the folder already holds hand-cut lessons 1-7."""
+    data = _load_split(n)
+    src = _lesson_recording(n)
+    if data is None or src is None:
+        abort(404)
+    if n in SYNTHESIZED_LESSONS:
+        # AUDIO_DIR is Hector's pronunciation; a synthesized voice does not
+        # belong there.
+        return jsonify({"error": f"lesson {n}'s recording is synthesized, not "
+                                 f"Hector's: not exported"}), 409
+    overwrite = bool((request.get_json(silent=True) or {}).get("overwrite"))
+    written, exists, failed, unchecked, bad = [], [], [], 0, []
+    for r in data["rows"]:
+        if not r["checked"]:
+            unchecked += 1
+            continue
+        if not SPLIT_NAME_RE.fullmatch(r["name"]):
+            bad.append(r["name"])
+            continue
+        target = os.path.join(AUDIO_DIR, r["name"] + ".ogg")
+        if os.path.exists(target) and not overwrite:
+            exists.append(r["name"])
+            continue
+        done = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", src,
+                               "-ss", f"{r['start']:.3f}", "-to", f"{r['end']:.3f}",
+                               "-ac", "1", "-ar", "48000", "-c:a", "libvorbis",
+                               "-b:a", "96k", target], capture_output=True, text=True)
+        if done.returncode:
+            failed.append(f"{r['name']}: {done.stderr.strip().splitlines()[-1]}")
+        else:
+            written.append(r["name"])
+    return jsonify({"written": written, "exists": exists, "failed": failed,
+                    "unchecked": unchecked, "bad_names": bad})
+
 
 if __name__ == "__main__" or True:
     app.run(debug=True, port=5000, use_reloader=os.environ.get("WV_NO_RELOADER") != "1")

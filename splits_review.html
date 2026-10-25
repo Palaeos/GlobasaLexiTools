@@ -1,0 +1,385 @@
+<meta charset="utf-8">
+<title>Globasa Lesson Splits</title>
+<style>
+:root { --green:#2e7d32; --green-light:#d8ecd9; --muted:#6b6b6b;
+        --line:#dcdcdc; --radius:6px; --bg:#fafafa; --warn:#8a5a00; --warn-bg:#fde9c8; }
+* { box-sizing:border-box; }
+body { margin:0; font:15px/1.4 "Open Sans",system-ui,sans-serif; background:var(--bg); color:#222; }
+header { background:var(--green-light); padding:.6rem 1rem; position:sticky; top:0; z-index:5; }
+header h1 { margin:0; font-size:1.1rem; color:var(--green); }
+header nav { font-size:.85rem; margin-top:.2rem; }
+header nav a { color:var(--green); text-decoration:none; }
+.bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin-top:.5rem; }
+select, input, button { font:inherit; padding:.25rem .45rem; border:1px solid var(--line);
+                        border-radius:var(--radius); background:#fff; }
+button { cursor:pointer; }
+button:hover { background:#f0f0f0; }
+button.primary { background:var(--green); color:#fff; border-color:var(--green); }
+.hint { color:var(--muted); font-size:.82rem; }
+main { display:grid; grid-template-columns:minmax(0,1fr) 22rem; gap:1rem; padding:1rem; }
+@media (max-width:900px) { main { grid-template-columns:1fr; } }
+
+#wave { width:100%; height:150px; background:#fff; border:1px solid var(--line);
+        border-radius:var(--radius); display:block; cursor:pointer; touch-action:none; }
+.editor { background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+          padding:.6rem; margin-top:.6rem; display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+.editor .name { font-size:1.15rem; width:14rem; }
+.editor .t { width:5.5rem; }
+.heard { font-family:ui-monospace,monospace; color:var(--muted); }
+
+table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line);
+        border-radius:var(--radius); margin-top:.6rem; font-size:.9rem; }
+td, th { padding:.25rem .45rem; border-bottom:1px solid var(--line); text-align:left; }
+th { font-weight:600; color:var(--muted); font-size:.8rem; }
+tr { cursor:pointer; }
+tr.cur { background:var(--green-light); }
+tr.unsure td.nm { color:var(--warn); font-weight:600; }
+tr.done td.nm::after { content:" ✓"; color:var(--green); }
+.chip { font-size:.7rem; padding:0 .35rem; border-radius:3px; background:#eee; color:var(--muted); }
+.chip.warn { background:var(--warn-bg); color:var(--warn); }
+.chip.ok { background:var(--green-light); color:var(--green); }
+
+aside section { background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+                padding:.6rem; margin-bottom:.8rem; }
+aside h2 { font-size:.9rem; margin:0 0 .4rem; color:var(--green); }
+aside ul { margin:0; padding-left:1.1rem; font-size:.88rem; }
+kbd { font:.75rem ui-monospace,monospace; border:1px solid var(--line); border-bottom-width:2px;
+      border-radius:3px; padding:0 .25rem; background:#fafafa; }
+.keys { font-size:.82rem; line-height:1.7; }
+#status { font-size:.82rem; color:var(--muted); }
+#result { font-size:.85rem; white-space:pre-wrap; }
+</style>
+
+<header>
+  <h1>Lesson Splits <span id="progress" class="hint"></span></h1>
+  <nav>
+    <a href="/">Dictionary</a> &bull; <a href="/images">Image Curator</a> &bull;
+    <a href="/review">Image Review</a>
+  </nav>
+  <div class="bar">
+    <select id="lesson"></select>
+    <button id="exportBtn" class="primary">Export checked clips</button>
+    <span id="status"></span>
+  </div>
+</header>
+
+<main>
+  <div>
+    <canvas id="wave"></canvas>
+    <div class="hint">The current segment in green, with a second either side. Drag an edge
+      to move it; click to play; shift-click to split the segment there.</div>
+    <div class="editor">
+      <button id="play" title="Space">▶ Play</button>
+      <button id="ctx" title="C">▶ With context</button>
+      <input id="name" class="name" list="entries" spellcheck="false" title="N">
+      <datalist id="entries"></datalist>
+      <label>from <input id="start" class="t" type="number" step="0.01"></label>
+      <label>to <input id="end" class="t" type="number" step="0.01"></label>
+      <button id="check" title="Enter">✓ Correct, next</button>
+      <button id="merge" title="M">Merge with next</button>
+      <button id="del" title="Delete">Delete</button>
+      <span class="heard" id="heard"></span>
+    </div>
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Heard</th><th>Time</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <aside>
+    <section>
+      <h2>Keys</h2>
+      <div class="keys">
+        <kbd>Space</kbd> play &nbsp; <kbd>C</kbd> play with context<br>
+        <kbd>Enter</kbd> correct, next &nbsp; <kbd>↑</kbd><kbd>↓</kbd> move<br>
+        <kbd>[</kbd><kbd>]</kbd> start −/+ &nbsp; <kbd>;</kbd><kbd>'</kbd> end −/+
+        (20 ms; <kbd>Shift</kbd> 100 ms)<br>
+        <kbd>N</kbd> rename &nbsp; <kbd>M</kbd> merge with next
+      </div>
+    </section>
+    <section>
+      <h2>On the list but not in any segment</h2>
+      <ul id="missing"></ul>
+      <div class="hint">The recording may simply not read these. If one is in a segment
+        under another name, rename that segment.</div>
+    </section>
+    <section>
+      <h2>Export</h2>
+      <div class="hint">Writes each ticked segment as <code>name.ogg</code> into the clip
+        folder the dictionary plays from. Existing clips are left alone unless you say so.</div>
+      <div id="result"></div>
+    </section>
+  </aside>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const NUDGE = 0.02, BIG = 0.1, CONTEXT = 0.5, VIEW_PAD = 1.0, EDGE_PX = 7;
+let lesson = null, data = null, cur = 0, buffer = null, ctx = null, playing = null, saveTimer = null;
+
+function clipName(entry) {
+  return entry.replace(/\.\.\./g, " ").replace(/[()]/g, "").trim().split(/\s+/).join("_");
+}
+function fmt(t) { return t.toFixed(2); }
+
+async function loadLessons(select) {
+  const list = await (await fetch("/api/splits")).json();
+  const sel = $("lesson");
+  sel.innerHTML = "";
+  for (const l of list) {
+    const o = document.createElement("option");
+    o.value = l.lesson;
+    o.textContent = `Lesson ${l.lesson} — ${l.checked}/${l.rows} checked` +
+      (l.unsure ? `, ${l.unsure} unsure` : "") + (l.synthesized ? " — synthesized voice" : "");
+    sel.appendChild(o);
+  }
+  if (!list.length) { $("status").textContent = "No proposals: run lesson_audio_labels.py"; return; }
+  sel.value = select !== undefined ? select : (list.find(l => l.checked < l.rows) || list[0]).lesson;
+  await openLesson(+sel.value);
+}
+
+async function openLesson(n) {
+  lesson = n;
+  stop();
+  $("status").textContent = "loading audio…";
+  data = await (await fetch(`/api/splits/${n}`)).json();
+  ctx = ctx || new AudioContext();
+  const wav = await (await fetch(`/api/splits/${n}/audio`)).arrayBuffer();
+  buffer = await ctx.decodeAudioData(wav);
+  $("entries").innerHTML = data.entries.map(e => `<option value="${clipName(e)}">`).join("");
+  cur = Math.max(0, data.rows.findIndex(r => !r.checked));
+  $("status").textContent = data.synthesized ?
+    "This lesson's recording is a synthesized voice, not Hector's: it is not exported." : "";
+  render();
+}
+
+function progress() {
+  const done = data.rows.filter(r => r.checked).length;
+  $("progress").textContent = `· lesson ${lesson}: ${done} of ${data.rows.length} checked`;
+}
+
+function render() {
+  const body = $("rows");
+  body.innerHTML = "";
+  data.rows.forEach((r, i) => {
+    const tr = document.createElement("tr");
+    tr.className = (i === cur ? "cur " : "") + (r.name.endsWith("?") ? "unsure " : "") +
+                   (r.checked ? "done" : "");
+    const chips = [];
+    if (r.off_list) chips.push(`<span class="chip warn">not on list</span>`);
+    if (r.exported) chips.push(`<span class="chip ok">clip exists</span>`);
+    tr.innerHTML = `<td>${i + 1}</td><td class="nm"></td><td class="heard"></td>` +
+                   `<td>${fmt(r.start)}–${fmt(r.end)}</td><td>${chips.join(" ")}</td>`;
+    tr.querySelector(".nm").textContent = r.name;
+    tr.querySelector(".heard").textContent = r.heard || "";
+    tr.onclick = () => { select(i); play(); };
+    body.appendChild(tr);
+  });
+  const used = new Set(data.rows.map(r => r.name.replace(/\?$/, "")));
+  const missing = data.entries.filter(e => !used.has(clipName(e)) &&
+    !used.has(clipName(e.replace(/\s*\([^)]*\)/g, ""))));
+  $("missing").innerHTML = missing.length ? "" : "<li class='hint'>none</li>";
+  for (const m of missing) { const li = document.createElement("li"); li.textContent = m; $("missing").appendChild(li); }
+  fillEditor();
+  progress();
+  drawWave();
+  if (body.children[cur]) body.children[cur].scrollIntoView({ block: "nearest" });
+}
+
+function fillEditor() {
+  const r = data.rows[cur];
+  if (!r) return;
+  $("name").value = r.name;
+  $("start").value = fmt(r.start);
+  $("end").value = fmt(r.end);
+  $("heard").textContent = r.heard ? `heard: ${r.heard}` : "";
+}
+
+function select(i) {
+  cur = Math.max(0, Math.min(data.rows.length - 1, i));
+  stop();
+  render();
+}
+
+// ---------- playback ----------
+function stop() { if (playing) { try { playing.stop(); } catch (e) {} playing = null; } }
+function playRange(from, to) {
+  stop();
+  if (!buffer) return;
+  from = Math.max(0, from); to = Math.min(buffer.duration, to);
+  if (ctx.state === "suspended") ctx.resume();
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(ctx.destination);
+  src.start(0, from, to - from);
+  playing = src;
+  const t0 = ctx.currentTime;
+  const tick = () => {
+    if (playing !== src) return drawWave();
+    const at = from + (ctx.currentTime - t0);
+    if (at >= to) { playing = null; return drawWave(); }
+    drawWave(at);
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function play() { const r = data.rows[cur]; playRange(r.start, r.end); }
+function playContext() { const r = data.rows[cur]; playRange(r.start - CONTEXT, r.end + CONTEXT); }
+
+// ---------- waveform ----------
+function view() {
+  const r = data.rows[cur];
+  return [Math.max(0, r.start - VIEW_PAD), Math.min(buffer.duration, r.end + VIEW_PAD)];
+}
+function drawWave(playhead) {
+  const cv = $("wave");
+  const w = cv.width = cv.clientWidth * devicePixelRatio;
+  const h = cv.height = cv.clientHeight * devicePixelRatio;
+  const g = cv.getContext("2d");
+  g.clearRect(0, 0, w, h);
+  if (!buffer || !data.rows.length) return;
+  const [v0, v1] = view();
+  const x = t => (t - v0) / (v1 - v0) * w;
+  data.rows.forEach((r, i) => {
+    if (r.end < v0 || r.start > v1) return;
+    g.fillStyle = i === cur ? "rgba(46,125,50,.18)" : "rgba(0,0,0,.05)";
+    g.fillRect(x(r.start), 0, x(r.end) - x(r.start), h);
+    if (i === cur) {
+      g.fillStyle = "#2e7d32";
+      g.fillRect(x(r.start) - 1.5, 0, 3, h);
+      g.fillRect(x(r.end) - 1.5, 0, 3, h);
+    }
+  });
+  const samples = buffer.getChannelData(0), rate = buffer.sampleRate;
+  g.fillStyle = "#555";
+  for (let px = 0; px < w; px++) {
+    const a = Math.floor((v0 + (v1 - v0) * px / w) * rate);
+    const b = Math.floor((v0 + (v1 - v0) * (px + 1) / w) * rate);
+    let lo = 0, hi = 0;
+    for (let k = a; k < b; k++) { const s = samples[k] || 0; if (s < lo) lo = s; if (s > hi) hi = s; }
+    g.fillRect(px, h / 2 - hi * h / 2, 1, Math.max(1, (hi - lo) * h / 2));
+  }
+  if (playhead !== undefined) { g.fillStyle = "#c62828"; g.fillRect(x(playhead) - 1, 0, 2, h); }
+}
+
+let drag = null;
+function timeAt(ev) {
+  const cv = $("wave"), rect = cv.getBoundingClientRect();
+  const [v0, v1] = view();
+  return v0 + (ev.clientX - rect.left) / rect.width * (v1 - v0);
+}
+$("wave").addEventListener("pointerdown", ev => {
+  if (!buffer) return;
+  const r = data.rows[cur], t = timeAt(ev);
+  const rect = $("wave").getBoundingClientRect(), [v0, v1] = view();
+  const px = s => (s - v0) / (v1 - v0) * rect.width;
+  const at = ev.clientX - rect.left;
+  if (Math.abs(at - px(r.start)) <= EDGE_PX) drag = "start";
+  else if (Math.abs(at - px(r.end)) <= EDGE_PX) drag = "end";
+  else if (ev.shiftKey && t > r.start + 0.05 && t < r.end - 0.05) return split(t);
+  else return playRange(Math.max(t, r.start), r.end);
+  $("wave").setPointerCapture(ev.pointerId);
+});
+$("wave").addEventListener("pointermove", ev => {
+  if (!drag) return;
+  const r = data.rows[cur], t = timeAt(ev);
+  if (drag === "start") r.start = Math.min(t, r.end - 0.05);
+  else r.end = Math.max(t, r.start + 0.05);
+  r.checked = false;
+  fillEditor(); drawWave();
+});
+$("wave").addEventListener("pointerup", () => { if (drag) { drag = null; changed(); play(); } });
+
+// ---------- editing ----------
+function changed() { render(); clearTimeout(saveTimer); saveTimer = setTimeout(save, 500); $("status").textContent = "…"; }
+async function save() {
+  const res = await fetch(`/api/splits/${lesson}`, { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: data.rows }) });
+  $("status").textContent = res.ok ? "saved" : `save failed: ${(await res.json()).error}`;
+}
+function nudge(edge, by) {
+  const r = data.rows[cur];
+  r[edge] = Math.max(0, r[edge] + by);
+  if (r.end - r.start < 0.05) r[edge] -= by;
+  r.checked = false;
+  changed();
+}
+function check() {
+  const r = data.rows[cur];
+  r.name = $("name").value.trim().replace(/\?$/, "");
+  r.checked = true;
+  const next = data.rows.findIndex((x, i) => i > cur && !x.checked);
+  cur = next >= 0 ? next : Math.min(cur + 1, data.rows.length - 1);
+  changed();
+  play();
+}
+function split(t) {
+  const r = data.rows[cur];
+  const second = { ...r, start: t, name: "", heard: "", checked: false, exported: false };
+  r.end = t; r.checked = false;
+  data.rows.splice(cur + 1, 0, second);
+  changed();
+}
+function merge() {
+  const r = data.rows[cur], n = data.rows[cur + 1];
+  if (!n) return;
+  r.end = n.end; r.heard = (r.heard || "") + (n.heard || ""); r.checked = false;
+  data.rows.splice(cur + 1, 1);
+  changed();
+}
+function del() {
+  data.rows.splice(cur, 1);
+  cur = Math.min(cur, data.rows.length - 1);
+  changed();
+}
+
+$("lesson").onchange = e => openLesson(+e.target.value);
+$("play").onclick = play;
+$("ctx").onclick = playContext;
+$("check").onclick = check;
+$("merge").onclick = merge;
+$("del").onclick = del;
+$("name").onchange = () => { const r = data.rows[cur]; r.name = $("name").value.trim(); r.checked = false; changed(); };
+$("start").onchange = () => { data.rows[cur].start = +$("start").value; data.rows[cur].checked = false; changed(); };
+$("end").onchange = () => { data.rows[cur].end = +$("end").value; data.rows[cur].checked = false; changed(); };
+$("exportBtn").onclick = async () => {
+  await save();
+  const go = async overwrite => (await fetch(`/api/splits/${lesson}/export`, { method: "POST",
+    headers: { "Content-Type": "application/json" }, body: JSON.stringify({ overwrite }) })).json();
+  let r = await go(false);
+  if (r.error) { $("result").textContent = r.error; return; }
+  let msg = `Written: ${r.written.length ? r.written.join(", ") : "none"}`;
+  if (r.unchecked) msg += `\nNot ticked yet: ${r.unchecked}`;
+  if (r.bad_names.length) msg += `\nNames that cannot be filenames: ${r.bad_names.join(", ")}`;
+  if (r.failed.length) msg += `\nFailed: ${r.failed.join("; ")}`;
+  if (r.exists.length) msg += `\nAlready in the clip folder, left alone: ${r.exists.join(", ")}`;
+  $("result").textContent = msg;
+  if (r.exists.length) {
+    const b = document.createElement("button");
+    b.textContent = `Overwrite those ${r.exists.length}`;
+    b.onclick = async () => { const o = await go(true); $("result").textContent = `Overwritten: ${o.written.join(", ")}`; loadLessons(lesson); };
+    $("result").appendChild(document.createElement("br"));
+    $("result").appendChild(b);
+  }
+  loadLessons(lesson);
+};
+
+document.addEventListener("keydown", ev => {
+  if (!data) return;
+  const typing = ev.target.tagName === "INPUT";
+  if (typing) { if (ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); check(); } return; }
+  const step = ev.shiftKey ? BIG : NUDGE;
+  const keys = {
+    " ": play, "c": playContext, "C": playContext, "Enter": check,
+    "ArrowDown": () => { select(cur + 1); play(); }, "ArrowUp": () => { select(cur - 1); play(); },
+    "[": () => nudge("start", -step), "{": () => nudge("start", -step),
+    "]": () => nudge("start", step), "}": () => nudge("start", step),
+    ";": () => nudge("end", -step), ":": () => nudge("end", -step),
+    "'": () => nudge("end", step), '"': () => nudge("end", step),
+    "n": () => { $("name").focus(); $("name").select(); }, "N": () => $("name").focus(),
+    "m": merge, "M": merge, "Delete": del,
+  };
+  if (keys[ev.key]) { ev.preventDefault(); keys[ev.key](); }
+});
+window.addEventListener("resize", () => data && drawWave());
+loadLessons();
+</script>

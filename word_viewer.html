@@ -2283,13 +2283,17 @@ function renderResult(data) {
   }
 
   if (data.has_pronunciation) {
+    // Hector's recordings, except a synthesized lesson's (17): say which, and
+    // never let a synthesized voice pass as his.
+    const synth = data.pronunciation_voice === "synthesized";
     const btn = document.createElement("button");
     btn.className = "btn-audio";
-    btn.title = "Play pronunciation";
-    btn.textContent = "🔊";
+    btn.title = synth ? "Play pronunciation: a synthesized voice (lesson 17), not Hector"
+                      : "Play Hector's pronunciation";
+    btn.textContent = synth ? "🔊 synthesized" : "🔊";
     btn.addEventListener("click", () => {
       const au = document.getElementById("pronAudio");
-      au.src = `/audio/${data.word}.ogg`;
+      au.src = `/audio/${encodeURIComponent(data.pronunciation_file || data.word)}.ogg`;
       au.play();
     });
     headDiv.appendChild(btn);
