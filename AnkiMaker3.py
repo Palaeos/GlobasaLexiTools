@@ -34,6 +34,12 @@ class AnkiFields:
         self.DuayumImajeAsel = ""
         self.Anaphor = ""
         self.AloAnaphor = ""
+        self.AnaphorMena = ""
+        self.AloAnaphorMena = ""
+        self.AnaphorImaje = ""
+        self.AnaphorImajeAsel = ""
+        self.AloAnaphorImaje = ""
+        self.AloAnaphorImajeAsel = ""
         self.Oposmenalexi = ""
         self.GlobasaMisal = ""
         self.MisalClozed = ""
@@ -52,6 +58,8 @@ class AnkiFields:
         self.Auxiliary = ""
         self.Feeling = ""
         self.State = ""
+        self.VerbClass = ""
+        self.NoObjectForm = ""
         self.Paladoawdio = ""
         self.PaladoKodek = ""
         self.Soti = ""
@@ -223,6 +231,65 @@ def _apply_to_exclude(eng_text, exclude_text, lexi=""):
 
 PREPOSITION_HEAD_PARTS = {"p", "p jm", "jm p"}
 
+# The pronoun belongs to a sense, not to a word. te covers "all living forms"
+# (xwexi, Pronouns): a plant word is te only as the live, whole plant; as food,
+# as a part (leaf, root, nut) or cut/dead it is to -- CanonicalSentences #149,
+# kanabis growing vs smoked. menalariAnaphorSenses.tsv lists each sense of the
+# plant and food words with its pronoun, and overrides menalariPronouns for
+# them. A word with a te sense and a to sense gets a card for each, labelled.
+anaphor_senses = {}
+with open("menalariAnaphorSenses.tsv", newline="", encoding="utf-8") as f:
+    for sense in csv.DictReader(f, delimiter="\t"):
+        anaphor_senses.setdefault(sense["Word"], {}).setdefault(
+            sense["Anaphor"], []).append(sense["Mena"])
+
+
+# One Verb Type card per verb, kept apart from the verb's meaning (minimum
+# information principle): "▯ X" -> the frame equivalent to a plain
+# intransitive -- the echo object, the optional -cu, the sen -do / sen -pul
+# paraphrase, or for a plain intransitive "no -cu", stated outright so it is
+# recalled rather than inferred. Codes are the WordClass verb segments, after
+# xwexi Gramati: Verb Categories; the label shows on the answer. "Xcu" becomes
+# X(cu) when the gloss says "v.intr (optional use of -cu)": every b.oro verb
+# except 7 the lexicon leaves unmarked (plurota, rujwan, ...).
+VERB_CLASSES = {
+    "oj": "transitive", "oj.ru": "echo-object transitive",
+    "nenoj": "intransitive", "nenoj.p": "also intransitive",
+    "oro": "ambitransitive: non-agentive", "oro.harka": "ambitransitive: motion",
+    "oro.hisi": "ambitransitive: feeling", "oro.jotay": "ambitransitive: state",
+    "lin": "copula", "lin.oj": "transitive copula", "sah": "auxiliary",
+}
+VERB_TYPE_FRAMES = {
+    "oj.ru": "▯ X X",
+    "oro": "▯ Xcu",
+    "oro.harka": "▯ Xcu",
+    "oro.hisi": "▯ X = ▯ sen X<b>do</b><br>X<b>cu</b>: become",
+    "oro.jotay": "▯ X = ▯ sen X<b>pul</b><br>X<b>cu</b>: become",
+    "nenoj": "▯ X (no -cu)",
+    "nenoj.p": "▯ X (no -cu)",
+}
+
+def _verb_classes(wordclass):
+    """'b.oj; b.nenoj.p' -> ['oj', 'nenoj.p']. Affix entries (`f.oj xfik`)
+    are suffixes, not verbs, and are skipped."""
+    out = []
+    for seg in re.sub(r"^tabel: ", "", str(wordclass)).split(";"):
+        m = re.fullmatch(r"[bf]\.(\S+)", seg.strip())
+        if m and m.group(1) in VERB_CLASSES:
+            out.append(m.group(1))
+    return out
+
+
+def _parse_pronouns(cell):
+    """'to, te' -> ['to', 'te']. Tolerates the '.' typo and stray spaces, which
+    otherwise end up in the card's CSS class ('class=" te"')."""
+    if not isinstance(cell, str):
+        return []
+    return [p for p in re.split(r"[,.]\s*", cell.strip()) if p]
+
+
+
+
 # Shared with Word Viewer, which gives these their own table row.
 SLANG_NOUN_QUALIFIERS = _SLANG_NOUN_QUALIFIERS
 
@@ -300,11 +367,26 @@ with open("./" + ranking_name, newline="") as ranking_file, \
             fields.EnfasisdoLexi = globasaStressSentence(row[0]).strip()
         selected_rows = df.loc[row[0]]
 
-        if row[0] in prnf.index and isinstance(prnf.loc[row[0]].Pronoun, str):
-            pronouns = prnf.loc[row[0]].Pronoun.split(",")
+        pronouns = []
+        if row[0] in anaphor_senses:
+            # te first, so Pornamelexi is always the live plant and Alo
+            # Pornamelexi the food, part or cut plant.
+            senses = anaphor_senses[row[0]]
+            pronouns = [p for p in ("te", "to") if p in senses]
+            if len(pronouns) == 2:
+                fields.AnaphorMena = "; ".join(senses["te"])
+                fields.AloAnaphorMena = "; ".join(senses["to"])
+        elif row[0] in prnf.index and isinstance(prnf.loc[row[0]].Pronoun, str):
+            pronouns = _parse_pronouns(prnf.loc[row[0]].Pronoun)
+        if pronouns:
             fields.Anaphor = pronouns[0]
             if len(pronouns) > 1:
                 fields.AloAnaphor = pronouns[1]
+            anaphor_imgs = images_store.anaphor_slots(image_store.get(row[0]))
+            if fields.Anaphor in anaphor_imgs:
+                fields.AnaphorImaje, fields.AnaphorImajeAsel = anaphor_imgs[fields.Anaphor]
+            if fields.AloAnaphor in anaphor_imgs:
+                fields.AloAnaphorImaje, fields.AloAnaphorImajeAsel = anaphor_imgs[fields.AloAnaphor]
 
         antonyms = selected_rows["Antonyms"]
         if isinstance(antonyms, str) and antonyms:
@@ -496,6 +578,22 @@ with open("./" + ranking_name, newline="") as ranking_file, \
             tags += [str(row[2]).replace(" ", "_")]
         fields.tags = " ".join(tags)
 
+        # A -cu headword (bukacu, pilocu, boncu) gets no Verb Type card: its
+        # gloss's "optional use of -cu" is its own -cu, and on an ambitransitive
+        # root it is itself the frame the root's card asks for.
+        classes = [c for c in _verb_classes(selected_rows["WordClass"])
+                   if c in VERB_TYPE_FRAMES]
+        lexi = row[0]
+        if classes and not (lexi.endswith("cu") and lexi[:-2] in df.index):
+            takes_cu = bool(re.search(r"\(optional (use of )?-cu\)",
+                                      englishRawGlosses))
+            fields.VerbClass = " · ".join(VERB_CLASSES[c] for c in classes)
+            fields.NoObjectForm = "<br>".join(
+                VERB_TYPE_FRAMES[c]
+                .replace("Xcu", f"{lexi}(cu)" if takes_cu else lexi)
+                .replace("X", lexi)
+                for c in classes)
+
         # One still per PoS group, in PoS-group order, so the card's two images
         # line up with the PoS1/Mena1 and PoS2/Mena2 glosses printed beside them.
         # Still and animation are independent now: a word can have both.
@@ -519,10 +617,15 @@ with open("./" + ranking_name, newline="") as ranking_file, \
             fields.Transitive, fields.EchoTransitive, fields.Intransitive,
             fields.IntransitiveCu, fields.Copula, fields.Auxiliary,
             fields.Feeling, fields.State,
+            fields.VerbClass, fields.NoObjectForm,
             fields.Imajelinku, fields.ImajeAsel, fields.NSFW,
             fields.DuayumImaje, fields.DuayumImajeAsel,
             fields.Faleanimalinku, fields.Faleanimaasel,
-            fields.Anaphor, fields.Oposmenalexi,
+            fields.Anaphor, fields.AloAnaphor,
+            fields.AnaphorMena, fields.AloAnaphorMena,
+            fields.AnaphorImaje, fields.AnaphorImajeAsel,
+            fields.AloAnaphorImaje, fields.AloAnaphorImajeAsel,
+            fields.Oposmenalexi,
             fields.GlobasaMisal, fields.MisalClozed, fields.MisalBasatayti,
             fields.FaleliMisal, fields.FaleliMisalClozed, fields.FaleliMisalBasatayti,
             fields.TigayumMisal, fields.TigayumMisalClozed, fields.TigayumMisalBasatayti,

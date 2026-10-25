@@ -28,7 +28,8 @@ An image carries EITHER `file` + `wiki` (Wikimedia-hosted, resolvable) OR a
 literal `url` (Giphy, math renders — carried through untouched, never resolved).
 
 Unknown keys round-trip untouched, on the word record, on a sense and on an
-image. Hand-added fields (`illustratable`, `note`, `derive`, `exclude`) must
+image. Hand-added fields (`illustratable`, `note`, `derive`, `exclude`,
+`anaphor`) must
 survive every writer that doesn't know about them.
 """
 import json
@@ -391,6 +392,28 @@ def anki_slots(record, width=DEFAULT_WIDTH):
     if animation is not None:
         out["Faleanimalinku"] = card_src(animation)
         out["Faleanimaasel"] = "" if animation.get("local") else source_page(animation)
+    return out
+
+
+def anaphor_slots(record, width=DEFAULT_WIDTH):
+    """{pronoun: (card_src, source_page)} for senses marked `"anaphor"`.
+
+    A plant word takes `te` as the living plant and `to` once picked or
+    harvested (`kanabis` growing is te, smoked it is to). The distinction is in
+    the referent, not the gloss, so the pictures carry it: a sense marked
+    `"anaphor": "te"` shows the plant, `"to"` the produce. The first still of
+    the first sense marked with each pronoun wins.
+    """
+    out = {}
+    for sense in senses_of(record):
+        pronoun = (sense.get("anaphor") or "").strip()
+        if not pronoun or pronoun in out:
+            continue
+        sense_stills = stills(sense.get("images"))
+        if sense_stills:
+            img = sense_stills[0]
+            out[pronoun] = (img["local"] if img.get("local") else best_url(img, width),
+                            "" if img.get("local") else source_page(img))
     return out
 
 
