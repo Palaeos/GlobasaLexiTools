@@ -278,7 +278,8 @@ function renderSources() {
       h += `<tr>${i === 0 ? `<td rowspan="${ws.length}">${esc(l.basa)}<div class="small muted">${esc(l.family)}</div></td>
         <td rowspan="${ws.length}">found</td>` : ""}
         <td><label><input type="checkbox" data-k="${esc(k)}" ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
-          ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}</td>
+          ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}
+          ${(w.titles || []).length ? `<div class="small muted">as titled: ${esc(w.titles.join(", "))}</div>` : ""}</td>
         <td class="small">${esc(w.roman || w.ipa || "")}</td>
         <td><input class="gform" type="text" value="${esc(form)}" data-ok="${esc(k)}" data-lang="${w.lang}" data-word="${esc(w.word)}">
           ${w.forms.length > 1 ? `<div class="small muted">also ${esc(w.forms.slice(1).join(", "))}</div>` : ""}</td>
