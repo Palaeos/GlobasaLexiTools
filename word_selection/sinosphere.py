@@ -145,12 +145,13 @@ def normalise(w, lang="cmn"):
     t = table()
     combos = [""]
     for c in w:
-        if lang == "ja" and c in t["j2t"]:
-            alts = t["j2t"][c]
-        elif lang in ("cmn", "ja") and c not in t["mc"] and c in t["s2t"]:
+        if lang in ("cmn", "ja") and c not in t["mc"] and c in t["s2t"]:
             alts = t["s2t"][c]
         else:
             alts = [c]
+        # kyūjitai as the canonical variant for every language: Mandarin and
+        # Japanese 為, Korean / Vietnamese hanja 爲 (無為 ~ 무위 無爲 ~ vô vi)
+        alts = [a2 for a in alts for a2 in (t["j2t"].get(a) or [a])]
         combos = [x + y for x in combos for y in alts][:MAX_SPELLINGS]
     return combos
 
