@@ -2078,3 +2078,9 @@
 | 12:33 | contrasts: foil same-root reach (joy table), inflection-aware side assignment, vi syllable matching; happy/幸福: 4 families separate + 6 marked | word_selection/contrasts.py | ok | ~15000 |
 | 12:46 | contrasts: auto_pivot sweep + suggestion hint + page section/API; bucketed same-root search (sweep ~60s -> 5.8s) | word_selection/contrasts.py, Word Selector.py, word_selector.html | ok | ~15000 |
 | 12:46 | contrasts sweep speedup recorded | .wolf | ok | ~200 |
+| 13:01 | Word Selector: LexiliAsel precedent for Sino-xenic blending (precedent.py, blend, pipeline, page note); top-1 on Sino-xenic roots 13.2% -> 20.4%, loans unchanged | word_selection/precedent.py, blend.py, pipeline.py, word_selector.html | ok | ~20000 |
+| 13:26 | precedent generalised to 5 groups within the methodology (final vowel slot excluded); top-1 all roots 26.8 -> 30.6% | word_selection/precedent.py, blend.py | ok | ~25000 |
+| 13:38 | Fixed missing ja 基質: Han-spelling cognate completion in pipeline (attested via ja.wiktionary/en.wiktionary/hanja tables) | word_selection/pipeline.py, sinosphere.py | ok | ~8000 |
+| 13:45 | Strip disambiguators from all source words at merge; titles kept and shown | word_selection/sources/__init__.py, word_selector.html | ok | ~3000 |
+| 13:59 | form_rules: Sino-Japanese -tsu/-chi/-ku/-ki vote no final vowel (kiju no longer proposed) | word_selection/form_rules.py | ok | ~3000 |
+| 14:08 | Middle Chinese coda options (-t -k -p -m -n -ng) from LexiliAsel precedent in form_rules; 基質 -> kijitu | word_selection/precedent.py, form_rules.py, pipeline.py | ok | ~15000 |

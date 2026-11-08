@@ -3615,5 +3615,38 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-08T11:39:44"
+  },
+  {
+    "id": "bug-223",
+    "timestamp": "2026-11-08T13:26:53",
+    "error_message": "IndexError: list index out of range in precedent.lookup (follow layer)",
+    "file": "word_selection/precedent.py",
+    "root_cause": "A class pattern's follow Counter can be empty or zeroed by leave-one-out subtraction (Globasa took none of the members' letters)",
+    "fix": "Use positive counts (+Counter) and skip empty ones",
+    "tags": [
+      "precedent",
+      "counter",
+      "leave-one-out"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-08T13:26:53"
+  },
+  {
+    "id": "bug-224",
+    "timestamp": "2026-11-08T13:38:07",
+    "error_message": "User: Japanese kishitsu (基質) missing from the matrix sources when it was found before",
+    "file": "word_selection/pipeline.py",
+    "root_cause": "Japanese 基質 is in no English Wiktionary translation table, has no English-Wiktionary entry, and is not the Wikidata label for Q1463013 (石基); it only appears when the concept supplies it (e.g. a ja seed), so a concept with only a cmn seed lost it",
+    "fix": "pipeline.add_han_cognates: after gathering, add same-Han-spelling cognates in missing Sinosphere languages when attested (ja: Japanese Wiktionary or English Wiktionary entry; cmn: English Wiktionary zh entry; ko/vi: hanja/chữ Hán tables); compounds only; Korean/Vietnamese homographs pass on only spellings another language confirms; flagged 'check the meaning'",
+    "tags": [
+      "word-selector",
+      "sinosphere",
+      "sources",
+      "han-spelling"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-08T13:38:07"
   }
 ]
