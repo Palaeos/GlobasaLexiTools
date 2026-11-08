@@ -59,6 +59,8 @@
 - `AnkiMaker3.py` — AnkiFields: reset (~6234 tok)
 - `annotate_alignments.html` — Globasa Gold Alignment Annotator (~13876 tok)
 - `apkg_image_sync.py` — Pulls image links out of Globasa__Vocabulary.apkg into menalariImages.jsonl. Resolves Anki field ordinals BY NAME from the deck's `fields` table (they drifted once already); maps Imajelinku->PoS group 1, DuayumImaje->PoS group 2, Faleanimalinku->animation (~2600 tok)
+- `constructions.py` — Shared construction matcher. Constructions.xlsx pairs a headword with a syntactic frame (`▯ jixi na ▯`) plus a `to_exclude` list of gloss items that only hold inside the frame. split_items/split_annotation/normalise_item/apply_to_exclude (returns (text, matched)), load_constructions, exclusions. Lifted out of AnkiMaker3 so the wordlist cleaner and the deck builder cannot drift (~900 tok)
+- `extract_constructions.py` — Strips the `to_exclude` gloss items from word-list.csv in place after each CDN download. Idempotent; preserves CRLF and the missing final terminator; backs up to word-list.csv.pre-constructions. `hay` and `sengi` end with no English gloss — the frame carries their whole meaning (~700 tok)
 - `course_ranker.py` — Power-law scoring constants — tune to taste. (~2561 tok)
 - `dictionaryPreprocess.py` — ── PoS → Apertium symbol ──────────────────────────────────────────────── (~4993 tok)
 - `Doxo_passages_edited_updated.csv` (~68050 tok)
@@ -73,9 +75,20 @@
 - `Lexilista_parser.py` — Declares import (~6780 tok)
 - `images_review.html` — Contact-sheet review UI at /review: every illustrated word as a dense grid of thumbnails + gloss, filterable by tag / flag (shared, gone, off-commons, uploaded, derived), sortable, infinite scroll, click-through to the curator, drop-lead-image action (~1900 tok)
 - `images_curator.html` — Commons image curation UI served at /images: course-ranked queue of words whose gloss has an unillustrated content PoS, per-sense image editing (add/remove/reorder/label/set-pos), Commons search grid, one-click "can't be pictured" (~2600 tok)
-- `images_store.py` — Shared per-sense image store (menalariImages.jsonl): word -> PoS -> sense -> images. parse_commons_url (4 URL forms -> canonical file title), best_url/filepath_url (Special:FilePath fallback), image_keys (canonical + `aka` former titles), anki_slots (one still per PoS group), word_pos_keys, JSONL I/O that round-trips unknown keys (~2400 tok)
+- `images_store.py` — Shared per-sense image store (menalariImages.jsonl): word -> PoS -> sense -> images. parse_commons_url (4 URL forms -> canonical file title), best_url/filepath_url (Special:FilePath fallback), image_keys (canonical + `aka` former titles), anki_slots (one still per PoS group), anaphor_slots (sense `anaphor: te|to` -> plant pronoun card image), word_pos_keys, JSONL I/O that round-trips unknown keys (~2400 tok)
 - `migrate_images_jsonl.py` — One-shot, idempotent: seeds menalariImages.jsonl from menalariImages_edited.csv + Globasa__Vocabulary.apkg; assigns `pos` only for single-PoS words; reports unparsed URLs + the multi-PoS queue (~1700 tok)
 - `resolve_commons_images.py` — Refills direct_url from the MediaWiki API (50 titles/request, redirects=1, iiurlwidth=500); records former titles in `aka` on rename; flags deleted files as status=missing (~1800 tok)
+- `vscode-tasks.json` — Staged replacement for `.vscode/tasks.json` (that path is a read-only mount in the Claude Code sandbox). Adds the four deck-pipeline tasks; install with `cp vscode-tasks.json .vscode/tasks.json` then delete (~200 tok)
+- `LafuzuDeckMaker.py` — Builds/updates Globasa__Lafuzu.apkg (deck Globasa::Lafuzu): written<->spoken cards from Hector's recordings. Sources: lesson word-list clips in Segmentation/Ektor_su_Lafuzu_processed (.ogg), 04.pimpan-logaxey mp3s, 03.gramati/01.abece-ji-lafuzu example words + permitted variants. Pairs audio only on exact filename=text spelling match. Templates Written → Spoken, Spoken → Written (optional via SpokenToWritten field), one subdeck each; synthesized lesson 17 as separate tagged notes under Globasa::Lafuzu::Synthesized::*; GUIDs from text (~2600 tok)
+- `splits_review.html` — Word Viewer page /splits: review lesson-recording split proposals. Web Audio playback (sample-accurate), zoomed waveform with draggable edges, shift-click split, merge/delete, rename with lesson-entry datalist, keyboard (Space/C/Enter/arrows/[ ] ; '), autosave, export ticked rows as clips (~3500 tok)
+- `lesson_audio_labels.py` — Proposes Audacity label tracks (LessonAudioLabels/darsu_NN_lexilista.txt) for lessons not yet cut. Cuts: ffmpeg silencedetect, padded 0.12 s. Names: wav2vec2 phoneme recogniser (Models/wav2vec2-lv-60-espeak-cv-ft) -> IPA mapped to Globasa letters -> in-order edit-distance alignment with the lesson's entries (skips, two-segment phrases); off-list segments matched against word-list headwords; unsure labels end in "?" (~2600 tok)
+- `xwexi_lessons.py` — Shared lesson word-list parser: lesson_entries(n) (expands "**kenumer** (**te**/**to**)" into 3 entries), spoken_forms(entry) ("pala (yon/in)" -> pala yon / pala in / pala), clip_name() (~500 tok)
+- `menalariAnaphorSenses.tsv` — Per-sense pronoun for every plant/food word (Word, Anaphor te|to, Mena label). te = live whole plant only; food, parts, cut/dead = to. Overrides menalariPronouns_edited.tsv in AnkiMaker3 (~9000 tok)
+- `menalariMainGloss.tsv` — Main-gloss overrides for Anki (Word, MainGloss, Note): AnkiMaker3 fronts and emphasises the named gloss in whichever PoS row contains it, when the wordlist's first gloss is not the clearest core (~50 tok)
+- `menalariGlossQualifiers.tsv` — Qualifiers for English homographs the wordlist leaves bare (Word, Gloss, Qualifier, Note): AnkiMaker3 renders the gloss as "hack (_with an axe_)". tabar/hake (hack), jumun/harufi (spell) (~80 tok)
+- `menalariMainGloss_candidates.tsv` — Review list for menalariMainGloss.tsv: rows whose first English gloss another (non-related) word shares, with that word, the row's unshared glosses and Epo. Generated ad hoc 2026-11-07, not by a script in the repo (~60000 tok)
+- `restructure_vocab_deck.py` — One-off, idempotent schema change to Globasa__Vocabulary.apkg: names templates Card 14-19, adds AloAnaphor/AnaphorMena/AnaphorImaje fields, rewrites Pornamelexi + adds Alo Pornamelexi (plant te/to), removes SabziFruta prototype notetype; adds the single Verb Type card (removes the rejected Verb Class card) and makes echo/-cu meaning cards use the bare verb. Idempotent, extend it for future schema changes. Backup .pre-restructure.bak (~1900 tok)
+- `update_vocab_deck.py` — Pushes AnkiList.csv into Globasa__Vocabulary.apkg using Anki's own library, so card generation follows the real conditional templates. Files every card in Globasa::Vocabulary::<template name> (template deck override + move pass, drops emptied subdecks); removes cards an update left empty; warns when the input apkg carries study history. Keeps note type, 32 templates, styling and every note GUID (GUIDs carry learners' scheduling on re-import). Fields matched to columns BY NAME; Lexi is read-only (24 notes are trailing-space twins). Adds new words, reports duplicates and retired notes, never deletes (~1500 tok)
 - `validate_images.py` — Warnings-only checker: stale/unassigned `pos`, sense labels matching no gloss, gone images, retired words; skips illustratable=false (~1300 tok)
 - `menalariImages.jsonl` — Per-sense image store, 1797 words / 1775 images. SOURCE OF TRUTH for images; supersedes menalariImages_edited.csv (which is now an untouched backup) (~250000 tok)
 - `LLM_sense_judge.py` — wn_expand (~16417 tok)
@@ -90,7 +103,7 @@
 - `requirements.txt` — Python dependencies (~90 tok)
 - `run_giza_improved.py` — parse_wordlist_gloss, parse_menalari_gloss, get_word_pairs, segment_word (~24733 tok)
 - `tmx_viewer.html` — Globasa TMX Viewer (~6112 tok)
-- `translation_aide.html` — Globasa Translation Aide (~6835 tok)
+- `translation_aide.html` — Globasa Translation Aide; interactive Apertium frontend: polysemy dropdowns, plus un/nun marker chips for the article and present-tense markers Globasa leaves unmarked (~6900 tok)
 - `Wiktionary extension builder.py` — Wiktionary extension builder — reads vetted senses from xlsx files, (~2776 tok)
 - `Wiktionary sense based translation extender 3.py` — match_sense_to_definition, extract_definition_and_examples, crossvalidate, wl_get (~4974 tok)
 - `wiktionary_constants.py` — Shared constants and helpers for Wiktionary sense extender scripts. (~3963 tok)
@@ -127,6 +140,7 @@
 - `AnkiMaker.py` — Main Anki deck generator for content words; uses frequency-sorted wordlist + official wordlist (~2900 tok)
 - `AnkiMaker2.py` — Variant Anki generator with AnkiFields reset logic (~2576 tok)
 - `dictionaryPreprocess.py` — Generates mono/bilingual Apertium XML entries (14 files: En/Es/Eo/De/Fr/Nl/un × fn/content) via Lexilista_parser.parseWordEntry; verb-subtype-aware (vblex/vbmod/vbser); foreign-gender + Globasa-gender expansion (~3200 tok)
+- `extend_tmx_doxo_2026_11.py` — Dry-run by default; `--write` appends the Nov 2026 Doxo texts (mostly Globasa-only TUs) to both TMX files and the master CSV, refuses to run twice (~2300 tok)
 - `extend_tmx_eo.py` — Extends TMX with Esperanto; parse_eo_file, build_eo_by_position, make_tu (~3354 tok)
 - `extend_tmx_pnc_multi.py` — Extends TMX with P&C translations (de, fr, da, nl, eo, ru, pt, id) from transcript markdowns (~1200 tok)
 - `extend_tmx_udhr_multi.py` — Extends TMX with UDHR (de, fr, ru, zh, hi, ar, pt, tr, id, sw); auto sentence splitting (~2000 tok)
@@ -142,6 +156,9 @@
 - `JSONL parser.py` — Parses Wiktionary JSONL dumps; Translation class (~1888 tok)
 - `JSONL tagInfo.py` — Extracts tag info from JSONL dumps; Translation class (~1441 tok)
 - `Lexilista_parser.py` — Shared wordlist parser; GlossPoS, parseEntry (~2118 tok)
+- `sense_vetter.py` — Local page on port 8090 for vetting Wiktionary senses, most obvious first, no model; scored partly by other glosses, taxa and tags against sibling senses; saves to sense_vetting.jsonl (verdicts s, n, u=unsure, clear), --check and --export modes (~6500 tok)
+- `sense_vetter.html` — Keyboard-driven page for sense_vetter.py, with Hide vetted toggle, Unsure mark, peek with marking, browse by tag, and views for words with no sense marked and for unsure senses (~4500 tok)
+- `sense_review_queue.py` — Scores Wiktionary senses against TMX usage with a decision model on llama-server, writes a blind annotator queue ordered by value per minute plus a scores TSV to sense_review/; resumable, memory-capped Reads sense_vetting.jsonl; --rotate tests option-order effects; caps passes at 25 senses; default 4 shuffles. Default prompt uses the model-card layout; --compare tests choice formats.
 - `LLM_sense_judge.py` — 6-tier Wiktionary sense applicability judge: core match, register/domain, Qdrant corpus, composite, WordNet oewn:2023, Qwen LLM. Uses single Tier column (a/l). (~16500 tok)
 - `load_globasa_graph.js` — Node.js script using @ladybugdb/core to create globasa.lbug from kuzu_import/ CSVs (~400 tok)
 - `make_tmx.py` — TMX file generator (~449 tok)
@@ -168,7 +185,7 @@
 - `WiktionaryScraper.py` — Live Wiktionary API scraper, get_wiktionary_data (~782 tok)
 - `Word selection automator 2.py` — Updated word selection automator (~2827 tok)
 - `Word selection automator.py` — Interactive: English word -> Wiktionary scrape -> lexiseleti with Globasa renditions (~2508 tok)
-- `Word Viewer.py` — Flask-based local dictionary viewer; WordViewerDB (LMDB 8 sub-dbs), build_db() from all source files, /lookup/<word> JSON API, /audio/<word>.ogg pronunciation serving (~450 tok)
+- `Word Viewer.py` — Flask-based local dictionary viewer; WordViewerDB (LMDB 8 sub-dbs), build_db() from all source files, /lookup/<word> JSON API, /audio/<word>.ogg pronunciation serving; /splits + /api/splits[/<n>[/audio|/export]] lesson-split review (state in LessonAudioLabels/*.json, export Vorbis 48k mono into AUDIO_DIR, never overwrites unless asked) (~450 tok)
 - `word_viewer.html` — Single-page frontend; 16-language selector (up to 2), PoS-grouped translation table with verb rowspan/colspan, gender article/anaphor, Butterick typography, RTL, example tooltips, constructions (~600 tok)
 - `Wordnet based translation extender.py` — WIP: queries synonym sets for translations via CILIs (~1769 tok)
 - `WordRanker.py` — Scrapes corpus for examples, ranks by corpus order; collectNGrams, processSentence, emphasizeExample (~6280 tok)
@@ -271,5 +288,38 @@
 ## xwexi-pages-grav/ (git submodule)
 - `backups/thirty_update_2026-08-24/` — Pre-update snapshot of the Thirty Short Stories data: original `Doxo_passages.tmx`, `Doxo_passages_extended.tmx`, `Doxo_passages_edited_updated.csv`, `gold_alignments/en.tsv`, plus `thirty_revisions_before_2026-08-24.tsv` (the 980 hand-revised rows) and `dropped_hand_edits_2026-08-24.tsv` (479 old-vs-new Globasa differences for review).
 - `Corpora/thirty_paragraph_breaks.tsv` — Paragraph breaks per story (StoryIndex, GlobasaTitle, comma-separated sentence indices that start a new paragraph), recovered from `Corpora/ThirtyStories.typ`. Editorial, not authorial: added by the repo owner and ChatGPT, not by Vanege. Globasa and English break at the same sentence positions, so one set serves both.
+- `globasa_collision_check.py` — Candidate-form collision checker for proposed Globasa roots: exact hits, near-homophones (y->i / w->u normalisation, catches tian~tyan), edit-distance-1 minimal pairs, misparse of existing words as candidate+morpheme, self-decomposition into prefix+root, plus phonotactic validation implementing the DOCUMENTED xwexi rules (onset cluster list, coda=any consonant medially / restricted word-finally, stop+stop ban, w/y caveats); validated at 99.6% against all 3188 roots. Severity: BLOCK/WARN/NOTE/CLEAR (~1400 tok)
 - `globasa_hyphenation.py` — Pure Globasa syllabifier (possible_onsets, all_consonants, hyphenation, fix_hyphenation), extracted from `Hyphenation.py` so it can be imported without triggering that script's word-list download and pattern-file writes.
 - `globasa_word_hyphenation.py` — Morpheme-aware Globasa hyphenation. Splits a word into morphemes (word-list `Hyphenation` column > `LexiliAsel` composition > productive affix stripping) and syllabifies each independently, so compound seams are never broken across (e.g. `atexalkoba` -> a-tex-al-ko-ba, not a-te-xal-ko-ba). API: morphemes(), hyphenate(), break_positions().
+
+## docs/research/
+
+- `colexification-happiness-luck.md` — **State vs trait happiness across languages**: how the "happy right now" / "happy in general" distinction is encoded (6 mechanisms: separate lexemes, copula choice, no split, inner-organ periphrasis, root-and-pattern morphology, trait-word-is-heavier) and what each pole attaches to (momentary → joy/glad/cheer/lively, from shining/jumping/rejoicing/intoxication; enduring → luck/blessed/content/fulfilled/prosperous, from allotted share/omen/fitting-together/fertility). Documents why CLICS is structurally blind to the contrast. 30 languages, ~100 words, all from the Wiktionary API. Original by Mistral Vibe; revised + reoriented by Claude 2026-09-07 (~9000 tok)
+- `.colexification-happiness-luck.md.orig` — hidden pre-revision copy of the above, kept because docs/ is untracked in git (~5100 tok)
+- `colexification-happiness-luck-review.md` — Source audit + corrected classification + extension of the above. Documents 11 factual errors and 4 citation mismatches; adds real CLICS⁴ / Glottolog / Oishi et al. 2013 data, three recurring source metaphors (allotted share / omen / things fitting together), and a Globasa `hox`–`xanse` analysis (~6500 tok)
+- `semantic-eurocentrism-audit.md` — Audit of semantic Eurocentrism in Globasa: Esperanto-alignment measurement (Epo>Eng>Spa), refuted decomposability hypothesis (permutation test), word-selection tooling review, 5 criteria for semantic imports, truncation pattern (muka/mosem/dao/gwanxi/kismetu), proposals (2 roots + ~16 compounds), WALS lexical typology, phonotactics, full source list (~9500 tok)
+
+- `Methodology for Lexical Development _ Globasa.html` — Saved official page: minimal-pair avoidance tiers, source selection, form rules for new roots (~7300 tok)
+- `Taquigrafía_Castellana_-_Marti.pdf` — Scan of Marti's Spanish shorthand manual: alphabet, syllabary and joining plates at PDF pages 115-125 (144 pages)
+- `1240624.1240850.pdf` — Cao & Zhai 2007, CHI paper modelling pen stroke time from curves, lines and corners; source for the shorthand stroke-time ranking (10 pages)
+- `shorthand_geometry.py` — Loads candidate alphabets from shorthand_candidates.json; stroke geometry, word pen paths and the shared stroke-time model (stroke_time)
+- `shorthand_optimizer.py` — Simulated-annealing search for a shorthand alphabet, parallel over all cores, about 1 minute (single simple shapes: lines, semicircles, loops, circles; rounded-join rule, inter-letter contact penalty, simplicity/size order by frequency, variety and Latin tie-breaker; Cao & Zhai time, Callendar joins, look-alike whitelist, lineality); writes shorthand_candidates.json
+- `shorthand_candidates.json` — Top 3 diverse alphabets from the optimizer, with settings and join/confusion reports; read by shorthand_geometry.py
+- `shorthand_word_stats.py` — Word statistics for the shorthand search: even-weighted text letter pairs, lexicon pairs, word-edge letters, word lengths, function-word phrase joins, misreading % per letter pair over text and full word list; writes shorthand_word_stats.json
+- `shorthand_word_stats.json` — Output of shorthand_word_stats.py, read by shorthand_optimizer.py
+- `shorthand_practice_sheet.py` — Builds the printable A4 vowel-style practice sheet from shorthand_geometry.py
+- `shorthand_practice_sheet.pdf` — 8-page practice sheet comparing the 3 optimizer candidates: key, 40-stroke inventory, top 20 pairs, sentences, speed and cold-read log
+- `shorthand_style_metrics.py` — Corpus metrics per vowel style: model time, drift, word height, risky joint angles, and joins scored by Callendar's sharp/blunt/continuous categories
+- `manualofcursives00calliala.pdf` / `.epub` — Callendar 1889, Manual of Cursive Shorthand (phonetic forerunner of Orthic); joining principles in the introduction and section 54 (book p. 56 = PDF p. 64)
+- `shorthand_literature_sweep.md` — Reading list on handwriting speed models and legibility for the shorthand design: papers to read first, two tables, gaps, a small self-test
+
+## Word Selector (2026-11-07)
+- `word_selection/contrasts.py` — lexical contrasts other languages make inside an English sense, via foreign Wiktionary editions (WiktionaryLMDB_<ed>): pivot words' senses + translation tables; sides = merged foreign senses; contrast = disjoint words in >=2 families; focus() gives exclusions for one side; best sense per pivot, phrase rule, general-sense detection; neighbour English tables via reverse index; related() root matching; compare_to_pivot() pairwise pivot-vs-foil verdicts per language; auto_pivot() sweep, suggestion(), summarize(); wired into Word Selector (/api/contrasts, section 3b) (~7500 tok)
+- `word_selection/abjad.py` — Arabic/Persian consonant skeletons (fallback join in cluster.py) + vocalization prediction between them from vowel length (length_form, parse, predict, predict_all) (~2500 tok)
+- `word_selection/sinosphere.py` — Sinosphere support for clustering: build() one dump pass -> word_selection_cache/sinosphere.json (MC Baxter readings, simp->trad, shinjitai->kyūjitai, Korean hanja, Vietnamese chữ Hán from vi-etym-sino); han_spellings() normalised; ja_reading_kind() on'yomi vs kun'yomi; pivots() MC + Cantonese (~3000 tok)
+- `Word Selector.py` — Flask page on :8092 for automated word selection (concept builder, sources table, ranked etymon clusters, proposals, dossier, save to word_selection_decisions.jsonl) (~1500 tok)
+- `word_selector.html` — single-page UI for the above (~6000 tok)
+- `word_selection/` — pipeline package: languages, concept_index (LMDB accessor + build_reverse), lexicon (LexiliAsel etymon parser, reverse index), translit (rule engine, 16 langs, gold-tuned), align (weighted NW + center-star MSA), cluster (etym links + avg linkage, thr 0.30), select (families/tie-breaks/fallback), blend, form_rules, collision (tiered minimal pairs; globasa_collision_check.py imports it), dossier, pipeline, sources/{wiktionary,wikidata,seeds}
+- `Wiktionary concept index.py` — one pass over raw-wiktextract dump -> WiktionaryLMDB_concepts/ (translations WITH roman, sense QIDs, entries with IPA/roman/etym for 16 langs + eo)
+- `Dictionary ingest.py` — downloads/indexes CC-CEDICT, JMdict, OMW (downloads blocked in sandbox; adapters not yet written)
+- `word_selection_eval.py` — `translit [lang]` per-language accuracy vs LexiliAsel romanizations; `roots [oracle|e2e] [N]` leave-one-out root proposals
