@@ -23,7 +23,7 @@ DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
 MAP_SIZE = 40 * 1024 ** 3
 # Arabic-script vowel marks + tatweel: Wiktionary titles are unvocalised
 _HARAKAT = re.compile("[\u064b-\u0652\u0670\u0640]")
-SUBDBS = [b"translations", b"trans_qid", b"qid", b"entries", b"reverse", b"etym_reverse"]
+SUBDBS = [b"translations", b"trans_qid", b"qid", b"entries", b"reverse", b"etym_reverse", b"parts"]
 
 
 def pack(v):
@@ -96,6 +96,15 @@ class ConceptIndex:
         """Source-language words whose etymology links them to (src_lang, term)."""
         return self._get("etym_reverse", key(src_lang, etym_norm(src_lang, term))) or []
 
+    def parts(self, lang, word):
+        """[[part, gloss]] of a compound, from its Wiktionary compound/affix template
+        (German Milchstraße -> [[Milch, ''], [Straße, '']]; Japanese 天の川 ->
+        [[天, heaven], [の, ''], [川, river]]); [] if none."""
+        for w in dict.fromkeys([word, word.lower()]):
+            v = self._get("parts", key(lang, w))
+            if v:
+                return v
+        return []
 
     def entries(self, lang, word):
         """Entries for a word, trying the exact form, then lower/capitalised."""
@@ -196,6 +205,46 @@ def build_etym_reverse(path=DIR, langs=None):
     idx.close()
     return len(rev)
 
+
+PART_TEMPLATES = {"compound", "com", "af", "affix", "prefix", "suffix", "confix", "blend",
+                  "ja-compound", "zh-compound", "ko-compound"}
+
+
+def build_parts(dump, path=DIR, langs=None):
+    """One pass over the raw wiktextract dump: compound/affix template parts (with the
+    template's part glosses t1, t2 ...) of source-language entries -> `parts`."""
+    import json
+    from .languages import LANGS
+    langs = set(langs or {l["dump"] for l in LANGS})
+    marks = [f'"lang_code": "{l}"' for l in langs]
+    out = {}
+    with open(dump, encoding="utf-8") as f:
+        for line in f:
+            if '"etymology_templates"' not in line or not any(m in line for m in marks):
+                continue
+            d = json.loads(line)
+            if d.get("lang_code") not in langs or (d.get("lang_code"), d.get("word")) in out:
+                continue
+            for t in d.get("etymology_templates", []) or []:
+                if t.get("name") not in PART_TEMPLATES:
+                    continue
+                args = t.get("args", {})
+                parts, i = [], 2
+                while str(i) in args:
+                    part = (args[str(i)] or "").strip()
+                    gloss = (args.get(f"t{i - 1}") or args.get(f"gloss{i - 1}") or "").strip()
+                    if part:
+                        parts.append([part, gloss])
+                    i += 1
+                if len(parts) >= 2:
+                    out[(d["lang_code"], d["word"])] = parts
+                    break
+    idx = ConceptIndex(path, readonly=False)
+    with idx.env.begin(write=True) as txn:
+        for (lang, word), parts in out.items():
+            txn.put(key(lang, word), pack(parts), db=idx.dbs["parts"])
+    idx.close()
+    return len(out)
 
 
 def build_reverse(path=DIR):
