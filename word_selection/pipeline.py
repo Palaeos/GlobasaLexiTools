@@ -272,12 +272,30 @@ def lexiliasel(cluster):
 # Leave-one-out evaluation
 # ---------------------------------------------------------------------------
 
+# Languages whose oracle form is the Wiktionary pronunciation when there is one:
+# LexiliAsel's Persian romanizations of European loans read the spelling (کبالت
+# kabalat, کازینو kazinu) where Wiktionary has the pronunciation (kobâlt, kâzino).
+# Arabic keeps LexiliAsel's: there Wiktionary's first reading is often another
+# word of the same spelling (لفظ lafaza for lafẓ) or keeps a case ending.
+PRONUNCIATION_ORACLE = {"fa"}
+
+
 def _members_for_root(root, mode, ix):
     members, formless = [], []
     for e in root["etymons"]:
         if e["code"] not in BY_CODE:
             continue
-        if mode == "oracle" and e["roman"]:
+        spoken = None
+        if mode == "oracle" and e["code"] in PRONUNCIATION_ORACLE:
+            from .sources.wiktionary import lookup
+            info = lookup(e["code"], e["word"].lstrip("/ ").strip())
+            if info["roman"] or info["ipa"]:
+                fs = translit.to_globasa(e["code"], e["word"], info["roman"][0] if info["roman"] else "",
+                                         info["ipa"][0] if info["ipa"] else "")
+                spoken = fs[0][0] if fs else None
+        if spoken:
+            form = spoken
+        elif mode == "oracle" and e["roman"]:
             form = translit.clean(e["roman"])
         else:
             from .sources.wiktionary import lookup
