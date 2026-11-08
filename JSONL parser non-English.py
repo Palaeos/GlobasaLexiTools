@@ -51,6 +51,8 @@ if lang_code not in WIKTIONARY_SOURCES:
 
 config = WIKTIONARY_SOURCES[lang_code]
 native_lang_name = config['native_lang_name']
+# an edition may name its own language several ways ("漢語|汉语|中文"); any matches
+native_lang_names = {n.strip() for n in native_lang_name.split('|') if n.strip()}
 lmdb_dir = config['lmdb_dir']
 
 # ---------------------------------------------------------------------------
@@ -108,10 +110,10 @@ if discover_mode:
 
     print(f"\nTop 30 data['lang'] values:")
     for lang, count in lang_counts.most_common(30):
-        marker = " <-- configured" if lang == native_lang_name else ""
+        marker = " <-- configured" if lang in native_lang_names else ""
         print(f"  {count:>6d}  {lang}{marker}")
 
-    if native_lang_name not in lang_counts:
+    if not native_lang_names & set(lang_counts):
         print(f"\nWARNING: configured native_lang_name '{native_lang_name}' not found!")
         print(f"Update wiktionary_config.xlsx WiktionarySources sheet.")
     sys.exit(0)
@@ -138,7 +140,7 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
                 continue
 
             lang = data['lang']
-            if lang != native_lang_name:
+            if lang not in native_lang_names:
                 continue
 
             matched += 1
@@ -175,13 +177,14 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
                 if (word, PoS) not in translationDictionary:
                     translationDictionary[(word, PoS)] = {}
                 for translation in translations:
-                    if 'word' not in translation or 'sense' not in translation:
+                    if 'word' not in translation:
                         continue
                     # Handle both old ('code') and new ('lang_code') key names
                     lang_code_t = translation.get('code') or translation.get('lang_code')
                     if not lang_code_t:
                         continue
-                    sense_key = translation['sense']
+                    # Japanese Wiktionary often has one untitled table per entry
+                    sense_key = translation.get('sense') or ''
                     if sense_key not in translationDictionary[(word, PoS)]:
                         translationDictionary[(word, PoS)][sense_key] = {}
                     if lang_code_t not in translationDictionary[(word, PoS)][sense_key]:
