@@ -117,6 +117,8 @@ def run():
         c["methodology"] = methodology.for_cluster(c)
         for p in c.get("proposals") or []:
             p["methodology"] = methodology.for_proposal(p)
+    for q in res.get("team_questions", []):
+        q["methodology"] = methodology.justify(["BLEND", "loose resemblances not counted"])
     try:
         hint = contrasts.suggestion(concept)
     except Exception as e:      # the hint is optional; never sink the run

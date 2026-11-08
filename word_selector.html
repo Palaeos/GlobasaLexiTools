@@ -72,6 +72,9 @@ input.gform { width: 9rem; font-weight: 600; }
 details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
 /* methodology justifications and reader */
 .meth summary { font-weight: 600; font-size: .8rem; color: var(--accent); }
+.teamq { border: 1px solid var(--caution); border-radius: var(--radius); padding: .6rem .8rem; margin: .4rem 0 .8rem; }
+.teamq h3 { margin: 0 0 .3rem; font-size: .95rem; color: var(--caution); }
+.teamq .opt { margin: .25rem 0; }
 .meth .step { font-size: .8rem; color: var(--muted); margin: .45rem 0 .15rem; }
 .meth blockquote, #methReader blockquote { margin: .15rem 0 .3rem; padding: .3rem .6rem; border-left: 3px solid var(--accent);
   background: var(--bg); font-size: .85rem; line-height: 1.4; }
@@ -167,6 +170,7 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
 
 <section id="clusters" hidden>
   <h2>4. Etymon clusters, ranked by the methodology</h2>
+  <div id="teamQuestions"></div>
   <div id="clusterList"></div>
 </section>
 
@@ -385,8 +389,21 @@ $("findContrasts").onclick = async () => {
   $("findContrasts").disabled = false;
 };
 
+// A ranking that hinges on a resemblance at the edge of what existing roots accept
+// is the development team's call: both outcomes, with the passages behind them.
+function renderTeamQuestions() {
+  const qs = S.result.team_questions || [];
+  $("teamQuestions").innerHTML = qs.map(q => `<div class="teamq"><h3>Question for the development team</h3>
+    <div>${esc(q.question)}</div>
+    <div class="opt"><b>If yes:</b> <span class="form">${esc(q.if_yes.form)}</span> <span class="small muted">— cluster #${q.if_yes.cluster + 1}: ${esc(q.if_yes.why)}</span></div>
+    <div class="opt"><b>If no:</b> <span class="form">${esc(q.if_no.form)}</span> <span class="small muted">— cluster #${q.if_no.cluster + 1}: ${esc(q.if_no.why)}</span></div>
+    <div class="small muted">${esc(q.basis)}. The question goes into the dossier.</div>
+    ${methHtml(q.methodology, "Methodology")}</div>`).join("");
+}
+
 function renderClusters() {
   $("clusters").hidden = false;
+  renderTeamQuestions();
   const box = $("clusterList"); box.innerHTML = "";
   S.result.clusters.slice(0, 10).forEach((c, i) => {
     const d = document.createElement("div"); d.className = "cluster" + (i === S.cluster ? " active" : "");
@@ -512,6 +529,8 @@ function derivHtml(der, unatt) {
 }
 function renderDossier() {
   const d = S.dossier, p = d.proposal; let h = "";
+  if ((d.team_questions || []).length) h += `<div class="teamq"><h3>Questions for the development team</h3><ul>${d.team_questions.map(q =>
+    `<li>${esc(q.question)}<br><b>If yes:</b> ${esc(q.if_yes.form)} · <b>If no:</b> ${esc(q.if_no.form)}<br><span class="small muted">${esc(q.basis)}</span></li>`).join("")}</ul></div>`;
   if (d.flags.length) h += `<div class="flag"><b>Uncertainty:</b><ul>${d.flags.map(f => `<li>${esc(f)}</li>`).join("")}</ul></div>`;
   d.concept_info.forEach(ci => {
     if (ci.error) { h += `<p class="small muted">${esc(ci.qid)}: ${esc(ci.error)}</p>`; return; }

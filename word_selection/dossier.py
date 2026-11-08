@@ -187,6 +187,7 @@ def build(concept, result, cluster_index=0, form=None):
         "neighbours": neighbours(terms, concept),
         "usage": usage(terms),
         "flags": flags(result, cluster),
+        "team_questions": result.get("team_questions", []),
         "proposal": None,
         "concept_info": [],
     }
@@ -287,6 +288,11 @@ def to_markdown(d):
         L.append("\n## Usage test (Doxo passages)\n")
         for u in d["usage"]:
             L.append(f"- {u['glb']}\n  — {u['en'] or u['eo']}  *({u['ctx']})*")
+    if d.get("team_questions"):
+        L.append("\n## Questions for the development team\n")
+        for q in d["team_questions"]:
+            L.append(f"- {q['question']}\n  - If yes: **{q['if_yes']['form']}** ({q['if_yes']['why']})"
+                     f"\n  - If no: **{q['if_no']['form']}** ({q['if_no']['why']})\n  - Basis: {q['basis']}")
     if d["flags"]:
         L.append("\n## Uncertainty flags\n")
         L += [f"- {f}" for f in d["flags"]]

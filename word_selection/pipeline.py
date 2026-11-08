@@ -460,17 +460,21 @@ def run(concept, overrides=None, only_sources=None):
         c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
     if any([agreement(c, word_class) for c in clusters]):   # every cluster assessed; re-rank if support changed
         clusters = select.rank(clusters)
+    questions = team_questions(clusters)
     return {"words": words, "status": statuses(words, concept.get("no_word", [])),
-            "clusters": clusters, "errors": errors, "cultural": culture}
+            "clusters": clusters, "errors": errors, "cultural": culture, "team_questions": questions}
 
 
 SUPPORT_MAX = 0.30   # a member supports a form within this distance: 95% of LexiliAsel's cited
                      # etymons are (median 0.11; baru ~ beruang 0.21), as the cluster threshold
+SUPPORT_BORDER = 0.258   # beyond the 90th percentile: a resemblance at the edge of what roots accept
 
 
 def _support(form, members):
-    """(supporting languages, loose members, unverified members) of a form."""
-    sup, loose, unver = set(), [], []
+    """(supporting languages, loose members, unverified members, {borderline lang:
+    (label, distance)}) of a form; a language is borderline when its closest member
+    lies between SUPPORT_BORDER and SUPPORT_MAX."""
+    sup, loose, unver, near = set(), [], [], {}
     for m in members:
         fs = [f.replace(" ", "") for f in m.get("forms") or []]
         if not fs:
@@ -478,11 +482,15 @@ def _support(form, members):
         label = f"{m['lang']} {m['word']} ({fs[0]})"
         if m.get("provenance") == ["etym-cognate"]:      # an unverified guess creates no agreement
             unver.append(label)
-        elif min(distance(form, f, normalized=True) for f in fs) <= SUPPORT_MAX:
-            sup.add(m["lang"])
         else:
-            loose.append(label)
-    return sup, [x for x in loose if x.split()[0] not in sup], unver
+            d = min(distance(form, f, normalized=True) for f in fs)
+            if d <= SUPPORT_MAX:
+                sup.add(m["lang"])
+                near[m["lang"]] = min(near.get(m["lang"], (label, 9.0)), (label, round(d, 3)), key=lambda x: x[1])
+            else:
+                loose.append(label)
+    border = {l: v for l, v in near.items() if v[1] > SUPPORT_BORDER}
+    return sup, [x for x in loose if x.split()[0] not in sup], unver, border
 
 
 def agreement(c, word_class=""):
@@ -499,10 +507,44 @@ def agreement(c, word_class=""):
         c["support"] = None
         return False
     best = props[0]
-    sup, loose, unver = _support(best["form"].lower(), c["members"])
+    sup, loose, unver, border = _support(best["form"].lower(), c["members"])
     c.update(support=sorted(sup), support_form=best["form"], support_tolerance=SUPPORT_MAX,
-             loose=loose, unverified=unver)
+             loose=loose, unverified=unver, borderline=border)
     return bool(loose or unver)
+
+
+def team_questions(clusters):
+    """When the winner's agreement rests on a resemblance at the edge of what
+    existing roots accept (SUPPORT_BORDER..SUPPORT_MAX) and the ranking changes
+    without it, that is the development team's call: both outcomes are returned
+    (yew: English yew ~ Korean 주목 as false friends gives yumoke; without them the
+    fallback order gives Mandarin 紫杉)."""
+    import copy
+    if not clusters or not clusters[0].get("borderline"):
+        return []
+    top = clusters[0]
+    border = top["borderline"]
+    alt = []
+    for i, c in enumerate(clusters):
+        a = copy.copy(c)
+        a["_i"] = i
+        if c.get("support") is not None:
+            a["support"] = [l for l in c["support"] if l not in border]
+        alt.append(a)
+    alt = select.rank(alt)
+    if alt[0]["_i"] == 0 and len(alt[0]["families"]) == len(top["families"]):
+        return []
+    other = clusters[alt[0]["_i"]]
+    pairs = ", ".join(f"{lbl} at {d}" for lbl, d in border.values())
+    form = (top["proposals"] or [{"form": "?"}])[0]["form"]
+    alt_form = (other.get("proposals") or [{"form": "(no proposal)"}])[0]["form"]
+    return [{
+        "question": f"Do {pairs} resemble {form} closely enough to count as agreement (false friends)?",
+        "basis": (f"distance {SUPPORT_BORDER}-{SUPPORT_MAX} is the top 10% of what LexiliAsel's roots accept "
+                  f"(baru ~ beruang 0.21 is below it); the methodology leaves such resemblance to judgement"),
+        "if_yes": {"cluster": 0, "form": form, "why": top["why"]},
+        "if_no": {"cluster": alt[0]["_i"], "form": alt_form, "why": alt[0]["why"]},
+    }]
 
 
 def lexiliasel(cluster):
