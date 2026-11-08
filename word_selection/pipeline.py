@@ -3,7 +3,7 @@ Also the leave-one-out evaluation over existing roots."""
 
 import random
 
-from . import abjad, blend, cluster as clustering, sinosphere, collision, form_rules, lexicon, select, sources, translit
+from . import abjad, blend, cluster as clustering, sinosphere, collision, form_rules, lexicon, select, sources, translit, vocalization
 from .align import distance, edit_count
 from .languages import BY_CODE, CODES
 
@@ -11,8 +11,43 @@ SEV_RANK = {"CLEAR": 0, "NOTE": 0, "CAUTION": 1, "WARN": 2, "BLOCK": 3}
 BLENDS_PER_CLUSTER = 8
 
 
-def enrich(words):
-    """Fill roman/ipa/etym/pos from the word's own Wiktionary entry; add Globasa forms."""
+def _arabic_dictionary(w, context):
+    """An unvocalized Arabic word: the Camel Morph vocalization dictionary first, its
+    Wiktionary-based forms after it as marked fallbacks."""
+    # only a romanization the source gave with this sense (a translation table's) may
+    # choose among readings; the entry's first one may belong to another homograph
+    roman_form = (w["forms"][0] if w["forms"] and w.get("roman") and not w.get("roman_from") else "")
+    got, flag = vocalization.arabic_forms(w["word"], context, roman_form)
+    if not got:
+        return
+    rest = [(f, how if "fallback" in how else f"{how} (fallback: after the vocalization dictionary)")
+            for f, how in w["forms_how"] if f not in {g for g, _ in got}]
+    w["forms_how"] = got + rest
+    w["forms"] = [f for f, _ in w["forms_how"]]
+    w["vocalized_by"] = "camel_morph"
+    if flag:
+        w.setdefault("flags", []).append(flag)
+
+
+def _persian_dictionary(w):
+    """A Persian word: KaamelDict first, Wiktionary-based forms after it as marked
+    fallbacks (Wiktionary's reading still picks among the dictionary's variants)."""
+    roman_form = w["forms"][0].replace(" ", "") if w["forms"] and w.get("roman") else ""
+    got, flag = vocalization.persian_forms(w["word"], roman_form)
+    if not got:
+        return
+    rest = [(f, how if "fallback" in how else f"{how} (fallback: after the vocalization dictionary)")
+            for f, how in w["forms_how"] if f not in {g for g, _ in got}]
+    w["forms_how"] = got + rest
+    w["forms"] = [f for f, _ in w["forms_how"]]
+    w["vocalized_by"] = "kaameldict"
+    if flag:
+        w.setdefault("flags", []).append(flag)
+
+
+def enrich(words, context=()):
+    """Fill roman/ipa/etym/pos from the word's own Wiktionary entry; add Globasa forms.
+    context: English words of the concept (to choose among dictionary readings)."""
     from .sources import wiktionary
     for w in words:
         info = wiktionary.lookup(w["lang"], w["word"])
@@ -37,11 +72,15 @@ def enrich(words):
                 w["forms_how"] = [(f, "translation-table roman (fallback)" if how == "roman" else how)
                                   for f, how in w["forms_how"]]
             w["forms"] = [f for f, _ in w["forms_how"]]
+            if w["lang"] == "ar" and not translit.arabic_script(w["word"]):
+                _arabic_dictionary(w, context)
+            elif w["lang"] == "fa":
+                _persian_dictionary(w)
         if w["lang"] in ("cmn", "ja", "ko", "vi"):        # clustering only
             w["han"] = sinosphere.han_spellings(w["lang"], w["word"], (w.get("forms") or [""])[0])
             w["native_reading"] = (w["lang"] == "ja" and not w["han"] and sinosphere.is_han_word(w["word"]))
             w["pivots"] = list(sinosphere.pivots(w["han"][0])) if w["han"] else []
-        w["romanized"] = bool(w.get("roman")) and bool(w["forms"])
+        w["romanized"] = (bool(w.get("roman")) or bool(w.get("vocalized_by"))) and bool(w["forms"])
         if not w["forms"]:
             w.setdefault("flags", []).append("needs romanization")
         if any(p.startswith("wikipedia") for p in w["provenance"]) and len(w["provenance"]) == 1:
@@ -243,7 +282,9 @@ def run(concept, overrides=None, only_sources=None):
     excluded = {tuple(x) for x in concept.get("excluded", [])}
     for w in words:
         w["excluded"] = (w["lang"], w["word"]) in excluded
-    enrich(words)
+    context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
+    context += [w["word"] for w in words if w["lang"] == "en"]
+    enrich(words, context)
     predict_vocalizations(words)
     apply_overrides(words, overrides or {})
     items = [dict(w, id=i) for i, w in enumerate(words)
@@ -282,7 +323,8 @@ def lexiliasel(cluster):
 # Leave-one-out evaluation
 # ---------------------------------------------------------------------------
 
-# Languages whose oracle form is the Wiktionary pronunciation when there is one:
+# Languages whose oracle form is the real pronunciation when there is one (the
+# vocalization dictionary, else Wiktionary):
 # LexiliAsel's Persian romanizations of European loans read the spelling (کبالت
 # kabalat, کازینو kazinu) where Wiktionary has the pronunciation (kobâlt, kâzino).
 # Arabic keeps LexiliAsel's: there Wiktionary's first reading is often another
@@ -303,6 +345,9 @@ def _members_for_root(root, mode, ix):
                 fs = translit.to_globasa(e["code"], e["word"], info["roman"][0] if info["roman"] else "",
                                          info["ipa"][0] if info["ipa"] else "")
                 spoken = fs[0][0] if fs else None
+            got, _ = vocalization.persian_forms(e["word"].lstrip("/ ").strip(), (spoken or "").replace(" ", ""))
+            if got:
+                spoken = got[0][0]
         form_from = "wiktionary pronunciation"
         if spoken:
             form = spoken
@@ -320,6 +365,13 @@ def _members_for_root(root, mode, ix):
             except Exception:
                 fs = []
             form = fs[0][0] if fs else ""
+            if e["code"] == "ar" and not translit.arabic_script(e["word"]):
+                got, _ = vocalization.arabic_forms(e["word"], [root.get("eng", "")] + [
+                    x["word"] for x in root["etymons"] if x["code"] == "en"])
+                form = got[0][0] if got else form
+            elif e["code"] == "fa":
+                got, _ = vocalization.persian_forms(e["word"].lstrip("/ ").strip(), form.replace(" ", "") if (roman or ipa) else "")
+                form = got[0][0] if got else form
         if form:
             members.append({"lang": e["code"], "form": form.replace(" ", ""), "word": e["word"], "pos": "",
                             "form_from": form_from if mode == "oracle" else "transliteration"})

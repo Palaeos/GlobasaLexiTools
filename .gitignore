@@ -2,3 +2,6 @@
 Models/
 # Lesson recordings decoded to WAV for the /splits page
 LessonAudioLabels/.cache/
+
+# Word Selector caches and downloaded third-party data (never commit: e.g. GPL dictionaries)
+word_selection_cache/
