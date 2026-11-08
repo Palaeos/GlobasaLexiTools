@@ -150,9 +150,68 @@ def add_han_cognates(words):
     return words
 
 
+MAX_DESCENDANTS = 40     # an etymon with more source-language descendants is too generic
+MAX_PER_LANG = 3
+
+
+ETYM_ROUNDS = 2          # a cognate's own etymons are followed once more
+
+
+def add_etym_cognates(words, rounds=ETYM_ROUNDS):
+    """Cognates by shared etymon that no source returned: a word's own etymons
+    (borrowings, derivations, inheritance from Sanskrit/Pali), then the other
+    source-language words from the same etymon (concept index `etym_reverse`):
+    English dukkha / Hindi दुःख -> Telugu దుఃఖము, Indonesian duka (Sanskrit दुःख,
+    Pali dukkha); English wu wei -> Mandarin 無為. An etymon in a source language is
+    added itself. Flagged for a meaning check: an etymon's descendants can drift."""
+    from .concept_index import ETYM_KINDS, INH_FROM
+    from .languages import DUMP_TO_CODE
+    from .sources.wiktionary import index, lookup
+    ix = index()
+    present = {(w["lang"], w["word"]) for w in words}
+    seen, per_lang, frontier = set(), {}, list(words)
+    for _ in range(rounds):          # English dukkha -> Pali dukkha -> Indonesian duka
+        etymons = {}                 # -> Sanskrit दुःख -> Hindi दुःख, Telugu దుఃఖము
+        for w in frontier:
+            for kind, src, term in lookup(w["lang"], w["word"])["etym"]:
+                if src.endswith("-pro") or not term or (src, term) in seen:
+                    continue
+                if kind in ETYM_KINDS or (kind == "inh" and src in INH_FROM):
+                    etymons.setdefault((src, term), f"{BY_CODE[w['lang']]['basa']} {w['word']}")
+        seen |= set(etymons)
+        added = _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE)
+        if not added:
+            break
+        words.extend(added)
+        frontier = added
+    return words
+
+
+def _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE):
+    added = []
+    for (src, term), via in etymons.items():
+        desc = ix.descendants(src, term)
+        if len(desc) > MAX_DESCENDANTS:
+            continue
+        cands = ([[src, term]] if src in DUMP_TO_CODE else []) + desc
+        for dl, word in cands:
+            code = DUMP_TO_CODE.get(dl)
+            if not code or code not in BY_CODE or (code, word) in present:
+                continue
+            if per_lang.get((src, term, code), 0) >= MAX_PER_LANG:
+                continue
+            per_lang[(src, term, code)] = per_lang.get((src, term, code), 0) + 1
+            present.add((code, word))
+            added.append({"lang": code, "word": word, "roman": "", "ipa": "", "sense": "", "url": "",
+                          "tags": [], "provenance": ["etym-cognate"],
+                          "flags": [f"shares the etymon {src} {term} with {via}; check the meaning"]})
+    return added
+
+
 def run(concept, overrides=None, only_sources=None):
     words, errors = sources.gather(concept, only=only_sources)
-    add_han_cognates(words)
+    add_etym_cognates(words)      # first: English wu wei brings Mandarin 無為 ...
+    add_han_cognates(words)       # ... which the Han spelling extends to ja, ko, vi
     excluded = {tuple(x) for x in concept.get("excluded", [])}
     for w in words:
         w["excluded"] = (w["lang"], w["word"]) in excluded

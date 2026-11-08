@@ -5,6 +5,8 @@ Sub-databases (all values msgpack):
   trans_qid     word\\0pos -> {sense: [QID, ...]}   (translation-table sense -> Wikidata)
   qid           QID -> [[lang, word, pos, sense_or_gloss, kind]]  kind: "t" table, "g" gloss
   reverse       lang\\0word -> [[en_word, pos, sense]]  (which tables list this word)
+  etym_reverse  src_lang\\0term -> [[lang, word]]  (source-language words borrowed or
+                derived from that etymon: sa दुःख -> hi दुःख, te దుఃఖము, id duka)
   entries       lang\\0word -> [entry, ...]  one per dump line (pos/etymology), where
                 entry = {pos, senses: [{g, raw, tags, qid, ex}], ipa: [[ipa, tags]],
                          roman: [...], etym: [[type, src_lang, src_term]]}
@@ -21,7 +23,7 @@ DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
 MAP_SIZE = 40 * 1024 ** 3
 # Arabic-script vowel marks + tatweel: Wiktionary titles are unvocalised
 _HARAKAT = re.compile("[\u064b-\u0652\u0670\u0640]")
-SUBDBS = [b"translations", b"trans_qid", b"qid", b"entries", b"reverse"]
+SUBDBS = [b"translations", b"trans_qid", b"qid", b"entries", b"reverse", b"etym_reverse"]
 
 
 def pack(v):
@@ -90,6 +92,11 @@ class ConceptIndex:
         return []
 
     # -- Any-language entries ----------------------------------------------
+    def descendants(self, src_lang, term):
+        """Source-language words whose etymology links them to (src_lang, term)."""
+        return self._get("etym_reverse", key(src_lang, etym_norm(src_lang, term))) or []
+
+
     def entries(self, lang, word):
         """Entries for a word, trying the exact form, then lower/capitalised."""
         bare = _HARAKAT.sub("", word)
@@ -145,6 +152,50 @@ def match_sense(sense_key, senses):
             if score > best:
                 best, best_i = score, i
     return best_i if best >= 0.5 else None
+
+
+# Etymology links that make two words cognate for word selection: borrowings and
+# derivations, and inheritance from the classical Indic languages (Hindi dukh <
+# Sanskrit duḥkha, a tadbhava). Inheritance from Latin or Old English would tie
+# nearly every European word to its neighbours.
+ETYM_KINDS = {"bor", "lbor", "slbor", "obor", "ubor", "translit", "der", "psm"}
+INH_FROM = {"sa", "pi", "pra", "inc-pra", "inc-mid"}
+
+
+def etym_norm(src_lang, term):
+    """Etymon key: NFC, no harakat, Sanskrit n-stem and nominative alike (कर्मन् ~ कर्म)."""
+    t = unicodedata.normalize("NFC", _HARAKAT.sub("", (term or "").strip().strip("*")))
+    if src_lang == "sa":
+        t = re.sub("न्$", "", t)
+    return t
+
+
+def build_etym_reverse(path=DIR, langs=None):
+    """Post-pass over `entries`: fill `etym_reverse` (no dump needed). langs: the dump
+    codes to index (default: the source languages)."""
+    from .languages import LANGS
+    langs = set(langs or {l["dump"] for l in LANGS})
+    idx = ConceptIndex(path, readonly=False)
+    rev = {}
+    with idx.env.begin() as txn:
+        for k, v in txn.cursor(db=idx.dbs["entries"]):
+            lang, word = k.decode("utf-8").split("\x00", 1)
+            if lang not in langs:
+                continue
+            for e in unpack(v):
+                for kind, src, term in e.get("etym", []):
+                    if src.endswith("-pro") or not term:
+                        continue
+                    if kind in ETYM_KINDS or (kind == "inh" and src in INH_FROM):
+                        refs = rev.setdefault((src, etym_norm(src, term)), [])
+                        if [lang, word] not in refs:
+                            refs.append([lang, word])
+    with idx.env.begin(write=True) as txn:
+        for (src, term), refs in rev.items():
+            txn.put(key(src, term), pack(refs[:500]), db=idx.dbs["etym_reverse"])
+    idx.close()
+    return len(rev)
+
 
 
 def build_reverse(path=DIR):
