@@ -240,3 +240,146 @@ def predict_all(src_lang, src_word, romans, tgt_lang, tgt_word):
                 if f not in out:
                     out.append(f)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Vocalization from a cognate in another script (Turkish akademi -> آکادمی)
+# ---------------------------------------------------------------------------
+# Most Arabic/Persian words with no romanization anywhere are loans whose cluster
+# also holds a Latin-script (or romanized) cognate: Turkish, which spells its
+# loans phonemically, or a European source. The script supplies the consonants;
+# the cognate supplies the unwritten vowels and the quality of a mater (Persian
+# و is o or u, ی is i or e). The fit cost is the cognate test.
+
+# Vowels a script can leave unwritten, per language (Iranian Persian a e o;
+# Arabic a i u), and how a cognate's other vowels map onto them
+UNWRITTEN = {"fa": {"a": "a", "e": "e", "o": "o", "i": "e", "u": "o"},
+             "ar": {"a": "a", "i": "i", "u": "u", "e": "i", "o": "u"}}
+# Vowel qualities a mater may stand for in loans
+MATER_VOWELS = {"fa": {"ا": ("a",), "و": ("u", "o"), "ی": ("i", "e")},
+                "ar": {"ا": ("a",), "و": ("u",), "ی": ("i",)}}     # Arabic has no e, o
+SKIP_PARTNER = 0.8      # a cognate consonant the script does not write
+SKIP_LETTER = 1.0       # a written letter the cognate lacks
+INSERT_VOWEL = 0.1      # an unwritten vowel taken from the cognate
+# accepted cost per written letter. Leave-one-out on LexiliAsel etymons with a
+# Wiktionary reading: 0.15 keeps 84% (fa) / 71% (ar) of true cognates while a
+# random other root's words fit 0.1% / 0.0% of the time (0.35: 94/90% vs 6.7/5.0%)
+FIT_MAX = 0.15
+
+
+def _options(lang, letter, first, last, madda=False):
+    """(sound to match, sound to output, cost) for one letter; madda: an initial
+    آ, which is always â (the normalised letters write it ا)."""
+    opts = []
+    for snd, kind in _realizations(lang, letter, first, last, False):
+        if madda and kind == "0":
+            continue
+        if kind == "F":                      # the ending is the language's own: fa ه -e, ar ة -a
+            for v in ("a", "e"):
+                opts.append((v, "e" if (lang == "fa" and letter == "ه") else "a" if letter == "ة" else snd, 0.0))
+            continue
+        if kind == "L" and letter in MATER_VOWELS[lang]:
+            for k, v in enumerate(MATER_VOWELS[lang][letter]):
+                opts.append((v, v, 0.05 * k))
+        else:
+            opts.append((snd, snd, 0.0))
+    if letter == "ی":                                  # i plus glide (آکسیوم âksiyom)
+        opts.append(("iy", "iy", 0.0))
+    if letter in ("و", "ی"):                          # consonantal w/v, y
+        opts.append(("w" if letter == "و" and lang == "ar" else ("v" if letter == "و" else "y"),) * 2 + (0.0,))
+        if letter == "و":
+            opts.append(("w", "v" if lang == "fa" else "w", 0.1))
+    return list(dict.fromkeys(opts))
+
+
+def vocalize_from(lang, word, partner_form):
+    """Reading of an unvocalized Arabic/Persian word from a cognate's form in Globasa
+    letters: (form, cost per written letter), or None if it does not fit (FIT_MAX)."""
+    from .align import sub_cost
+    L = _letters(lang, word)
+    P = (partner_form or "").replace(" ", "")
+    if not L or not P or lang not in UNWRITTEN:
+        return None
+    n, m = len(L), len(P)
+    INF = float("inf")
+    best = {(0, 0): (0.0, None)}
+    unwritten = UNWRITTEN[lang]
+    madda = _MARKS.sub("", word.strip()).startswith("آ")
+
+    def relax(state, cost, back):
+        if cost < best.get(state, (INF,))[0]:
+            best[state] = (cost, back)
+
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if (i, j) not in best:
+                continue
+            c0 = best[(i, j)][0]
+            if j < m:                                  # unwritten vowel / unwritten consonant
+                if P[j] in _V:
+                    # only between letters: a vowel-initial word starts with alef or
+                    # ع, and a final vowel is always written (ه -e; Arabic case vowels drop)
+                    if 0 < i < n:
+                        relax((i, j + 1), c0 + INSERT_VOWEL, (i, j, unwritten[P[j]]))
+                    else:
+                        relax((i, j + 1), c0 + SKIP_PARTNER, (i, j, ""))
+                else:
+                    relax((i, j + 1), c0 + SKIP_PARTNER, (i, j, ""))
+            if i == n:
+                continue
+            for match, out, extra in _options(lang, L[i], i == 0, i == n - 1, madda and i == 0):
+                k = len(match)
+                if k == 0:
+                    relax((i + 1, j), c0 + extra, (i, j, ""))
+                    continue
+                if j + k > m:
+                    continue
+                seg = P[j:j + k]
+                sc = sum(0 if a == b else (sub_cost(a, b) if (a in _V) == (b in _V) else 1.0)
+                         for a, b in zip(match, seg))
+                if sc <= 0.6:
+                    relax((i + 1, j + k), c0 + sc + extra, (i, j, out))
+            # a written letter the cognate lacks: keep its sound
+            snd = next((s for s, _k in _realizations(lang, L[i], i == 0, i == n - 1, False) if _k == "c"), "")
+            relax((i + 1, j), c0 + SKIP_LETTER, (i, j, snd))
+    if (n, m) not in best:
+        return None
+    cost = best[(n, m)][0] / n
+    if cost > FIT_MAX:
+        return None
+    out, key = [], (n, m)
+    while key != (0, 0):
+        i, j, s = best[key][1]
+        out.append(s)
+        key = (i, j)
+    form = "".join(out[::-1])
+    form = re.sub(r"([bcdfghjklmnprstvxyz])\1", r"\1", form)
+    return form, round(cost, 3)
+
+
+EUROPEAN = ("fr", "en", "es", "de", "ru")
+COGNATE_LANGS = ("tr",) + EUROPEAN + ("hi", "id", "sw")
+
+
+def vocalize_from_cognates(lang, word, partners):
+    """Best reading of an unvocalized ar/fa word from cognates [(code, form)]:
+    (form, cost, code) or None. A European fit marks a European loan, read from
+    Turkish (whose spelling of such loans is phonemic) or the European form;
+    otherwise Turkish is passed over (its vowel harmony: edeb, elmas for adab,
+    almas). Held out on 950 fa / 843 ar etymons with a Wiktionary reading
+    (FIT_MAX 0.35): 52.7% / 51.9% exact, 83.9% / 78.8% within one edit."""
+    fits = []
+    for code, form in partners:
+        if code not in COGNATE_LANGS or not form:
+            continue
+        got = vocalize_from(lang, word, form)
+        if got:
+            fits.append((got[1], got[0], code))
+    if not fits:
+        return None
+    if any(c in EUROPEAN for _, _, c in fits):
+        pool = [x for x in fits if x[2] in EUROPEAN + ("tr",)]
+        best = min(pool, key=lambda x: x[0] - (0.02 if x[2] == "tr" else 0))
+    else:
+        best = min([x for x in fits if x[2] != "tr"] or fits)
+    return best[1], best[0], best[2]

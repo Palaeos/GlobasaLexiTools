@@ -47,7 +47,9 @@ def enrich(words):
 def predict_vocalizations(words):
     """An Arabic or Persian word with no romanization takes readings predicted from a
     romanized word of the other language with the same spelling (abjad.predict_all:
-    vowel length carries the correspondence; Arabic i/u ~ Persian e/o)."""
+    vowel length carries the correspondence; Arabic i/u ~ Persian e/o); failing
+    that, from a cognate in another script that fits its spelling
+    (abjad.vocalize_from_cognates: Turkish akademi -> آکادمی akademi)."""
     for w in words:
         if w["lang"] not in abjad.LANGS or w.get("romanized") or w.get("excluded"):
             continue
@@ -70,6 +72,22 @@ def predict_vocalizations(words):
             w.setdefault("flags", []).append("vocalization predicted from the "
                                              + ("Persian" if w["lang"] == "ar" else "Arabic") + " spelling")
             w["flags"] = [f for f in w["flags"] if f != "needs romanization"]
+        elif not w.get("forms"):
+            # no same-spelling partner: a cognate in another script (Turkish akademi
+            # -> آکادمی) supplies the unwritten vowels, if it fits the spelling
+            partners = {}
+            for p in words:
+                if p["lang"] in abjad.COGNATE_LANGS and p.get("forms") and not p.get("excluded"):
+                    partners.setdefault((p["lang"], p["forms"][0]), p)
+            got = abjad.vocalize_from_cognates(w["lang"], w["word"], list(partners))
+            if got:
+                form, cost, code = got
+                src = next(p for (c, f), p in partners.items() if c == code)
+                w["forms"] = [form]
+                w["forms_how"] = [(form, f"vowels from {BY_CODE[code]['basa']} {src['word']} (fit {cost})")]
+                w.setdefault("flags", []).append(f"vocalization predicted from {BY_CODE[code]['basa']} "
+                                                 f"{src['word']}; check it")
+                w["flags"] = [f for f in w["flags"] if f != "needs romanization"]
     return words
 
 
@@ -255,7 +273,7 @@ def lexiliasel(cluster):
 # ---------------------------------------------------------------------------
 
 def _members_for_root(root, mode, ix):
-    members = []
+    members, formless = [], []
     for e in root["etymons"]:
         if e["code"] not in BY_CODE:
             continue
@@ -273,6 +291,12 @@ def _members_for_root(root, mode, ix):
             form = fs[0][0] if fs else ""
         if form:
             members.append({"lang": e["code"], "form": form.replace(" ", ""), "word": e["word"], "pos": ""})
+        elif mode != "oracle" and e["code"] in abjad.LANGS:
+            formless.append(e)
+    for e in formless:            # as predict_vocalizations: vowels from a fitting cognate
+        got = abjad.vocalize_from_cognates(e["code"], e["word"], [(m["lang"], m["form"]) for m in members])
+        if got:
+            members.append({"lang": e["code"], "form": got[0], "word": e["word"], "pos": ""})
     return members
 
 
