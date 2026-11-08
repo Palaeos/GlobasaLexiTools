@@ -53,10 +53,19 @@ def sense_check(member, terms):
     match = scored[0][1] if scored and scored[0][0] > 0 else None
     others = [s for o, s in scored if s is not match]
     flag = None
+    f = member.get("sense_fit") or {}
     if not info["senses"]:
         flag = "no own-language entry in Wiktionary (cannot confirm the sense)"
-    elif match is None:
-        flag = "none of its own-language senses mentions the concept's terms -- check the sense"
+    elif f.get("fit") == "shifted":
+        flag = (f"meaning shifted: \"{f['gloss']}\" has the concept's word only with a particle or as the means "
+                f"(as nicode < Hindi 'squeeze out' was replaced by bopu)")
+    elif f.get("fit") == "homonym":
+        flag = (f"another sense of the English word: \"{f['gloss']}\" (as miza leaned on Greek μάζα, "
+                f"physical mass, for the Mass)")
+    elif f.get("fit") == "ambiguous":
+        flag = f"check which sense: \"{f['gloss']}\" gives only the English word, which has other senses"
+    elif match is None or f.get("fit") == "unattested":
+        flag = "none of its own-language senses attests the concept -- check the sense"
     return {"lang": member["lang"], "word": member["word"], "match": match,
             "other_senses": others[:8], "n_senses": len(info["senses"]), "flag": flag,
             "etym": info["etym"][:6]}

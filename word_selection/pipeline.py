@@ -132,6 +132,44 @@ def foreign_reading(lang, word, forms_how, en_form, ipa="", roman=""):
     return out, f"written in Latin script in {basa}; no {basa} pronunciation found: read as the English word (fallback)"
 
 
+def check_meanings(words, concept):
+    """sense_fit for every source word: does its own entry attest the concept's
+    meaning? A shifted or unattested meaning is flagged and creates no agreement
+    (nicode < Hindi निचोड़ना "to extract by squeezing, squeeze out" was replaced by
+    bopu < Vietnamese bóp "to press (with hands)")."""
+    from . import sense_fit
+    if not sense_fit.concept_words(concept)[0]:
+        return words              # no English sense to check against (a taxon is its own key)
+    for w in words:
+        # English words come from the concept itself, except those found by etymology
+        if (w["lang"] == "en" and w.get("provenance") != ["etym-cognate"]) or w.get("excluded"):
+            continue
+        f = sense_fit.fit(w["lang"], w["word"], concept)
+        w["sense_fit"] = f
+        if f["fit"] == "shifted":
+            w.setdefault("flags", []).append(f"meaning shifted in its own entry: \"{f['gloss']}\" (the concept's word "
+                                             f"only with a particle or as the means); not counted as agreement")
+        if "etym-cognate" in w.get("provenance", []) and len(w["provenance"]) == 1 \
+                and f["fit"] in ("homonym", "shifted", "unattested") \
+                and (w["lang"], w["word"]) not in {tuple(x) for x in concept.get("included", [])}:
+            # a cognate found by etymology whose own entry gives another meaning
+            w["excluded"] = True
+            w["tags"] = sorted(set(w.get("tags", [])) | {"default-out"})
+            w.setdefault("flags", []).append("left out by default: an etymology cognate whose own entry does not "
+                                             "carry the meaning (tick it to include it)")
+        if f["fit"] == "homonym":
+            w.setdefault("flags", []).append(f"another sense of the English word: its own entry says \"{f['gloss']}\" "
+                                             f"(as miza leaned on Greek μάζα, physical mass, for the Mass); "
+                                             f"not counted as agreement")
+        elif f["fit"] == "ambiguous":
+            w.setdefault("flags", []).append(f"check which sense: its own entry gives only the English word "
+                                             f"(\"{f['gloss'][:60]}\"), which has other senses")
+        elif f["fit"] == "unattested":
+            w.setdefault("flags", []).append(f"check the meaning: its own entry does not name the concept "
+                                             f"(\"{f['gloss'][:80]}\"; a synonym may say the same)")
+    return words
+
+
 def check_foreign_spellings(words, latin_languages=False):
     """foreign_reading() for non-English words spelt in Latin letters that are also
     English words (in the concept, or with an English Wiktionary IPA). In a
@@ -370,13 +408,17 @@ MAX_PER_LANG = 3
 ETYM_ROUNDS = 2          # a cognate's own etymons are followed once more
 
 
-def add_etym_cognates(words, rounds=ETYM_ROUNDS):
+def add_etym_cognates(words, rounds=ETYM_ROUNDS, concept=None):
     """Cognates by shared etymon that no source returned: a word's own etymons
     (borrowings, derivations, inheritance from Sanskrit/Pali), then the other
     source-language words from the same etymon (concept index `etym_reverse`):
     English dukkha / Hindi दुःख -> Telugu దుఃఖము, Indonesian duka (Sanskrit दुःख,
     Pali dukkha); English wu wei -> Mandarin 無為. An etymon in a source language is
-    added itself. Flagged for a meaning check: an etymon's descendants can drift."""
+    added itself. Flagged for a meaning check: an etymon's descendants can drift.
+    Only the etymology of the entries that carry the concept's meaning is followed
+    (sense_fit.etymology_for_meaning: English mass the liturgy < missa, not
+    physical mass < massa < Greek μᾶζα, the confusion behind Globasa's miza)."""
+    from . import sense_fit
     from .concept_index import ETYM_KINDS, INH_FROM
     from .languages import DUMP_TO_CODE
     from .sources.wiktionary import index, lookup
@@ -386,7 +428,9 @@ def add_etym_cognates(words, rounds=ETYM_ROUNDS):
     for _ in range(rounds):          # English dukkha -> Pali dukkha -> Indonesian duka
         etymons = {}                 # -> Sanskrit दुःख -> Hindi दुःख, Telugu దుఃఖము
         for w in frontier:
-            for kind, src, term in lookup(w["lang"], w["word"])["etym"]:
+            etym = (sense_fit.etymology_for_meaning(w["lang"], w["word"], concept) if concept
+                    else lookup(w["lang"], w["word"])["etym"])
+            for kind, src, term in etym:
                 if src.endswith("-pro") or not term or (src, term) in seen:
                     continue
                 if kind in ETYM_KINDS or (kind == "inh" and src in INH_FROM):
@@ -423,7 +467,7 @@ def _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE):
 
 def run(concept, overrides=None, only_sources=None):
     words, errors = sources.gather(concept, only=only_sources)
-    add_etym_cognates(words)      # first: English wu wei brings Mandarin 無為 ...
+    add_etym_cognates(words, concept=concept)   # first: English wu wei brings Mandarin 無為 ...
     add_han_cognates(words)       # ... which the Han spelling extends to ja, ko, vi
     excluded = {tuple(x) for x in concept.get("excluded", [])}
     included = {tuple(x) for x in concept.get("included", [])}
@@ -434,6 +478,7 @@ def run(concept, overrides=None, only_sources=None):
     context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
     context += [w["word"] for w in words if w["lang"] == "en"]
     enrich(words, context)
+    check_meanings(words, concept)
     from . import cultural
     culture = cultural.detect(concept, words)
     # proper nouns / culture-specific words: every language's pronunciation is checked
@@ -482,6 +527,8 @@ def _support(form, members):
         label = f"{m['lang']} {m['word']} ({fs[0]})"
         if m.get("provenance") == ["etym-cognate"]:      # an unverified guess creates no agreement
             unver.append(label)
+        elif (m.get("sense_fit") or {}).get("fit") in ("shifted", "homonym"):
+            unver.append(f"{label}: own entry \"{m['sense_fit']['gloss'][:60]}\"")
         else:
             d = min(distance(form, f, normalized=True) for f in fs)
             if d <= SUPPORT_MAX:

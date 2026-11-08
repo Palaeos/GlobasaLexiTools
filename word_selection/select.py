@@ -46,7 +46,8 @@ def rank(clusters):
                     f"{c['support_tolerance']} of {c['support_form']}): {', '.join(c['loose'])}")
         if c.get("unverified"):
             u = c["unverified"]
-            why += (f"; unverified etymology guesses not counted: {', '.join(u[:3])}"
+            why += (f"; not counted (an unverified etymology guess, or its own entry gives another meaning): "
+                    f"{', '.join(u[:3])}"
                     + (f" and {len(u) - 3} more" if len(u) > 3 else ""))
         if c["tie_breaks"]:
             why += "; meets tie-break(s): " + ", ".join(c["tie_breaks"])

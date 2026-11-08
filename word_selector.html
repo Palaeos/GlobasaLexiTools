@@ -321,7 +321,7 @@ function renderSources() {
       const k = `${w.lang}\t${w.word}`, form = S.overrides[k] || (w.forms[0] || "");
       h += `<tr>${i === 0 ? `<td rowspan="${ws.length}">${esc(l.basa)}<div class="small muted">${esc(l.family)}</div></td>
         <td rowspan="${ws.length}">found</td>` : ""}
-        <td><label><input type="checkbox" data-k="${esc(k)}" ${(w.tags || []).includes("scientific-name") ? 'data-default-out="1"' : ""} ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
+        <td><label><input type="checkbox" data-k="${esc(k)}" ${(w.tags || []).some(t => t === "scientific-name" || t === "default-out") ? 'data-default-out="1"' : ""} ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
           ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}
           ${(w.titles || []).length ? `<div class="small muted">as titled: ${esc(w.titles.join(", "))}</div>` : ""}</td>
         <td class="small">${esc(w.roman || w.ipa || "")}</td>

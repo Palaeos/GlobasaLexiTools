@@ -154,7 +154,11 @@ RULES = [
                                          (Q, "", "very closely resembles at least one")],
      "support needs a member within distance 0.30 of the proposal: 95% of LexiliAsel's cited etymons are "
      "(false friends count, as baru < Hindi balu, English bear, Indonesian beruang)"),
-    (r"unverified etymology guesses", [], "an etymology-cognate guess (a fallback) creates no agreement until checked"),
+    (r"unverified etymology guess|does not attest the meaning|meaning shifted|another meaning|another sense of the English",
+     [(M, "Source Selection", "reliable online sources"), (M, "Semantics", "greatest support in the source")],
+     "a source counts for a meaning only where its own entry attests it: nicode (< Hindi निचोड़ना "
+     "'to extract by squeezing, squeeze out') was replaced by bopu (< Vietnamese bóp 'to press'); "
+     "miza (the Mass) leaned in part on Greek μάζα, which is physical mass"),
     # --- shaping: final vowels
     (r"a-posteriori vowel|ends in a vowel", [(M, "Exact Form", "tend to end in a vowel"),
                                             (M, "Exact Form", "Examples of a posteriori")], None),
