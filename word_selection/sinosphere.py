@@ -271,6 +271,24 @@ def words_spelled(spelling, lang):
     return out
 
 
+def _final_of(baxter):
+    """Middle Chinese final consonant of a Baxter reading: p t k m n ng, or ''."""
+    r = re.sub(r"[XH]$", "", baxter.strip())
+    m = re.search(r"(ng|m|n|p|t|k)$", r)
+    return m.group(1) if m else ""
+
+
+def mc_finals(spelling):
+    """{final consonant: [Baxter reading]} of a Han spelling's last character
+    (級 -> {'p': ['kip']}; 質 -> {'t': ['tsyit'], '': ['trijH']})."""
+    out = {}
+    if spelling:
+        for t in _trad(spelling[-1]):
+            for r in table()["mc"].get(t, []):
+                out.setdefault(_final_of(r), []).append(r)
+    return out
+
+
 def han_spellings(lang, word, form=None):
     """Normalised Han spellings of a word: itself (cmn; ja unless `form` is a native
     reading), its hanja (ko) or chữ Hán (vi). Empty when none is known."""

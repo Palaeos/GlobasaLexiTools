@@ -290,14 +290,54 @@ def _sino_forms(members):
     return out
 
 
-def codas_shown(members):
-    """{coda: [languages showing its reflex]} among the cluster's Sinosphere members."""
+def mc_final(members):
+    """The Middle Chinese final consonant of the cluster's Han spelling (its last
+    character's Baxter reading): (finals, reading) where finals is a set of the
+    possible finals ('' = none). 級 -> ({'p'}, 'kip'); 質 -> ({'t', ''}, ...);
+    (None, '') without a Han spelling or a reading."""
+    from . import sinosphere
+    for i in _sino(members):
+        m = members[i]
+        for sp in sinosphere.han_spellings(m["lang"], m.get("word", ""), m.get("form")):
+            fin = sinosphere.mc_finals(sp)
+            if fin:
+                return set(fin), "/".join(r for rs in fin.values() for r in rs[:1])
+    return None, ""
+
+
+def codas_shown(members, strict=False):
+    """{coda: [evidence]} for the cluster's final Middle Chinese consonant. The
+    Middle Chinese reading decides when it is unambiguous (級 kip: -p, and then
+    Japanese kyū's final -u is the -p's reflex; a whole-syllable Japanese -ku
+    after a character with no final is no coda); when it is ambiguous (質 tsyit /
+    trijH) the surface reflexes choose among its options; without a reading, the
+    surface reflexes alone (two of them if strict). Evidence: 'ja', 'ko', ... or
+    'MC:kip'."""
     mem = _sino_forms(members)
-    out = {}
+    surface = {}
     for coda, rx in CODA_REFLEX.items():
         langs = [l for l, p in rx.items() if mem.get(l) and re.search(p, mem[l])]
         if langs:
-            out[coda] = langs
+            surface[coda] = langs
+    finals, reading = mc_final(members)
+    if finals is None:
+        return {c: ls for c, ls in surface.items() if not strict or len(ls) >= 2}
+    if len(finals) == 1:
+        c = next(iter(finals))
+        if not c:
+            return {}
+        langs = list(surface.get(c, []))
+        if c == "p" and "ja" in mem and mem["ja"][-1] in VOWELS and "ja" not in langs:
+            langs.append("ja")                # kyū < kifu: the final -u is the -p
+        if c in ("p", "t", "k") and "cmn" in mem and mem["cmn"][-1] in VOWELS:
+            langs.append("cmn")               # 級 jí < kip: Mandarin lost the stop
+        return {c: langs + [f"MC:{reading}"]}
+    out = {}
+    for c, ls in surface.items():
+        if c in finals:
+            if c in ("p", "t", "k") and "cmn" in mem and mem["cmn"][-1] in VOWELS:
+                ls = ls + ["cmn"]
+            out[c] = ls + [f"MC:{reading}"]
     return out
 
 
@@ -316,25 +356,20 @@ def _coda_outcome(coda, root):
 
 @lru_cache(maxsize=1)
 def coda_stats():
-    """{coda: (Counter(suffix), {suffix: [example roots]}, roots)} from roots where at
-    least two Sinosphere languages show the coda's reflex."""
-    out = {}
-    data = []
+    """{coda: (Counter(suffix), {suffix: [example roots]}, roots)} from Sino-xenic
+    roots whose final Middle Chinese consonant is known (its reading, or two
+    surface reflexes)."""
+    out = {c: (collections.Counter(), collections.defaultdict(list), [0]) for c in CODA_REFLEX}
     for word, members in _root_members():
-        mem = _sino_forms(members)
-        if len(mem) >= 2:
-            data.append((word, mem))
-    for coda, rx in CODA_REFLEX.items():
-        cnt, ex = collections.Counter(), collections.defaultdict(list)
-        n = 0
-        for word, mem in data:
-            if sum(1 for l, p in rx.items() if mem.get(l) and re.search(p, mem[l])) >= 2:
-                n += 1
-                suf = _coda_outcome(coda, word)
-                cnt[suf] += 1
-                ex[suf].append(word)
-        out[coda] = (cnt, dict(ex), n)
-    return out
+        if len(_sino_forms(members)) < 2:
+            continue
+        for coda in codas_shown(members, strict=True):
+            cnt, ex, n = out[coda]
+            n[0] += 1
+            suf = _coda_outcome(coda, word)
+            cnt[suf] += 1
+            ex[suf].append(word)
+    return {c: (cnt, dict(ex), n[0]) for c, (cnt, ex, n) in out.items()}
 
 
 def coda_options(members):
@@ -346,7 +381,15 @@ def coda_options(members):
     out = []
     for coda, langs in codas_shown(members).items():
         cnt, ex, n = coda_stats()[coda]
-        shown = ", ".join(f"{l} -{re.search(CODA_REFLEX[coda][l], mem[l]).group(0)}" for l in langs)
+        def label(l):
+            if l.startswith("MC:"):
+                return f"Middle Chinese {l[3:]}"
+            if l == "cmn" and coda in ("p", "t", "k"):
+                return "cmn lost it"
+            hit = re.search(CODA_REFLEX[coda].get(l, "$^"), mem.get(l, ""))
+            return f"{l} -{hit.group(0)}" if hit else f"{l} -{mem.get(l, '')[-1:]}"
+        shown = ", ".join(label(l) for l in langs)
+        langs = [l for l in langs if not l.startswith("MC:")]
         # a rendering needs real precedent (MIN_COUNT roots: -ni / -nu for -n have one
         # each of 73 and only crowd out one-syllable roots like byen); stops always
         # keep the a priori -u, the methodology's own rule for East Asian sources

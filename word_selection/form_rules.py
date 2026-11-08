@@ -57,14 +57,23 @@ OPEN_STEM = re.compile(r"(tsu|ci|cu|ku|ki|fu|ng|l|t|k|p|m|n)$")
 
 
 def _sino_japanese_coda(m):
-    """A Sino-Japanese reading whose final -tsu/-chi/-ku/-ki is the epenthetic
-    syllable after a Middle Chinese stop (基質 kishitsu < kicit, cf. Korean gijil):
-    the etymon ends in a consonant, so its vowel is no a-posteriori vowel."""
-    if m["lang"] != "ja" or not SINO_JA_CODA.search((m.get("form") or "").replace(" ", "")):
+    """A Sino-Japanese reading whose final vowel belongs to a Middle Chinese stop:
+    the epenthetic -tsu/-chi/-ku/-ki after -t/-k (基質 kishitsu < kicit, cf. Korean
+    gijil), or the -u left by -p (級 kyū < kifu < kip, cf. Korean geup). The etymon
+    ends in a consonant, so the vowel is no a-posteriori vowel."""
+    f = (m.get("form") or "").replace(" ", "")
+    if m["lang"] != "ja" or not f or f[-1] not in VOWELS:
         return False
     from . import sinosphere
     w = m.get("word", "")
-    return sinosphere.is_han_word(w) and sinosphere.ja_reading_kind(w, m["form"].replace(" ", "")) != "native"
+    if not sinosphere.is_han_word(w) or sinosphere.ja_reading_kind(w, f) == "native":
+        return False
+    finals = set(sinosphere.mc_finals(w))
+    if finals == {"p"}:
+        return True
+    if not SINO_JA_CODA.search(f):
+        return False
+    return not finals or bool(finals & {"t", "k"})
 
 
 def ending_votes(core, members):
@@ -118,6 +127,10 @@ def shape(form, members, word_class="", coda=True):
     # core = form without one a-posteriori vowel (planeta -> planet; kakao stays)
     core = w[:-1] if len(w) > 2 and w[-1] in VOWELS and w[-2] not in VOWELS else w
     votes, vlangs = ending_votes(core, members)
+    # Mandarin's final vowel after a lost Middle Chinese stop (級 jí < kip) is the
+    # syllable's own vowel, not an a-posteriori vowel
+    from .precedent import codas_shown
+    lost = next((c for c, ev in codas_shown(members).items() if c in ("p", "t", "k") and "cmn" in ev), None)
     best = max(votes.values()) if votes else 1.0
     cons_langs = {m["lang"] for m in members if m["form"] and m["form"][-1] not in VOWELS}
     any_cons, many_cons = bool(cons_langs), len(cons_langs) >= 8
@@ -148,6 +161,10 @@ def shape(form, members, word_class="", coda=True):
         for v in vowel_options:
             f = core + v
             pen, why = support(v) + VOWEL_BIAS, f"a-posteriori vowel -{v} (as in {', '.join(sorted(vlangs[v]))})"
+            if lost and "cmn" in vlangs[v]:
+                others = sorted(vlangs[v] - {"cmn"})
+                why = (f"-{v}: Mandarin's own vowel, its Middle Chinese -{lost} lost"
+                       + (f" (also as in {', '.join(others)})" if others else ""))
             if many_cons:
                 pen, why = pen + 0.3, why + "; caveat 3 argues against a vowel"
             if syllables(f) >= 4 and any_cons:
