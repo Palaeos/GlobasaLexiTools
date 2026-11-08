@@ -21,7 +21,7 @@ from flask import Flask, jsonify, request, send_from_directory
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from word_selection import collision, contrasts, dossier, pipeline
+from word_selection import collision, contrasts, dossier, methodology, pipeline
 from word_selection.align import distance, edit_count
 from word_selection.languages import LANGS
 from word_selection.sources import seeds as seeds_src, wikidata, wiktionary
@@ -114,6 +114,9 @@ def run():
     res = _run(concept, overrides)
     for c in res["clusters"]:
         c["lexiliasel"] = pipeline.lexiliasel(c)
+        c["methodology"] = methodology.for_cluster(c)
+        for p in c.get("proposals") or []:
+            p["methodology"] = methodology.for_proposal(p)
     try:
         hint = contrasts.suggestion(concept)
     except Exception as e:      # the hint is optional; never sink the run
@@ -122,6 +125,12 @@ def run():
 
 
 _contrast_cache = {}
+
+
+@app.route("/api/methodology")
+def methodology_passages():
+    """Every passage of the methodology, Q&A and grammar phonotactics, for the reader."""
+    return jsonify(methodology.passages())
 
 
 @app.route("/api/contrasts", methods=["POST"])

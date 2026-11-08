@@ -70,6 +70,24 @@ input.gform { width: 9rem; font-weight: 600; }
 .status-no-data { color: var(--muted); font-style: italic; }
 .status-no-word { color: var(--caution); }
 details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
+/* methodology justifications and reader */
+.meth summary { font-weight: 600; font-size: .8rem; color: var(--accent); }
+.meth .step { font-size: .8rem; color: var(--muted); margin: .45rem 0 .15rem; }
+.meth blockquote, #methReader blockquote { margin: .15rem 0 .3rem; padding: .3rem .6rem; border-left: 3px solid var(--accent);
+  background: var(--bg); font-size: .85rem; line-height: 1.4; }
+.meth .src { font-size: .75rem; color: var(--muted); }
+.meth .basis { font-size: .8rem; color: var(--caution); margin: .1rem 0 .3rem; }
+.meth a, #methReader a { color: var(--link); }
+#methReader { position: fixed; top: 0; right: 0; bottom: 0; width: min(34rem, 100%); background: var(--surface);
+  border-left: 1px solid var(--border); box-shadow: -4px 0 16px rgba(0,0,0,.12); overflow-y: auto; z-index: 20;
+  padding: .8rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+#methReader header { position: sticky; top: 0; background: var(--surface); color: var(--text); padding: .2rem 0 .5rem;
+  display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+#methReader h3 { margin: 1rem 0 .3rem; } #methReader h4 { margin: .8rem 0 .2rem; font-size: .9rem; color: var(--muted); }
+#methReader blockquote { border-left-color: var(--border); }
+#methReader blockquote.parent-of { margin-left: 0; }
+#methReader blockquote.child { margin-left: 1.2rem; }
+#methReader blockquote.hit { border-left-color: var(--accent); background: var(--sel); }
 #msg { position: fixed; bottom: 1rem; right: 1rem; max-width: 30rem; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .8rem; font-size: .9rem;
   box-shadow: 0 2px 8px rgba(0,0,0,.15); }
@@ -80,7 +98,8 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
 <body>
 <header>
   <h1>Word Selector</h1>
-  <p>Methodology for Lexical Development, automated as far as it goes. You make the call.</p>
+  <p>Methodology for Lexical Development, automated as far as it goes. You make the call.
+    <button class="ghost" id="methOpen" type="button">Read the methodology</button></p>
 </header>
 <main>
 
@@ -161,6 +180,11 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
     <button class="ghost" id="copyBtn">Copy Markdown</button><span id="saveInfo" class="small muted"></span></div>
 </section>
 <div id="msg" hidden></div>
+<aside id="methReader" hidden aria-label="Methodology reader">
+  <header><b>Globasa methodology</b>
+    <span><button class="ghost" id="methAll">Show all</button> <button class="ghost" id="methClose">Close</button></span></header>
+  <div id="methBody"></div>
+</aside>
 </main>
 
 <script>
@@ -350,11 +374,49 @@ function renderClusters() {
     const mem = c.members.map(m => `<span class="chip" title="${esc(m.forms[0] || "")}">${esc(basa(m.lang))} ${esc(m.word)}</span>`).join("");
     d.innerHTML = `<div><b>#${i + 1}</b> ${esc(c.why)}</div><div>${mem}</div>
       ${c.existing_roots && c.existing_roots.length ? `<div class="flag">Already the etymon of: ${esc(c.existing_roots.join(", "))}</div>` : ""}
-      ${c.proposals ? "" : '<div class="small muted">(no proposals)</div>'}`;
+      ${c.proposals ? "" : '<div class="small muted">(no proposals)</div>'}
+      ${methHtml(c.methodology, "Why it ranks here: methodology")}`;
     d.onclick = async () => { if (!c.proposals) return; S.cluster = i; S.form = null; renderClusters(); renderProposals(); await loadDossier(); };
     box.appendChild(d);
   });
 }
+
+// ---------- methodology ----------
+// Each ranking step with the passages of the methodology, Q&A or grammar behind it;
+// "read in context" opens the reader at that passage. Steps that rest on lexicon
+// data or a fallback say so instead of quoting the methodology.
+function methHtml(list, title) {
+  if (!list || !list.length) return "";
+  const body = list.map(j => `<div class="step">${esc(j.step)}</div>${
+    j.passages.map(p => `<blockquote>${p.parent ? `<span class="src">${esc(p.parent)}</span><br>` : ""}${esc(p.text)}
+      <div class="src">${esc(p.doc_title)} · ${esc(p.section)} · <a href="#" data-meth="${esc(p.id)}">read in context</a></div></blockquote>`).join("")}${
+    j.basis ? `<div class="basis">${esc(j.basis)}</div>` : ""}`).join("");
+  return `<details class="meth" onclick="event.stopPropagation()"><summary>${esc(title)} (${list.length})</summary>${body}</details>`;
+}
+let METH = null;
+async function openReader(id) {
+  if (!METH) {
+    try { METH = await (await fetch("/api/methodology")).json(); }
+    catch (e) { msg("Could not load the methodology: " + e.message); return; }
+  }
+  const box = $("methBody"); let h = "", doc = "", sec = "";
+  METH.forEach(p => {
+    if (p.doc !== doc) { doc = p.doc; sec = ""; h += `<h3>${esc(p.doc_title)} <a class="small" href="${esc(p.url)}" target="_blank" rel="noopener">online</a></h3>`; }
+    if (p.section !== sec) { sec = p.section; h += `<h4>${esc(sec)}</h4>`; }
+    h += `<blockquote id="m-${esc(p.id)}" class="${p.parent ? "child" : ""}${p.id === id ? " hit" : ""}">${esc(p.text)}</blockquote>`;
+  });
+  box.innerHTML = h; $("methReader").hidden = false;
+  const el = id && document.getElementById("m-" + id);
+  if (el) el.scrollIntoView({ block: "center" });
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-meth]");
+  if (!a) return;
+  e.preventDefault(); e.stopPropagation(); openReader(a.dataset.meth);
+}, true);
+$("methClose").onclick = () => { $("methReader").hidden = true; };
+$("methAll").onclick = () => openReader(null);
+$("methOpen").onclick = () => openReader(null);
 
 function renderProposals() {
   const c = S.result.clusters[S.cluster]; $("proposals").hidden = !c;
@@ -366,7 +428,8 @@ function renderProposals() {
       <td class="form">${esc(p.form)}</td><td><span class="badge sev-${p.severity}">${p.severity}</span></td>
       <td>${p.total.toFixed(2)}</td><td class="small">${esc(p.trace.join("; "))}${
         (p.blend.notes || []).filter(n => n.includes("precedent") || n.includes("fallback")).map(n => `<div class="${n.includes("fallback") ? "flag" : "muted"}">${esc(n)}</div>`).join("")}${
-        p.blend.precedent && p.blend.precedent.departs ? `<div class="flag">departs from LexiliAsel precedent at ${p.blend.precedent.departs} position(s)</div>` : ""}</td>
+        p.blend.precedent && p.blend.precedent.departs ? `<div class="flag">departs from LexiliAsel precedent at ${p.blend.precedent.departs} position(s)</div>` : ""}${
+        methHtml(p.methodology, "Why: methodology")}</td>
       <td class="small">${esc(basa(cl.lang))} ${esc(cl.word)} (${cl.edits} edit${cl.edits === 1 ? "" : "s"})</td></tr>`;
   });
   $("propTable").innerHTML = h;
