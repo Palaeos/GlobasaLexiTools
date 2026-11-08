@@ -184,7 +184,7 @@ IPA = rules(
 
 # Vocalised Arabic script -> Globasa letters (preferred over a looked-up
 # romanization, which may belong to a different entry of the same spelling).
-AR_CONS = {"ب": "b", "ت": "t", "ث": "s", "ج": "j", "ح": "h", "خ": "h", "د": "d", "ذ": "z", "ر": "r",
+AR_CONS = {"ب": "b", "ت": "t", "ث": "t", "ج": "j", "ح": "h", "خ": "h", "د": "d", "ذ": "z", "ر": "r",
            "ز": "z", "س": "s", "ش": "x", "ص": "s", "ض": "d", "ط": "t", "ظ": "z", "ع": "h", "غ": "g",
            "ف": "f", "ق": "k", "ك": "k", "ک": "k", "ل": "l", "م": "m", "ن": "n", "ه": "h", "ة": "a",
            "پ": "b", "گ": "g", "چ": "c", "ژ": "j", "ڤ": "v"}
