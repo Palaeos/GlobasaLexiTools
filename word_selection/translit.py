@@ -137,6 +137,7 @@ SPANISH = rules(
 )
 
 GERMAN = rules(
+    ("x", "ks"),     # before sch -> x: Globasa x is /ʃ/ (Taxi, Unix)
     ("tsch", "c"), ("dsch", "j"), ("sch", "x"), ("^sp", "xp"), ("^st", "xt"),
     ("(?<=[aou])ch", "h"), ("ch", "h"), ("chs", "ks"), ("ck", "k"), ("ph", "f"), ("th", "t"),
     ("tz", "ts"), ("z", "ts"), ("qu", "kv"), ("ei", "ay"), ("ai", "ay"), ("eu", "oy"), ("äu", "oy"),
