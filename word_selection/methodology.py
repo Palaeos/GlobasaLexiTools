@@ -150,6 +150,11 @@ RULES = [
      "LexiliAsel precedent: how existing roots applied these rules"),
     (r"LexiliAsel precedent \((jako|indic)\)", [(M, "Exact Form", "middle ground")],
      "LexiliAsel precedent: how existing roots resolved such disagreements (not spelled out in the methodology)"),
+    (r"loose resemblances not counted", [(M, "Exact Form", "middle ground"),
+                                         (Q, "", "very closely resembles at least one")],
+     "support needs a member within distance 0.30 of the proposal: 95% of LexiliAsel's cited etymons are "
+     "(false friends count, as baru < Hindi balu, English bear, Indonesian beruang)"),
+    (r"unverified etymology guesses", [], "an etymology-cognate guess (a fallback) creates no agreement until checked"),
     # --- shaping: final vowels
     (r"a-posteriori vowel|ends in a vowel", [(M, "Exact Form", "tend to end in a vowel"),
                                             (M, "Exact Form", "Examples of a posteriori")], None),

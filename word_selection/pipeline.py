@@ -458,8 +458,51 @@ def run(concept, overrides=None, only_sources=None):
             c["cultural"] = dict(culture, form=origin["forms"][0])
             c["proposals"] = (cult + [p for p in c["proposals"] if p["form"] not in {q["form"] for q in cult}])[:12]
         c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
+    if any([agreement(c, word_class) for c in clusters]):   # every cluster assessed; re-rank if support changed
+        clusters = select.rank(clusters)
     return {"words": words, "status": statuses(words, concept.get("no_word", [])),
             "clusters": clusters, "errors": errors, "cultural": culture}
+
+
+SUPPORT_MAX = 0.30   # a member supports a form within this distance: 95% of LexiliAsel's cited
+                     # etymons are (median 0.11; baru ~ beruang 0.21), as the cluster threshold
+
+
+def _support(form, members):
+    """(supporting languages, loose members, unverified members) of a form."""
+    sup, loose, unver = set(), [], []
+    for m in members:
+        fs = [f.replace(" ", "") for f in m.get("forms") or []]
+        if not fs:
+            continue
+        label = f"{m['lang']} {m['word']} ({fs[0]})"
+        if m.get("provenance") == ["etym-cognate"]:      # an unverified guess creates no agreement
+            unver.append(label)
+        elif min(distance(form, f, normalized=True) for f in fs) <= SUPPORT_MAX:
+            sup.add(m["lang"])
+        else:
+            loose.append(label)
+    return sup, [x for x in loose if x.split()[0] not in sup], unver
+
+
+def agreement(c, word_class=""):
+    """Which of a cluster's languages its proposal really stands for: members within
+    SUPPORT_MAX of the form (sound decides, not etymology: false friends count, as
+    baru < Hindi balu, Indonesian beruang, English bear, German Bär), judged against
+    the best proposal only: a blend built to bridge two families
+    (zarnar between Arabic zarnab and Persian sorhdar) sits as close to both as
+    baru to balu and bear, so distance cannot tell a false pair from a false
+    friend, and bridging would manufacture agreement.
+    Sets c["support"], c["loose"], c["unverified"]; True if anything was set aside."""
+    props = c.get("proposals") or []
+    if not props:
+        c["support"] = None
+        return False
+    best = props[0]
+    sup, loose, unver = _support(best["form"].lower(), c["members"])
+    c.update(support=sorted(sup), support_form=best["form"], support_tolerance=SUPPORT_MAX,
+             loose=loose, unverified=unver)
+    return bool(loose or unver)
 
 
 def lexiliasel(cluster):

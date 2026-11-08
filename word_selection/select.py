@@ -5,6 +5,12 @@
    European + any; Persian and Turkish.
 3. No agreement (best cluster has one family): fallback order
    Mandarin (two-character words only) > Vietnamese > Telugu > Swahili > Arabic > Hindi.
+
+A cluster may carry "support": the languages whose words its best proposal stays
+close to (pipeline.agreement). Only they count. Sound decides, not etymology:
+false friends are fine (baru: Hindi balu, English bear, German Bär), but a
+resemblance no form can stay close to (Persian sorhdar ~ Arabic zarnab) is not
+agreement.
 """
 
 from .languages import BY_CODE, FALLBACK_ORDER, TIE_BREAKS, families
@@ -20,6 +26,8 @@ def rank(clusters):
     {langs, families, tie_breaks, rank_key, why}."""
     for c in clusters:
         langs = {m["lang"] for m in c["members"] if m["lang"] in BY_CODE}
+        if c.get("support") is not None:
+            langs &= set(c["support"])
         c["langs"] = sorted(langs, key=list(BY_CODE).index)
         c["families"] = sorted(families(langs))
         c["tie_breaks"] = [name for name, test in TIE_BREAKS if test(langs)]
@@ -33,6 +41,13 @@ def rank(clusters):
     clusters.sort(key=lambda c: c["rank_key"], reverse=True)
     for i, c in enumerate(clusters):
         why = describe(c["langs"])
+        if c.get("loose"):
+            why += (f"; loose resemblances not counted (no member of theirs within distance "
+                    f"{c['support_tolerance']} of {c['support_form']}): {', '.join(c['loose'])}")
+        if c.get("unverified"):
+            u = c["unverified"]
+            why += (f"; unverified etymology guesses not counted: {', '.join(u[:3])}"
+                    + (f" and {len(u) - 3} more" if len(u) > 3 else ""))
         if c["tie_breaks"]:
             why += "; meets tie-break(s): " + ", ".join(c["tie_breaks"])
         if i > 0:
