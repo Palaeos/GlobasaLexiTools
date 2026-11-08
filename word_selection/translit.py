@@ -332,6 +332,8 @@ def to_globasa(lang, word, roman="", ipa=""):
         elif ipa:
             add(ipa_to_globasa(ipa), "ipa (fallback: no romanization)")
     elif lang == "tr":
+        if r:     # tables romanize only words not read as spelt (Unix: yuniks)
+            add(apply(TURKISH, unicodedata.normalize("NFC", r)), "roman (Turkish pronunciation)")
         add(apply(TURKISH, lw), "spelling")
     elif lang == "es":
         add(apply(SPANISH, strip_marks(lw, keep="̃̈").replace("ñ", "ñ").replace("ü", "ü")), "spelling")

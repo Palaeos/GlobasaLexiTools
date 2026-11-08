@@ -90,6 +90,81 @@ def enrich(words, context=()):
     return words
 
 
+def foreign_reading(lang, word, forms_how, en_form, ipa="", roman=""):
+    """A word spelt like an English word (Unix) may be read as in English, or not:
+    German says [ˈjuːnɪks], French \\y.niks\\. The language's own pronunciation is
+    checked (its entry's IPA, its own Wiktionary edition: pronunciation.py, a
+    Turkish table romanization) and replaces the spelling reading when it is closer
+    to the English reading than to the spelling reading (a loan read as in English
+    or near it); native words that merely look English (German Hand) keep their
+    spelling. With no pronunciation found: the language's spelling reading
+    (Latin-script languages) or the English reading (a Latin-script spelling in
+    another script), as a marked fallback, with the other reading offered too.
+    Returns (forms_how, flag or '')."""
+    from . import pronunciation
+    from .languages import LANGS
+    latin = {l["code"] for l in LANGS if l["latin"]}
+    basa = BY_CODE[lang]["basa"]
+    spelt = [f for f, how in forms_how if how.startswith("spelling")]
+    spelling = spelt[0] if spelt else ""
+    own, own_how = "", ""
+    if ipa:
+        own, own_how = translit.ipa_to_globasa(ipa).replace(" ", ""), f"{basa} pronunciation [{ipa}]"
+    elif pronunciation.ipa(lang, word):
+        p = pronunciation.ipa(lang, word)[0]
+        own, own_how = translit.ipa_to_globasa(p).replace(" ", ""), f"{basa} Wiktionary pronunciation [{p}]"
+    elif roman and forms_how and "pronunciation" in forms_how[0][1]:
+        own, own_how = forms_how[0]
+    if own:
+        if spelling and distance(own, en_form) < distance(own, spelling):
+            return [(own, f"{own_how}: a loan read as in English or near it, not as spelt")] + \
+                [(f, h) for f, h in forms_how if f != own], ""
+        return forms_how, ""
+    if lang in latin:
+        if not spelling or spelling == en_form:
+            return forms_how, ""
+        out = [(f, h if "fallback" in h else f"{h} (fallback: no {basa} pronunciation found)") for f, h in forms_how]
+        out.append((en_form, f"as the English word (fallback: no {basa} pronunciation found)"))
+        return out, (f"spelt like English {word}, no {basa} pronunciation found: read by {basa} "
+                     f"spelling (fallback); the English reading is offered too")
+    out = [(en_form, f"as the English word (fallback: Latin-script spelling, no {basa} pronunciation found)")]
+    out += [(f, h if "fallback" in h else f"{h} (fallback)") for f, h in forms_how if f != en_form]
+    return out, f"written in Latin script in {basa}; no {basa} pronunciation found: read as the English word (fallback)"
+
+
+def check_foreign_spellings(words, latin_languages=False):
+    """foreign_reading() for non-English words spelt in Latin letters that are also
+    English words (in the concept, or with an English Wiktionary IPA). In a
+    Latin-script language only for proper nouns and culture-specific words
+    (latin_languages): for ordinary words Globasa favours the European spelling
+    (rum, not ram), and checking every German/French pronunciation cost 4 roots
+    (parti, vaselin, sabotaje lost to paati, vaslin, sabotas)."""
+    from .languages import LANGS
+    from .sources.wiktionary import lookup
+    latin = {l["code"] for l in LANGS if l["latin"]}
+    english = {w["word"].lower(): w for w in words if w["lang"] == "en" and w.get("forms")}
+    for w in words:
+        if w["lang"] == "en" or w.get("excluded") or not translit.LATIN.match(w["word"]):
+            continue
+        if w["lang"] in latin and not latin_languages:
+            continue
+        en = english.get(w["word"].lower())
+        if en:
+            en_form = en["forms"][0]
+        else:
+            info = lookup("en", w["word"])
+            en_form = translit.ipa_to_globasa(info["ipa"][0]).replace(" ", "") if info["ipa"] else ""
+        if not en_form:
+            continue
+        fh, flag = foreign_reading(w["lang"], w["word"], w.get("forms_how", []), en_form,
+                                   w.get("ipa", ""), w.get("roman", ""))
+        w["forms_how"] = fh
+        w["forms"] = list(dict.fromkeys(f for f, _ in fh))
+        if flag:
+            w.setdefault("flags", []).append(flag)
+    return words
+
+
 def predict_vocalizations(words):
     """An Arabic or Persian word with no romanization takes readings predicted from a
     romanized word of the other language with the same spelling (abjad.predict_all:
@@ -176,6 +251,77 @@ def propose(members, word_class="", exclude=(), exclude_root=None):
                       "collision": rep, "severity": rep["severity"], "total": round(total, 4),
                       "distances": sorted(dists, key=lambda x: x["d"])}
     return sorted(out.values(), key=lambda p: (SEV_RANK[p["severity"]], p["total"]))
+
+
+def _reading_support(readings, members):
+    """For each candidate reading of the source word, the languages whose checked
+    form is closest to it and within one phoneme of it."""
+    from .align import edit_count
+    support = {r: set() for r in readings}
+    for m in members:
+        if not m["form"] or m.get("fallback"):     # a fallback reading is no evidence
+            continue
+        d = {r: distance(m["form"], r) for r in readings}
+        best = min(d.values())
+        near = [r for r in readings if d[r] == best and edit_count(m["form"], r)[0] <= 1]
+        if len(near) == 1:
+            support[near[0]].add(m["lang"])
+    return support
+
+
+def propose_cultural(info, origin, members, word_class="", exclude=()):
+    """Proposals for a proper noun / culture-specific word: the source word's form
+    under the grammar's phonotactics for its kind (a proper noun is also offered as
+    a culture-specific common noun), not a blend.
+
+    A source in Latin script has two candidate readings: its pronunciation (Unix
+    yuniks) and its spelling (uniks; Globasa leans on spelling for Latin-script
+    recognizability: rum, not ram). They are ranked by the languages whose checked
+    readings match them: loans in other scripts carry the pronunciation (Russian
+    Юникс, Arabic يونكس yuniks), Latin-script languages may keep the spelling
+    (Spanish, French uniks). On a tie the spelling wins."""
+    from . import cultural
+    pron = origin["forms"][0].replace(" ", "")
+    spelt = next((f.replace(" ", "") for f, how in origin.get("forms_how", []) if how.startswith("spelling")), "")
+    readings = [pron] + ([spelt] if spelt and spelt != pron and translit.LATIN.match(origin["word"]) else [])
+    support = _reading_support(readings, members)
+    order = sorted(readings, key=lambda r: (-len(support[r]), r != spelt))
+    basa = BY_CODE[origin["lang"]]["basa"]
+    checked = cultural.checked_pronunciations(pron, members)
+    differ = [f"{l} {f}" for l, f, ok in checked if not ok]
+    head = (f"{'proper noun' if info['kind'] == 'proper' else 'culture-specific word'}: "
+            f"form follows {basa} {origin['word']} ({info['why']})")
+    out = []
+    kinds = [info["kind"]] + (["cultural"] if info["kind"] == "proper" else [])
+    for src in order:
+        which = "pronunciation" if src == pron else "spelling (Latin-script recognizability)"
+        backing = ", ".join(sorted(support[src])) or "no language"
+        note = f"{which} reading {src}: matched by {backing}" + (
+            f"; other readings: {', '.join(differ)}" if src == pron and differ else "")
+        # Methodology, words sourced from English: long vowels follow the pronunciation
+        # (Yuta for Utah), so spelt u- read /juː/ is yu-
+        if origin["lang"] == "en" and src == pron and src.startswith("yu") and spelt.startswith("u"):
+            note += "; methodology (words sourced from English): long vowels follow the pronunciation, as Yuta for Utah"
+        for kind in kinds:
+            for v in form_rules.shape(src, members, word_class, coda=False, kind=kind)[:1 if kind == "proper" else 2]:
+                f = v["form"]
+                shown = f[:1].upper() + f[1:] if kind == "proper" else f
+                if any(p["form"] == shown for p in out):
+                    continue
+                rep = collision.check(f, exclude=exclude, kind=kind)
+                dists = [{"lang": m["lang"], "word": m.get("word", ""), "form": m["form"],
+                          "d": round(distance(f, m["form"], normalized=True), 3), "edits": edit_count(f, m["form"])[0]}
+                         for m in members]
+                label = "proper noun" if kind == "proper" else "culture-specific word"
+                out.append({"form": shown, "kind": kind, "reading": which, "support": sorted(support[src]),
+                            "blend": {"form": src, "score": 0.0, "origin": f"{label}: {basa} {origin['word']}",
+                                      "notes": [head, note], "closest": None,
+                                      "precedent": {"columns": 0, "departs": 0}},
+                            "trace": [f"{label} phonotactics (grammar)", f"{which} reading"] + v["trace"],
+                            "shape_penalty": round(v["penalty"], 3), "collision": rep, "severity": rep["severity"],
+                            "total": round(v["penalty"], 4), "distances": sorted(dists, key=lambda x: x["d"])})
+    # proper nouns first, then the culture-specific forms, each in reading order
+    return sorted(out, key=lambda p: (p["kind"] != info["kind"], order.index(p["blend"]["form"])))
 
 
 def add_han_cognates(words):
@@ -285,19 +431,32 @@ def run(concept, overrides=None, only_sources=None):
     context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
     context += [w["word"] for w in words if w["lang"] == "en"]
     enrich(words, context)
+    from . import cultural
+    culture = cultural.detect(concept, words)
+    # proper nouns / culture-specific words: every language's pronunciation is checked
+    check_foreign_spellings(words, latin_languages=bool(culture))
     predict_vocalizations(words)
     apply_overrides(words, overrides or {})
     items = [dict(w, id=i) for i, w in enumerate(words)
              if not w["excluded"] and (w["forms"] or abjad.skeletons(w["lang"], w["word"]))]
     clusters = select.rank(clustering.cluster(items))
     word_class = concept.get("word_class", "")
+    origin = cultural.origin_member(culture, words) if culture else None
     for c in clusters:
         members = [{"lang": m["lang"], "form": m["forms"][0], "word": m["word"], "pos": m.get("pos", "")}
                    for m in c["members"] if m["forms"]]   # spelling-only members have no form to blend
         c["proposals"] = propose(members, word_class)[:12] if members else []
+        for mm, m in zip([m for m in c["members"] if m["forms"]], members):
+            m["fallback"] = "fallback" in ((mm.get("forms_how") or [("", "")])[0][1])
+        if origin and any(m is origin or (m["lang"], m["word"]) == (origin["lang"], origin["word"])
+                          for m in c["members"]):
+            # proper noun / culture-specific word: the source's form leads (unless blocked)
+            cult = [p for p in propose_cultural(culture, origin, members, word_class) if p["severity"] != "BLOCK"]
+            c["cultural"] = dict(culture, form=origin["forms"][0])
+            c["proposals"] = (cult + [p for p in c["proposals"] if p["form"] not in {q["form"] for q in cult}])[:12]
         c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
     return {"words": words, "status": statuses(words, concept.get("no_word", [])),
-            "clusters": clusters, "errors": errors}
+            "clusters": clusters, "errors": errors, "cultural": culture}
 
 
 def lexiliasel(cluster):
@@ -330,6 +489,10 @@ def lexiliasel(cluster):
 # Arabic keeps LexiliAsel's: there Wiktionary's first reading is often another
 # word of the same spelling (لفظ lafaza for lafẓ) or keeps a case ending.
 PRONUNCIATION_ORACLE = {"fa"}
+# Latin-script spellings in a non-Latin-script language, spelt like the root's
+# English etymon: read by foreign_reading, as the pipeline does (ordinary roots:
+# Latin-script languages keep their spelling)
+FOREIGN_CHECK = True
 
 
 def _members_for_root(root, mode, ix):
@@ -372,6 +535,21 @@ def _members_for_root(root, mode, ix):
             elif e["code"] == "fa":
                 got, _ = vocalization.persian_forms(e["word"].lstrip("/ ").strip(), form.replace(" ", "") if (roman or ipa) else "")
                 form = got[0][0] if got else form
+        if form and FOREIGN_CHECK and e["code"] != "en" and not BY_CODE[e["code"]]["latin"] \
+                and translit.LATIN.match(e["word"]) and not e["roman"]:
+            en = next((x for x in root["etymons"] if x["code"] == "en"
+                       and x["word"].lower() == e["word"].lower()), None)
+            if en:
+                from .sources.wiktionary import lookup
+                ei = lookup("en", en["word"])
+                en_form = translit.ipa_to_globasa(ei["ipa"][0]).replace(" ", "") if ei["ipa"] else ""
+                if en_form:
+                    wi = lookup(e["code"], e["word"])
+                    fh = translit.to_globasa(e["code"], e["word"], wi["roman"][0] if wi["roman"] else "",
+                                             wi["ipa"][0] if wi["ipa"] else "")
+                    fh, _ = foreign_reading(e["code"], e["word"], fh, en_form,
+                                            wi["ipa"][0] if wi["ipa"] else "", wi["roman"][0] if wi["roman"] else "")
+                    form = fh[0][0] if fh else form
         if form:
             members.append({"lang": e["code"], "form": form.replace(" ", ""), "word": e["word"], "pos": "",
                             "form_from": form_from if mode == "oracle" else "transliteration"})
