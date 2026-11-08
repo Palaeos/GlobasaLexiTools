@@ -39,10 +39,22 @@ def _key(concept, overrides):
     return hashlib.sha1(json.dumps([concept, overrides], sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
+PROGRESS = {"stage": "", "started": 0.0, "running": False}
+
+
+def _progress(stage):
+    PROGRESS["stage"] = stage
+
+
 def _run(concept, overrides):
+    import time
     k = _key(concept, overrides)
     if k not in _cache:
-        _cache[k] = pipeline.run(concept, overrides)
+        PROGRESS.update(stage="Starting", started=time.time(), running=True)
+        try:
+            _cache[k] = pipeline.run(concept, overrides, progress=_progress)
+        finally:
+            PROGRESS["running"] = False
     return _cache[k]
 
 
@@ -127,6 +139,23 @@ def run():
 
 
 _contrast_cache = {}
+
+
+@app.route("/api/entry")
+def entry():
+    """A source word's own-language Wiktionary senses, to investigate its meaning."""
+    lang, word = request.args.get("lang", ""), request.args.get("word", "")
+    info = wiktionary.lookup(lang, word)
+    return jsonify({"lang": lang, "word": word, "senses": [{"pos": s["pos"], "gloss": s["gloss"], "tags": s["tags"]}
+                                                          for s in info["senses"]][:30],
+                    "etym": info["etym"][:8], "ipa": info["ipa"][:3], "roman": info["roman"][:3]})
+
+
+@app.route("/api/progress")
+def progress():
+    """The running pipeline's current stage, for the page to show while it waits."""
+    import time
+    return jsonify({**PROGRESS, "elapsed": round(time.time() - PROGRESS["started"]) if PROGRESS["running"] else 0})
 
 
 @app.route("/api/methodology")

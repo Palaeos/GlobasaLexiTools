@@ -140,6 +140,8 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
     <button id="addTaxon">Add taxon</button></div>
   <h3>This concept</h3>
   <div id="conceptChips" class="row"><span class="muted small">Nothing yet.</span></div>
+  <div class="row"><label class="small"><input type="checkbox" id="etymCog"> Also add cognates found by etymology
+    (dukkha → Telugu దుఃఖము; flagged, and left out where their own entry gives another meaning)</label></div>
   <div class="row"><button id="runBtn">Gather and propose</button><span id="runInfo" class="muted small"></span></div>
 </section>
 
@@ -294,17 +296,69 @@ $("addQid").onclick = () => { const q = $("qidIn").value.trim().toUpperCase(); i
 // ---------- run ----------
 async function run() {
   S.concept.label = $("label").value.trim(); S.concept.word_class = $("wclass").value;
-  $("runBtn").disabled = true; $("runInfo").textContent = "Gathering sources and blending…";
+  S.concept.etym_cognates = $("etymCog").checked;
+  $("runBtn").disabled = true; $("runInfo").textContent = "Starting…";
+  // show the pipeline's current stage while waiting (a run can take minutes)
+  const poll = setInterval(async () => {
+    try {
+      const p = await (await fetch("/api/progress")).json();
+      if (p.running) $("runInfo").textContent = `${p.stage}… (${p.elapsed} s)`;
+    } catch (e) { /* the run itself reports errors */ }
+  }, 800);
   try {
     S.result = await api("/api/run", { concept: S.concept, overrides: S.overrides });
+    clearInterval(poll);
     S.cluster = 0; S.form = null;
     $("runInfo").textContent = `${S.result.words.length} source words, ${S.result.clusters.length} clusters` +
       (S.result.errors.length ? ` — ${S.result.errors.join("; ")}` : "");
     renderSources(); renderContrastHint(); renderClusters(); renderProposals(); await loadDossier();
-  } catch (e) { $("runInfo").textContent = e.message; }
+  } catch (e) { clearInterval(poll); $("runInfo").textContent = e.message; }
   $("runBtn").disabled = false;
 }
 $("runBtn").onclick = run; $("rerun").onclick = run;
+
+// Dictionaries to investigate a word's meaning yourself, for the interface language
+// (English): bilingual X-English dictionaries first, a monolingual one last
+const MONO = " (monolingual)";
+const DICTS = {
+  en: [["Merriam-Webster", w => `https://www.merriam-webster.com/dictionary/${w}`]],
+  es: [["SpanishDict", w => `https://www.spanishdict.com/translate/${w}`], ["WordReference", w => `https://www.wordreference.com/es/en/translation.asp?spen=${w}`], ["RAE" + MONO, w => `https://dle.rae.es/${w}`]],
+  fr: [["WordReference", w => `https://www.wordreference.com/fren/${w}`], ["CNRTL" + MONO, w => `https://www.cnrtl.fr/definition/${w}`]],
+  de: [["dict.cc", w => `https://www.dict.cc/?s=${w}`], ["LEO", w => `https://dict.leo.org/german-english/${w}`], ["Duden" + MONO, w => `https://www.duden.de/suchen/dudenonline/${w}`]],
+  ru: [["WordReference", w => `https://www.wordreference.com/ruen/${w}`], ["ru.wiktionary" + MONO, w => `https://ru.wiktionary.org/wiki/${w}`]],
+  cmn: [["MDBG", w => `https://www.mdbg.net/chinese/dictionary?wdqb=${w}`]],
+  ja: [["Jisho", w => `https://jisho.org/search/${w}`]],
+  ko: [["Naver English", w => `https://en.dict.naver.com/#/search?query=${w}`]],
+  vi: [["VDict", w => `https://vdict.com/${w},2,0,0.html`], ["vi.wiktionary" + MONO, w => `https://vi.wiktionary.org/wiki/${w}`]],
+  hi: [["Shabdkosh", w => `https://www.shabdkosh.com/search-dictionary?lc=hi&sl=hi&tl=en&e=${w}`]],
+  te: [["Andhrabharati", w => `https://www.andhrabharati.com/dictionary/index.php?w=${w}`]],
+  ar: [["Almaany", w => `https://www.almaany.com/en/dict/ar-en/${w}/`]],
+  fa: [["Abadis", w => `https://abadis.ir/?lntype=fatoen&word=${w}`]],
+  tr: [["Tureng", w => `https://tureng.com/en/turkish-english/${w}`], ["TDK" + MONO, w => `https://sozluk.gov.tr/?kelime=${w}`]],
+  id: [["Glosbe", w => `https://glosbe.com/id/en/${w}`], ["KBBI" + MONO, w => `https://kbbi.kemdikbud.go.id/entri/${w}`]],
+  sw: [["Glosbe", w => `https://glosbe.com/sw/en/${w}`], ["sw.wiktionary" + MONO, w => `https://sw.wiktionary.org/wiki/${w}`]],
+};
+function dictLinks(lang, word) {
+  const e = encodeURIComponent(word);
+  const links = [[`Wiktionary`, `https://en.wiktionary.org/wiki/${e}`]].concat((DICTS[lang] || []).map(([n, f]) => [n, f(e)]));
+  return links.map(([n, u]) => `<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`).join(" · ");
+}
+document.addEventListener("click", async e => {
+  const a = e.target.closest("[data-entry]");
+  if (!a) return;
+  e.preventDefault();
+  const box = document.querySelector(`[data-entrybox="${CSS.escape(a.dataset.entry)}"]`);
+  if (!box) return;
+  if (!box.hidden) { box.hidden = true; return; }
+  const [lang, word] = a.dataset.entry.split("\t");
+  box.hidden = false; box.textContent = "Looking it up…";
+  try {
+    const r = await (await fetch(`/api/entry?lang=${encodeURIComponent(lang)}&word=${encodeURIComponent(word)}`)).json();
+    box.innerHTML = r.senses.length ? `<ol>${r.senses.map(s => `<li><i>${esc(s.pos)}</i> ${esc(s.gloss)}${
+      s.tags && s.tags.length ? ` <span class="muted">(${esc(s.tags.join(", "))})</span>` : ""}</li>`).join("")}</ol>`
+      : '<span class="muted">No entry for it in English Wiktionary: use the dictionaries above.</span>';
+  } catch (err) { box.textContent = "Lookup failed: " + err.message; }
+});
 
 function renderSources() {
   $("sources").hidden = false;
@@ -323,6 +377,8 @@ function renderSources() {
         <td rowspan="${ws.length}">found</td>` : ""}
         <td><label><input type="checkbox" data-k="${esc(k)}" ${(w.tags || []).some(t => t === "scientific-name" || t === "default-out") ? 'data-default-out="1"' : ""} ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
           ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}
+          <div class="small">${dictLinks(w.lang, w.word)} · <a href="#" data-entry="${esc(k)}">own-language senses</a></div>
+          <div class="small" data-entrybox="${esc(k)}" hidden></div>
           ${(w.titles || []).length ? `<div class="small muted">as titled: ${esc(w.titles.join(", "))}</div>` : ""}</td>
         <td class="small">${esc(w.roman || w.ipa || "")}</td>
         <td><input class="gform" type="text" value="${esc(form)}" data-ok="${esc(k)}" data-lang="${w.lang}" data-word="${esc(w.word)}">

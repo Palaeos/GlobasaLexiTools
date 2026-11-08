@@ -465,9 +465,14 @@ def _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE):
     return added
 
 
-def run(concept, overrides=None, only_sources=None):
+def run(concept, overrides=None, only_sources=None, progress=None):
+    """progress(stage): called at each stage, for a waiting user (the page shows it)."""
+    say = progress or (lambda stage: None)
+    say("Gathering source words (Wiktionary, Wikidata, Wikispecies, seeds)")
     words, errors = sources.gather(concept, only=only_sources)
-    add_etym_cognates(words, concept=concept)   # first: English wu wei brings Mandarin 無為 ...
+    say(f"Following etymologies and Han spellings ({len(words)} words so far)")
+    if concept.get("etym_cognates"):   # opt-in (user: not by default): English wu wei brings Mandarin 無為 ...
+        add_etym_cognates(words, concept=concept)
     add_han_cognates(words)       # ... which the Han spelling extends to ja, ko, vi
     excluded = {tuple(x) for x in concept.get("excluded", [])}
     included = {tuple(x) for x in concept.get("included", [])}
@@ -477,20 +482,25 @@ def run(concept, overrides=None, only_sources=None):
             "scientific-name" in w.get("tags", []) and (w["lang"], w["word"]) not in included)
     context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
     context += [w["word"] for w in words if w["lang"] == "en"]
+    say(f"Reading pronunciations and vocalizing {len(words)} words")
     enrich(words, context)
+    say("Checking each word's meaning in its own dictionary entry")
     check_meanings(words, concept)
     from . import cultural
     culture = cultural.detect(concept, words)
     # proper nouns / culture-specific words: every language's pronunciation is checked
+    say("Checking how each language pronounces loans; predicting missing vowels")
     check_foreign_spellings(words, latin_languages=bool(culture))
     predict_vocalizations(words)
     apply_overrides(words, overrides or {})
     items = [dict(w, id=i) for i, w in enumerate(words)
              if not w["excluded"] and (w["forms"] or abjad.skeletons(w["lang"], w["word"]))]
+    say(f"Clustering {len(items)} words by sound and spelling")
     clusters = select.rank(clustering.cluster(items))
     word_class = concept.get("word_class", "")
     origin = cultural.origin_member(culture, words) if culture else None
-    for c in clusters:
+    for k, c in enumerate(clusters):
+        say(f"Blending and checking proposals: cluster {k + 1} of {len(clusters)}")
         members = [{"lang": m["lang"], "form": m["forms"][0], "word": m["word"], "pos": m.get("pos", "")}
                    for m in c["members"] if m["forms"]]   # spelling-only members have no form to blend
         c["proposals"] = propose(members, word_class)[:12] if members else []
@@ -503,6 +513,7 @@ def run(concept, overrides=None, only_sources=None):
             c["cultural"] = dict(culture, form=origin["forms"][0])
             c["proposals"] = (cult + [p for p in c["proposals"] if p["form"] not in {q["form"] for q in cult}])[:12]
         c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
+    say("Ranking clusters by real agreement")
     if any([agreement(c, word_class) for c in clusters]):   # every cluster assessed; re-rank if support changed
         clusters = select.rank(clusters)
     questions = team_questions(clusters)
