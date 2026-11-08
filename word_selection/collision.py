@@ -32,9 +32,22 @@ EXTRA_PREFIXES = {"pos", "nen", "wal", "ri", "ru", "be", "du", "aw", "day", "lil
 SEVERITY = ["CLEAR", "NOTE", "CAUTION", "WARN", "BLOCK"]
 
 
-def phonotactics(w):
-    """Violations of the documented rules (xwexi gramati/abece-ji-lafuzu).
-    Syllable structure (C)(C)V(C); word-final coda restricted to f l m n r s w x y."""
+KINDS = ("ordinary", "proper", "cultural")
+
+
+def phonotactics(w, kind="ordinary"):
+    """Violations of the documented rules (xwexi gramati/abece-ji-lafuzu), by kind:
+      ordinary  (C)(C)V(C); word-final coda one of f l m n r s w x y; no coda-onset
+                double stops; no nucleus-onset iy/uw, no onset-nucleus wu/yi
+      proper    (C)(C)V(C)(C): any final consonant, codas of up to two consonants
+                also word-finally (Madrid, Polska, Budapest), double stops allowed,
+                iy/uw and wu/yi allowed (Kuweyti, Wuhan)
+      cultural  ordinary rules word-finally, proper-noun rules elsewhere (teriyaki,
+                koktel, bakgamon, blakjaku, jazu, vodka, futbal)
+    The nucleus-coda caveat (-iy -iw -uy -uw) holds for all three."""
+    if kind not in KINDS:
+        raise ValueError(kind)
+    lax = kind in ("proper", "cultural")          # proper-noun rules inside the word
     out = []
     if not re.fullmatch(r"[a-z]+", w):
         return ["non-alphabetic"]
@@ -43,10 +56,15 @@ def phonotactics(w):
     if not (set(w) & VOWELS):
         return out + ["no vowel"]
     if w[-1] not in VOWELS:
-        if w[-1] not in FINAL_CODA:
-            out.append(f"illegal word-final '{w[-1]}'")
-        if len(w) > 1 and w[-2] not in VOWELS:
-            out.append("final consonant cluster (coda is max 1)")
+        final = re.search(r"[^aeiou]+$", w).group(0)
+        if kind == "proper":
+            if len(final) > 2:
+                out.append(f"final coda '{final}' too long (max 2)")
+        else:
+            if w[-1] not in FINAL_CODA:
+                out.append(f"illegal word-final '{w[-1]}'")
+            if len(final) > 1:
+                out.append("final consonant cluster (coda is max 1)")
     m = re.match(r"^([^aeiou]+)", w)
     if m:
         o = m.group(1)
@@ -56,15 +74,15 @@ def phonotactics(w):
             out.append(f"onset '{o}' not a permitted cluster")
     for m in re.finditer(r"(?=[aeiou]([^aeiou]+)[aeiou])", w):
         run = m.group(1)
-        if len(run) > 3:
-            out.append(f"medial run '{run}' too long (max coda1+onset2)")
+        if len(run) > (4 if lax else 3):
+            out.append(f"medial run '{run}' too long (max coda{2 if lax else 1}+onset2)")
             continue
         ok = False
-        for cut in (0, 1):
+        for cut in ((0, 1, 2) if lax else (0, 1)):
             coda, onset = run[:cut], run[cut:]
             if not onset or len(onset) > 2 or (len(onset) == 2 and onset not in ONSET2):
                 continue
-            if coda and coda in STOPS and onset[0] in STOPS:
+            if not lax and coda and coda in STOPS and onset[0] in STOPS:
                 continue
             ok = True
             break
@@ -75,14 +93,15 @@ def phonotactics(w):
     for bad in ("iy", "iw", "uy", "uw"):
         if re.search(bad + r"(?![aeiou])", w):
             out.append(f"nucleus-coda '{bad}' not allowed")
-    if re.search(r"iy[aeiou]", w):
-        out.append("nucleus-onset 'iy' not allowed")
-    if re.search(r"uw[aeiou]", w):
-        out.append("nucleus-onset 'uw' not allowed")
-    if "wu" in w:
-        out.append("onset-nucleus 'wu' not allowed")
-    if "yi" in w:
-        out.append("onset-nucleus 'yi' not allowed")
+    if not lax:
+        if re.search(r"iy[aeiou]", w):
+            out.append("nucleus-onset 'iy' not allowed")
+        if re.search(r"uw[aeiou]", w):
+            out.append("nucleus-onset 'uw' not allowed")
+        if "wu" in w:
+            out.append("onset-nucleus 'wu' not allowed")
+        if "yi" in w:
+            out.append("onset-nucleus 'yi' not allowed")
     return out
 
 
@@ -139,13 +158,14 @@ def pair_tier(cand, other):
 TIER_SEVERITY = {"NEVER": "BLOCK", "LAST_RESORT": "WARN", "AVOID": "CAUTION", "ANY": "NOTE"}
 
 
-def check(cand, exclude=()):
-    """Full report for a candidate. `exclude`: words to ignore (leave-one-out eval)."""
+def check(cand, exclude=(), kind="ordinary"):
+    """Full report for a candidate. `exclude`: words to ignore (leave-one-out eval).
+    kind: phonotactics to apply ('ordinary', 'proper', 'cultural')."""
     cand = cand.lower()
     words, keys, roots, prefixes, suffixes = _lex()
     ex = set(exclude)
     rep = {"candidate": cand, "exact": [], "homophone": [], "minimal_pairs": [],
-           "misparse_existing": [], "self_decomposes": [], "phonotactics": phonotactics(cand)}
+           "misparse_existing": [], "self_decomposes": [], "phonotactics": phonotactics(cand, kind)}
     if cand in words and cand not in ex:
         rep["exact"].append((cand, gloss(cand)))
     for w in keys.get(key(cand), []):

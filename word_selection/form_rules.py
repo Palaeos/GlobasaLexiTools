@@ -40,7 +40,9 @@ def _initial_e(w, trace):
     return w
 
 
-def _final_ok(w):
+def _final_ok(w, kind="ordinary"):
+    if kind == "proper":           # any final consonant, codas of up to two (Madrid, Polska, Budapest)
+        return w[-1] in VOWELS or len(re.search(r"[^aeiou]*$", w).group(0)) <= 2
     return w[-1] in VOWELS or (w[-1] in FINAL_CODA and len(w) > 1 and w[-2] in VOWELS)
 
 
@@ -121,11 +123,15 @@ def normalize(w, trace):
     return out
 
 
-def shape(form, members, word_class="", coda=True):
+def shape(form, members, word_class="", coda=True, kind="ordinary"):
     """form: blended Globasa-letter form. members: [{lang, form, word, pos}] of the cluster.
     word_class: Globasa class ('b' noun/verb, 't' adj/adv ...).
     coda: offer Middle Chinese coda renderings (the pipeline does so for its best
     blend only, so the options do not crowd the list).
+    kind: 'ordinary', 'proper' (proper-noun phonotactics: the source's final
+    consonants stay, Madrid, Budapest; no syllable-count or onset preferences) or
+    'cultural' (culture-specific words: proper-noun rules inside the word,
+    ordinary rules at its end: koktel, blakjaku, jazu, yinyangu).
     Returns [{form, penalty, trace}] (legal variants only, best first)."""
     base_trace = []
     w = _initial_e(normalize(form, base_trace), base_trace)
@@ -157,10 +163,12 @@ def shape(form, members, word_class="", coda=True):
 
     if core != w or core[-1] not in VOWELS:
         # the ending is open: no vowel, or one of the source vowels
-        if _final_ok(core) and core[-1] not in VOWELS:
+        if _final_ok(core, kind) and core[-1] not in VOWELS:
             pen, why = support("-"), f"no final vowel (as in {', '.join(sorted(vlangs.get('-', []))) or 'no source'})"
             if many_cons:
                 pen, why = pen - 0.3, why + "; caveat 3: 8+ languages end in a consonant"
+            if kind == "proper":
+                pen, why = pen - 0.5, why + "; a proper noun keeps its source's final consonants (Madrid, Budapest)"
             add(core, pen, [why])
         vowel_options = [v for v in votes if v != "-"]
         for v in vowel_options:
@@ -175,7 +183,7 @@ def shape(form, members, word_class="", coda=True):
             if syllables(f) >= 4 and any_cons:
                 pen, why = pen + 0.5, why + "; caveat 1: 4+ syllables with consonant-final sources"
             add(f, pen, [why])
-        if not _final_ok(core) and not vowel_options:
+        if not _final_ok(core, kind) and not vowel_options:
             v = ("i" if is_verb else "e") if ie else "u"
             add(core + v, 0.1, [f"a-priori vowel -{v} after illegal final '{core[-1]}' "
                                 f"({'Indo-European' if ie else 'non-Indo-European'} sources"
@@ -199,15 +207,16 @@ def shape(form, members, word_class="", coda=True):
     out, seen = [], set()
     for c in cands:
         f = c["form"]
-        if f in seen or phonotactics(f):
+        if f in seen or phonotactics(f, kind):
             continue
         seen.add(f)
         n = syllables(f)
-        c["penalty"] += syllable_penalty(n)
-        if n != 3:
-            c["trace"].append(f"{n} syllable{'s' if n != 1 else ''}"
-                              + (" (Globasa favours 3)" if n == 2 else " (avoid)" if n in (1,) or n > 3 else ""))
-        if word_class[:1] in ("b", "n", "v") and f.startswith(BANNED_ONSETS):
+        if kind != "proper":
+            c["penalty"] += syllable_penalty(n)
+            if n != 3:
+                c["trace"].append(f"{n} syllable{'s' if n != 1 else ''}"
+                                  + (" (Globasa favours 3)" if n == 2 else " (avoid)" if n in (1,) or n > 3 else ""))
+        if kind != "proper" and word_class[:1] in ("b", "n", "v") and f.startswith(BANNED_ONSETS):
             c["penalty"] += 0.5
             c["trace"].append("noun/verb root begins with a reserved onset (le- xa- nun- ger- be- du-)")
         out.append(c)
