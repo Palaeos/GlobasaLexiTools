@@ -3648,5 +3648,22 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-08T13:38:07"
+  },
+  {
+    "id": "bug-225",
+    "timestamp": "2026-11-08T19:30:00",
+    "error_message": "Persian words transliterated from the Classical/Dari romanization (kitāb, afsāna) instead of the Iranian one LexiliAsel uses (ketab, afsane); 726/1679 Persian etymons had no input at all",
+    "file": "word_selection/sources/wiktionary.py",
+    "root_cause": "lookup() returned entry romanizations in dump order (Classical first) and every caller takes [0]; it ignored the tr= romanizations of translation tables, the only reading for most Persian words without an entry",
+    "fix": "lookup() ranks Persian romanizations Iranian first (â; then no macrons) and falls back to table_romans() (translation-table tr=, majority) when entries give none; roman_from says which. Also removed translit PERSIAN iyV->iV (râdiyo/bâmiye: LexiliAsel keeps radiyo/bamiye)",
+    "tags": [
+      "word-selector",
+      "persian",
+      "transliteration",
+      "wiktionary"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-08T19:30:00"
   }
 ]
