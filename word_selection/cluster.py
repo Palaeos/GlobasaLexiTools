@@ -24,6 +24,13 @@ from .align import distance, sino_distance
 from .languages import BY_CODE
 
 THRESHOLD = 0.30   # pairwise cognate F1 0.92 on LexiliAsel (prec 0.95, rec 0.90)
+# A pair also needs few enough edits for its length: a short word against a long
+# one is mostly cheap edge gaps (yew yu ~ Korean 주목 jumok: 0.30 with 4 edits;
+# Persian sorhdar ~ Arabic zarnab: 0.29 with 5). None = off: as a blanket rule it
+# costs too much. LexiliAsel pairs: recall .910 -> .891 (0.6) / .829 (0.5), random
+# false positives 5.7% -> 4.2% / 1.9%, but roots whose members form one cluster
+# 80.2% -> 68.0% / 47.5%.
+EDIT_GUARD = None
 HAN_LANGS = {"cmn", "ja", "ko", "vi"}
 # Sino-route distances (correspondences + MC/Cantonese pivots) carry a penalty: on
 # LexiliAsel Sinosphere pairs @0.30, plain recall .791 / false-pos .052; Sino+pivots
@@ -37,13 +44,23 @@ def _norm(w):
     return "".join(c for c in d if not unicodedata.combining(c)).lower().strip("-* ")
 
 
+def _guarded(x, y):
+    d = distance(x, y, normalized=True)
+    if EDIT_GUARD is not None and d <= THRESHOLD:
+        import math
+        from .align import edit_count
+        if edit_count(x, y)[0] > max(1, math.ceil(EDIT_GUARD * max(len(x), len(y)))):
+            return 9.0
+    return d
+
+
 def item_distance(a, b):
     """Min normalised distance over the items' alternative renderings. Between a
     Han-spelt word and a Sinosphere word of unknown spelling (see _sino_ok),
     Sino-xenic sound correspondences count too."""
     if not (a["forms"] and b["forms"]):
         return 9.0   # an unreadable word joins only through its spelling
-    d = min(distance(x, y, normalized=True) for x in a["forms"] for y in b["forms"])
+    d = min(_guarded(x, y) for x in a["forms"] for y in b["forms"])
     if _sino_ok(a, b):
         # Middle Chinese / Cantonese pivots (item["pivots"]) keep the codas and
         # velars Mandarin lost; they are compared only against the other word's
