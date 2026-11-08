@@ -169,10 +169,11 @@ def _positions(s):
     return out
 
 
-def align(a, b, sub=None, coda=None, nasal_pos=0.0):
+def align(a, b, sub=None, coda=None, nasal_pos=0.0, edge_gap=EDGE_GAP):
     """Global alignment. Returns (cost, [(x, y), ...]) with '-' for gaps.
     sub: substitution cost (default sub_cost); coda(s, k): if true, deleting s[k]
-    costs at most CODA_GAP."""
+    costs at most CODA_GAP; edge_gap: gap cost at either end (a syllable's
+    initial is no word edge: sino_align passes GAP)."""
     sub = sub or sub_cost
     n, m = len(a), len(b)
     pa, pb = _positions(a), _positions(b)
@@ -180,10 +181,10 @@ def align(a, b, sub=None, coda=None, nasal_pos=0.0):
     D = [[0.0] * (m + 1) for _ in range(n + 1)]
     P = [[None] * (m + 1) for _ in range(n + 1)]
     for i in range(1, n + 1):
-        D[i][0] = D[i - 1][0] + EDGE_GAP
+        D[i][0] = D[i - 1][0] + (min(edge_gap, CODA_GAP) if coda and coda(a, i - 1) else edge_gap)
         P[i][0] = "u"
     for j in range(1, m + 1):
-        D[0][j] = D[0][j - 1] + EDGE_GAP
+        D[0][j] = D[0][j - 1] + (min(edge_gap, CODA_GAP) if coda and coda(b, j - 1) else edge_gap)
         P[0][j] = "l"
     for i in range(1, n + 1):
         for j in range(1, m + 1):
@@ -191,8 +192,8 @@ def align(a, b, sub=None, coda=None, nasal_pos=0.0):
             if nasal_pos and a[i - 1] in "mn" and b[j - 1] in "mn" and {pa[i - 1], pb[j - 1]} == {"c", "o"}:
                 c += nasal_pos
             best, op = D[i - 1][j - 1] + c, "d"
-            gu = EDGE_GAP if j in (0, m) else GAP
-            gl = EDGE_GAP if i in (0, n) else GAP
+            gu = edge_gap if j in (0, m) else GAP
+            gl = edge_gap if i in (0, n) else GAP
             if coda:
                 gu = min(gu, CODA_GAP) if coda(a, i - 1) else gu
                 gl = min(gl, CODA_GAP) if coda(b, j - 1) else gl
