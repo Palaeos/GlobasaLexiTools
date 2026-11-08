@@ -104,10 +104,15 @@ def ending_votes(core, members):
 
 def normalize(w, trace):
     """Lexicon-attested spelling norms: no geminates (0 roots have one);
+    m, not n, before b/p (mb 36, mp 36, nb/np 0: gumbo, dumbu, fumbun);
     C+i+V -> CyV (233 roots vs 14) and C+u+V -> CwV (91 vs 19)."""
     out = re.sub(r"([bcdfghjklmnprstvxz])\1", r"\1", w)
     if out != w:
         trace.append("geminate simplified (Globasa roots have none)")
+    nm = re.sub(r"n(?=[bp])", "m", out)
+    if nm != out:
+        trace.append("n before b/p written m (Globasa roots: mb/mp only)")
+        out = nm
     g = re.sub(r"(?<=[^aeiouyw])i(?=[aeou])", "y", out)
     g = re.sub(r"(?<=[^aeiouyw])u(?=[aeio])", "w", g)
     if g != out and not phonotactics(g):
