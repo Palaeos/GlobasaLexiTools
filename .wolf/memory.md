@@ -2100,3 +2100,8 @@
 | 20:58 | Meaning check against each source's own entry (sense_fit.py): shifted meanings excluded from agreement, unattested flagged; dossier uses it; nicode/bopu case | word_selection/{sense_fit,pipeline,select,methodology,dossier}.py | uncommitted | ~25k |
 | 21:07 | Homonym check (miza/μάζα case): sense-aware glosses, capitalised Mass, etymology followed only from meaning-bearing entries, default-out cognates | word_selection/{sense_fit,pipeline,select,methodology,dossier}.py, word_selector.html | uncommitted; Mass -> missa cluster | ~50k |
 | 21:12 | Committed meaning check (nicode/miza); vaso assessed (sources mean 'vase'; narrowing not auto-detected yet) | word_selection/* | committed | ~5k |
+| 21:15 | Progress display while the Word Selector runs (pipeline progress callback, /api/progress, page polling) | word_selection/pipeline.py, Word Selector.py, word_selector.html | uncommitted, tested | ~8k |
+| 21:19 | Dictionary links + own-language senses per source word (page, /api/entry); conservative source defaults left for next session | Word Selector.py, word_selector.html | uncommitted, tested | ~6k |
+| 21:23 | Etymology cognates opt-in (concept etym_cognates, page checkbox), off by default | word_selection/pipeline.py, word_selector.html | uncommitted, tested | ~3k |
+| 21:25 | Dictionary links: bilingual X-English first, monolingual last (labelled) | word_selector.html | uncommitted | ~2k |
+| 21:31 | Session end: Hanzi-for-ko/vi request recorded as next session's first step; uncommitted: etym cognates opt-in, dictionary links (bilingual first), own-language senses, progress display | .wolf/cerebrum.md | recorded | ~1k |
