@@ -129,6 +129,12 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
     <button id="addArticle">Add article</button>
     <input type="text" id="qidIn" placeholder="Q-number" size="10"><button class="ghost" id="addQid">Add QID</button>
   </div>
+  <h3>From a taxon (plants, animals, fungi …)</h3>
+  <p class="small muted">The scientific name only finds the words with that meaning (Wikispecies vernacular names,
+    Wikipedia, the Wiktionary senses whose definition names it); the words themselves need no Latin basis.
+    A genus or family is often named in the plural: the singular is taken, and flagged.</p>
+  <div class="row"><input type="text" id="taxonIn" placeholder="Taxus, Taxus baccata, Taxaceae" size="30">
+    <button id="addTaxon">Add taxon</button></div>
   <h3>This concept</h3>
   <div id="conceptChips" class="row"><span class="muted small">Nothing yet.</span></div>
   <div class="row"><button id="runBtn">Gather and propose</button><span id="runInfo" class="muted small"></span></div>
@@ -188,7 +194,7 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
 </main>
 
 <script>
-const S = { concept: { label: "", word_class: "b", wikt_senses: [], qids: [], articles: [], seeds: [], excluded: [], no_word: [] },
+const S = { concept: { label: "", word_class: "b", wikt_senses: [], qids: [], articles: [], seeds: [], taxa: [], excluded: [], no_word: [] },
             overrides: {}, result: null, cluster: 0, form: null, dossier: null, markdown: "", langs: [] };
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
@@ -207,6 +213,7 @@ function renderChips() {
   c.wikt_senses.forEach((s, i) => out.push(chip(`${s[1]} (${s[2]}): ${s[3] || "—"}`, () => c.wikt_senses.splice(i, 1))));
   c.articles.forEach((a, i) => out.push(chip(`${a[0]}.wikipedia: ${a[1]}`, () => c.articles.splice(i, 1))));
   c.qids.forEach((q, i) => out.push(chip(q, () => c.qids.splice(i, 1))));
+  (c.taxa || []).forEach((x, i) => out.push(chip(`taxon ${x}`, () => c.taxa.splice(i, 1))));
   c.seeds.forEach((s, i) => out.push(chip(`seed ${s[0]}:${s[1]}`, () => c.seeds.splice(i, 1))));
   const box = $("conceptChips"); box.innerHTML = "";
   if (!out.length) box.innerHTML = '<span class="muted small">Nothing yet.</span>';
@@ -269,6 +276,15 @@ $("addArticle").onclick = async () => {
     msg(`${r.title}: ${r.n_langs} language editions${r.qid ? ", " + r.qid : ""}`); renderChips();
   } catch (e) { msg(e.message); }
 };
+$("addTaxon").onclick = () => {
+  const x = $("taxonIn").value.trim().replace(/\s+/g, " ");
+  if (!x) return;
+  // scientific names: genus capitalised, epithet lower-case (taxus baccata -> Taxus baccata)
+  const name = x[0].toUpperCase() + x.slice(1).toLowerCase();
+  S.concept.taxa = S.concept.taxa || [];
+  if (!S.concept.taxa.includes(name)) S.concept.taxa.push(name);
+  $("taxonIn").value = ""; renderChips();
+};
 $("addQid").onclick = () => { const q = $("qidIn").value.trim().toUpperCase(); if (/^Q\d+$/.test(q) && !S.concept.qids.includes(q)) { S.concept.qids.push(q); renderChips(); } };
 
 // ---------- run ----------
@@ -301,7 +317,7 @@ function renderSources() {
       const k = `${w.lang}\t${w.word}`, form = S.overrides[k] || (w.forms[0] || "");
       h += `<tr>${i === 0 ? `<td rowspan="${ws.length}">${esc(l.basa)}<div class="small muted">${esc(l.family)}</div></td>
         <td rowspan="${ws.length}">found</td>` : ""}
-        <td><label><input type="checkbox" data-k="${esc(k)}" ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
+        <td><label><input type="checkbox" data-k="${esc(k)}" ${(w.tags || []).includes("scientific-name") ? 'data-default-out="1"' : ""} ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
           ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}
           ${(w.titles || []).length ? `<div class="small muted">as titled: ${esc(w.titles.join(", "))}</div>` : ""}</td>
         <td class="small">${esc(w.roman || w.ipa || "")}</td>
@@ -314,6 +330,9 @@ function renderSources() {
   $("srcTable").querySelectorAll("[data-k]").forEach(cb => cb.onchange = () => {
     const [lang, word] = cb.dataset.k.split("\t"), ex = S.concept.excluded, i = ex.findIndex(x => x[0] === lang && x[1] === word);
     if (!cb.checked && i < 0) ex.push([lang, word]); if (cb.checked && i >= 0) ex.splice(i, 1);
+    // words left out by default (a taxon's scientific name as a title) need an explicit include
+    const inc = S.concept.included = S.concept.included || [], j = inc.findIndex(x => x[0] === lang && x[1] === word);
+    if (cb.checked && j < 0 && cb.dataset.defaultOut) inc.push([lang, word]); if (!cb.checked && j >= 0) inc.splice(j, 1);
   });
   $("srcTable").querySelectorAll("[data-noword]").forEach(cb => cb.onchange = () => {
     const nw = S.concept.no_word, c = cb.dataset.noword, i = nw.indexOf(c);

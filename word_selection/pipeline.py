@@ -426,8 +426,11 @@ def run(concept, overrides=None, only_sources=None):
     add_etym_cognates(words)      # first: English wu wei brings Mandarin 無為 ...
     add_han_cognates(words)       # ... which the Han spelling extends to ja, ko, vi
     excluded = {tuple(x) for x in concept.get("excluded", [])}
+    included = {tuple(x) for x in concept.get("included", [])}
     for w in words:
-        w["excluded"] = (w["lang"], w["word"]) in excluded
+        # a taxon's scientific name used as an article title is left out unless ticked
+        w["excluded"] = (w["lang"], w["word"]) in excluded or (
+            "scientific-name" in w.get("tags", []) and (w["lang"], w["word"]) not in included)
     context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
     context += [w["word"] for w in words if w["lang"] == "en"]
     enrich(words, context)

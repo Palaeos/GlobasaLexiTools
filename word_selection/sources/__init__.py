@@ -11,7 +11,7 @@ Every word is stripped of a trailing disambiguator ("基质 (地质)" -> "基质
 merged on the bare word; the titled forms are kept in "titles".
 
 A concept = {label, wikt_senses: [[wiki, word, pos, sense]], qids: [...],
-             seeds: [[lang, word]], cili: [...]}
+             seeds: [[lang, word]], cili: [...], taxa: [scientific name, ...]}
 Adding a dictionary = adding a module and listing it in REGISTRY.
 """
 
@@ -20,7 +20,7 @@ import re
 
 from ..languages import BY_CODE
 
-REGISTRY = ["wiktionary", "wikidata", "seeds"]   # next: "omw", "cedict", "jmdict" (see Dictionary ingest.py)
+REGISTRY = ["wiktionary", "wikidata", "seeds", "taxon"]   # next: "omw", "cedict", "jmdict" (see Dictionary ingest.py)
 
 
 def modules():
@@ -74,6 +74,7 @@ def gather(concept, only=None):
                     m[f] = m.get(f) or sw.get(f, "")
                 m["tags"] = sorted(set(m.get("tags", [])) | set(sw.get("tags", [])))
                 m["titles"] = sorted(set(m.get("titles", [])) | set(sw.get("titles", [])))
+                m["flags"] = list(dict.fromkeys(m.get("flags", []) + sw.get("flags", [])))
             else:
                 merged[k] = {"roman": "", "ipa": "", "sense": "", "url": "", "tags": [], **sw}
     return list(merged.values()), errors
