@@ -45,6 +45,10 @@ CLASS = {**{c: "P" for c in "jcx"}, **{c: "K" for c in "kg"}, "h": "H", "f": "H"
          **{c: "N" for c in "mn"}, **{c: "L" for c in "lr"}, **{c: "S" for c in "sz"},
          **{c: "T" for c in "td"}, **{c: "B" for c in "pb"}}
 MIN_COUNT = 3        # a pattern needs this many roots behind it
+# Count every root's column under each of its sub-patterns too, so that backing
+# off to (cmn d, ko t) finds the six roots where ja and vi were also present
+# (5 took d), not only the one with cmn and ko alone
+MARGINAL = False
 MIN_SHARE = 0.6      # and this share for its winning letter
 
 
@@ -116,6 +120,16 @@ def final_slot(rows):
 # Learning from the lexicon
 # ---------------------------------------------------------------------------
 
+def _patterns(col):
+    """Keys a column counts under: the whole pattern, and (MARGINAL) each
+    sub-pattern of two or more languages that still disagree."""
+    items = tuple(sorted(col.items()))
+    if not MARGINAL:
+        return [items]
+    return [sub for size in range(len(items), 1, -1) for sub in combinations(items, size)
+            if len({c for _, c in sub}) >= 2]
+
+
 def _classes(col):
     return tuple(sorted((l, CLASS.get(c, c)) for l, c in col.items()))
 
@@ -163,7 +177,8 @@ def _learn(group):
             if len(set(col.values())) < 2:
                 continue
             chosen = rows[-1][k]
-            counts[tuple(sorted(col.items()))][chosen] += 1
+            for key in _patterns(col):
+                counts[key][chosen] += 1
             f = follow[_classes(col)]
             f[1] += 1
             for l, c in col.items():
@@ -181,24 +196,36 @@ def follow_model(group="sino"):
     return _learn(group)[1]
 
 
+class _Less:
+    """A model minus one root's own counts, subtracted at lookup (a deep copy of
+    the whole model per root is slow once sub-patterns are counted too)."""
+
+    def __init__(self, base, delta, follow=False):
+        self.base, self.delta, self.follow = base, delta, follow
+
+    def get(self, key):
+        v, d = self.base.get(key), self.delta.get(key)
+        if v is None or d is None:
+            return v
+        if self.follow:
+            return v[0] - d[0], v[1] - d[1]
+        return v - d        # Counter subtraction keeps positive counts only
+
+
 @lru_cache(maxsize=8192)
 def _without(group, root):
     """Both models with one root's own contributions removed (leave-one-out)."""
-    import copy
-    m = copy.deepcopy(model(group))
-    fm = {k: (collections.Counter(v[0]), v[1]) for k, v in follow_model(group).items()}
+    delta = collections.defaultdict(collections.Counter)
+    fdelta = {}
     for col, chosen in _learn(group)[2].get(root, []):
-        c = m.get(tuple(sorted(col.items())))
-        if c:
-            c[chosen] -= 1
-        key = _classes(col)
-        if key in fm:
-            cnt, n = fm[key]
-            for l, ch in col.items():
-                if ch == chosen:
-                    cnt[l] -= 1
-            fm[key] = (cnt, n - 1)
-    return m, fm
+        for key in _patterns(col):
+            delta[key][chosen] += 1
+        cnt, n = fdelta.get(_classes(col), (collections.Counter(), 0))
+        for l, ch in col.items():
+            if ch == chosen:
+                cnt[l] += 1
+        fdelta[_classes(col)] = (cnt, n + 1)
+    return _Less(model(group), delta), _Less(follow_model(group), fdelta, follow=True)
 
 
 def lookup(col, exclude_root=None, group="sino"):
