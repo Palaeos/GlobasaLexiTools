@@ -8,6 +8,7 @@ least one source form by at most 1 phoneme, or 2 close phonemes.
 
 import itertools
 
+from . import precedent
 from .align import distance, edit_count, msa
 from .languages import family
 
@@ -18,6 +19,9 @@ PREFER = {("e", "a"), ("e", "i"), ("o", "a"), ("o", "e"), ("o", "i"), ("u", "o")
           ("s", "z"), ("w", "v")}
 CLOSE_VOTE = 0.15    # votes within this (fraction of the column total) count as tied
 CONTESTED = 0.6      # runner-up >= 60% of the winner -> also try it
+# LexiliAsel precedent for Sino-xenic columns (precedent.py) takes priority over
+# the vote; each column where a candidate departs from it costs this much
+PRECEDENT_PENALTY = 0.15
 
 
 WEIGHTING = "language"   # "language": each language 1 (form blending); "family": each family 1
@@ -68,9 +72,14 @@ def _column_choices(col, ws, final=False):
     return choices[:2], note, votes
 
 
-def candidates(members, max_variants=16):
-    """members: [{lang, form, ...}] (form in Globasa letters).
-    Returns [{form, score, origin, notes, closest}] sorted by score (lower better)."""
+def candidates(members, max_variants=16, exclude_root=None):
+    """members: [{lang, form, word, ...}] (form in Globasa letters).
+    Where related forms disagree at a position, LexiliAsel precedent (precedent.py:
+    Sino-xenic, Japanese/Korean loans, Arabic loans, Indic, European) decides before
+    the vote and the generic letter preferences (Mandarin j / Japanese k / Korean g
+    -> k), except in the word-final vowel slot, which form_rules decides.
+    exclude_root: leave that root out of the precedent (evaluation).
+    Returns [{form, score, origin, notes, closest, precedent}] sorted by score (lower better)."""
     members = [m for m in members if m["form"]]
     if not members:
         return []
@@ -79,8 +88,21 @@ def candidates(members, max_variants=16):
     _, rows = msa(forms)
     columns = list(zip(*rows))
     picks, notes, contested = [], [], []
+    prec = {}                      # column -> precedent letter
+    groups = precedent.applicable(members)
+    end = precedent.final_slot(rows)    # the word-final vowel slot is form_rules' business
     for k, col in enumerate(columns):
         ch, note, votes = _column_choices(col, ws, final=(k == len(columns) - 1))
+        p = precedent.decide(members, col, k, end, exclude_root, groups) if groups else None
+        if p:
+            letter, n, share, pattern, group = p
+            prec[k] = letter
+            if ch[0] != letter:
+                ch = [letter] + [c for c in ch if c != letter][:1]
+                via = " ".join(f"{a}:{b}" for a, b in pattern if a != "follows")
+                follows = dict(pattern).get("follows")
+                notes.append(f"{letter if letter != '-' else '(none)'} at {via}: LexiliAsel precedent ({group}), "
+                             f"{n} roots ({int(share * 100)}%)" + (f", following {follows}" if follows else ""))
         picks.append(ch)
         if note:
             notes.append(note)
@@ -88,9 +110,12 @@ def candidates(members, max_variants=16):
             contested.append(k)
     contested = contested[:4]
 
+    def departures(combo):
+        return sum(1 for k, c in enumerate(combo) if k in prec and c != prec[k])
+
     out = {}
 
-    def add(form, origin, extra_notes=()):
+    def add(form, origin, extra_notes=(), departs=0):
         if not form or form in out:
             return
         ok = False
@@ -105,13 +130,15 @@ def candidates(members, max_variants=16):
         if not ok:
             return
         score = sum(w * distance(form, f, normalized=True) for w, f in zip(ws, forms)) / sum(ws)
+        score += PRECEDENT_PENALTY * departs
         out[form] = {"form": form, "score": round(score, 4), "origin": origin,
-                     "notes": list(extra_notes), "closest": closest}
+                     "notes": list(extra_notes), "closest": closest,
+                     "precedent": {"columns": len(prec), "departs": departs}}
 
     for combo in itertools.islice(itertools.product(*[picks[k] if k in contested else picks[k][:1]
                                                       for k in range(len(picks))]), max_variants):
         f = "".join(c for c in combo if c != "-")
-        add(f, "consensus", notes)
-    for m, f in zip(members, forms):
-        add(f, f"source form ({m['lang']})")
+        add(f, "precedent" if prec and not departures(combo) else "consensus", notes, departures(combo))
+    for m, f, row in zip(members, forms, rows):
+        add(f, f"source form ({m['lang']})", departs=departures(row))
     return sorted(out.values(), key=lambda c: c["score"])

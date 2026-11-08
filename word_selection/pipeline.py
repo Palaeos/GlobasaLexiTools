@@ -88,11 +88,12 @@ def statuses(words, no_word=()):
     return {c: ("found" if c in have else "no word" if c in no_word else "no data") for c in CODES}
 
 
-def propose(members, word_class="", exclude=()):
-    """Blend + shape + collision-check one cluster. members: [{lang, form, word, pos}]."""
+def propose(members, word_class="", exclude=(), exclude_root=None):
+    """Blend + shape + collision-check one cluster. members: [{lang, form, word, pos}].
+    exclude_root: leave that root out of the LexiliAsel precedent (evaluation)."""
     out = {}
-    for b in blend.candidates(members)[:BLENDS_PER_CLUSTER]:
-        for v in form_rules.shape(b["form"], members, word_class):
+    for i, b in enumerate(blend.candidates(members, exclude_root=exclude_root)[:BLENDS_PER_CLUSTER]):
+        for v in form_rules.shape(b["form"], members, word_class, coda=(i == 0)):
             f = v["form"]
             if f in out:
                 continue
@@ -110,7 +111,6 @@ def propose(members, word_class="", exclude=()):
     return sorted(out.values(), key=lambda p: (SEV_RANK[p["severity"]], p["total"]))
 
 
-def run(concept, overrides=None, only_sources=None):
 def add_han_cognates(words):
     """Sinosphere cognates by Han spelling that no source returned: a Mandarin seed
     基質 brings Japanese 基質 (kishitsu) and Korean 기질, if the dictionaries attest
@@ -150,9 +150,10 @@ def add_han_cognates(words):
     return words
 
 
+def run(concept, overrides=None, only_sources=None):
     words, errors = sources.gather(concept, only=only_sources)
-    excluded = {tuple(x) for x in concept.get("excluded", [])}
     add_han_cognates(words)
+    excluded = {tuple(x) for x in concept.get("excluded", [])}
     for w in words:
         w["excluded"] = (w["lang"], w["word"]) in excluded
     enrich(words)
@@ -234,7 +235,7 @@ def evaluate_roots(mode="oracle", n=None, seed=0, verbose=True):
         if len(members) < 2:
             continue
         exclude = {w for w in words if w.startswith(gold)}
-        props = propose(members, r["cls"], exclude=exclude)
+        props = propose(members, r["cls"], exclude=exclude, exclude_root=gold)
         forms = [p["form"] for p in props]
         if forms and forms[0] == gold:
             top1 += 1

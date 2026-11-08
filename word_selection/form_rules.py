@@ -51,9 +51,27 @@ VOTE_SCALE = 0.6      # penalty for an ending with no support, relative to the b
 VOWEL_BIAS = -0.1     # "roots tend to end with an a-posteriori vowel found in a source"
 
 
+SINO_JA_CODA = re.compile(r"(tsu|ci|cu|ku|ki)$")
+# a blend's final coda reflex, removed before attaching a Middle Chinese coda option
+OPEN_STEM = re.compile(r"(tsu|ci|cu|ku|ki|fu|ng|l|t|k|p|m|n)$")
+
+
+def _sino_japanese_coda(m):
+    """A Sino-Japanese reading whose final -tsu/-chi/-ku/-ki is the epenthetic
+    syllable after a Middle Chinese stop (基質 kishitsu < kicit, cf. Korean gijil):
+    the etymon ends in a consonant, so its vowel is no a-posteriori vowel."""
+    if m["lang"] != "ja" or not SINO_JA_CODA.search((m.get("form") or "").replace(" ", "")):
+        return False
+    from . import sinosphere
+    w = m.get("word", "")
+    return sinosphere.is_han_word(w) and sinosphere.ja_reading_kind(w, m["form"].replace(" ", "")) != "native"
+
+
 def ending_votes(core, members):
     """Per-language vote on what follows the aligned core: a vowel, or nothing ('-').
-    Each language has weight 1, split among its forms."""
+    Each language has weight 1, split among its forms. A Sino-Japanese reading ending
+    in an epenthetic -tsu/-chi/-ku/-ki votes for no vowel (its etymon ends in -t/-k);
+    katakana loans keep their -u at half weight (EPENTHETIC)."""
     per_lang = {}
     for m in members:
         per_lang[m["lang"]] = per_lang.get(m["lang"], 0) + 1
@@ -61,6 +79,11 @@ def ending_votes(core, members):
     for m in members:
         f = (m["form"] or "").replace(" ", "")
         if not f:
+            continue
+        if _sino_japanese_coda(m):
+            end, w = "-", 1.0 / per_lang[m["lang"]]
+            votes[end] = votes.get(end, 0) + w
+            langs.setdefault(end, set()).add(m["lang"])
             continue
         _, pairs = align(core, f)
         end = pairs[-1][1] if pairs and pairs[-1][0] == "-" and pairs[-1][1] in VOWELS else "-"
@@ -84,9 +107,11 @@ def normalize(w, trace):
     return out
 
 
-def shape(form, members, word_class=""):
+def shape(form, members, word_class="", coda=True):
     """form: blended Globasa-letter form. members: [{lang, form, word, pos}] of the cluster.
     word_class: Globasa class ('b' noun/verb, 't' adj/adv ...).
+    coda: offer Middle Chinese coda renderings (the pipeline does so for its best
+    blend only, so the options do not crowd the list).
     Returns [{form, penalty, trace}] (legal variants only, best first)."""
     base_trace = []
     w = _initial_e(normalize(form, base_trace), base_trace)
@@ -139,6 +164,15 @@ def shape(form, members, word_class=""):
         add(core + "a", -0.3, ["English -ation noun / -ate verb source -> -a"])
     if special_i:
         add(core + "i", -0.2, ["es -ia/-io, fr -aire/-oire or English -y source -> -i"])
+    # Middle Chinese codas: whenever a Sinosphere member shows a reflex (Japanese
+    # -tsu, Korean -l, Vietnamese -t ...), offer the renderings existing roots use
+    # (-tu, -ku, -m, -n, -ngu ...), attached to the blend's open stem
+    from .precedent import coda_options
+    opts = coda_options(members) if coda else []
+    if opts:
+        stem = OPEN_STEM.sub("", w) or w
+        for suf, pen, why in opts:
+            add(stem + suf, pen, [why])
 
     out, seen = [], set()
     for c in cands:
