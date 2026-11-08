@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word Selector</title>
+<style>
+@font-face { font-family: 'Source Sans 3'; src: url('/fonts/SourceSans3/SourceSans3VF-Upright.otf.woff2') format('woff2'); font-weight: 200 900; }
+@font-face { font-family: 'Source Sans 3'; src: url('/fonts/SourceSans3/SourceSans3VF-Italic.otf.woff2') format('woff2'); font-weight: 200 900; font-style: italic; }
+:root {
+  --text: #333; --muted: #666; --bg: #fafafa; --surface: #fff; --border: #e0e0e0; --link: #1a5fb4;
+  --header-bg: #d5edcf; --header-text: #2a5a1e; --accent: #4a8c3f;
+  --clear: #2d7d46; --note: #6b6b6b; --caution: #9a6700; --warn: #c25e00; --block: #c0392b;
+  --chip: #eef3ec; --sel: #fff7d6;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --text: #e8e8e8; --muted: #aaa; --bg: #1a1a1a; --surface: #252525; --border: #444; --link: #7cb4f8;
+    --header-bg: #1e3318; --header-text: #b0d8a8; --chip: #2c3a29; --sel: #3a3420;
+    --clear: #6cc489; --note: #aaa; --caution: #e0b43c; --warn: #f0954a; --block: #ff7b6b; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 18px/1.45 'Source Sans 3', 'Noto Sans', system-ui, sans-serif; font-feature-settings: 'kern', 'liga'; }
+header { background: var(--header-bg); color: var(--header-text); padding: .7rem 1.25rem; }
+header h1 { margin: 0; font-size: 1.35rem; font-weight: 600; letter-spacing: .01em; }
+header p { margin: .1rem 0 0; font-size: .9rem; }
+main { max-width: 1180px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: .9rem 1.1rem 1rem; margin-bottom: 1.25rem; }
+h2 { font-size: 1.05rem; font-weight: 700; margin: 0 0 .6rem; letter-spacing: .02em; }
+h3 { font-size: .95rem; font-weight: 700; margin: 1rem 0 .35rem; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .35rem 0; }
+input[type=text], select, textarea { font: inherit; font-size: .95rem; padding: .3rem .5rem; color: var(--text);
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px; }
+textarea { width: 100%; }
+button { font: inherit; font-size: .9rem; padding: .3rem .8rem; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff; }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .5; cursor: default; }
+.chip { display: inline-flex; align-items: center; gap: .3rem; background: var(--chip); border-radius: 999px;
+  padding: .05rem .6rem; font-size: .85rem; margin: .1rem; }
+.chip button { background: none; border: none; color: var(--muted); padding: 0 .1rem; font-size: 1rem; }
+.badge { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; padding: 0 .35rem;
+  border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+.sev-CLEAR { color: var(--clear); } .sev-NOTE { color: var(--note); } .sev-CAUTION { color: var(--caution); }
+.sev-WARN { color: var(--warn); } .sev-BLOCK { color: var(--block); }
+.flag { color: var(--warn); font-size: .8rem; }
+.contrast { border: 1px solid var(--border); border-radius: var(--radius); padding: .6rem .8rem; margin: .5rem 0; }
+.contrast .sides { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin: .4rem 0; }
+@media (max-width: 640px) { .contrast .sides { grid-template-columns: 1fr; } }
+.v-separates { color: var(--clear); } .v-marked { color: var(--caution); } .v-same { color: var(--muted); }
+.hint { background: var(--sel); border-radius: 4px; padding: .4rem .6rem; margin: .3rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .25rem .45rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tablewrap { overflow-x: auto; }
+.list { max-height: 22rem; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; }
+.list label { display: block; padding: .3rem .5rem; border-bottom: 1px solid var(--border); cursor: pointer; }
+.list label:hover { background: var(--sel); }
+.cluster { border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .7rem; margin: .4rem 0; cursor: pointer; }
+.cluster.active { border-color: var(--accent); background: var(--sel); }
+.prop { cursor: pointer; } .prop.active td { background: var(--sel); }
+.form { font-weight: 700; font-size: 1.05rem; letter-spacing: .02em; }
+.grid td { font-family: ui-monospace, 'Source Code Pro', monospace; padding: .05rem .25rem; text-align: center; border: none; }
+.grid .diff { color: var(--warn); font-weight: 700; } .grid .lbl { text-align: left; font-family: inherit; color: var(--muted); }
+input.gform { width: 9rem; font-weight: 600; }
+.status-no-data { color: var(--muted); font-style: italic; }
+.status-no-word { color: var(--caution); }
+details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
+#msg { position: fixed; bottom: 1rem; right: 1rem; max-width: 30rem; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .8rem; font-size: .9rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 800px) { .cols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Word Selector</h1>
+  <p>Methodology for Lexical Development, automated as far as it goes. You make the call.</p>
+</header>
+<main>
+
+<section id="builder">
+  <h2>1. Concept</h2>
+  <div class="row"><input type="text" id="label" placeholder="Label (your words for the concept)" size="40">
+    <label class="small">Root class
+      <select id="wclass"><option value="b">b — noun/verb</option><option value="t">t — adjective/adverb</option>
+        <option value="">other / unsure</option></select></label></div>
+
+  <div class="cols">
+    <div>
+      <h3>From a Wiktionary sense</h3>
+      <div class="row"><input type="text" id="enword" placeholder="English headword"><button id="findSenses">Find senses</button></div>
+      <div id="senseList" class="list" hidden></div>
+    </div>
+    <div>
+      <h3>From seed words (any source language)</h3>
+      <textarea id="seedText" rows="2" placeholder="fa:منت, tr:minnet, ja:義理"></textarea>
+      <div class="row"><button id="expandSeeds">Add seeds and find related senses</button></div>
+      <div id="seedSuggest" class="list" hidden></div>
+    </div>
+  </div>
+  <h3>From Wikipedia / Wikidata</h3>
+  <div class="row">
+    <select id="wpLang"></select><input type="text" id="wpTitle" placeholder="Article title" size="30">
+    <button id="addArticle">Add article</button>
+    <input type="text" id="qidIn" placeholder="Q-number" size="10"><button class="ghost" id="addQid">Add QID</button>
+  </div>
+  <h3>This concept</h3>
+  <div id="conceptChips" class="row"><span class="muted small">Nothing yet.</span></div>
+  <div class="row"><button id="runBtn">Gather and propose</button><span id="runInfo" class="muted small"></span></div>
+</section>
+
+<section id="checkFirst" hidden>
+  <h2>2. Check first</h2>
+  <p class="small muted">The methodology's first step: can an existing root, affix or compound already say this?</p>
+  <div id="checkBody"></div>
+</section>
+
+<section id="sources" hidden>
+  <h2>3. Sources</h2>
+  <p class="small muted">Edit a Globasa rendering to correct it (saved as gold for the transliterators).
+    Untick a word to leave it out. “No data” means the sources had nothing; mark “no word” only when you know the language has none.</p>
+  <div class="tablewrap"><table id="srcTable"></table></div>
+  <div class="row"><button id="rerun">Re-run with these changes</button></div>
+</section>
+
+<section id="contrasts" hidden>
+  <h2>3b. Contrasts other languages make</h2>
+  <p class="small muted">English translation senses can lump meanings that other languages keep apart
+    (happy: lasting 幸福 vs momentary 嬉しい). Each source word is tried as a pivot; a contrast is kept when
+    languages of at least two families separate it, or mark it with a word of their own for one side.</p>
+  <div id="contrastHint"></div>
+  <div class="row"><button class="ghost" id="findContrasts">Look for contrasts</button>
+    <span class="small muted" id="contrastInfo"></span></div>
+  <div id="contrastList"></div>
+</section>
+
+<section id="clusters" hidden>
+  <h2>4. Etymon clusters, ranked by the methodology</h2>
+  <div id="clusterList"></div>
+</section>
+
+<section id="proposals" hidden>
+  <h2>5. Proposals</h2>
+  <div class="tablewrap"><table id="propTable"></table></div>
+  <div class="row"><input type="text" id="ownForm" placeholder="Try your own form"><button class="ghost" id="checkOwn">Check it</button></div>
+  <div id="ownResult"></div>
+</section>
+
+<section id="dossier" hidden>
+  <h2>6. Dossier</h2>
+  <div id="dossierBody"></div>
+  <h3>Decision</h3>
+  <textarea id="note" rows="2" placeholder="Your reasoning (saved with the decision)"></textarea>
+  <div class="row"><button id="saveBtn">Save decision</button><button class="ghost" id="exportBtn">Download dossier (.md)</button>
+    <button class="ghost" id="copyBtn">Copy Markdown</button><span id="saveInfo" class="small muted"></span></div>
+</section>
+<div id="msg" hidden></div>
+</main>
+
+<script>
+const S = { concept: { label: "", word_class: "b", wikt_senses: [], qids: [], articles: [], seeds: [], excluded: [], no_word: [] },
+            overrides: {}, result: null, cluster: 0, form: null, dossier: null, markdown: "", langs: [] };
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+function msg(text, ms = 5000) { const m = $("msg"); m.textContent = text; m.hidden = false; clearTimeout(m._t); m._t = setTimeout(() => m.hidden = true, ms); }
+async function api(path, body) {
+  const r = await fetch(path, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+  const j = await r.json().catch(() => ({ error: r.statusText }));
+  if (!r.ok || j.error) throw new Error(j.error || r.statusText);
+  return j;
+}
+const basa = c => (S.langs.find(l => l.code === c) || {}).basa || c;
+
+// ---------- concept builder ----------
+function renderChips() {
+  const c = S.concept, out = [];
+  c.wikt_senses.forEach((s, i) => out.push(chip(`${s[1]} (${s[2]}): ${s[3] || "—"}`, () => c.wikt_senses.splice(i, 1))));
+  c.articles.forEach((a, i) => out.push(chip(`${a[0]}.wikipedia: ${a[1]}`, () => c.articles.splice(i, 1))));
+  c.qids.forEach((q, i) => out.push(chip(q, () => c.qids.splice(i, 1))));
+  c.seeds.forEach((s, i) => out.push(chip(`seed ${s[0]}:${s[1]}`, () => c.seeds.splice(i, 1))));
+  const box = $("conceptChips"); box.innerHTML = "";
+  if (!out.length) box.innerHTML = '<span class="muted small">Nothing yet.</span>';
+  out.forEach(e => box.appendChild(e));
+}
+function chip(text, remove) {
+  const s = document.createElement("span"); s.className = "chip"; s.textContent = text;
+  const b = document.createElement("button"); b.textContent = "×"; b.title = "Remove";
+  b.onclick = () => { remove(); renderChips(); }; s.appendChild(b); return s;
+}
+function senseRow(s, extra = "") {
+  const lab = document.createElement("label");
+  const key = JSON.stringify([s.wiki, s.word, s.pos, s.sense]);
+  const on = S.concept.wikt_senses.some(x => JSON.stringify(x) === key);
+  lab.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}> <b>${esc(s.word)}</b> <i>${esc(s.pos)}</i>: ${esc(s.sense || "(no sense label)")}
+    <span class="muted small">— ${s.n_langs} source langs${s.qids.length ? " · " + s.qids.join(", ") : ""}</span>
+    ${s.definition ? `<div class="small muted">${esc(s.definition)}</div>` : ""}${extra}`;
+  lab.querySelector("input").onchange = e => {
+    const arr = S.concept.wikt_senses, i = arr.findIndex(x => JSON.stringify(x) === key);
+    if (e.target.checked && i < 0) arr.push([s.wiki, s.word, s.pos, s.sense]);
+    if (!e.target.checked && i >= 0) arr.splice(i, 1);
+    s.qids.forEach(q => { if (e.target.checked && !S.concept.qids.includes(q)) S.concept.qids.push(q); });
+    renderChips();
+  };
+  return lab;
+}
+$("findSenses").onclick = async () => {
+  const w = $("enword").value.trim(); if (!w) return;
+  const list = $("senseList"); list.hidden = false; list.innerHTML = '<div class="small muted">Looking up…</div>';
+  try {
+    const ss = await api("/api/senses?word=" + encodeURIComponent(w));
+    list.innerHTML = ss.length ? "" : '<div class="small muted">No translation tables for this headword.</div>';
+    ss.forEach(s => list.appendChild(senseRow(s)));
+  } catch (e) { list.innerHTML = `<div class="flag">${esc(e.message)}</div>`; }
+};
+$("expandSeeds").onclick = async () => {
+  const box = $("seedSuggest"); box.hidden = false; box.innerHTML = '<div class="small muted">Expanding…</div>';
+  try {
+    const r = await api("/api/expand", { seeds: $("seedText").value });
+    r.seeds.forEach(s => { if (!S.concept.seeds.some(x => x[0] === s[0] && x[1] === s[1])) S.concept.seeds.push(s); });
+    box.innerHTML = "";
+    if (r.qids.length) {
+      const d = document.createElement("div"); d.className = "small"; d.style.padding = ".3rem .5rem";
+      d.innerHTML = "QIDs on the seeds' senses: " + r.qids.map(([q, via]) =>
+        `<button class="ghost" data-q="${q}" title="${esc(via.join("; "))}">${q}</button>`).join(" ");
+      d.querySelectorAll("button").forEach(b => b.onclick = () => { if (!S.concept.qids.includes(b.dataset.q)) S.concept.qids.push(b.dataset.q); renderChips(); });
+      box.appendChild(d);
+    }
+    if (!r.senses.length) box.insertAdjacentHTML("beforeend", '<div class="small muted" style="padding:.3rem .5rem">No related translation tables found; the seeds alone will be used.</div>');
+    r.senses.forEach(s => box.appendChild(senseRow(s, `<div class="small muted">via ${esc(s.via.join("; "))}</div>`)));
+    renderChips();
+  } catch (e) { box.innerHTML = `<div class="flag">${esc(e.message)}</div>`; }
+};
+$("addArticle").onclick = async () => {
+  const lang = $("wpLang").value, t = $("wpTitle").value.trim(); if (!t) return;
+  try {
+    const r = await api(`/api/article?lang=${lang}&title=${encodeURIComponent(t)}`);
+    S.concept.articles.push([lang, r.title]);
+    if (r.qid && !S.concept.qids.includes(r.qid)) S.concept.qids.push(r.qid);
+    msg(`${r.title}: ${r.n_langs} language editions${r.qid ? ", " + r.qid : ""}`); renderChips();
+  } catch (e) { msg(e.message); }
+};
+$("addQid").onclick = () => { const q = $("qidIn").value.trim().toUpperCase(); if (/^Q\d+$/.test(q) && !S.concept.qids.includes(q)) { S.concept.qids.push(q); renderChips(); } };
+
+// ---------- run ----------
+async function run() {
+  S.concept.label = $("label").value.trim(); S.concept.word_class = $("wclass").value;
+  $("runBtn").disabled = true; $("runInfo").textContent = "Gathering sources and blending…";
+  try {
+    S.result = await api("/api/run", { concept: S.concept, overrides: S.overrides });
+    S.cluster = 0; S.form = null;
+    $("runInfo").textContent = `${S.result.words.length} source words, ${S.result.clusters.length} clusters` +
+      (S.result.errors.length ? ` — ${S.result.errors.join("; ")}` : "");
+    renderSources(); renderContrastHint(); renderClusters(); renderProposals(); await loadDossier();
+  } catch (e) { $("runInfo").textContent = e.message; }
+  $("runBtn").disabled = false;
+}
+$("runBtn").onclick = run; $("rerun").onclick = run;
+
+function renderSources() {
+  $("sources").hidden = false;
+  const byLang = {}; S.result.words.forEach(w => (byLang[w.lang] = byLang[w.lang] || []).push(w));
+  let h = "<tr><th>Language</th><th>Status</th><th>Word</th><th>Romanization</th><th>Globasa</th><th>From</th></tr>";
+  S.langs.forEach(l => {
+    const ws = byLang[l.code] || [], st = S.result.status[l.code];
+    if (!ws.length) {
+      h += `<tr><td>${esc(l.basa)}</td><td class="status-${st.replace(" ", "-")}">${st}</td><td colspan="4">
+        <label class="small"><input type="checkbox" data-noword="${l.code}" ${S.concept.no_word.includes(l.code) ? "checked" : ""}> this language has no word for it</label></td></tr>`;
+      return;
+    }
+    ws.forEach((w, i) => {
+      const k = `${w.lang}\t${w.word}`, form = S.overrides[k] || (w.forms[0] || "");
+      h += `<tr>${i === 0 ? `<td rowspan="${ws.length}">${esc(l.basa)}<div class="small muted">${esc(l.family)}</div></td>
+        <td rowspan="${ws.length}">found</td>` : ""}
+        <td><label><input type="checkbox" data-k="${esc(k)}" ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
+          ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}</td>
+        <td class="small">${esc(w.roman || w.ipa || "")}</td>
+        <td><input class="gform" type="text" value="${esc(form)}" data-ok="${esc(k)}" data-lang="${w.lang}" data-word="${esc(w.word)}">
+          ${w.forms.length > 1 ? `<div class="small muted">also ${esc(w.forms.slice(1).join(", "))}</div>` : ""}</td>
+        <td class="small">${w.provenance.map(p => `<span class="chip">${esc(p.split(":").slice(0, 2).join(":"))}</span>`).join("")}</td></tr>`;
+    });
+  });
+  $("srcTable").innerHTML = h;
+  $("srcTable").querySelectorAll("[data-k]").forEach(cb => cb.onchange = () => {
+    const [lang, word] = cb.dataset.k.split("\t"), ex = S.concept.excluded, i = ex.findIndex(x => x[0] === lang && x[1] === word);
+    if (!cb.checked && i < 0) ex.push([lang, word]); if (cb.checked && i >= 0) ex.splice(i, 1);
+  });
+  $("srcTable").querySelectorAll("[data-noword]").forEach(cb => cb.onchange = () => {
+    const nw = S.concept.no_word, c = cb.dataset.noword, i = nw.indexOf(c);
+    if (cb.checked && i < 0) nw.push(c); if (!cb.checked && i >= 0) nw.splice(i, 1);
+  });
+  $("srcTable").querySelectorAll("[data-ok]").forEach(inp => inp.onchange = async () => {
+    const v = inp.value.trim().toLowerCase(); S.overrides[inp.dataset.ok] = v;
+    try { await api("/api/override", { lang: inp.dataset.lang, word: inp.dataset.word, form: v }); msg("Rendering saved; re-run to apply."); } catch (e) { msg(e.message); }
+  });
+}
+
+// ---------- contrasts (auto-pivot) ----------
+function renderContrastHint() {
+  $("contrasts").hidden = false; $("contrastList").innerHTML = ""; $("contrastInfo").textContent = "";
+  const h = S.result.contrast_hint || {};
+  $("contrastHint").innerHTML = h.suggest
+    ? `<div class="hint small"><b>Suggested:</b> ${esc(h.reason)}.</div>`
+    : (h.reason ? `<div class="small muted">${esc(h.reason)}.</div>` : "");
+  $("findContrasts").className = h.suggest ? "" : "ghost";
+}
+const vclass = v => v.startsWith("separates") ? "v-separates" : v === "marked" ? "v-marked" : "v-same";
+function renderContrasts(list) {
+  const box = $("contrastList");
+  if (!list.length) { box.innerHTML = '<p class="small muted">No contrast is made in two or more families.</p>'; return; }
+  box.innerHTML = list.map(c => {
+    const side = (title, tables, words) => `<div><div class="small"><b>${title}</b></div>
+      <div class="small muted">${esc(tables.map(t => t.split(" /")[0]).join(", "))}</div>
+      <div>${Object.entries(words).map(([l, ws]) => `<span class="chip">${esc(basa(l))} ${esc(ws.slice(0, 3).join(", "))}</span>`).join("")}</div></div>`;
+    const langs = Object.entries(c.languages).filter(([l]) => l !== "en")
+      .map(([l, v]) => `<span class="chip ${vclass(v.verdict)}" title="${esc(v.pivot.join(", "))} | ${esc((v.own.length ? v.own : v.foil).join(", "))}">${esc(basa(l))}: ${esc(v.verdict)}</span>`).join("");
+    const gl = c.globasa.map(g => `<span class="chip" title="${esc(g.eng)}">${esc(g.word)}${g.merges ? " (covers both)" : ` (${esc(g.sides.join(""))} side)`}</span>`).join("");
+    const cov = Object.entries(c.covered).map(([t, gs]) => `${esc(t.split(" /")[0])} → ${esc(gs.join(", "))}`).join("; ");
+    return `<div class="contrast">
+      <div><b>Pivot ${esc(c.pivot[1])}</b> <span class="small muted">(${esc(basa(c.pivot[0]))}${c.also_pivots.length ? `; also ${esc(c.also_pivots.map(p => p[1]).join(", "))}` : ""})</span>
+        — separates in ${c.separates.length} famil${c.separates.length === 1 ? "y" : "ies"}${c.marked.length ? `, marked in ${c.marked.length} more` : ""}</div>
+      <div class="sides">${side("Pivot side", c.pivot_tables, c.pivot_words)}${side("Other side", c.foil_tables, c.foil_words)}</div>
+      <div>${langs}</div>
+      ${gl ? `<div class="small" style="margin-top:.3rem">Existing Globasa: ${gl}</div>` : ""}
+      ${cov ? `<div class="small muted">Already covered: ${cov}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+$("findContrasts").onclick = async () => {
+  $("findContrasts").disabled = true; $("contrastInfo").textContent = "Trying each source word as a pivot (about a minute)…";
+  try {
+    const r = await api("/api/contrasts", { concept: S.concept, overrides: S.overrides });
+    $("contrastInfo").textContent = `${r.contrasts.length} contrast(s)`;
+    renderContrasts(r.contrasts);
+  } catch (e) { $("contrastInfo").textContent = e.message; }
+  $("findContrasts").disabled = false;
+};
+
+function renderClusters() {
+  $("clusters").hidden = false;
+  const box = $("clusterList"); box.innerHTML = "";
+  S.result.clusters.slice(0, 10).forEach((c, i) => {
+    const d = document.createElement("div"); d.className = "cluster" + (i === S.cluster ? " active" : "");
+    const mem = c.members.map(m => `<span class="chip" title="${esc(m.forms[0] || "")}">${esc(basa(m.lang))} ${esc(m.word)}</span>`).join("");
+    d.innerHTML = `<div><b>#${i + 1}</b> ${esc(c.why)}</div><div>${mem}</div>
+      ${c.existing_roots && c.existing_roots.length ? `<div class="flag">Already the etymon of: ${esc(c.existing_roots.join(", "))}</div>` : ""}
+      ${c.proposals ? "" : '<div class="small muted">(no proposals)</div>'}`;
+    d.onclick = async () => { if (!c.proposals) return; S.cluster = i; S.form = null; renderClusters(); renderProposals(); await loadDossier(); };
+    box.appendChild(d);
+  });
+}
+
+function renderProposals() {
+  const c = S.result.clusters[S.cluster]; $("proposals").hidden = !c;
+  if (!c) return;
+  let h = "<tr><th>Form</th><th>Checks</th><th>Score</th><th>How it was made</th><th>Closest source</th></tr>";
+  (c.proposals || []).forEach(p => {
+    const cl = p.distances[0] || {};
+    h += `<tr class="prop ${p.form === S.form ? "active" : ""}" data-f="${esc(p.form)}">
+      <td class="form">${esc(p.form)}</td><td><span class="badge sev-${p.severity}">${p.severity}</span></td>
+      <td>${p.total.toFixed(2)}</td><td class="small">${esc(p.trace.join("; "))}</td>
+      <td class="small">${esc(basa(cl.lang))} ${esc(cl.word)} (${cl.edits} edit${cl.edits === 1 ? "" : "s"})</td></tr>`;
+  });
+  $("propTable").innerHTML = h;
+  $("propTable").querySelectorAll(".prop").forEach(tr => tr.onclick = async () => { S.form = tr.dataset.f; renderProposals(); await loadDossier(); });
+}
+
+$("checkOwn").onclick = async () => {
+  const f = $("ownForm").value.trim(); if (!f) return;
+  try {
+    const r = await api("/api/check", { form: f, concept: S.concept, cluster: S.cluster, overrides: S.overrides });
+    $("ownResult").innerHTML = `<p><span class="form">${esc(f)}</span> <span class="badge sev-${r.collision.severity}">${r.collision.severity}</span></p>`
+      + collisionHtml(r.collision) + distTable(r.distances) + derivHtml(r.derivatives, r.unattested_clusters);
+  } catch (e) { msg(e.message); }
+};
+
+// ---------- dossier ----------
+async function loadDossier() {
+  if (!S.result || !S.result.clusters.length) return;
+  $("dossier").hidden = false; $("dossierBody").innerHTML = '<p class="muted small">Assembling the dossier…</p>';
+  try {
+    const r = await api("/api/dossier", { concept: S.concept, overrides: S.overrides, cluster: S.cluster, form: S.form });
+    S.dossier = r.dossier; S.markdown = r.markdown; S.form = r.dossier.proposal ? r.dossier.proposal.form : null;
+    renderProposals(); renderDossier(); renderCheckFirst();
+  } catch (e) { $("dossierBody").innerHTML = `<p class="flag">${esc(e.message)}</p>`; }
+}
+function collisionHtml(col) {
+  let h = "";
+  if (col.exact.length || col.homophone.length) h += `<p class="sev-BLOCK">Collides with: ${col.exact.concat(col.homophone).map(([w, g]) => `<b>${esc(w)}</b> (${esc(g)})`).join("; ")}</p>`;
+  if (col.phonotactics.length) h += `<p class="sev-BLOCK">Phonotactics: ${esc(col.phonotactics.join("; "))}</p>`;
+  const order = { NEVER: 0, LAST_RESORT: 1, AVOID: 2, ANY: 3 };
+  const mp = col.minimal_pairs.slice().sort((a, b) => order[a.tier] - order[b.tier]);
+  if (mp.length) h += `<table><tr><th>Minimal pair</th><th>Tier</th><th>Gloss</th><th>Contrast</th></tr>${mp.slice(0, 14).map(m =>
+    `<tr><td><b>${esc(m.word)}</b></td><td><span class="badge sev-${{NEVER: "BLOCK", LAST_RESORT: "WARN", AVOID: "CAUTION", ANY: "NOTE"}[m.tier]}">${m.tier.replace("_", " ")}</span></td><td>${esc(m.gloss)}</td><td class="small">${esc(m.why)}</td></tr>`).join("")}</table>
+    ${mp.length > 14 ? `<p class="small muted">…and ${mp.length - 14} more (tier ANY)</p>` : ""}`;
+  else h += "<p>No minimal pairs.</p>";
+  const aff = col.misparse_existing.map(([w, g, how]) => `${esc(w)} could read as ${esc(how)}`).concat(col.self_decomposes.map(esc));
+  if (aff.length) h += `<p class="sev-WARN">Affix look-alikes: ${aff.join("; ")}</p>`;
+  return h;
+}
+function distTable(ds) {
+  if (!ds || !ds.length) return "";
+  return `<table><tr><th>Source</th><th>Word</th><th>Rendering</th><th>Edits</th><th>Distance</th></tr>${ds.map(x =>
+    `<tr><td>${esc(basa(x.lang))}</td><td>${esc(x.word)}</td><td>${esc(x.form)}</td><td>${x.edits}</td><td>${x.d}</td></tr>`).join("")}</table>`;
+}
+function gridHtml(p) {
+  const rows = p.distances.map(x => {
+    const top = x.pairs.map(([a]) => a), bot = x.pairs.map(([, b]) => b);
+    return `<tr><td class="lbl">${esc(basa(x.lang))} ${esc(x.word)}</td>${bot.map((b, i) =>
+      `<td class="${b !== top[i] ? "diff" : ""}">${esc(b)}</td>`).join("")}</tr>
+      <tr><td class="lbl small">${esc(p.form)}</td>${top.map(a => `<td>${esc(a)}</td>`).join("")}</tr>`;
+  }).join("");
+  return `<div class="tablewrap"><table class="grid">${rows}</table></div>`;
+}
+function derivHtml(der, unatt) {
+  const bad = der.filter(x => x.phonotactics.length || x.taken);
+  let h = `<p><b>Derivatives:</b> ${der.map(x => `<span class="${x.phonotactics.length ? "sev-BLOCK" : x.taken ? "sev-WARN" : ""}"
+    title="${esc(x.taken ? "taken: " + x.gloss : x.phonotactics.join("; "))}">${esc(x.form)}</span>`).join(", ")}
+    ${bad.length ? "" : '<span class="small muted"> — all legal and free</span>'}</p>`;
+  if (unatt && unatt.length) h += `<p class="flag">Rare medial clusters: ${unatt.map(u => `'${esc(u.cluster)}' (${u.roots_with_it} roots)`).join(", ")}</p>`;
+  return h;
+}
+function renderDossier() {
+  const d = S.dossier, p = d.proposal; let h = "";
+  if (d.flags.length) h += `<div class="flag"><b>Uncertainty:</b><ul>${d.flags.map(f => `<li>${esc(f)}</li>`).join("")}</ul></div>`;
+  d.concept_info.forEach(ci => {
+    if (ci.error) { h += `<p class="small muted">${esc(ci.qid)}: ${esc(ci.error)}</p>`; return; }
+    h += `<div class="row">${ci.image_url ? `<img src="${esc(ci.image_url)}" alt="" style="max-width:160px;border-radius:4px">` : ""}
+      <div><b>${esc(ci.qid)}</b>: ${esc((ci.descriptions || {}).en || "")}${ci.eo_label ? ` — Esperanto: <i>${esc(ci.eo_label)}</i>` : ""}
+      ${Object.entries(ci.leads || {}).map(([l, t]) => `<div class="small"><b>${l}</b>: ${esc(t)}</div>`).join("")}
+      <div class="small muted">Wikipedia often opens with the literal etymology; read it as context, not as a definition.</div></div></div>`;
+  });
+  if (p) {
+    h += `<h3>Proposal <span class="form">${esc(p.form)}</span> <span class="badge sev-${p.severity}">${p.severity}</span></h3>
+      <p class="small">${esc(p.trace.join("; "))}</p>
+      <details open><summary>Alignment with each source</summary>${gridHtml(p)}</details>
+      <details open><summary>Collisions and minimal pairs</summary>${collisionHtml(p.collision)}</details>
+      ${derivHtml(p.derivatives, p.unattested_clusters)}`;
+  }
+  const cl = d.cluster;
+  h += `<h3>Source cluster</h3><p>${esc(cl.why)}</p>
+    ${cl.etym_links.length ? `<p class="small">Etymology links: ${esc(cl.etym_links.slice(0, 8).join("; "))}</p>` : ""}
+    <details><summary>Why the other clusters lost (${d.losers.length})</summary><ul>${d.losers.map(x =>
+      `<li class="small">${esc(x.words.join(", "))}: ${esc(x.why)}</li>`).join("")}</ul></details>`;
+  h += `<details open><summary>Sense check: each source in its own language</summary><table><tr><th>Source</th><th>Matching sense</th><th>Also means</th></tr>${d.sense_checks.map(s =>
+    `<tr><td>${esc(basa(s.lang))} <b>${esc(s.word)}</b></td><td>${s.match ? esc(s.match.gloss) : "—"}${s.flag ? `<div class="flag">${esc(s.flag)}</div>` : ""}</td>
+     <td class="small">${s.other_senses.slice(0, 4).map(o => esc(o.gloss.slice(0, 90))).join("<br>")}</td></tr>`).join("")}</table></details>`;
+  const a = d.attestation;
+  h += `<details open><summary>Attestation (Sprachbund criterion)</summary>
+    <p>Families with a word for the concept: ${esc(a.families_with_word.join(", "))}<br>Families sharing this form: ${esc(a.families_sharing_form.join(", "))}</p>
+    <table><tr><th>Area</th><th>Has a word</th><th>Shares this form</th><th>No data</th></tr>${a.areas.map(r =>
+      `<tr><td>${esc(r.area)}</td><td>${esc(r.have_word.join(", ") || "—")}</td><td>${esc(r.share_form.join(", ") || "—")}</td><td class="muted">${esc(r.missing_data.join(", "))}</td></tr>`).join("")}</table>
+    <p class="small muted">${esc(a.note)}</p></details>`;
+  if (d.usage.length) h += `<details><summary>Usage test: Doxo passages (${d.usage.length})</summary><ul>${d.usage.map(u =>
+    `<li>${esc(u.glb)}<div class="small muted">${esc(u.en || u.eo)} (${esc(u.ctx)})</div></li>`).join("")}</ul></details>`;
+  $("dossierBody").innerHTML = h;
+}
+function renderCheckFirst() {
+  const d = S.dossier; $("checkFirst").hidden = false;
+  const ex = d.cluster.existing_roots, nb = d.neighbours.words;
+  $("checkBody").innerHTML = (ex.length ? `<p class="flag">These source words are already the etymon of: <b>${esc(ex.join(", "))}</b></p>` : "")
+    + (nb.length ? `<table><tr><th>Word</th><th>Class</th><th>English</th><th>Esperanto</th></tr>${nb.slice(0, 15).map(w =>
+      `<tr><td><b>${esc(w.word)}</b></td><td class="small">${esc(w.cat)} ${esc(w.cls)}</td><td>${esc(w.eng)}</td><td>${esc(w.epo)}</td></tr>`).join("")}</table>
+      <p class="small muted">${esc(d.neighbours.note)}</p>` : "<p>No existing word glosses with these terms.</p>");
+}
+$("saveBtn").onclick = async () => {
+  if (!S.form) return msg("Pick a proposal first.");
+  const c = S.result.clusters[S.cluster];
+  try {
+    const r = await api("/api/save", { form: S.form, concept: S.concept, cluster: S.cluster, lexiliasel: c.lexiliasel,
+      note: $("note").value, markdown: S.markdown + (($("note").value) ? `\n## Decision note\n\n${$("note").value}\n` : "") });
+    $("saveInfo").textContent = `Saved; dossier at ${r.dossier}. LexiliAsel: ${c.lexiliasel}`;
+  } catch (e) { msg(e.message); }
+};
+$("exportBtn").onclick = () => {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([S.markdown], { type: "text/markdown" }));
+  a.download = `${S.form || "dossier"}.md`; a.click();
+};
+$("copyBtn").onclick = async () => { try { await navigator.clipboard.writeText(S.markdown); msg("Copied."); } catch (e) { msg("Copy failed: " + e.message); } };
+
+(async () => {
+  S.langs = await api("/api/langs");
+  $("wpLang").innerHTML = S.langs.map(l => `<option value="${l.code === "cmn" ? "zh" : l.code}">${esc(l.basa)}</option>`).join("");
+})();
+</script>
+</body>
+</html>

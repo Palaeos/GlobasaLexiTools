@@ -85,6 +85,24 @@
       }
     },
     {
+      "label": "Word Selector",
+      "type": "process",
+      "command": "${workspaceFolder}/venv/bin/python3",
+      "args": ["-u", "Word Selector.py"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "isBackground": true,
+      "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Running on",
+          "endsPattern": "Running on"
+        }
+      }
+    },
+    {
       "label": "English Wiktionary Sense Extender",
       "type": "process",
       "command": "${workspaceFolder}/venv/bin/python3",
