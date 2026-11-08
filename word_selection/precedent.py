@@ -149,7 +149,12 @@ def _learn(group):
         mem = [members[i] for i in sel(members) if members[i]["form"]]
         if len({m["lang"] for m in mem}) < 2:
             continue
-        _, rows = msa([m["form"] for m in mem] + [word])
+        rows = None
+        if group == "sino":        # as blend.candidates aligns them
+            from . import sino_align
+            rows = sino_align.rows(mem, extra=[word], sino_idx=list(range(len(mem))))
+        if rows is None:
+            _, rows = msa([m["form"] for m in mem] + [word])
         end = final_slot(rows[:-1])
         for k in range(min(end, len(rows[0]))):
             col = {}

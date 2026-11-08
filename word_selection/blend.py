@@ -8,7 +8,7 @@ least one source form by at most 1 phoneme, or 2 close phonemes.
 
 import itertools
 
-from . import precedent
+from . import precedent, sino_align
 from .align import distance, edit_count, msa
 from .languages import family
 
@@ -85,11 +85,20 @@ def candidates(members, max_variants=16, exclude_root=None):
         return []
     ws = weights(members)
     forms = [m["form"].replace(" ", "") for m in members]
-    _, rows = msa(forms)
-    columns = list(zip(*rows))
-    picks, notes, contested = [], [], []
-    prec = {}                      # column -> precedent letter
     groups = precedent.applicable(members)
+    # Sino-xenic clusters: aligned to the Middle Chinese reading, syllable by syllable
+    rows = sino_align.rows(members, sino_idx=groups["sino"]) if "sino" in groups else None
+    notes = []
+    if rows is not None:
+        notes += sino_align.fallback_notes(sino_align.spelling(members, groups["sino"])[0])
+    elif "sino" in groups:
+        notes.append("Sinosphere forms aligned letter by letter (fallback: no Han spelling shared by "
+                     "two languages with readings, or mostly non-Sinosphere cluster)")
+    if rows is None:
+        _, rows = msa(forms)
+    columns = list(zip(*rows))
+    picks, contested = [], []
+    prec = {}                      # column -> precedent letter
     end = precedent.final_slot(rows)    # the word-final vowel slot is form_rules' business
     for k, col in enumerate(columns):
         ch, note, votes = _column_choices(col, ws, final=(k == len(columns) - 1))
