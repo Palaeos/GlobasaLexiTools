@@ -108,14 +108,61 @@ def _ipa_rank(ipa_tags):
     return (0 if ("US" in tags or "General-American" in tags) else 1, 0 if ipa.startswith("/") else 1)
 
 
+def _roman_rank(lang, r):
+    """Persian entries list the Classical/Dari romanization first (kitāb, afsāna,
+    pilk, du) and the Iranian one after (ketâb, afsâne, pelk, do); the Word
+    Selector follows the Iranian pronunciation. Dari/Classical marks (ā ī ū ē ō ô:
+    mômiyâ, sôsan) rank last; then â; then e/o, the Iranian reflexes of short i/u."""
+    if lang != "fa":
+        return 0
+    if re.search("[āīūēōô]", r):
+        return 3
+    if "â" in r:
+        return 0
+    return 1 if re.search("[eo]", r) else 2
+
+
+_HARAKAT = re.compile("[\u064b-\u0652\u0670\u0640]")
+
+
+@lru_cache(maxsize=50000)
+def table_romans(lang, word):
+    """Romanizations English translation tables give this word (their tr=), most
+    often given first: 357 of the 726 LexiliAsel Persian etymons with no entry
+    romanization (most have no entry at all) are listed in some table with one."""
+    code = DUMP_TO_CODE.get(lang, lang)
+    if code not in BY_CODE:
+        return []
+    ix = index()
+    bare = _HARAKAT.sub("", word).strip()
+    votes = {}
+    for wk in BY_CODE[code]["wikt"]:
+        for en, pos, sense in ix.tables_listing(wk, word)[:30]:
+            items = ix.translations(en, pos).get(sense, {})
+            for item in (items.get(wk, []) if isinstance(items, dict) else []):
+                if item[1] and _HARAKAT.sub("", item[0]).strip() == bare:
+                    votes[item[1]] = votes.get(item[1], 0) + 1
+    ranked = sorted(votes, key=lambda r: (_roman_rank(code, r), -votes[r]))
+    return ranked
+
+
 def lookup(lang, word):
-    """Entries of a word in its own language: senses, pronunciation, etymology."""
+    """Entries of a word in its own language: senses, pronunciation, etymology.
+    roman: the entries' romanizations (Persian: Iranian first), else those the
+    translation tables give the word (roman_from says which)."""
     dump = BY_CODE[lang]["dump"] if lang in BY_CODE else lang
+    code = DUMP_TO_CODE.get(dump, lang)
     es = index().entries(dump, word)
+    roman = sorted(dict.fromkeys(r for e in es for r in e["roman"]), key=lambda r: _roman_rank(code, r))
+    roman_from = "entry" if roman else ""
+    if not roman and code in ("ar", "fa", "hi", "te", "ru", "ja", "ko", "cmn"):
+        roman = table_romans(code, word)
+        roman_from = "table" if roman else ""
     return {
         "senses": [{"pos": e["pos"], "gloss": s["g"][-1], "tags": s["tags"], "qid": s["qid"],
                     "example": s["ex"][0] if s["ex"] else None} for e in es for s in e["senses"]],
-        "roman": [r for e in es for r in e["roman"]],
+        "roman": roman,
+        "roman_from": roman_from,
         "ipa": [i[0] for i in sorted((i for e in es for i in e["ipa"]), key=_ipa_rank)],
         "etym": [x for e in es for x in e["etym"]],
     }

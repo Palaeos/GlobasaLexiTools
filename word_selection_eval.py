@@ -23,13 +23,11 @@ MODE = sys.argv[1] if len(sys.argv) > 1 else "translit"
 
 
 def lookup_pron(ix, lang, word):
-    roman, ipa = "", ""
-    for e in ix.entries(BY_CODE[lang]["dump"], word):
-        if not roman and e["roman"]:
-            roman = e["roman"][0]
-        if not ipa and e["ipa"]:
-            ipa = e["ipa"][0][0]
-    return roman, ipa
+    """As the pipeline sees it (sources.wiktionary.lookup: entry romanization,
+    Persian Iranian first, else the translation tables')."""
+    from word_selection.sources.wiktionary import lookup
+    info = lookup(lang, word)
+    return (info["roman"][0] if info["roman"] else ""), (info["ipa"][0] if info["ipa"] else "")
 
 
 def eval_translit(only=None):

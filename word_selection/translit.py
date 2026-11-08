@@ -120,7 +120,7 @@ ARABIC = rules(  # Wiktionary Arabic romanization (LexiliAsel: ʕ -> h, ō -> u,
 
 PERSIAN = rules(  # Wiktionary Persian romanization (Iranian reading: ow -> o, w -> v, final -a -> -e)
     ("[ʔʕʿʾ']", ""), ("â", "a"), ("ā(?=$| )", "e"), ("ā", "a"), ("ō", "u"), ("ē", "i"), ("ī", "i"), ("ū", "u"),
-    ("ow(?![" + V + "])", "o"), ("w", "v"), ("iy(?=[" + V + "])", "i"),
+    ("ow(?![" + V + "])", "o"), ("w", "v"),    # iy before a vowel stays (râdiyo, bâmiye: LexiliAsel radiyo, bamiye)
     ("š", "x"), ("sh", "x"), ("č", "c"), ("ch", "c"), ("ž", "j"), ("zh", "j"),
     ("[xḵ]", "h"), ("kh", "h"), ("[ğġq]", "g"), ("gh", "g"),
 )
