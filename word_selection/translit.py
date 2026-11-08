@@ -316,7 +316,7 @@ def to_globasa(lang, word, roman="", ipa=""):
         if r:
             add(apply(INDIC, unicodedata.normalize("NFC", r)), "roman")
         elif ipa:
-            add(ipa_to_globasa(ipa), "ipa")
+            add(ipa_to_globasa(ipa), "ipa (fallback: no romanization)")
     elif lang == "ar":
         sc = arabic_script(w)
         if sc:
@@ -324,12 +324,12 @@ def to_globasa(lang, word, roman="", ipa=""):
         if r:
             add(re.sub(r"([bcdfghjklmnprstvxyz])\1", r"\1", apply(ARABIC, unicodedata.normalize("NFC", r))), "roman")
         elif ipa:
-            add(ipa_to_globasa(ipa), "ipa")
+            add(ipa_to_globasa(ipa), "ipa (fallback: no romanization)")
     elif lang == "fa":
         if r:
             add(apply(PERSIAN, unicodedata.normalize("NFC", r)), "roman")
         elif ipa:
-            add(ipa_to_globasa(ipa), "ipa")
+            add(ipa_to_globasa(ipa), "ipa (fallback: no romanization)")
     elif lang == "tr":
         add(apply(TURKISH, lw), "spelling")
     elif lang == "es":
@@ -354,5 +354,5 @@ def to_globasa(lang, word, roman="", ipa=""):
         elif LATIN.match(w):
             add(lw, "spelling")
         elif ipa:
-            add(ipa_to_globasa(ipa), "ipa")
+            add(ipa_to_globasa(ipa), "ipa (fallback: no romanization)")
     return out

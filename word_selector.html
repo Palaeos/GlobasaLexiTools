@@ -365,7 +365,7 @@ function renderProposals() {
     h += `<tr class="prop ${p.form === S.form ? "active" : ""}" data-f="${esc(p.form)}">
       <td class="form">${esc(p.form)}</td><td><span class="badge sev-${p.severity}">${p.severity}</span></td>
       <td>${p.total.toFixed(2)}</td><td class="small">${esc(p.trace.join("; "))}${
-        (p.blend.notes || []).filter(n => n.includes("precedent")).map(n => `<div class="muted">${esc(n)}</div>`).join("")}${
+        (p.blend.notes || []).filter(n => n.includes("precedent") || n.includes("fallback")).map(n => `<div class="${n.includes("fallback") ? "flag" : "muted"}">${esc(n)}</div>`).join("")}${
         p.blend.precedent && p.blend.precedent.departs ? `<div class="flag">departs from LexiliAsel precedent at ${p.blend.precedent.departs} position(s)</div>` : ""}</td>
       <td class="small">${esc(basa(cl.lang))} ${esc(cl.word)} (${cl.edits} edit${cl.edits === 1 ? "" : "s"})</td></tr>`;
   });

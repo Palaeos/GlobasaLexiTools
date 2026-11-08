@@ -18,6 +18,10 @@ def enrich(words):
         info = wiktionary.lookup(w["lang"], w["word"])
         if not w.get("roman") and info["roman"]:
             w["roman"] = info["roman"][0]
+            w["roman_from"] = info["roman_from"]
+            if info["roman_from"] == "table":
+                w.setdefault("flags", []).append("romanization from a translation table "
+                                                 "(fallback: the word's entry gives none)")
         if not w.get("ipa") and info["ipa"]:
             w["ipa"] = info["ipa"][0]
         w["etym"] = info["etym"]
@@ -29,6 +33,9 @@ def enrich(words):
             except Exception as e:   # a romanizer library failing must not sink the table
                 w["forms_how"] = []
                 w.setdefault("flags", []).append(f"transliteration failed: {e}")
+            if w.get("roman_from") == "table":
+                w["forms_how"] = [(f, "translation-table roman (fallback)" if how == "roman" else how)
+                                  for f, how in w["forms_how"]]
             w["forms"] = [f for f, _ in w["forms_how"]]
         if w["lang"] in ("cmn", "ja", "ko", "vi"):        # clustering only
             w["han"] = sinosphere.han_spellings(w["lang"], w["word"], (w.get("forms") or [""])[0])
@@ -70,7 +77,8 @@ def predict_vocalizations(words):
             w["forms"] = preds + [f for f in w["forms"] if f not in preds]
             w["forms_how"] = how + [x for x in w.get("forms_how", []) if x[0] not in preds]
             w.setdefault("flags", []).append("vocalization predicted from the "
-                                             + ("Persian" if w["lang"] == "ar" else "Arabic") + " spelling")
+                                             + ("Persian" if w["lang"] == "ar" else "Arabic")
+                                             + " spelling (fallback: no romanization)")
             w["flags"] = [f for f in w["flags"] if f != "needs romanization"]
         elif not w.get("forms"):
             # no same-spelling partner: a cognate in another script (Turkish akademi
@@ -84,9 +92,11 @@ def predict_vocalizations(words):
                 form, cost, code = got
                 src = next(p for (c, f), p in partners.items() if c == code)
                 w["forms"] = [form]
-                w["forms_how"] = [(form, f"vowels from {BY_CODE[code]['basa']} {src['word']} (fit {cost})")]
+                w["forms_how"] = [(form, f"vowels from {BY_CODE[code]['basa']} {src['word']} "
+                                         f"(fallback, fit {cost})")]
                 w.setdefault("flags", []).append(f"vocalization predicted from {BY_CODE[code]['basa']} "
-                                                 f"{src['word']}; check it")
+                                                 f"{src['word']} (fallback: no romanization and no "
+                                                 f"same-spelling Arabic/Persian partner); check it")
                 w["flags"] = [f for f in w["flags"] if f != "needs romanization"]
     return words
 
@@ -293,10 +303,13 @@ def _members_for_root(root, mode, ix):
                 fs = translit.to_globasa(e["code"], e["word"], info["roman"][0] if info["roman"] else "",
                                          info["ipa"][0] if info["ipa"] else "")
                 spoken = fs[0][0] if fs else None
+        form_from = "wiktionary pronunciation"
         if spoken:
             form = spoken
         elif mode == "oracle" and e["roman"]:
             form = translit.clean(e["roman"])
+            form_from = ("LexiliAsel romanization (fallback: no Wiktionary pronunciation)"
+                         if e["code"] in PRONUNCIATION_ORACLE else "LexiliAsel romanization")
         else:
             from .sources.wiktionary import lookup
             info = lookup(e["code"], e["word"])
@@ -308,13 +321,15 @@ def _members_for_root(root, mode, ix):
                 fs = []
             form = fs[0][0] if fs else ""
         if form:
-            members.append({"lang": e["code"], "form": form.replace(" ", ""), "word": e["word"], "pos": ""})
+            members.append({"lang": e["code"], "form": form.replace(" ", ""), "word": e["word"], "pos": "",
+                            "form_from": form_from if mode == "oracle" else "transliteration"})
         elif mode != "oracle" and e["code"] in abjad.LANGS:
             formless.append(e)
     for e in formless:            # as predict_vocalizations: vowels from a fitting cognate
         got = abjad.vocalize_from_cognates(e["code"], e["word"], [(m["lang"], m["form"]) for m in members])
         if got:
-            members.append({"lang": e["code"], "form": got[0], "word": e["word"], "pos": ""})
+            members.append({"lang": e["code"], "form": got[0], "word": e["word"], "pos": "",
+                            "form_from": f"vowels from {got[2]} cognate (fallback)"})
     return members
 
 
