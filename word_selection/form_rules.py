@@ -107,10 +107,17 @@ def ending_votes(core, members):
 def normalize(w, trace):
     """Lexicon-attested spelling norms: no geminates (0 roots have one);
     m, not n, before b/p (mb 36, mp 36, nb/np 0: gumbo, dumbu, fumbun);
+    initial dz-/ts- -> z-/s- (no root begins with either);
     C+i+V -> CyV (233 roots vs 14) and C+u+V -> CwV (91 vs 19)."""
     out = re.sub(r"([bcdfghjklmnprstvxz])\1", r"\1", w)
     if out != w:
         trace.append("geminate simplified (Globasa roots have none)")
+    # an initial affricate is no cluster for e-: no root begins with dz-, ts-, edz- or ets-;
+    # dz- is written z (zira < 自然 dzìrán, zaxi, zungu; also s, j), ts- s (sangu, saypan, sunami; also c)
+    af = re.sub(r"^dz", "z", re.sub(r"^ts", "s", out))
+    if af != out:
+        trace.append(f"initial affricate {out[:2]}- written {af[0]} (no root begins with dz-/ts-: zira, sangu)")
+        out = af
     nm = re.sub(r"n(?=[bp])", "m", out)
     if nm != out:
         trace.append("n before b/p written m (Globasa roots: mb/mp only)")

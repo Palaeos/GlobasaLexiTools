@@ -171,7 +171,7 @@ RULES = [
     (r"Middle Chinese -", [(M, "Exact Form", "All others (Mandarin")],
      "LexiliAsel precedent: how existing roots render a Middle Chinese final"),
     # --- norms from the lexicon, not the documentation
-    (r"geminate simplified|n before b/p|written as glide", [],
+    (r"geminate simplified|n before b/p|written as glide|initial affricate", [],
      "a spelling norm attested in the lexicon (no root has it otherwise); not in the methodology"),
     (r"fallback", [], "a fallback: secondary data or a prediction, weigh it accordingly"),
     # --- proper nouns, culture-specific words
