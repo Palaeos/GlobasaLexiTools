@@ -111,8 +111,48 @@ def propose(members, word_class="", exclude=()):
 
 
 def run(concept, overrides=None, only_sources=None):
+def add_han_cognates(words):
+    """Sinosphere cognates by Han spelling that no source returned: a Mandarin seed
+    基質 brings Japanese 基質 (kishitsu) and Korean 기질, if the dictionaries attest
+    them in those languages. Compounds only (2+ characters); flagged for a meaning
+    check (手紙 is "letter" in Japanese, "toilet paper" in Mandarin)."""
+    sino = ("cmn", "ja", "ko", "vi")
+    spellings = [(w, sinosphere.han_spellings(w["lang"], w["word"])) for w in words if w["lang"] in sino]
+    langs_of = {}
+    for w, sps in spellings:
+        for sp in sps:
+            langs_of.setdefault(sp, set()).add(w["lang"])
+    have = {}
+    for w, sps in spellings:
+        # a Korean / Vietnamese homograph (기질: 氣質, 器質, 基質) passes on only the
+        # spellings another language in the concept confirms (Mandarin 基質)
+        if len(sps) > 1:
+            sps = [sp for sp in sps if langs_of[sp] - {w["lang"]}]
+        for sp in sps:
+            have.setdefault(sp, {}).setdefault(w["lang"], w["word"])
+    present = {(w["lang"], w["word"]) for w in words}
+    added = []
+    for sp, by_lang in have.items():
+        if len(sp) < 2:
+            continue
+        src_lang, src_word = next(iter(by_lang.items()))
+        for lang in sino:
+            if lang in by_lang:
+                continue
+            for word in sinosphere.words_spelled(sp, lang):
+                if (lang, word) not in present:
+                    present.add((lang, word))
+                    added.append({"lang": lang, "word": word, "roman": "", "ipa": "", "sense": "", "url": "",
+                                  "tags": [], "provenance": ["han-cognate"],
+                                  "flags": [f"same Han spelling as {BY_CODE[src_lang]['basa']} {src_word} "
+                                            f"({sp}); check the meaning"]})
+    words.extend(added)
+    return words
+
+
     words, errors = sources.gather(concept, only=only_sources)
     excluded = {tuple(x) for x in concept.get("excluded", [])}
+    add_han_cognates(words)
     for w in words:
         w["excluded"] = (w["lang"], w["word"]) in excluded
     enrich(words)

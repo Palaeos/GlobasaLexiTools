@@ -211,6 +211,66 @@ def ja_reading_kind(word, form):
     return "sino" if near else "native"
 
 
+@lru_cache(maxsize=1)
+def _inverse_maps():
+    """traditional -> simplified and kyūjitai -> shinjitai (first counterpart)."""
+    t = table()
+    t2s, k2s = {}, {}
+    for simp, trads in t["s2t"].items():
+        for tr in trads:
+            t2s.setdefault(tr, simp)
+    for shin, kyus in t["j2t"].items():
+        for ky in kyus:
+            k2s.setdefault(ky, shin)
+    return t2s, k2s
+
+
+def surface_forms(spelling, lang):
+    """How a normalised (traditional) Han spelling may be written in a language:
+    Mandarin traditional and simplified; Japanese kyūjitai and shinjitai."""
+    t2s, k2s = _inverse_maps()
+    if lang == "cmn":
+        return list(dict.fromkeys([spelling, "".join(t2s.get(c, c) for c in spelling)]))
+    if lang == "ja":
+        return list(dict.fromkeys(["".join(k2s.get(c, c) for c in spelling), spelling]))
+    return [spelling]
+
+
+@lru_cache(maxsize=1)
+def _spelling_index():
+    """{lang: {normalised Han spelling: [word]}} for Korean and Vietnamese."""
+    out = {}
+    for lang in ("ko", "vi"):
+        for w, hs in table()[lang].items():
+            for h in hs:
+                for n in normalise(h, lang):
+                    out.setdefault(lang, {}).setdefault(n, []).append(w)
+    return out
+
+
+def words_spelled(spelling, lang):
+    """Words of a Sinosphere language with this normalised Han spelling that the
+    dictionaries attest: Korean hanja / Vietnamese chữ Hán tables; Mandarin and
+    Japanese entries in English Wiktionary, or in Japanese Wiktionary for Japanese."""
+    if lang in ("ko", "vi"):
+        return list(dict.fromkeys(_spelling_index().get(lang, {}).get(spelling, [])))
+    from .sources.wiktionary import index, other_wiki
+    ix = index()
+    out = []
+    for w in surface_forms(spelling, lang):
+        found = bool(ix.entries("zh" if lang == "cmn" else "ja", w))
+        if not found and lang == "ja":
+            db = other_wiki("ja")
+            if db is not None:
+                with db.env.begin(db=db.db_senses) as txn:
+                    cur = txn.cursor()
+                    p = (w + "\x00").encode("utf-8")
+                    found = cur.set_range(p) and bytes(cur.key()).startswith(p)
+        if found:
+            out.append(w)
+    return out
+
+
 def han_spellings(lang, word, form=None):
     """Normalised Han spellings of a word: itself (cmn; ja unless `form` is a native
     reading), its hanja (ko) or chữ Hán (vi). Empty when none is known."""
