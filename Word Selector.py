@@ -124,6 +124,9 @@ def run():
     concept = request.json["concept"]
     overrides = {**_saved_overrides(), **request.json.get("overrides", {})}
     res = _run(concept, overrides)
+    for w in res["words"]:      # historical Han, confirmed by another Sinosphere word of the concept
+        w["han_shown"] = pipeline.display_han(w, res["words"])
+        w["han_unconfirmed"] = pipeline.han_unconfirmed(w, res["words"])
     for c in res["clusters"]:
         c["lexiliasel"] = pipeline.lexiliasel(c)
         for m in c["members"]:

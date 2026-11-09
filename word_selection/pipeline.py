@@ -608,23 +608,31 @@ def team_questions(clusters):
 HISTORICAL_HAN = ("ko", "vi")   # Sino-xenic words no longer written in Han characters
 
 
-def display_han(m, cluster=None):
-    """Historical Han spelling to show beside a Korean/Vietnamese word (기질 基質,
-    vô vi 無爲), or "". With a cluster, prefer the spellings its other Sinosphere
-    members share (the one the word was clustered by)."""
+def display_han(m, peers=None):
+    """Historical Han spelling to show beside a Korean/Vietnamese word (기질 氣質,
+    khí chất 氣質), or "". Only a spelling some other Sinosphere word among `peers`
+    (a cluster's members, or the concept's words) shares is shown: the hanja table
+    lists every homograph, and native 독 'jar' is not 毒 or 獨."""
     if m.get("lang") not in HISTORICAL_HAN:
         return ""
     hs = list(m.get("han") if "han" in m else sinosphere.han_spellings(m["lang"], m.get("word", "")))
-    if not hs:
-        return ""
-    if cluster:
-        others = set()
-        for o in cluster["members"]:
-            if o is not m and o["lang"] in ("cmn", "ja", "ko", "vi"):
-                others.update(o.get("han") or [])
-        shared = [h for h in hs if h in others]
-        hs = shared or hs
-    return " / ".join(hs)
+    if isinstance(peers, dict):
+        peers = peers["members"]
+    others = set()
+    for o in peers or []:
+        if o is not m and (o["lang"], o.get("word")) != (m["lang"], m.get("word")) \
+                and o["lang"] in ("cmn", "ja", "ko", "vi"):
+            others.update(o.get("han") or [])
+    return " / ".join(h for h in hs if h in others)
+
+
+def han_unconfirmed(m, peers):
+    """Han spellings of a ko/vi word that no other word of the concept confirms
+    (possible homographs), for the sources table only."""
+    if m.get("lang") not in HISTORICAL_HAN:
+        return []
+    shown = set(display_han(m, peers).split(" / "))
+    return [h for h in m.get("han") or [] if h not in shown]
 
 
 def lexiliasel(cluster):

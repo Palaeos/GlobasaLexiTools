@@ -459,11 +459,15 @@ function renderTeamQuestions() {
     ${methHtml(q.methodology, "Methodology")}</div>`).join("");
 }
 
-// Korean/Vietnamese Sino-xenic words: historical Han spelling (clustering uses it)
+// Korean/Vietnamese Sino-xenic words: historical Han spelling, shown only when another
+// Sinosphere word of the concept shares it; other hanja/chữ Hán are possible homographs
 function hanHtml(w) {
-  if (!["ko", "vi"].includes(w.lang) || !(w.han || []).length) return "";
-  return `<span class="han" title="historical Han spelling (no longer the written form)">${esc(w.han.join(" / "))}</span>
+  if (!["ko", "vi"].includes(w.lang)) return "";
+  let h = "";
+  if (w.han_shown) h += `<span class="han" title="historical Han spelling (no longer the written form)">${esc(w.han_shown)}</span>
     <span class="small muted">historical Han</span>`;
+  if ((w.han_unconfirmed || []).length) h += `<div class="small muted">Han homographs, unconfirmed: ${esc(w.han_unconfirmed.join(" / "))}</div>`;
+  return h;
 }
 
 function renderClusters() {
