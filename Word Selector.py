@@ -126,6 +126,8 @@ def run():
     res = _run(concept, overrides)
     for c in res["clusters"]:
         c["lexiliasel"] = pipeline.lexiliasel(c)
+        for m in c["members"]:
+            m["han_shown"] = pipeline.display_han(m, c)
         c["methodology"] = methodology.for_cluster(c)
         for p in c.get("proposals") or []:
             p["methodology"] = methodology.for_proposal(p)
@@ -197,7 +199,8 @@ def check():
         c = res["clusters"][int(request.json.get("cluster", 0))]
         for m in [m for m in c["members"] if m["forms"]]:
             n, close = edit_count(form, m["forms"][0])
-            dists.append({"lang": m["lang"], "word": m["word"], "form": m["forms"][0], "edits": n,
+            dists.append({"lang": m["lang"], "word": m["word"], "han": pipeline.display_han(m, c),
+                          "form": m["forms"][0], "edits": n,
                           "d": round(distance(form, m["forms"][0], normalized=True), 3)})
     return jsonify({"collision": rep, "distances": sorted(dists, key=lambda x: x["d"]),
                     "derivatives": dossier.derivatives(form),

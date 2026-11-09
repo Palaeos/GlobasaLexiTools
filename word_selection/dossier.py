@@ -178,8 +178,14 @@ def flags(result, cluster):
     return out
 
 
+def _with_han(word, han):
+    return f"{word} (historical Han {han})" if han else word
+
+
 def build(concept, result, cluster_index=0, form=None):
+    from .pipeline import display_han
     cluster = result["clusters"][cluster_index]
+    han = {(m["lang"], m["word"]): display_han(m, cluster) for m in cluster["members"]}
     terms = concept_terms(concept, result)
     props = cluster.get("proposals", [])
     chosen = next((p for p in props if p["form"] == form), props[0] if props else None)
@@ -191,7 +197,8 @@ def build(concept, result, cluster_index=0, form=None):
                     "existing_roots": cluster.get("existing_roots", [])},
         "losers": [{"index": i, "words": [f"{m['lang']}:{m['word']}" for m in c["members"]][:10], "why": c["why"]}
                    for i, c in enumerate(result["clusters"]) if i != cluster_index][:8],
-        "sense_checks": [sense_check(m, terms) for m in cluster["members"]],
+        "sense_checks": [dict(sense_check(m, terms), han=han[(m["lang"], m["word"])])
+                         for m in cluster["members"]],
         "attestation": attestation(result, cluster),
         "neighbours": neighbours(terms, concept),
         "usage": usage(terms),
@@ -204,6 +211,7 @@ def build(concept, result, cluster_index=0, form=None):
         from .align import align
         for x in chosen["distances"]:
             x["pairs"] = align(chosen["form"], x["form"])[1]
+            x["han"] = han.get((x["lang"], x["word"]), "")
         d["proposal"] = {"form": chosen["form"], "trace": chosen["trace"], "severity": chosen["severity"],
                          "distances": chosen["distances"], "collision": chosen["collision"],
                          "derivatives": derivatives(chosen["form"]),
@@ -241,7 +249,8 @@ def to_markdown(d):
         L.append("Rules applied: " + "; ".join(p["trace"]))
         L.append("\n| Source | Word | Rendering | Edits | Distance |\n|---|---|---|---|---|")
         for x in p["distances"]:
-            L.append(f"| {BY_CODE[x['lang']]['basa']} | {x['word']} | {x['form']} | {x['edits']} | {x['d']} |")
+            L.append(f"| {BY_CODE[x['lang']]['basa']} | {_with_han(x['word'], x.get('han'))} | {x['form']} "
+                     f"| {x['edits']} | {x['d']} |")
         col = p["collision"]
         if col["exact"] or col["homophone"]:
             L.append("\n**Collisions:** " + "; ".join(f"{w} ({g})" for w, g in col["exact"] + col["homophone"]))
@@ -274,7 +283,7 @@ def to_markdown(d):
     L.append("\n## Sense check (each source in its own language)\n")
     for s in d["sense_checks"]:
         m = s["match"]
-        line = f"- **{BY_CODE[s['lang']]['basa']} {s['word']}**: " + (f"“{m['gloss']}”" if m else "—")
+        line = f"- **{BY_CODE[s['lang']]['basa']} {_with_han(s['word'], s.get('han'))}**: " + (f"“{m['gloss']}”" if m else "—")
         if s["other_senses"]:
             line += "; also: " + "; ".join(f"“{o['gloss'][:60]}”" for o in s["other_senses"][:4])
         if s["flag"]:

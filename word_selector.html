@@ -40,6 +40,7 @@ button { font: inherit; font-size: .9rem; padding: .3rem .8rem; border-radius: 4
   border: 1px solid var(--accent); background: var(--accent); color: #fff; }
 button.ghost { background: transparent; color: var(--accent); }
 button:disabled { opacity: .5; cursor: default; }
+.han { font-family: "Noto Serif CJK TC", "Noto Sans CJK TC", serif; color: var(--muted, #666); }
 .chip { display: inline-flex; align-items: center; gap: .3rem; background: var(--chip); border-radius: 999px;
   padding: .05rem .6rem; font-size: .85rem; margin: .1rem; }
 .chip button { background: none; border: none; color: var(--muted); padding: 0 .1rem; font-size: 1rem; }
@@ -376,6 +377,7 @@ function renderSources() {
       h += `<tr>${i === 0 ? `<td rowspan="${ws.length}">${esc(l.basa)}<div class="small muted">${esc(l.family)}</div></td>
         <td rowspan="${ws.length}">found</td>` : ""}
         <td><label><input type="checkbox" data-k="${esc(k)}" ${(w.tags || []).some(t => t === "scientific-name" || t === "default-out") ? 'data-default-out="1"' : ""} ${w.excluded ? "" : "checked"}> ${esc(w.word)}</label>
+          ${hanHtml(w)}
           ${(w.flags || []).map(f => `<div class="flag">${esc(f)}</div>`).join("")}
           <div class="small">${dictLinks(w.lang, w.word)} · <a href="#" data-entry="${esc(k)}">own-language senses</a></div>
           <div class="small" data-entrybox="${esc(k)}" hidden></div>
@@ -457,13 +459,20 @@ function renderTeamQuestions() {
     ${methHtml(q.methodology, "Methodology")}</div>`).join("");
 }
 
+// Korean/Vietnamese Sino-xenic words: historical Han spelling (clustering uses it)
+function hanHtml(w) {
+  if (!["ko", "vi"].includes(w.lang) || !(w.han || []).length) return "";
+  return `<span class="han" title="historical Han spelling (no longer the written form)">${esc(w.han.join(" / "))}</span>
+    <span class="small muted">historical Han</span>`;
+}
+
 function renderClusters() {
   $("clusters").hidden = false;
   renderTeamQuestions();
   const box = $("clusterList"); box.innerHTML = "";
   S.result.clusters.slice(0, 10).forEach((c, i) => {
     const d = document.createElement("div"); d.className = "cluster" + (i === S.cluster ? " active" : "");
-    const mem = c.members.map(m => `<span class="chip" title="${esc(m.forms[0] || "")}">${esc(basa(m.lang))} ${esc(m.word)}</span>`).join("");
+    const mem = c.members.map(m => `<span class="chip" title="${esc(m.forms[0] || "")}${m.han_shown ? " · historical Han spelling " + esc(m.han_shown) : ""}">${esc(basa(m.lang))} ${esc(m.word)}${m.han_shown ? ` <span class="han">${esc(m.han_shown)}</span>` : ""}</span>`).join("");
     d.innerHTML = `<div><b>#${i + 1}</b> ${esc(c.why)}</div><div>${mem}</div>
       ${c.existing_roots && c.existing_roots.length ? `<div class="flag">Already the etymon of: ${esc(c.existing_roots.join(", "))}</div>` : ""}
       ${c.proposals ? "" : '<div class="small muted">(no proposals)</div>'}

@@ -605,8 +605,31 @@ def team_questions(clusters):
     }]
 
 
+HISTORICAL_HAN = ("ko", "vi")   # Sino-xenic words no longer written in Han characters
+
+
+def display_han(m, cluster=None):
+    """Historical Han spelling to show beside a Korean/Vietnamese word (기질 基質,
+    vô vi 無爲), or "". With a cluster, prefer the spellings its other Sinosphere
+    members share (the one the word was clustered by)."""
+    if m.get("lang") not in HISTORICAL_HAN:
+        return ""
+    hs = list(m.get("han") if "han" in m else sinosphere.han_spellings(m["lang"], m.get("word", "")))
+    if not hs:
+        return ""
+    if cluster:
+        others = set()
+        for o in cluster["members"]:
+            if o is not m and o["lang"] in ("cmn", "ja", "ko", "vi"):
+                others.update(o.get("han") or [])
+        shared = [h for h in hs if h in others]
+        hs = shared or hs
+    return " / ".join(hs)
+
+
 def lexiliasel(cluster):
-    """LexiliAsel string for a cluster, in source-list order."""
+    """LexiliAsel string for a cluster, in source-list order. Korean/Vietnamese
+    Sino-xenic words carry their historical Han spelling: 기질 基質 “giji”."""
     by = {}
     for m in cluster["members"]:
         by.setdefault(m["lang"], []).append(m)
@@ -616,10 +639,11 @@ def lexiliasel(cluster):
             continue
         items = []
         for m in by[code]:
+            word = " ".join(x for x in (m["word"], display_han(m, cluster)) if x)
             if (BY_CODE[code]["latin"] and code != "vi") or not m["forms"]:
-                items.append(m["word"])
+                items.append(word)
             else:
-                items.append(f"{m['word']} “{m['forms'][0]}”")
+                items.append(f"{word} “{m['forms'][0]}”")
         parts.append(f"{BY_CODE[code]['basa']} ({', '.join(dict.fromkeys(items))})")
     return ", ".join(parts)
 
