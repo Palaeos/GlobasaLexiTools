@@ -108,8 +108,10 @@ def candidates(members, max_variants=16, exclude_root=None):
             prec[k] = letter
             if ch[0] != letter:
                 ch = [letter] + [c for c in ch if c != letter][:1]
-                via = " ".join(f"{a}:{b}" for a, b in pattern if a != "follows")
+                via = " ".join(f"{a}:{b}" for a, b in pattern if a not in ("follows", "same letter"))
                 follows = dict(pattern).get("follows")
+                if "same letter" in dict(pattern):
+                    follows = "the letter, whichever language has it"
                 notes.append(f"{letter if letter != '-' else '(none)'} at {via}: LexiliAsel precedent ({group}), "
                              f"{n} roots ({int(share * 100)}%)" + (f", following {follows}" if follows else ""))
         picks.append(ch)

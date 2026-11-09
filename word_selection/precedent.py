@@ -196,6 +196,28 @@ def follow_model(group="sino"):
     return _learn(group)[1]
 
 
+@lru_cache(maxsize=None)
+def letter_model(group="sino"):
+    """{letter classes: Counter(letter Globasa chose)}: the last fallback, when no
+    one language is followed consistently but the letter is (Mandarin j/x/c,
+    Japanese k, Korean g: Globasa k in koge, sicunki, kido, yunki, mogoki, 5 of 8,
+    though which language that k follows varies)."""
+    out = collections.defaultdict(collections.Counter)
+    for root, cols in _learn(group)[2].items():
+        for col, chosen in cols:
+            out[_classes(col)][chosen] += 1
+    return dict(out)
+
+
+def _letter_counts(group, cls, exclude_root=None):
+    c = collections.Counter(letter_model(group).get(cls, {}))
+    if exclude_root:
+        for col, chosen in _learn(group)[2].get(exclude_root.lower(), []):
+            if _classes(col) == cls:
+                c[chosen] -= 1
+    return +c
+
+
 class _Less:
     """A model minus one root's own counts, subtracted at lookup (a deep copy of
     the whole model per root is slow once sub-patterns are counted too)."""
@@ -272,6 +294,17 @@ def lookup(col, exclude_root=None, group="sino"):
         if best:
             letter, n, share, sub, lang = best
             return (letter, n, share, sub + (("follows", lang),))
+    # no language followed consistently: the letter itself may be. Whole columns of
+    # three or more languages only: with two, following the letter is following a
+    # language, which the follow model above already judged (hi:r te:l)
+    if len(col) < 3:
+        return None
+    c = _letter_counts(group, _classes(col), exclude_root)
+    n = sum(c.values())
+    if n >= 2 * MIN_COUNT:          # the weakest model: twice the evidence (z/s/c: s in 3 of 5 is not enough)
+        letter, k = c.most_common(1)[0]
+        if letter in col.values() and k / n >= MIN_SHARE:
+            return (letter, n, round(k / n, 2), tuple(items) + (("same letter", letter),))
     return None
 
 
@@ -389,13 +422,18 @@ def _coda_outcome(coda, root):
 @lru_cache(maxsize=1)
 def coda_stats():
     """{coda: (Counter(suffix), {suffix: [example roots]}, roots)} from Sino-xenic
-    roots whose final Middle Chinese consonant is known (its reading, or two
-    surface reflexes)."""
+    roots whose final Middle Chinese consonant two Sinosphere members show on the
+    surface (ja -tsu, ko -l, vi -t ...; Mandarin's lost stop and the reading itself
+    do not count). The reading only decides WHICH coda: a root whose Han spelling
+    merely ends in a -t character (pilpil, tofa) was not blended from a coda and
+    would count as 'dropped' (-t: 4 -tu / 4 dropped, not 4 / 11)."""
     out = {c: (collections.Counter(), collections.defaultdict(list), [0]) for c in CODA_REFLEX}
     for word, members in _root_members():
         if len(_sino_forms(members)) < 2:
             continue
-        for coda in codas_shown(members, strict=True):
+        for coda, ev in codas_shown(members, strict=True).items():
+            if len([l for l in ev if not l.startswith("MC:") and l != "cmn"]) < 2:
+                continue
             cnt, ex, n = out[coda]
             n[0] += 1
             suf = _coda_outcome(coda, word)
