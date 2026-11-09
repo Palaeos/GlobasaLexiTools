@@ -178,6 +178,9 @@ RULES = [
     (r"geminate simplified|n before b/p|written as glide|initial affricate", [],
      "a spelling norm attested in the lexicon (no root has it otherwise); not in the methodology"),
     (r"fallback", [], "a fallback: secondary data or a prediction, weigh it accordingly"),
+    (r"pivots|only through the English table", [],
+     "data evidence, not methodology: how many pivots' own-edition translation tables (en:pot, de:Topf, "
+     "fr:cruche) give the words; consulted only after the methodology's tie-breaks and fallback order"),
     # --- proper nouns, culture-specific words
     (r"proper noun phonotactics|proper noun keeps", [(G, "Proper Nouns", "more lax"), (G, "Proper Nouns", "coda for proper nouns")], None),
     (r"culture-specific word phonotactics|culture-specific word:", [(G, "Culture-Specific", "follow the rules for ordinary words")], None),

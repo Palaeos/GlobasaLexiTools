@@ -5,6 +5,11 @@
    European + any; Persian and Turkish.
 3. No agreement (best cluster has one family): fallback order
    Mandarin (two-character words only) > Vietnamese > Telugu > Swahili > Arabic > Hindi.
+4. Not methodology, data evidence (only when the concept has two or more pivots,
+   seeds whose own-edition tables were gathered): how many pivots' tables give the
+   cluster's supporting words. A word given by the en, de and fr tables of pot/Topf/
+   cruche has the meaning; one given only through the English table is weaker.
+   It comes after the methodology's tie-breaks and fallback order, never before.
 
 A cluster may carry "support": the languages whose words its best proposal stays
 close to (pipeline.agreement). Only they count. Sound decides, not etymology:
@@ -24,10 +29,14 @@ def describe(langs):
 def rank(clusters):
     """Annotate and sort clusters; returns them best first, each with
     {langs, families, tie_breaks, rank_key, why}."""
+    all_pivots = {p for c in clusters for m in c["members"] for p in m.get("pivot_support", [])}
     for c in clusters:
         langs = {m["lang"] for m in c["members"] if m["lang"] in BY_CODE}
         if c.get("support") is not None:
             langs &= set(c["support"])
+        c["pivot_support"] = sorted({p for m in c["members"] if m["lang"] in langs
+                                     for p in m.get("pivot_support", [])})
+        pv = len(c["pivot_support"]) if len(all_pivots) >= 2 else 0
         c["langs"] = sorted(langs, key=list(BY_CODE).index)
         c["families"] = sorted(families(langs))
         c["tie_breaks"] = [name for name, test in TIE_BREAKS if test(langs)]
@@ -37,7 +46,7 @@ def rank(clusters):
             lang = next(iter(langs))
             ok = lang != "cmn" or any(len(m["word"]) == 2 for m in c["members"] if m["lang"] == "cmn")
             fb = len(FALLBACK_ORDER) - FALLBACK_ORDER.index(lang) if lang in FALLBACK_ORDER and ok else 0
-        c["rank_key"] = (len(c["families"]), tb_vector, fb, len(langs))
+        c["rank_key"] = (len(c["families"]), tb_vector, fb, pv, len(langs))
     clusters.sort(key=lambda c: c["rank_key"], reverse=True)
     for i, c in enumerate(clusters):
         why = describe(c["langs"])
@@ -51,6 +60,14 @@ def rank(clusters):
                     + (f" and {len(u) - 3} more" if len(u) > 3 else ""))
         if c["tie_breaks"]:
             why += "; meets tie-break(s): " + ", ".join(c["tie_breaks"])
+        if len(all_pivots) >= 2:
+            pv = c["pivot_support"]
+            if not pv:
+                why += f"; given by none of the {len(all_pivots)} pivots' tables"
+            elif pv == [p for p in pv if p.startswith("en:")] and len(pv) == 1:
+                why += f"; only through the English table ({pv[0]}) of {len(all_pivots)} pivots"
+            else:
+                why += f"; backed by {len(pv)} of {len(all_pivots)} pivots ({', '.join(pv)})"
         if i > 0:
             top = clusters[0]
             if len(c["families"]) < len(top["families"]):
@@ -60,8 +77,12 @@ def rank(clusters):
                 why += f"; lost on tie-break: {lost}"
             elif c["rank_key"] == top["rank_key"]:
                 why += "; TIED with the winner -- your call (try other parts of speech or synonyms)"
+            elif c["rank_key"][2] < top["rank_key"][2]:
+                why += "; lost on fallback order"
+            elif c["rank_key"][3] < top["rank_key"][3]:
+                why += "; lost: fewer pivots' tables give it (data evidence, not methodology)"
             else:
-                why += "; lost on fallback order / language count"
+                why += "; lost on language count"
         elif len(c["families"]) == 1:
             why += "; no cross-family agreement: fallback order applied"
         c["why"] = why

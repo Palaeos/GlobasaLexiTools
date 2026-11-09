@@ -465,14 +465,37 @@ def _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE):
     return added
 
 
+def pivot_support(w):
+    """The concept's pivots whose translation table gives this word: 'de:Topf' for
+    provenance 'wiktionary:de:Topf/noun' (a headword is its own pivot)."""
+    out = set()
+    for p in w.get("provenance", []):
+        if p.startswith("wiktionary:"):
+            wiki, rest = p[len("wiktionary:"):].split(":", 1)
+            out.add(f"{wiki}:{rest.rsplit('/', 1)[0]}")
+    return sorted(out)
+
+
 def run(concept, overrides=None, only_sources=None, progress=None):
     """progress(stage): called at each stage, for a waiting user (the page shows it)."""
     say = progress or (lambda stage: None)
     say("Gathering source words (Wiktionary, Wikidata, Wikispecies, seeds)")
     words, errors = sources.gather(concept, only=only_sources)
+    for w in words:
+        w["pivot_support"] = pivot_support(w)
+    from .sources.wiktionary import english_view
+    # English-gloss checks see a de/fr sense through the English tables it bridges to
+    en_concept, notes = english_view(concept), []
+    if en_concept.get("unbridged"):
+        if any(r[0] == "en" for r in en_concept["wikt_senses"]):
+            notes.append("checked against the other senses only (fallback: no English table found for "
+                         + ", ".join(en_concept["unbridged"]) + ")")
+        else:
+            notes.append("meaning check skipped (fallback: no English pivot; "
+                         + ", ".join(en_concept["unbridged"]) + " bridge to no English table)")
     say(f"Following etymologies and Han spellings ({len(words)} words so far)")
     if concept.get("etym_cognates"):   # opt-in (user: not by default): English wu wei brings Mandarin 無為 ...
-        add_etym_cognates(words, concept=concept)
+        add_etym_cognates(words, concept=en_concept)
     add_han_cognates(words)       # ... which the Han spelling extends to ja, ko, vi
     excluded = {tuple(x) for x in concept.get("excluded", [])}
     included = {tuple(x) for x in concept.get("included", [])}
@@ -480,12 +503,12 @@ def run(concept, overrides=None, only_sources=None, progress=None):
         # a taxon's scientific name used as an article title is left out unless ticked
         w["excluded"] = (w["lang"], w["word"]) in excluded or (
             "scientific-name" in w.get("tags", []) and (w["lang"], w["word"]) not in included)
-    context = [x for s in concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
+    context = [x for s in en_concept.get("wikt_senses", []) for x in (s[1], s[3]) if s[0] == "en"]
     context += [w["word"] for w in words if w["lang"] == "en"]
     say(f"Reading pronunciations and vocalizing {len(words)} words")
     enrich(words, context)
     say("Checking each word's meaning in its own dictionary entry")
-    check_meanings(words, concept)
+    check_meanings(words, en_concept)
     from . import cultural
     culture = cultural.detect(concept, words)
     # proper nouns / culture-specific words: every language's pronunciation is checked
@@ -518,7 +541,8 @@ def run(concept, overrides=None, only_sources=None, progress=None):
         clusters = select.rank(clusters)
     questions = team_questions(clusters)
     return {"words": words, "status": statuses(words, concept.get("no_word", [])),
-            "clusters": clusters, "errors": errors, "cultural": culture, "team_questions": questions}
+            "clusters": clusters, "errors": errors, "notes": notes, "cultural": culture,
+            "team_questions": questions, "bridged": en_concept.get("bridged", [])}
 
 
 SUPPORT_MAX = 0.30   # a member supports a form within this distance: 95% of LexiliAsel's cited

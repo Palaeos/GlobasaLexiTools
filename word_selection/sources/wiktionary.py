@@ -27,7 +27,7 @@ def index():
     return ConceptIndex()
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=8)      # en is separate; de fr ja zh built, es ru ko may follow
 def other_wiki(lang):
     path = os.path.join(ROOT, f"WiktionaryLMDB_{lang}")
     if not os.path.isdir(path):
@@ -100,6 +100,80 @@ def senses_for(word):
                         "examples": [x[0] for x in d["ex"]] if d else [],
                         "qids": qmap.get(sense, [])})
     return sorted(out, key=lambda s: -s["n_langs"])
+
+
+def _gloss_tokens(text):
+    return {t for t in re.findall(r"\w+", text.lower()) if len(t) > 3}
+
+
+def _edition_definition(label, defs):
+    """The edition's definition for a translation-table label: the label itself when
+    the edition's tables are keyed by definition (de.wiktionary: 'kleines Gefäß'), else
+    the definition sharing most words with it (fr: 'récipient à anse' ~ 'Vase de
+    terre ou de grès, à anse, ...'); "" when none does."""
+    if not label:
+        return ""
+    for d in defs:
+        if label in d.glosses:
+            return label
+    lt = _gloss_tokens(label)
+    best = max(defs, key=lambda d: len(lt & _gloss_tokens(" ".join(d.glosses))), default=None)
+    if best is not None and lt & _gloss_tokens(" ".join(best.glosses)):
+        return best.glosses[-1]
+    return ""
+
+
+def edition_words(wiki, word):
+    """Spellings to try in an edition: as typed, then capitalised (German nouns:
+    de:topf -> Topf), then lower-case."""
+    return list(dict.fromkeys([word, word[:1].upper() + word[1:], word.lower()]))
+
+
+def senses_in(wiki, word):
+    """senses_for() for any edition: the translation-table senses of `word` in
+    WiktionaryLMDB_<wiki>, in the same shape; [] when the edition is not built."""
+    if wiki == "en":
+        return senses_for(word)
+    db = other_wiki(wiki)
+    if db is None:
+        return []
+    from ..contrasts import foreign_senses
+    out = []
+    for w in edition_words(wiki, word):
+        for s in foreign_senses(wiki, w):
+            defs = db.get_senses(w, s["pos"]) or []
+            d = _edition_definition(s["sense"], defs)
+            out.append({"wiki": wiki, "word": w, "pos": s["pos"], "sense": s["sense"],
+                        "n_langs": len(s["trans"]), "definition": "" if d == s["sense"] else d,
+                        "examples": [], "qids": [], "trans": {k: sorted(v) for k, v in s["trans"].items()}})
+        if out:
+            break
+    return sorted(out, key=lambda s: -s["n_langs"])
+
+
+def english_view(concept):
+    """The concept as English senses, for checks that read English glosses (sense_fit).
+    A sense from another edition (de: Topf 'kleines Gefäß') is bridged to the English
+    tables that list that word AND are named by an English translation in its own
+    table (pot): those English senses stand for it. Unchanged when every sense is
+    English; {"bridged": [...], "unbridged": [...]} say what happened."""
+    rows = [list(r) for r in concept.get("wikt_senses", [])]
+    if all(r[0] == "en" for r in rows):
+        return concept
+    ix = index()
+    en_rows, bridged, unbridged = [r for r in rows if r[0] == "en"], [], []
+    for wiki, word, pos, sense in [r for r in rows if r[0] != "en"]:
+        en_words = {w for w, _, _ in table(wiki, word, pos, sense).get("en", [])
+                    for w in split_variants(w)}
+        lang = DUMP_TO_CODE.get(wiki, wiki)
+        got = []      # may already be among the concept's English senses: still a bridge
+        for code in (BY_CODE[lang]["wikt"] if lang in BY_CODE else [wiki]):
+            for en_word, en_pos, en_sense in ix.tables_listing(code, word):
+                if en_word in en_words and ["en", en_word, en_pos, en_sense] not in got:
+                    got.append(["en", en_word, en_pos, en_sense])
+        (bridged if got else unbridged).append(f"{wiki}:{word} '{sense}'")
+        en_rows += [r for r in got if r not in en_rows]
+    return dict(concept, wikt_senses=en_rows, bridged=bridged, unbridged=unbridged)
 
 
 def _ipa_rank(ipa_tags):

@@ -117,7 +117,8 @@ details { margin: .3rem 0; } summary { cursor: pointer; font-weight: 600; }
   <div class="cols">
     <div>
       <h3>From a Wiktionary sense</h3>
-      <div class="row"><input type="text" id="enword" placeholder="English headword"><button id="findSenses">Find senses</button></div>
+      <div class="row"><select id="wikiEd" title="Wiktionary edition the headword is looked up in"><option value="en">en.wiktionary</option></select>
+        <input type="text" id="enword" placeholder="Headword"><button id="findSenses">Find senses</button></div>
       <div id="senseList" class="list" hidden></div>
     </div>
     <div>
@@ -235,14 +236,15 @@ function senseRow(s, extra = "") {
   const lab = document.createElement("label");
   const key = JSON.stringify([s.wiki, s.word, s.pos, s.sense]);
   const on = S.concept.wikt_senses.some(x => JSON.stringify(x) === key);
-  lab.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}> <b>${esc(s.word)}</b> <i>${esc(s.pos)}</i>: ${esc(s.sense || "(no sense label)")}
-    <span class="muted small">— ${s.n_langs} source langs${s.qids.length ? " · " + s.qids.join(", ") : ""}</span>
+  const qids = s.qids || [];
+  lab.innerHTML = `<input type="checkbox" ${on ? "checked" : ""}> ${s.wiki !== "en" ? `<span class="small muted">${esc(s.wiki)}.wiktionary:</span> ` : ""}<b>${esc(s.word)}</b> <i>${esc(s.pos)}</i>: ${esc(s.sense || "(no sense label)")}
+    <span class="muted small">— ${s.n_langs} source langs${qids.length ? " · " + qids.join(", ") : ""}</span>
     ${s.definition ? `<div class="small muted">${esc(s.definition)}</div>` : ""}${extra}`;
   lab.querySelector("input").onchange = e => {
     const arr = S.concept.wikt_senses, i = arr.findIndex(x => JSON.stringify(x) === key);
     if (e.target.checked && i < 0) arr.push([s.wiki, s.word, s.pos, s.sense]);
     if (!e.target.checked && i >= 0) arr.splice(i, 1);
-    s.qids.forEach(q => { if (e.target.checked && !S.concept.qids.includes(q)) S.concept.qids.push(q); });
+    qids.forEach(q => { if (e.target.checked && !S.concept.qids.includes(q)) S.concept.qids.push(q); });
     renderChips();
   };
   return lab;
@@ -251,7 +253,7 @@ $("findSenses").onclick = async () => {
   const w = $("enword").value.trim(); if (!w) return;
   const list = $("senseList"); list.hidden = false; list.innerHTML = '<div class="small muted">Looking up…</div>';
   try {
-    const ss = await api("/api/senses?word=" + encodeURIComponent(w));
+    const ss = await api(`/api/senses?wiki=${$("wikiEd").value}&word=` + encodeURIComponent(w));
     list.innerHTML = ss.length ? "" : '<div class="small muted">No translation tables for this headword.</div>';
     ss.forEach(s => list.appendChild(senseRow(s)));
   } catch (e) { list.innerHTML = `<div class="flag">${esc(e.message)}</div>`; }
@@ -270,10 +272,33 @@ $("expandSeeds").onclick = async () => {
       box.appendChild(d);
     }
     if (!r.senses.length) box.insertAdjacentHTML("beforeend", '<div class="small muted" style="padding:.3rem .5rem">No related translation tables found; the seeds alone will be used.</div>');
+    renderOwnSenses(r.own || [], box);
+    if (r.senses.length) box.insertAdjacentHTML("beforeend", '<div class="small" style="padding:.3rem .5rem"><b>English tables related to the seeds</b></div>');
     r.senses.forEach(s => box.appendChild(senseRow(s, `<div class="small muted">via ${esc(s.via.join("; "))}</div>`)));
     renderChips();
   } catch (e) { box.innerHTML = `<div class="flag">${esc(e.message)}</div>`; }
 };
+// Each seed's senses in its own Wiktionary edition (a seed tuple pins one meaning):
+// the sense whose table lists the most other seeds is ticked; a tie is left to the user
+function renderOwnSenses(own, box) {
+  if (!own.length) return;
+  box.insertAdjacentHTML("beforeend", '<div class="small" style="padding:.3rem .5rem"><b>Each seed in its own Wiktionary</b> — the sense listing the most other seeds is ticked</div>');
+  own.forEach(r => {
+    const head = document.createElement("div"); head.className = "small"; head.style.padding = ".2rem .5rem";
+    head.innerHTML = `<b>${esc(r.seed.join(":"))}</b> in ${esc(r.edition || "?")}.wiktionary${r.note ? ` <span class="flag">${esc(r.note)}</span>` : ""}`;
+    box.appendChild(head);
+    r.senses.forEach((s, i) => {
+      if (i === r.pick && !S.concept.wikt_senses.some(x => JSON.stringify(x) === JSON.stringify([s.wiki, s.word, s.pos, s.sense])))
+        S.concept.wikt_senses.push([s.wiki, s.word, s.pos, s.sense]);
+      box.appendChild(senseRow(s, `<div class="small muted">lists ${s.score} of ${s.n_others} other seeds${s.listed.length ? ": " + esc(s.listed.join(", ")) : ""}</div>`));
+    });
+  });
+}
+api("/api/editions").then(e => {
+  const sel = $("wikiEd");
+  e.built.filter(x => x !== "en").forEach(x => sel.insertAdjacentHTML("beforeend", `<option value="${x}">${x}.wiktionary</option>`));
+  e.not_built.forEach(x => sel.insertAdjacentHTML("beforeend", `<option value="${x}" disabled>${x}.wiktionary (not built)</option>`));
+}).catch(() => {});
 $("addArticle").onclick = async () => {
   const lang = $("wpLang").value, t = $("wpTitle").value.trim(); if (!t) return;
   try {
@@ -311,7 +336,9 @@ async function run() {
     clearInterval(poll);
     S.cluster = 0; S.form = null;
     $("runInfo").textContent = `${S.result.words.length} source words, ${S.result.clusters.length} clusters` +
-      (S.result.errors.length ? ` — ${S.result.errors.join("; ")}` : "");
+      (S.result.errors.length ? ` — ${S.result.errors.join("; ")}` : "") +
+      ((S.result.notes || []).length ? ` — ${S.result.notes.join("; ")}` : "") +
+      ((S.result.bridged || []).length ? ` — English glosses checked via the English tables of ${S.result.bridged.join(", ")}` : "");
     renderSources(); renderContrastHint(); renderClusters(); renderProposals(); await loadDossier();
   } catch (e) { clearInterval(poll); $("runInfo").textContent = e.message; }
   $("runBtn").disabled = false;

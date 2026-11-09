@@ -88,15 +88,23 @@ def langs():
 
 @app.route("/api/senses")
 def senses():
-    word = request.args.get("word", "").strip()
-    return jsonify(wiktionary.senses_for(word) if word else [])
+    """Translation-table senses of a headword in any built edition (wiki=en default)."""
+    word, wiki = request.args.get("word", "").strip(), request.args.get("wiki", "en")
+    if not word:
+        return jsonify([])
+    return jsonify([{k: v for k, v in s.items() if k != "trans"} for s in wiktionary.senses_in(wiki, word)])
+
+
+@app.route("/api/editions")
+def editions():
+    return jsonify(seeds_src.editions())
 
 
 @app.route("/api/expand", methods=["POST"])
 def expand():
     text = request.json.get("seeds", "")
     seeds = seeds_src.parse(text)
-    return jsonify({"seeds": seeds, **seeds_src.expand(seeds)})
+    return jsonify({"seeds": seeds, **seeds_src.expand(seeds), "own": seeds_src.tuple_senses(seeds)})
 
 
 @app.route("/api/article")

@@ -28,8 +28,11 @@ DERIV_SUFFIXES = ["ya", "li", "yen", "ne", "gi", "cu", "do", "su", "mo", "ple", 
 
 def concept_terms(concept, result=None):
     """English (and Esperanto) words describing the concept, for gloss matching."""
+    from .sources.wiktionary import english_view
     terms = set()
-    for wiki, word, pos, sense in concept.get("wikt_senses", []):
+    # a de/fr sense counts through the English tables it bridges to (Topf -> pot),
+    # never with its own-language label read as English
+    for wiki, word, pos, sense in english_view(concept).get("wikt_senses", []):
         terms.add(word.lower())
         terms |= _content_words(sense)
     if concept.get("label"):
@@ -162,11 +165,24 @@ def usage(terms, limit=6):
     return out
 
 
+def pivots(concept, result, cluster):
+    """Each Wiktionary sense of the concept (en:pot, de:Topf, fr:cruche): how many
+    source words its table supplied, and how many of the chosen cluster's."""
+    out = []
+    for wiki, word, pos, sense in concept.get("wikt_senses", []):
+        pid = f"{wiki}:{word}"
+        out.append({"pivot": pid, "pos": pos, "sense": sense,
+                    "words": sum(pid in w.get("pivot_support", []) for w in result["words"]),
+                    "in_cluster": sum(pid in m.get("pivot_support", []) for m in cluster["members"])})
+    return out
+
+
 def flags(result, cluster):
     out = []
     for m in cluster["members"]:
         for f in m.get("flags", []):
             out.append(f"{m['lang']} {m['word']}: {f}")
+    out += list(result.get("notes", []))
     nd = [c for c, s in result["status"].items() if s == "no data"]
     if nd:
         out.append("no data (not 'no word') for: " + ", ".join(nd))
@@ -203,6 +219,7 @@ def build(concept, result, cluster_index=0, form=None):
         "neighbours": neighbours(terms, concept),
         "usage": usage(terms),
         "flags": flags(result, cluster),
+        "pivots": pivots(concept, result, cluster),
         "team_questions": result.get("team_questions", []),
         "proposal": None,
         "concept_info": [],
@@ -233,6 +250,11 @@ def to_markdown(d):
     if c.get("wikt_senses"):
         L.append("**Concept (Wiktionary senses):** " + "; ".join(
             f"{w} ({p}): {s}" for _, w, p, s in c["wikt_senses"]))
+    if len(d.get("pivots", [])) >= 2:
+        L.append("\n**Pivots** (each sense in its own Wiktionary edition; data evidence, not methodology):")
+        for p in d["pivots"]:
+            L.append(f"- {p['pivot']} ({p['pos']}) '{p['sense']}': {p['words']} source words, "
+                     f"{p['in_cluster']} in the chosen cluster")
     if c.get("qids"):
         L.append("**Wikidata:** " + ", ".join(c["qids"]))
     if c.get("seeds"):
