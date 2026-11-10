@@ -17,3 +17,7 @@ __pycache__/
 vetting_import/
 WiktionaryLMDB_vetted/
 WiktionaryLMDB_vetted.building/
+
+# Expanded vetting views: regenerated from vetted_senses.tsv + the dump
+GLB_ENG_WiktionarySenses*.tsv
+GLB_ENG_WiktionarySenses*.xlsx
