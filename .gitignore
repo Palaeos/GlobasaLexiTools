@@ -12,3 +12,8 @@ word-list.csv
 WordViewerLMDB/
 WordViewerLMDB.building/
 __pycache__/
+
+# Working copies of the vetting spreadsheets (decisions are stored in their own file)
+vetting_import/
+WiktionaryLMDB_vetted/
+WiktionaryLMDB_vetted.building/

@@ -21,7 +21,11 @@ Optional extras, which the viewer runs without:
 
 - `WV_AUDIO_DIR=/path/to/clips`: pronunciation recordings named `<word>.ogg`.
 - `WV_APERTIUM_DIR=/path/to/apertium-glb-eng`: a compiled Apertium pair, for the translation aide at `/translate`.
-- `menalariExtension.tsv`: translations beyond the official word list, built by [`Wiktionary extension builder.py`](Wiktionary%20extension%20builder.py).
+- Translations in about 50 more languages (`menalariExtension.tsv`): run `./setup.sh --extension`. It streams the English Wiktionary dump from [kaikki.org](https://kaikki.org/) (about 2.4 GB, not stored; set `WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl.gz` to use a local copy), keeps only the entries named by the vetting decisions in [`vetted_senses.tsv`](vetted_senses.tsv), and builds the file with [`Wiktionary extension builder.py`](Wiktionary%20extension%20builder.py). A dump newer than the one the senses were vetted against may have renamed some senses; the builder lists any it had to skip.
+
+### Vetting decisions
+
+The repository stores only the decisions, in `vetted_senses.tsv`: which Wiktionary sense (with its part of speech and verb type) applies to which Globasa word, and at which tier it was checked. The comfortable editing view, with definitions, examples and translations beside each candidate sense, is regenerated from the word list and the dump by [`Wiktionary sense based translation extender 3.py`](Wiktionary%20sense%20based%20translation%20extender%203.py) as `GLB_ENG_WiktionarySenses.xlsx`, in the directory named by `.senses_config.json`. Vet in the spreadsheet; [`vetted_senses.py`](vetted_senses.py) exports the decisions back to the TSV whenever the spreadsheet is newer.
 
 ## Apertium
 - [`dictionaryPreprocess.py`](dictionaryPreprocess.py) - Scrapes the Globasa wordlist to either generate monolingual or bilingual dictionary entries for Apertium

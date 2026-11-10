@@ -10,12 +10,13 @@ from openpyxl.utils import get_column_letter
 
 from Lexilista_parser import parseWordEntry, GlossPoS, VerbType, _expand_gloss_context
 from wiktionary_db import WiktionaryDB
+import vetted_senses
 from wiktionary_constants import (
     GLOSSPOS_TO_WIKT, WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
     SENSES_LANGS,
     lang_display_name, extract_italic_annotation,
     expand_comma_glosses, get_words_for_pos, get_sense_lang_translations,
-    _load_markings_from_rows, _load_markings_from_xlsx, _find_latest_backup,
+    _load_markings_from_xlsx, _find_latest_backup,
 )
 
 # ---------------------------------------------------------------------------
@@ -36,7 +37,6 @@ while True:
 # ---------------------------------------------------------------------------
 
 SENSES_FILENAME = "GLB_ENG_WiktionarySenses.xlsx"
-SENSES_TSV_FALLBACK = "./GLB_ENG_WiktionarySenses.tsv"
 CONFIG_FILE = ".senses_config.json"
 
 default_dir = "./"
@@ -54,43 +54,22 @@ with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
 senseKeyPath = os.path.join(senses_dir, SENSES_FILENAME)
 
 # ---------------------------------------------------------------------------
-# Preload existing vetted markings from .xlsx (fallback to .tsv)
+# Preload the vetting decisions (vetted_senses.tsv, re-exported from the
+# spreadsheet first when that is newer) and the spreadsheet's column widths
 # ---------------------------------------------------------------------------
 
-existing_markings = {}
+existing_markings = vetted_senses.load_markings("en")
+print(f"Loaded {len(existing_markings)} vetted markings from "
+      f"{os.path.basename(vetted_senses.VETTED_TSV)}")
+
 existing_col_widths = {}  # header name -> width (character units)
-
-loaded = False
-
-if os.path.exists(senseKeyPath):
-    try:
-        existing_markings, existing_col_widths = _load_markings_from_xlsx(senseKeyPath)
-        print(f"Loaded {len(existing_markings)} vetted markings from {senseKeyPath}")
-        loaded = True
-    except Exception as e:
-        print(f"Warning: {senseKeyPath} is corrupted ({e}), checking backups...")
-
-if not loaded:
-    backup_path = _find_latest_backup()
-    if backup_path:
+for _path in (senseKeyPath, _find_latest_backup()):
+    if _path and os.path.exists(_path):
         try:
-            existing_markings, existing_col_widths = _load_markings_from_xlsx(backup_path)
-            print(f"Loaded {len(existing_markings)} vetted markings from backup {backup_path}")
-            loaded = True
+            _, existing_col_widths = _load_markings_from_xlsx(_path)
+            break
         except Exception as e:
-            print(f"Warning: backup {backup_path} also corrupted ({e})")
-
-if not loaded and os.path.exists(SENSES_TSV_FALLBACK):
-    with open(SENSES_TSV_FALLBACK, newline='', encoding='utf-8') as f:
-        reader = csv.reader(f, delimiter='\t', quotechar='"')
-        header = next(reader, None)
-        if header:
-            existing_markings = _load_markings_from_rows(header, reader)
-    print(f"Loaded {len(existing_markings)} vetted markings from {SENSES_TSV_FALLBACK} (tsv fallback)")
-    loaded = True
-
-if not loaded:
-    print(f"No existing senses file found, starting fresh")
+            print(f"Warning: column widths not read from {_path} ({e})")
 
 # ---------------------------------------------------------------------------
 # LMDB database

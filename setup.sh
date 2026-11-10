@@ -2,6 +2,9 @@
 # Set up the Word Viewer on a fresh clone, then start it with:
 #     venv/bin/python "Word Viewer.py"      (http://localhost:5000)
 #
+#     ./setup.sh --extension   also builds menalariExtension.tsv (translations
+#                              in ~50 more languages) from the Wiktionary dump
+#
 # Safe to run again: it refreshes the word list from the Globasa CDN and, if
 # the list changed, drops the viewer's cache so the next start rebuilds it.
 set -euo pipefail
@@ -44,11 +47,24 @@ else:
         print("  Already up to date.")
 EOF
 
+if [ "${1:-}" = "--extension" ]; then
+    # Translations beyond the word list: the vetted senses (vetted_senses.tsv)
+    # looked up in the English Wiktionary. The dump (~2.4 GB) is streamed from
+    # kaikki.org, or read from WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz);
+    # only the vetted entries are kept.
+    echo "== Menalari extension from the Wiktionary dump (takes a while)"
+    venv/bin/python wiktionary_extract.py
+    venv/bin/python "Wiktionary extension builder.py"
+    rm -rf WordViewerLMDB
+fi
+
 cat <<'EOF'
 
 Done. Start the viewer with
     venv/bin/python "Word Viewer.py"
 and open http://localhost:5000
+
+Translations beyond the word list: ./setup.sh --extension
 
 Optional, machine-specific extras (the viewer runs without them):
     WV_AUDIO_DIR=/path/to/clips       pronunciation recordings (<word>.ogg)

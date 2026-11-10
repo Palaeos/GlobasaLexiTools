@@ -294,7 +294,8 @@ def entry_to_string(entry):
             last_nonempty = i
     if last_nonempty < 0:
         return ""
-    parts = [", ".join(s) if s else "" for s in entry[:last_nonempty + 1]]
+    # Sorted: sets have no stable order, and a rebuild must not reshuffle.
+    parts = [", ".join(sorted(s)) if s else "" for s in entry[:last_nonempty + 1]]
     return "; ".join(parts)
 
 

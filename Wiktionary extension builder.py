@@ -1,10 +1,11 @@
-"""Wiktionary extension builder — reads vetted senses from xlsx files,
+"""Wiktionary extension builder — reads the vetting decisions,
 fetches translations from LMDB, writes menalariExtension.tsv.
 
 Reads:
-  - GLB_ENG_WiktionarySenses.xlsx  (English Wiktionary senses)
-  - GLB_MULTI_WiktionarySenses.xlsx  (non-English curated senses, optional)
-  - WiktionaryLMDB/  (English)
+  - vetted_senses.tsv  (the decisions; re-exported from the senses
+    spreadsheets first when those are newer, see vetted_senses.py)
+  - WiktionaryLMDB/  (English; or WiktionaryLMDB_vetted/, the extract of just
+    the vetted entries made by wiktionary_extract.py)
   - WiktionaryLMDB_{lang}/  (non-English, per source)
   - word-list.csv  (for annotation overlays and word ordering)
 
@@ -15,12 +16,11 @@ Writes:
 import os
 import sys
 import csv
-import json
-
-from openpyxl import load_workbook
 
 from Lexilista_parser import parseWordEntry, VerbType as _VT
 from wiktionary_db import WiktionaryDB
+from wiktionary_extract import VETTED_LMDB
+import vetted_senses
 from wiktionary_constants import (
     GLOSSPOS_TO_WIKT, EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
@@ -47,115 +47,13 @@ while True:
         maxInt = int(maxInt / 10)
 
 # ---------------------------------------------------------------------------
-# Configurable paths
+# Load vetted senses (vetted_senses.tsv; re-exported from the spreadsheets
+# first if they are newer)
 # ---------------------------------------------------------------------------
 
-ENG_SENSES_FILENAME = "GLB_ENG_WiktionarySenses.xlsx"
-MULTI_SENSES_FILENAME = "GLB_MULTI_WiktionarySenses.xlsx"
-CONFIG_FILE = ".senses_config.json"
-
-default_dir = "./"
-if os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-        default_dir = json.load(f).get("senses_dir", default_dir)
-
-senses_dir = input(
-    f"Directory for senses xlsx files [{default_dir}]:\n"
-).strip() or default_dir
-
-eng_senses_path = os.path.join(senses_dir, ENG_SENSES_FILENAME)
-multi_senses_path = os.path.join(senses_dir, MULTI_SENSES_FILENAME)
-
-# ---------------------------------------------------------------------------
-# Load vetted senses from xlsx
-# ---------------------------------------------------------------------------
-
-
-def load_vetted_senses(xlsx_path, source_type):
-    """Load vetted senses from an xlsx file.
-
-    Returns list of dicts:
-      {glb, lookup_word, pos, sense, source, source_type}
-
-    source_type: 'eng' or 'multi'
-    For 'eng': source='en', lookup_word from 'Eng' column
-    For 'multi': source from 'Source' column, lookup_word from 'LookupWord' column
-    """
-    if not os.path.exists(xlsx_path):
-        return []
-
-    wb = load_workbook(xlsx_path, read_only=True)
-    ws = wb.active
-    row_iter = ws.iter_rows(values_only=True)
-    header = next(row_iter, None)
-    if not header:
-        wb.close()
-        return []
-
-    header = [str(h) if h is not None else '' for h in header]
-    col = {name: i for i, name in enumerate(header)}
-
-    app_idx = col.get('App?')
-    tier_idx = col.get('Tier')
-
-    if source_type == 'eng':
-        word_idx = col.get('Eng', 1)
-        source_idx = None
-    else:
-        word_idx = col.get('LookupWord', col.get('Eng', 1))
-        source_idx = col.get('Source')
-
-    pos_idx = col.get('Prt of Sp', 2)
-    vt_idx = col.get('VerbType')
-    sense_idx = col.get('Wiktionary Sense (in Translations)',
-                        col.get('Wiktionary Sense', 3))
-
-    senses = []
-    for row in row_iter:
-        row = [str(c) if c is not None else '' for c in row]
-        if len(row) <= max(x for x in [app_idx, tier_idx, word_idx, pos_idx, sense_idx] if x is not None):
-            continue
-
-        app = row[app_idx] if app_idx is not None else ''
-        tier = row[tier_idx] if tier_idx is not None else ''
-
-        if app != 's' or tier not in ('v', 'e'):
-            continue
-
-        glb = row[0]
-        lookup_word = row[word_idx] if word_idx < len(row) else ''
-        pos = row[pos_idx] if pos_idx < len(row) else ''
-        verb_type = row[vt_idx] if vt_idx is not None and vt_idx < len(row) else ''
-        sense = row[sense_idx] if sense_idx < len(row) else ''
-        source = row[source_idx] if source_idx is not None and source_idx < len(row) else 'en'
-
-        if not glb or not lookup_word or not pos or not sense:
-            continue
-
-        senses.append({
-            'glb': glb,
-            'lookup_word': lookup_word,
-            'pos': pos,
-            'verb_type': verb_type,
-            'sense': sense,
-            'source': source,
-        })
-
-    wb.close()
-    return senses
-
-
-print(f"Loading English senses from {eng_senses_path}...")
-eng_senses = load_vetted_senses(eng_senses_path, 'eng')
-print(f"  {len(eng_senses)} vetted English senses")
-
-multi_senses = []
-if os.path.exists(multi_senses_path):
-    print(f"Loading multi-source senses from {multi_senses_path}...")
-    multi_senses = load_vetted_senses(multi_senses_path, 'multi')
-    print(f"  {len(multi_senses)} vetted multi-source senses")
-
-all_senses = eng_senses + multi_senses
+all_senses = vetted_senses.load_vetted()
+print(f"  {sum(s['source'] == 'en' for s in all_senses)} vetted English senses, "
+      f"{sum(s['source'] != 'en' for s in all_senses)} from other Wiktionaries")
 
 # ---------------------------------------------------------------------------
 # Group senses by Globasa word
@@ -173,9 +71,18 @@ for s in all_senses:
 
 dbs = {}
 
-if eng_senses:
+# The full English database ("JSONL parser 2.py") when this machine has it;
+# otherwise the extract of just the vetted entries (wiktionary_extract.py),
+# which yields the same rows when both come from the same dump.
+if os.path.exists("./WiktionaryLMDB"):
     dbs['en'] = WiktionaryDB(readonly=True)
-    print(f"  Opened English LMDB")
+    print("  Opened English LMDB")
+elif os.path.exists(VETTED_LMDB):
+    dbs['en'] = WiktionaryDB(path=VETTED_LMDB, readonly=True)
+    print(f"  Opened English LMDB at {VETTED_LMDB} "
+          f"(fallback: no full WiktionaryLMDB, extract of the vetted entries)")
+else:
+    sys.exit("No English Wiktionary database: run wiktionary_extract.py first.")
 
 for source_code, config in WIKTIONARY_SOURCES.items():
     lmdb_dir = config['lmdb_dir']
@@ -220,6 +127,9 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
     writer.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
 
     words_with_data = 0
+    # Decisions the dump cannot serve: a different dump than the one vetted
+    # against renames or drops senses. Reported, never silently lost.
+    unmatched = defaultdict(list)
 
     for globasa_word in wordlist_order:
         senses = word_senses.get(globasa_word, [])
@@ -261,13 +171,16 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
             source = s['source']
             db = dbs.get(source)
             if db is None:
+                unmatched['no database for this Wiktionary'].append(s)
                 continue
 
             trans_entry = db.get_translations(s['lookup_word'], s['pos'])
             if trans_entry is None:
+                unmatched['word/part of speech not in the dump'].append(s)
                 continue
 
             if s['sense'] not in trans_entry:
+                unmatched['sense not in the dump'].append(s)
                 continue
 
             lang_translations = trans_entry[s['sense']]
@@ -320,7 +233,7 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
 
         # Build eng_sense_output
         eng_sense_output = ', '.join(
-            word + " [" + "|".join(senses_set) + "]"
+            word + " [" + "|".join(sorted(senses_set)) + "]"
             for word, senses_set in eng_sense_dict.items()
         )
 
@@ -341,3 +254,6 @@ for db in dbs.values():
 
 print(f"\nWrote menalariExtension.tsv: {words_with_data} words with translations, "
       f"{len(wordlist_order)} total rows")
+for reason, lst in unmatched.items():
+    print(f"  {len(lst)} vetted senses skipped: {reason}, e.g. "
+          + "; ".join(f"{s['glb']} / {s['lookup_word']} [{s['sense']}]" for s in lst[:3]))
