@@ -4,6 +4,7 @@ import markdown
 
 from Lexilista_parser import (GlossPoS, VerbType, parseEntry,
                               SLANG_NOUN_QUALIFIERS as _SLANG_NOUN_QUALIFIERS)
+import constructions
 import images_store
 from GlobasaTransliterators import globasaCountSyllables, globasaStressSentence
 
@@ -129,8 +130,7 @@ prnf = pd.read_csv("menalariPronouns_edited.tsv", sep="\t", index_col=0)
 image_store = images_store.load_images()
 gfcf = pd.read_csv("graphic_blacklist", index_col=0, sep=",")
 prnf.fillna(False, inplace=True)
-construction_frame = pd.read_excel("Constructions.xlsx", index_col=0, na_values=False)
-construction_frame.fillna(False, inplace=True)
+construction_frame = constructions.load_constructions()
 try:
     lexi_misal_frame = pd.read_excel("LexiMisal.xlsx", index_col=0, dtype=str)
     lexi_misal_frame = lexi_misal_frame.fillna("")
@@ -151,82 +151,6 @@ except FileNotFoundError:
         "Misal3", "Misal3Eng", "Misal4", "Misal4Eng",
     ])
     prep_misal_frame.index.name = "Lexi"
-
-
-_ANNOTATION_PREFIX_RE = re.compile(
-    r"^(?:n|v\.tr|v\.intr|v\.aux|v\.cop|adj|adv|interj|prep|conj|det|pron|"
-    r"num|par|prop\s+\w+|poss\s+\w+|pfx|sfx)"
-    r"(?:\s+phrs)?"
-    r"(?:\s*\([^)]*\))?"          # optional qualifier in parens
-    r"\s*:\s*",
-    re.IGNORECASE,
-)
-
-
-def _split_items(s):
-    """Split on commas that are not inside parentheses. Returns trimmed items."""
-    items, cur, depth = [], [], 0
-    for ch in s:
-        if ch == "(":
-            depth += 1
-            cur.append(ch)
-        elif ch == ")":
-            depth = max(0, depth - 1)
-            cur.append(ch)
-        elif ch == "," and depth == 0:
-            items.append("".join(cur).strip())
-            cur = []
-        else:
-            cur.append(ch)
-    if cur:
-        items.append("".join(cur).strip())
-    return [i for i in items if i]
-
-
-def _split_annotation(seg):
-    """Returns (annotation_prefix, body) where prefix includes trailing ': '."""
-    s = seg.strip()
-    m = _ANNOTATION_PREFIX_RE.match(s)
-    if m:
-        return s[:m.end()], s[m.end():]
-    return "", s
-
-
-def _normalise_item(item):
-    """Strip parentheticals (incl. markdown _italics_), collapse whitespace."""
-    s = re.sub(r"\s*\([^)]*\)", "", item)
-    s = re.sub(r"\s+", " ", s)
-    return s.strip(" ,;").lower()
-
-
-def _apply_to_exclude(eng_text, exclude_text, lexi=""):
-    """Within-segment item exclusion. For each `; `-separated segment, drop
-    comma-separated items (parenthesis-aware) whose normalised form matches
-    any item in `exclude_text`. If a segment has no items left, the segment
-    is removed entirely. Warns when `exclude_text` matched nothing."""
-    if not exclude_text or not exclude_text.strip():
-        return eng_text
-    _, excl_body = _split_annotation(exclude_text)
-    excl_items = {_normalise_item(it) for it in _split_items(excl_body)}
-    excl_items.discard("")
-    if not excl_items:
-        return eng_text
-    matched = False
-    kept_segments = []
-    for seg in eng_text.split("; "):
-        prefix, body = _split_annotation(seg)
-        kept_items = []
-        for item in _split_items(body):
-            if _normalise_item(item) in excl_items:
-                matched = True
-                continue
-            kept_items.append(item.strip())
-        if kept_items:
-            kept_segments.append(prefix + ", ".join(kept_items))
-    if not matched:
-        print(f"WARN: to_exclude={exclude_text!r} did not match any gloss "
-              f"segment of {lexi!r} (Constructions.xlsx may be stale)")
-    return "; ".join(kept_segments).strip("; ,")
 
 
 PREPOSITION_HEAD_PARTS = {"p", "p jm", "jm p"}
@@ -289,7 +213,6 @@ def _parse_pronouns(cell):
 
 
 
-
 # Shared with Word Viewer, which gives these their own table row.
 SLANG_NOUN_QUALIFIERS = _SLANG_NOUN_QUALIFIERS
 
@@ -318,6 +241,99 @@ def _is_t_class_wordclass(wc):
         if part == "t" or part.startswith("t "):
             return True
     return False
+
+
+MAIN_GLOSS_FIELDS = ("AnimateAdjective", "InanimateAdjective", "SlangMena",
+                     "Transitive", "EchoTransitive", "Intransitive",
+                     "IntransitiveCu", "Copula", "Auxiliary", "Feeling", "State")
+
+
+def _split_glosses(inner):
+    """Split a row's HTML at its top-level commas and semicolons: not inside
+    parentheses ("ace (card, playing)") or tags. Returns (items, separators)."""
+    items, seps, start, depth, in_tag = [], [], 0, 0, False
+    for i, ch in enumerate(inner):
+        if ch == "<":
+            in_tag = True
+        elif ch == ">":
+            in_tag = False
+        elif in_tag:
+            continue
+        elif ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth = max(depth - 1, 0)
+        elif ch in ",;" and depth == 0:
+            items.append(inner[start:i].strip())
+            seps.append(ch)
+            start = i + 1
+    items.append(inner[start:].strip())
+    return items, seps
+
+
+def emphasize_main_gloss(html, preferred=(), qualifiers={}):
+    """Front and wrap a row's main gloss in <span class="main-gloss">.
+
+    The wordlist lists a row's glosses main-first, the rest covering polysemy
+    and every other way the learner's language says it. Marking the main one
+    gives the learner one target to recall; the rest are there to check
+    against. Where the wordlist's first gloss is not the clearest core (verb
+    kinmyetu: "disdain ... look down on"), menalariMainGloss.tsv names the
+    word's main gloss, or a core group of them ("tender, loving" for hasaxi,
+    where no single gloss separates it from narem); if this row contains them
+    all, they are moved to the front and emphasised together. A
+    lone gloss is left plain, so the emphasis always means "the core of these".
+    The style (update_vocab_deck.MAIN_GLOSS_CSS) is neither bold nor italic,
+    which the card's headings and PoS labels already use.
+    """
+    m = re.fullmatch(r"\s*<p>(.*)</p>\s*", html or "", re.DOTALL)
+    if not m or "main-gloss" in html:
+        return html
+    items, seps = _split_glosses(m.group(1))
+    if not all(items):
+        return html
+    plain = [re.sub(r"<[^>]+>", "", it).strip().lower() for it in items]
+    # English homographs (hack: tabar chop vs hake computer; spell: jumun magic
+    # vs harufi letters) get a qualifier in the wordlist's own italic style.
+    for i, p in enumerate(plain):
+        if p in qualifiers:
+            items[i] = f"{items[i]} (<em>{qualifiers[p]}</em>)"
+    if len(items) < 2:
+        return f"<p>{items[0]}</p>" if items[0] != m.group(1).strip() else html
+    core = [0]
+    for group in preferred:
+        if all(g in plain for g in group):
+            core = [plain.index(g) for g in group]
+            break
+    # A core group reads as one unit, so it is joined by commas inside the
+    # emphasis; every other gloss keeps the separator that preceded it.
+    out = '<span class="main-gloss">' + ", ".join(items[i] for i in core) + "</span>"
+    for i, item in enumerate(items):
+        if i not in core:
+            out += f"{seps[i - 1] if i else ','} {item}"
+    return f"<p>{out}</p>"
+
+
+# Word -> {gloss: qualifier} for English homographs the wordlist leaves bare.
+GLOSS_QUALIFIERS = {}
+with open("menalariGlossQualifiers.tsv", newline="") as _f:
+    for _r in csv.DictReader(_f, delimiter="\t"):
+        if _r["Word"].strip() and _r["Gloss"].strip() and _r["Qualifier"].strip():
+            GLOSS_QUALIFIERS.setdefault(_r["Word"].strip(), {})[
+                _r["Gloss"].strip().lower()] = _r["Qualifier"].strip()
+
+
+# Word -> main glosses that override the wordlist's first gloss, one row each.
+# Matched per row, so a verb's main gloss leaves its noun row alone.
+MAIN_GLOSS_OVERRIDES = {}
+with open("menalariMainGloss.tsv", newline="") as _f:
+    for _r in csv.DictReader(_f, delimiter="\t"):
+        if _r["Word"].strip() and _r["MainGloss"].strip():
+            # A comma-separated MainGloss is a core group: every gloss in it
+            # must be in the row, and all of them are fronted together.
+            group = [g.lower() for g in
+                     _split_glosses(_r["MainGloss"].strip())[0] if g]
+            MAIN_GLOSS_OVERRIDES.setdefault(_r["Word"].strip(), []).append(group)
 
 
 def _assign_verb_gloss(fields, gloss):
@@ -392,11 +408,19 @@ with open("./" + ranking_name, newline="") as ranking_file, \
         if isinstance(antonyms, str) and antonyms:
             fields.Oposmenalexi = str(antonyms)
 
-        englishRawGlosses = str(selected_rows["TranslationEng"])
+        # A word whose whole meaning is a construction (`hay`, `sengi`) has an
+        # empty gloss once extract_constructions.py has run, which pandas hands
+        # back as NaN -- and str(NaN) is the truthy string "nan", which would
+        # parse into a bogus gloss.
+        raw_eng = selected_rows["TranslationEng"]
+        englishRawGlosses = "" if pd.isna(raw_eng) else str(raw_eng)
+        # Safety net for a wordlist freshly downloaded from the CDN, which
+        # carries the construction glosses again. Normally a no-op.
         if row[0] in construction_frame.index:
             excl = construction_frame.loc[row[0]]["to_exclude"]
             if isinstance(excl, str):
-                englishRawGlosses = _apply_to_exclude(englishRawGlosses, excl, row[0])
+                englishRawGlosses, _ = constructions.apply_to_exclude(
+                    englishRawGlosses, excl)
 
         if row[0] in construction_frame.index:
             crow = construction_frame.loc[row[0]]
@@ -608,6 +632,14 @@ with open("./" + ranking_name, newline="") as ranking_file, \
             fields.Faleanimaasel = slots["Faleanimaasel"]
             if any(slots.values()) and str(row[0]) in gfcf.index:
                 fields.NSFW = "y"
+
+        preferred = MAIN_GLOSS_OVERRIDES.get(str(row[0]).strip(), ())
+        quals = GLOSS_QUALIFIERS.get(str(row[0]).strip(), {})
+        fields.Mena = [emphasize_main_gloss(m, preferred, quals)
+                       for m in fields.Mena]
+        for name in MAIN_GLOSS_FIELDS:
+            setattr(fields, name, emphasize_main_gloss(
+                getattr(fields, name), preferred, quals))
 
         out_row = [
             fields.Lexi, fields.EnfasisdoLexi,

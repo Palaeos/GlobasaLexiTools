@@ -291,9 +291,16 @@ def _refine_verb_type(base_verb_type: VerbType, lexiklase: str, annotation_prefi
     return base_verb_type
 
 
-def _parseAnnotatedEnglish(englishText: str, lexiklase: str) -> list[ParsedGloss]:
+def _parseAnnotatedEnglish(englishText: str, lexiklase: str,
+                           expand_context: bool = True) -> list[ParsedGloss]:
     """Parse English gloss text using explicit PoS annotations.
     Returns list of ParsedGloss with PoS inferred from annotations + WordClass.
+
+    `expand_context` splits a gloss carrying a plain parenthetical into its
+    compact and verbose readings ("ace (card)" -> "ace", "ace card"), which is
+    what sense-matching wants. A consumer that lays each ParsedGloss into a
+    slot of its own -- the Anki makers -- must pass False, or one gloss eats
+    two part-of-speech slots.
     """
     segments = englishText.strip().split("; ")
     output = []
@@ -328,7 +335,7 @@ def _parseAnnotatedEnglish(englishText: str, lexiklase: str) -> list[ParsedGloss
                 vtype = _refine_verb_type(vtype, lexiklase, prefix_key)
 
             # Expand gloss-internal parentheticals
-            gloss_variants = _expand_gloss_context(gloss)
+            gloss_variants = _expand_gloss_context(gloss) if expand_context else [gloss]
             for g in gloss_variants:
                 output.append(ParsedGloss(g, pos, vtype, qualifier, afx))
 
@@ -458,9 +465,14 @@ def parseWordEntry(english: str, wordclass: str,
 
 
 # Backward-compatible API
-def parseEntry(englishText: str, lexiklase: str) -> list[ParsedGloss]:
+def parseEntry(englishText: str, lexiklase: str,
+               expand_context: bool = False) -> list[ParsedGloss]:
     """Parse English gloss entry. Detects new annotation format and dispatches.
     Backward-compatible: returns list of ParsedGloss (tuple-accessible).
+
+    Defaults to no context expansion: every caller is a deck builder that gives
+    each ParsedGloss its own part-of-speech slot. `parseWordEntry` keeps the
+    expansion, which is what the dictionary and the sense tools rely on.
     """
     text = englishText.strip()
     if not text:
@@ -471,7 +483,7 @@ def parseEntry(englishText: str, lexiklase: str) -> list[ParsedGloss]:
     prefix_key, _, _ = _parse_annotation_prefix(first_seg)
 
     if prefix_key is not None:
-        return _parseAnnotatedEnglish(text, lexiklase)
+        return _parseAnnotatedEnglish(text, lexiklase, expand_context)
     else:
         return _parseLegacyEntry(text, lexiklase)
 
