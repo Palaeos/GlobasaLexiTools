@@ -15,6 +15,7 @@ import sys
 import csv
 import hashlib
 import json
+import shutil
 import subprocess
 import threading
 import xml.etree.ElementTree as ET
@@ -41,7 +42,12 @@ from globasa_pos import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 LMDB_DIR = os.path.join(BASE_DIR, "WordViewerLMDB")
-AUDIO_DIR = "/media/paleos/Warehouse2/Applications/Segmentation/Ektor_su_Lafuzu_processed"
+# Pronunciation clips and the Apertium pair live outside the repository; set
+# WV_AUDIO_DIR / WV_APERTIUM_DIR to use them on another machine. Without them
+# the viewer runs with no pronunciation button and no translation aide.
+AUDIO_DIR = os.environ.get(
+    "WV_AUDIO_DIR",
+    "/media/paleos/Warehouse2/Applications/Segmentation/Ektor_su_Lafuzu_processed")
 WORDLIST_CSV = os.path.join(BASE_DIR, "word-list.csv")
 EXTENSION_TSV = os.path.join(BASE_DIR, "menalariExtension.tsv")
 PRONOUNS_TSV = os.path.join(BASE_DIR, "menalariPronouns_edited.tsv")
@@ -54,7 +60,9 @@ GIZA_DIR = os.path.join(BASE_DIR, "giza_output")
 HTML_FILE = os.path.join(BASE_DIR, "word_viewer.html")
 ALIGNMENT_HTML = os.path.join(BASE_DIR, "alignment_viewer.html")
 TRANSLATE_HTML = os.path.join(BASE_DIR, "translation_aide.html")
-APERTIUM_DIR = "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-eng"
+APERTIUM_DIR = os.environ.get(
+    "WV_APERTIUM_DIR",
+    "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-eng")
 GIZA_IMPROVED_DIR = os.path.join(BASE_DIR, "giza_output_improved")
 ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
 GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")
@@ -975,18 +983,39 @@ def build_image_rows():
 
 
 def build_db():
-    """Populate LMDB from source files. Run once (or when data changes)."""
-    print("Building WordViewerLMDB...")
+    """Populate LMDB from source files. Run once (or when data changes).
 
-    db = WordViewerDB(LMDB_DIR, readonly=False)
+    Builds into a scratch directory and swaps it in only when complete: a build
+    that crashed half-way used to leave an empty WordViewerLMDB behind, and
+    every later start then failed with lmdb.ReadonlyError."""
+    print("Building WordViewerLMDB...")
+    tmp_dir = LMDB_DIR + ".building"
+    shutil.rmtree(tmp_dir, ignore_errors=True)
+    try:
+        _build_db_into(tmp_dir)
+    except BaseException:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        raise
+    shutil.rmtree(LMDB_DIR, ignore_errors=True)
+    os.replace(tmp_dir, LMDB_DIR)
+    print("  Done.")
+
+
+def _build_db_into(path):
+    db = WordViewerDB(path, readonly=False)
 
     # -- Load word-list.csv --
     wl = pd.read_csv(WORDLIST_CSV, dtype=str).fillna("")
     wl = wl.set_index("Word")
 
     # -- Load extension TSV (direct output of Wiktionary extender) --
-    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", index_col=0, dtype=str).fillna("")
-    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
+    if os.path.isfile(EXTENSION_TSV):
+        ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", index_col=0, dtype=str).fillna("")
+        ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
+    else:
+        print(f"  Warning: {os.path.basename(EXTENSION_TSV)} missing: "
+              f"no translations beyond the word list")
+        ext_df = pd.DataFrame()
 
     # -- Load pronouns TSV --
     pron_df = pd.read_csv(PRONOUNS_TSV, sep="\t", index_col=0, dtype=str).fillna("")
@@ -995,22 +1024,29 @@ def build_db():
 
     # -- Load Soti.tsv (sound effects) --
     soti_rows = {}
-    with open(SOTI_TSV, newline="", encoding="utf-8") as f:
-        reader = csv.reader(f, delimiter="\t")
-        for row in reader:
-            if len(row) >= 2 and row[0]:
-                soti_rows[row[0].strip()] = {
-                    "audio_url": row[1].strip(),
-                    "source_url": row[2].strip() if len(row) > 2 else "",
-                }
+    if os.path.isfile(SOTI_TSV):
+        with open(SOTI_TSV, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f, delimiter="\t")
+            for row in reader:
+                if len(row) >= 2 and row[0]:
+                    soti_rows[row[0].strip()] = {
+                        "audio_url": row[1].strip(),
+                        "source_url": row[2].strip() if len(row) > 2 else "",
+                    }
+    else:
+        print(f"  Warning: {os.path.basename(SOTI_TSV)} missing: no sound effects")
 
     # -- Load NSFW blacklist --
     nsfw_words = set()
-    with open(GRAPHIC_BLACKLIST, encoding="utf-8") as f:
-        for line in f:
-            w = line.strip()
-            if w:
-                nsfw_words.add(w)
+    if os.path.isfile(GRAPHIC_BLACKLIST):
+        with open(GRAPHIC_BLACKLIST, encoding="utf-8") as f:
+            for line in f:
+                w = line.strip()
+                if w:
+                    nsfw_words.add(w)
+    else:
+        print(f"  Warning: {os.path.basename(GRAPHIC_BLACKLIST)} missing: "
+              f"no word is covered as NSFW")
 
     # -- Load Constructions.xlsx --
     constructions_map = {}
@@ -1167,7 +1203,6 @@ def build_db():
             db._put("tmx", word, entries, txn)
 
     db.close()
-    print("  Done.")
 
 
 # ---------------------------------------------------------------------------
@@ -1180,7 +1215,25 @@ app = Flask(__name__)
 if not os.path.exists(LMDB_DIR):
     build_db()
 
-_db = WordViewerDB(LMDB_DIR, readonly=True)
+def _open_built_db():
+    """The DB, or None when it is a leftover of a build that crashed before
+    builds were atomic: missing sub-databases or an empty word list."""
+    try:
+        db = WordViewerDB(LMDB_DIR, readonly=True)
+    except lmdb.Error:
+        return None
+    with db.env.begin() as txn:
+        if txn.stat(db.dbs[b"wordlist"])["entries"]:
+            return db
+    db.close()
+    return None
+
+
+_db = _open_built_db()
+if _db is None:
+    print("WordViewerLMDB is incomplete; rebuilding.")
+    build_db()
+    _db = WordViewerDB(LMDB_DIR, readonly=True)
 
 # Cache the full word list for derived-word reverse lookup and search index
 print("Loading word list index for reverse lookup and search...")
