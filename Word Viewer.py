@@ -528,12 +528,14 @@ _APERTIUM_PIPELINES = {
             " | apertium-pretransfer"
             " | lt-proc -b {d}/eng-glb.autobil.bin"
         ),
-        "back": (
+        "transfer": (
             "lrx-proc -m {d}/eng-glb.autolex.bin"
             " | apertium-anaphora {d}/apertium-glb-eng.eng-glb.arx"
             " | rtx-proc -a {d}/eng-glb.rtx.bin"
             " | lsx-proc {d}/eng-glb.revautoseq.bin"
-            " | lt-proc -g {d}/eng-glb.autogen.bin"
+        ),
+        "gen": (
+            "lt-proc -g {d}/eng-glb.autogen.bin"
             " | lt-proc -p {d}/eng-glb.autopgen.bin"
         ),
     },
@@ -546,12 +548,14 @@ _APERTIUM_PIPELINES = {
             " | apertium-pretransfer"
             " | lt-proc -b {d}/glb-eng.autobil.bin"
         ),
-        "back": (
+        "transfer": (
             "lrx-proc -m {d}/glb-eng.autolex.bin"
             " | apertium-anaphora {d}/apertium-glb-eng.glb-eng.arx"
             " | rtx-proc -a {d}/glb-eng.rtx.bin"
             " | lsx-proc {d}/glb-eng.revautoseq.bin"
-            " | lt-proc -g {d}/glb-eng.autogen.bin"
+        ),
+        "gen": (
+            "lt-proc -g {d}/glb-eng.autogen.bin"
             " | lt-proc -p {d}/glb-eng.autopgen.bin"
         ),
     },
@@ -571,9 +575,10 @@ def _run_apertium(text, mode):
 
 
 def _run_pipeline_half(text, direction, half):
-    """Run the front or back half of the Apertium pipeline.
+    """Run one stage group of the Apertium pipeline.
 
-    half: "front" or "back"
+    half: "front" (analysis through bidix), "transfer" (lexical selection
+    through structural transfer) or "gen" (generation).
     """
     pipeline = _APERTIUM_PIPELINES.get(direction, {}).get(half, "")
     if not pipeline:
@@ -603,6 +608,7 @@ def _parse_biltrans(biltrans_str):
         "source_tags": str,
         "alternatives": [{lemma, tags, raw}],
         "is_noun": bool,
+        "is_verb": bool,
         "is_suppressed_article": bool,
     }
     """
@@ -631,6 +637,10 @@ def _parse_biltrans(biltrans_str):
                 })
 
         is_noun = any("<n>" in a.get("tags", "") for a in alternatives)
+        is_verb = any(
+            any(t in a.get("tags", "") for t in _VERB_POS_TAGS)
+            for a in alternatives
+        )
         # Articles: @-prefixed det units have no Globasa equivalent
         is_suppressed = src.startswith("@") or (
             alternatives and alternatives[0]["raw"].startswith("@")
@@ -643,12 +653,89 @@ def _parse_biltrans(biltrans_str):
             "source_tags": source_tags,
             "alternatives": alternatives,
             "is_noun": is_noun,
+            "is_verb": is_verb,
             "is_det": is_det,
             "is_suppressed_article": is_det and is_suppressed,
             "is_numeral": "<num>" in source_tags,
         })
 
     return tokens
+
+
+_VERB_POS_TAGS = (
+    "<vblex>", "<vbser>", "<vbmod>", "<vbdo>", "<vbhaver>", "<vaux>", "<cop>",
+)
+_FINITE_TAGS = ("<pres>", "<past>", "<fut>", "<cni>", "<imp>")
+
+# Preverbs whose leading word is nothing but present-tense marking. Globasa
+# leaves the simple present unmarked, so these come out as "nun" for no reason;
+# the value is what to put in the stream instead (None = drop the token).
+_BARE_PRES_VBPR = {
+    "<vbpr><pres>": None,                # nun     -> (nothing)
+    "<vbpr><pres><neg>": "^no<adv>$",    # nun no  -> no
+    "<vbpr><pres><aff>": "^si<adv>$",    # nun si  -> si
+}
+# "be" and "have" head the progressive and the perfect, where the preverb
+# carries aspect rather than bare tense -- their nun stays.
+_ASPECT_AUX_LEMMAS = ("be", "have")
+
+_VBPR_RE = re.compile(r"\^u(<vbpr>(?:<[^>]+>)*)\$( ?)")
+
+
+def _finite_verbs(biltrans_tokens):
+    """Biltrans indices of the finite verbs, in order.
+
+    Transfer emits one ^u<vbpr>...$ preverb per finite VP, so this list lines
+    up positionally with the preverbs in the transfer output. Periphrastic
+    constructions ("does not eat", "is eating") are headed by the auxiliary,
+    which is the token carrying the tense; the lexical verb is non-finite.
+    """
+    out = []
+    for i, tok in enumerate(biltrans_tokens):
+        tags = tok["source_tags"]
+        if any(t in tags for t in _FINITE_TAGS) and any(
+            p in tags for p in _VERB_POS_TAGS
+        ):
+            out.append(i)
+    return out
+
+
+def _suppress_tense_markers(transfer_str, biltrans_tokens, tenses, direction):
+    """Strip the bare present-tense preverb ("nun") from the transfer stream.
+
+    tenses: {str(biltrans_idx): "nun"} -- indices the user switched back on.
+
+    Returns (modified stream, set of biltrans indices where the marker is
+    togglable) so the frontend knows which verbs to hang a nun chip on.
+    """
+    if direction != "eng-glb":
+        return transfer_str, set()
+
+    finite = _finite_verbs(biltrans_tokens)
+    togglable = set()
+    seen = [0]
+
+    def repl(m):
+        k = seen[0]
+        seen[0] += 1
+        tags = m.group(1)
+        if tags not in _BARE_PRES_VBPR or k >= len(finite):
+            return m.group(0)
+        idx = finite[k]
+        # Guard the positional pairing: a preverb the grammar conjured out of
+        # something other than a finite verb (an infinitival "to eat", say)
+        # shifts the count, and a mismatched tense is how that shows up.
+        if "<pres>" not in biltrans_tokens[idx]["source_tags"]:
+            return m.group(0)
+        if biltrans_tokens[idx]["source_lemma"].lower() in _ASPECT_AUX_LEMMAS:
+            return m.group(0)
+        togglable.add(idx)
+        if tenses.get(str(idx)) == "nun":
+            return m.group(0)
+        rest = _BARE_PRES_VBPR[tags]
+        return "" if rest is None else rest + m.group(2)
+
+    return _VBPR_RE.sub(repl, transfer_str), togglable
 
 
 def _apply_overrides(biltrans_tokens, overrides, articles, direction):
@@ -717,7 +804,7 @@ def _apply_overrides(biltrans_tokens, overrides, articles, direction):
     return " ".join(result_units)
 
 
-def _build_token_info(output_text, biltrans_tokens, direction):
+def _build_token_info(output_text, biltrans_tokens, direction, tense_toggles=()):
     """Build interactive token info by matching biltrans lemmas to output words.
 
     The Apertium transfer can insert/reorder words, so we match by lemma
@@ -779,6 +866,16 @@ def _build_token_info(output_text, biltrans_tokens, direction):
             })
             continue
 
+        # Present-tense verbs (eng->glb): emit info for the nun toggle. The
+        # chip hangs on the next verb in the output, which for periphrastic
+        # tenses is not this token but the lexical verb it governs.
+        if i in tense_toggles:
+            interactions.append({
+                "biltrans_idx": i,
+                "type": "tense_marker",
+                "source": tok["source_lemma"],
+            })
+
         if not tok["alternatives"]:
             continue
 
@@ -800,13 +897,14 @@ def _build_token_info(output_text, biltrans_tokens, direction):
         if len(alts) <= 1:
             alts = []  # No choices to show if only 1 unique lemma
 
-        if out_pos is not None or alts or tok["is_noun"]:
+        if out_pos is not None or alts or tok["is_noun"] or tok.get("is_verb"):
             interactions.append({
                 "biltrans_idx": i,
                 "type": "word",
                 "source": tok["source_lemma"],
                 "output_idx": out_pos,
                 "is_noun": tok["is_noun"],
+                "is_verb": tok.get("is_verb", False),
                 "is_numeral": tok.get("is_numeral", False),
                 "alternatives": alts,
             })
@@ -2719,6 +2817,7 @@ def api_translate():
     direction = data.get("direction", "eng-glb")
     overrides = data.get("overrides", {})
     articles = data.get("articles", {})
+    tenses = data.get("tenses", {})
     show_stages = data.get("stages", False)
 
     if not text:
@@ -2739,12 +2838,16 @@ def api_translate():
         biltrans_tokens, overrides, articles, direction
     )
 
-    # Run back half (stages 7-12) to get final output
-    raw_output = _run_pipeline_half(modified_biltrans, direction, "back")
+    # Run transfer, drop the unwanted present-tense preverb, then generate
+    transfer_str = _run_pipeline_half(modified_biltrans, direction, "transfer")
+    transfer_str, tense_toggles = _suppress_tense_markers(
+        transfer_str, biltrans_tokens, tenses, direction
+    )
+    raw_output = _run_pipeline_half(transfer_str, direction, "gen")
 
     # Build interactive token info
     output_words, interactions = _build_token_info(
-        raw_output, biltrans_tokens, direction
+        raw_output, biltrans_tokens, direction, tense_toggles
     )
 
     # Clean output string

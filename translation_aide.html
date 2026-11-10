@@ -248,6 +248,9 @@ h1 {
   padding: 0.05em 0.1em;
   border-radius: 2px;
 }
+.token-polysemy .marker-toggle {
+  border-bottom: none;
+}
 .token-polysemy .indicator {
   font-size: 0.7em;
   color: var(--color-muted);
@@ -262,7 +265,7 @@ h1 {
 }
 
 /* un toggle */
-.un-toggle {
+.marker-toggle {
   display: inline-block;
   font-size: 0.7rem;
   font-weight: 600;
@@ -271,16 +274,16 @@ h1 {
   border: 1px solid var(--color-border);
   border-radius: 3px;
   padding: 0 0.25em;
-  margin-left: 0.2em;
+  margin-right: 0.2em;
   cursor: pointer;
   vertical-align: middle;
   line-height: 1.4;
   user-select: none;
 }
-.un-toggle:hover {
+.marker-toggle:hover {
   background: rgba(26, 95, 180, 0.18);
 }
-.un-toggle.active {
+.marker-toggle.active {
   background: var(--color-search-btn);
   color: #fff;
   border-color: var(--color-search-btn);
@@ -450,6 +453,7 @@ h1 {
 let direction = 'eng-glb';
 let overrides = {};
 let articles = {};
+let tenses = {};
 let lastTokens = [];
 let lastResponse = null;
 
@@ -470,6 +474,7 @@ function doTranslate() {
   if (!text) return;
   overrides = {};
   articles = {};
+  tenses = {};
   sendTranslate(text);
 }
 
@@ -492,6 +497,7 @@ function sendTranslate(text) {
       direction: direction,
       overrides: overrides,
       articles: articles,
+      tenses: tenses,
       stages: showStages
     })
   })
@@ -513,7 +519,7 @@ function sendTranslate(text) {
 }
 
 /* ============================================================
-   Retranslate (preserves overrides/articles)
+   Retranslate (preserves overrides/articles/tenses)
    ============================================================ */
 function retranslate() {
   sendTranslate(document.getElementById('source-text').value.trim());
@@ -568,6 +574,21 @@ function renderOutput(data) {
     }
   }
 
+  // Present-tense markers (eng->glb): output word index -> the biltrans index
+  // whose nun it toggles. The chip hangs on the next verb in the output, which
+  // for periphrastic tenses ("does not eat") is not the token carrying <pres>.
+  const tenseToggleOutputIdxs = new Map();
+  for (let k = 0; k < interactions.length; k++) {
+    if (interactions[k].type !== 'tense_marker') continue;
+    for (let j = k + 1; j < interactions.length; j++) {
+      const cand = interactions[j];
+      if (cand.type === 'word' && cand.is_verb && cand.output_idx != null) {
+        tenseToggleOutputIdxs.set(cand.output_idx, interactions[k].biltrans_idx);
+        break;
+      }
+    }
+  }
+
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
     const span = document.createElement('span');
@@ -591,26 +612,31 @@ function renderOutput(data) {
 
     const ix = wordInteraction[i];
 
+    // Markers Globasa leaves off by default. Both sit before the word they
+    // attach to, and both compose with whatever the word itself renders as.
+    if (dir === 'eng-glb') {
+      if (ix && ix.is_noun && unToggleOutputIdxs.has(i)) {
+        const artIdx = findSuppressedArticleIdx(interactions, ix.biltrans_idx);
+        if (artIdx != null) {
+          span.appendChild(makeMarkerChip('un', articles, artIdx));
+        }
+      }
+      if (tenseToggleOutputIdxs.has(i)) {
+        span.appendChild(makeMarkerChip('nun', tenses, tenseToggleOutputIdxs.get(i)));
+      }
+    }
+
     // A. Lexical polysemy (both directions)
     if (ix && ix.alternatives && ix.alternatives.length > 0) {
-      span.classList.add('token-polysemy');
-      span.innerHTML = escapeHtml(displayText) + '<span class="indicator">\u25be</span>';
-      span.addEventListener('click', makePolysemyHandler(ix));
-    }
-    // B. eng->glb: un toggle on nouns that follow suppressed articles
-    else if (dir === 'eng-glb' && ix && ix.is_noun && unToggleOutputIdxs.has(i)) {
-      span.textContent = displayText;
-      const artIdx = findSuppressedArticleIdx(interactions, ix.biltrans_idx);
-      if (artIdx != null) {
-        const toggle = document.createElement('span');
-        toggle.classList.add('un-toggle');
-        toggle.textContent = 'un';
-        if (articles[artIdx] === 'un') {
-          toggle.classList.add('active');
-        }
-        toggle.addEventListener('click', makeUnToggleHandler(artIdx));
-        span.appendChild(toggle);
-      }
+      const body = document.createElement('span');
+      body.classList.add('token-polysemy');
+      body.appendChild(document.createTextNode(displayText));
+      const indicator = document.createElement('span');
+      indicator.classList.add('indicator');
+      indicator.textContent = '\u25be';
+      body.appendChild(indicator);
+      body.addEventListener('click', makePolysemyHandler(ix));
+      span.appendChild(body);
     }
     // C. glb->eng: article insertion on bare nouns
     else if (dir === 'glb-eng' && ix && ix.is_noun) {
@@ -623,7 +649,7 @@ function renderOutput(data) {
       span.appendChild(document.createTextNode(displayText));
     }
     else {
-      span.textContent = displayText;
+      span.appendChild(document.createTextNode(displayText));
     }
 
     out.appendChild(span);
@@ -694,24 +720,28 @@ function makePolysemyHandler(ix) {
       dropdown.appendChild(item);
     });
 
-    span.style.position = 'relative';
-    span.appendChild(dropdown);
+    const host = span.closest('.token') || span;
+    host.appendChild(dropdown);
   };
 }
 
 /* ============================================================
-   Un toggle handler (eng->glb)
+   Marker chips (eng->glb): un before a noun, nun before a verb
    ============================================================ */
-function makeUnToggleHandler(idx) {
-  return function(e) {
+function makeMarkerChip(label, store, idx) {
+  const chip = document.createElement('span');
+  chip.classList.add('marker-toggle');
+  chip.textContent = label;
+  chip.title = 'Globasa leaves this unmarked; click to insert "' + label + '"';
+  if (store[idx] === label) {
+    chip.classList.add('active');
+  }
+  chip.addEventListener('click', function(e) {
     e.stopPropagation();
-    if (articles[idx] === 'un') {
-      articles[idx] = '';
-    } else {
-      articles[idx] = 'un';
-    }
+    store[idx] = store[idx] === label ? '' : label;
     retranslate();
-  };
+  });
+  return chip;
 }
 
 /* ============================================================
