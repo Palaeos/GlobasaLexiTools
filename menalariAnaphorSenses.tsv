@@ -1,506 +1,325 @@
-Word	Anaphor	Mena
-acidikrimu	to	food
-acidiroti	to	food
-adasi	te	the living plant
-adasi	to	the seeds (as food)
-adasisupa	to	food
-akaci	te	the living tree
-akaci	to	a felled or dead tree
-aloe	te	the living plant
-aloe	to	cut (the leaves, the gel)
-ananas	te	the living plant
-ananas	to	the fruit (as food)
-ananassui	to	food
-anar	te	the living plant
-anar	to	the fruit (as food)
-anemon	te	the living plant
-anemon	to	a picked or cut flower
-anisu	te	the living plant
-anisu	to	the spice
-aprikoti	te	the living plant
-aprikoti	to	the fruit (as food)
-articoku	te	the living plant
-articoku	to	the vegetable (as food)
-avokato	te	the living plant
-avokato	to	the fruit (as food)
-aysekrimu	to	food
-badammilko	to	food
-baklava	to	food
-baluta	te	the living tree
-baluta	to	a felled or dead tree
-balutajozi	to	part of a plant
-bambu	te	the living plant
-bambu	to	cut (cane, timber)
-bamya	te	the living plant
-bamya	to	the vegetable (as food)
-banana	te	the living plant
-banana	to	the fruit (as food)
-baobabu	te	the living tree
-baobabu	to	a felled or dead tree
-barinjen	te	the living plant
-barinjen	to	the vegetable (as food)
-beri	to	food
-betula	te	the living tree
-betula	to	a felled or dead tree
-beygel	to	food
-beykon	to	food
-biskiti	to	food
-bisteki	to	food
-bitu	te	the living plant
-bitu	to	the vegetable (as food)
-blueberi	te	the living plant
-blueberi	to	the fruit (as food)
-bortokal	te	the living plant
-bortokal	to	the fruit (as food)
-bortokaljusu	to	food
-bortokalsui	to	food
-boysenberi	te	the living plant
-boysenberi	to	the fruit (as food)
-bretzel	to	food
-brokoli	te	the living plant
-brokoli	to	the vegetable (as food)
-bune	te	the living tree
-bune	to	a felled or dead tree
-burito	to	food
-burplanta	te	the living plant
-burplanta	to	cut, picked or dead
-cawdar	te	the living plant
-cawdar	to	the grain (as food)
-cay	to	food
-cebula	te	the living plant
-cebula	to	the vegetable (as food)
-ceri	te	the living plant
-ceri	to	the fruit (as food)
-cipresu	te	the living tree
-cipresu	to	a felled or dead tree
-cipsu	to	food
-citrus	to	food
-cokolate	to	food
-dahun	to	part of a plant
-dahunkabiji	te	the living plant
-dahunkabiji	to	the vegetable (as food)
-danyam	te	the living plant
-danyam	to	the grain (as food)
-darcini	te	the living plant
-darcini	to	the spice
-dardar	te	the living tree
-dardar	to	a felled or dead tree
-dawara	te	the living plant
-dawara	to	the grain (as food)
-daykabaca	te	the living plant
-daykabaca	to	the fruit (as food)
-daykanu	to	part of a plant
-deysi	te	the living plant
-deysi	to	a picked or cut flower
-dila	te	the living plant
-dila	to	the herb (as food, cut or dried)
-donatu	to	food
-dragonfruta	te	the living plant
-dragonfruta	to	the fruit (as food)
-drevo	te	the living tree
-drevo	to	a felled or dead tree
-duryan	te	the living plant
-duryan	to	the fruit (as food)
-ebanus	te	the living tree
-ebanus	to	a felled or dead tree
-eleki	te	the living plant
-eleki	to	the spice
-encilada	to	food
-espageti	to	food
-esparago	te	the living plant
-esparago	to	the vegetable (as food)
-espinaka	te	the living plant
-espinaka	to	the vegetable (as food)
-estarefruta	te	the living plant
-estarefruta	to	the fruit (as food)
-estroberi	te	the living plant
-estroberi	to	the fruit (as food)
-ewkalitus	te	the living tree
-ewkalitus	to	a felled or dead tree
-falafel	to	food
-fasul	te	the living plant
-fasul	to	the seeds (as food)
-ferne	te	the living plant
-ferne	to	cut, picked or dead
-fluragubar	to	part of a plant
-flurakabiji	te	the living plant
-flurakabiji	to	the vegetable (as food)
-fruta	to	food
-funduku	te	the living plant
-funduku	to	the nut (as food)
-furnoxey	to	food
-futru	te	the living fungus
-futru	to	the mushroom (as food)
-gancaw	te	the living plant
-gancaw	to	the spice
-gandum	te	the living plant
-gandum	to	the grain (as food)
-ganmoku	te	the living plant
-ganmoku	to	cut, picked or dead
-genu	to	part of a plant
-golenjan	te	the living plant
-golenjan	to	the spice
-gras	te	the living plant
-gras	to	cut grass, hay
-grosela	te	the living plant
-grosela	to	the fruit (as food)
-gwaba	te	the living plant
-gwaba	to	the fruit (as food)
-gwakamole	to	food
-halapenyo	te	the living plant
-halapenyo	to	the fruit (as food)
-hambo	to	food
-hamburger	to	food
-hardal	te	the living plant
-hardal	to	the spice
-hirxamaso	to	food
-hodaw	te	the living tree
-hodaw	to	the nut (as food)
-holoba	te	the living plant
-holoba	to	the spice
-hotdogu	to	food
-humus	to	food
-hurma	te	the living plant
-hurma	to	the fruit (as food)
-hwehyon	te	the living plant
-hwehyon	to	the vegetable (as food)
-hyara	te	the living plant
-hyara	to	the vegetable (as food)
-iksir	to	food
-injir	te	the living plant
-injir	to	the fruit (as food)
-irisplanta	te	the living plant
-irisplanta	to	a picked or cut flower
-jaka	te	the living plant
-jaka	to	the fruit (as food)
-jameyogurtu	to	food
-jasumin	te	the living plant
-jasumin	to	a picked or cut flower
-jelatin	to	food
-jinsen	te	the living plant
-jinsen	to	the root (as medicine or food)
-jovari	te	the living plant
-jovari	to	the grain (as food)
-jozi	to	food
-jubin	to	food
-jubinhamburger	to	food
-junidrevo	te	the living tree
-junidrevo	to	a felled or dead tree
-jusu	to	food
-jyenpatato	to	food
-kabaca	te	the living plant
-kabaca	to	the fruit (as food)
-kabiji	te	the living plant
-kabiji	to	the vegetable (as food)
-kafe	to	food
-kafur	to	food
-kaki	te	the living plant
-kaki	to	the fruit (as food)
-kakutus	te	the living plant
-kakutus	to	cut, picked or dead
-kamomil	te	the living plant
-kamomil	to	dried flowers (as tea)
-kanabis	te	the living plant
-kanabis	to	harvested (dried, smoked, etc.)
-kantaka	to	part of a plant
-kantalupu	te	the living plant
-kantalupu	to	the fruit (as food)
-kanu	to	part of a plant
-karanfu	te	the living plant
-karanfu	to	the spice
-karawi	te	the living plant
-karawi	to	cut, picked or dead
-karnexon	te	the living plant
-karnexon	to	a picked or cut flower
-karote	te	the living plant
-karote	to	the vegetable (as food)
-kasava	te	the living plant
-kasava	to	the vegetable (as food)
-kayena	to	food
-kebabu	to	food
-keke	to	food
-kendi	to	food
-kesadiya	to	food
-ketani	te	the living plant
-ketani	to	cut, picked or dead
-kimci	to	food
-kiwifruta	te	the living plant
-kiwifruta	to	the fruit (as food)
-klover	te	the living plant
-klover	to	cut, picked or dead
-koka	te	the living plant
-koka	to	harvested (dried leaves)
-koko	te	the living plant
-koko	to	the coconut (as food)
-kokomilko	to	food
-koktel	to	food
-kola	te	the living tree
-kola	to	the nut or the drink
-kopakeke	to	food
-korku	to	part of a plant
-koryandro	te	the living plant
-koryandro	to	the herb (as food, cut or dried)
-krenberi	te	the living plant
-krenberi	to	the fruit (as food)
-krimujubin	to	food
-kruasan	to	food
-kukuhwa	te	the living plant
-kukuhwa	to	a picked or cut flower
-kunkwatu	te	the living plant
-kunkwatu	to	the fruit (as food)
-kurkuma	te	the living plant
-kurkuma	to	the spice
-kuskus	to	food
-kustardi	to	food
-lablabu	te	the living plant
-lablabu	to	cut, picked or dead
-lavenda	te	the living plant
-lavenda	to	cut or dried flowers
-lawrel	te	the living plant
-lawrel	to	the leaves (bay leaf)
-letuka	te	the living plant
-letuka	to	the vegetable (as food)
-lici	te	the living plant
-lici	to	the fruit (as food)
-likakendi	to	food
-lilaku	te	the living plant
-lilaku	to	cut, picked or dead
-limon	te	the living plant
-limon	to	the fruit (as food)
-limonsui	to	food
-limu	te	the living plant
-limu	to	the fruit (as food)
-limusui	to	food
-linxam	te	the living tree
-linxam	to	a felled or dead tree
-liu	te	the living tree
-liu	to	a felled or dead tree
-lotus	te	the living plant
-lotus	to	a picked or cut flower
-mais	te	the living plant
-mais	to	the corn (as food)
-majoram	te	the living plant
-majoram	to	the herb (as food, cut or dried)
-maku	to	part of a plant
-malzaxey	to	food
-mandarin	te	the living plant
-mandarin	to	the fruit (as food)
-mango	te	the living plant
-mango	to	the fruit (as food)
-maple	te	the living plant
-maple	to	cut, picked or dead
-marsepan	to	food
-marximalo	to	food
-maryami	te	the living plant
-maryami	to	the herb (as food, cut or dried)
-maso	to	food
-melon	te	the living plant
-melon	to	the fruit (as food)
-milko	to	food
-minta	te	the living plant
-minta	to	the herb (as food, cut or dried)
-moksay	to	part of a plant
-mudan	te	the living plant
-mudan	to	a picked or cut flower
-mufin	to	food
-mugunge	te	the living plant
-mugunge	to	a picked or cut flower
-mulin	te	the living plant
-mulin	to	the vegetable (as food)
-murto	te	the living plant
-murto	to	the spice
-muskada	te	the living plant
-muskada	to	the spice
-namake	to	food
-nelufar	te	the living plant
-nelufar	to	a picked or cut flower
-netar	to	part of a plant
-nohudu	te	the living plant
-nohudu	to	the seeds (as food)
-nudel	to	food
-nyame	te	the living plant
-nyame	to	the vegetable (as food)
-omelete	to	food
-oregano	te	the living plant
-oregano	to	the herb (as food, cut or dried)
-orkide	te	the living plant
-orkide	to	a picked or cut flower
-ovo	to	food
-palme	te	the living tree
-palme	to	a felled or dead tree
-palo	to	part of a plant
-palobija	to	food
-papaya	te	the living plant
-papaya	to	the fruit (as food)
-papirus	te	the living plant
-papirus	to	cut, picked or dead
-paprika	to	food
-patato	te	the living plant
-patato	to	the vegetable (as food)
-pay	to	food
-pekan	te	the living plant
-pekan	to	the nut (as food)
-peresil	te	the living plant
-peresil	to	the herb (as food, cut or dried)
-persika	te	the living plant
-persika	to	the fruit (as food)
-petalo	to	part of a plant
-pilpil	te	the living plant
-pilpil	to	the spice
-pimento	te	the living plant
-pimento	to	the vegetable (as food)
-pinatu	te	the living plant
-pinatu	to	the seeds (as food)
-pingo	te	the living plant
-pingo	to	the fruit (as food)
-pitza	to	food
-pommais	to	food
-ponci	to	food
-popi	te	the living plant
-popi	to	a picked or cut flower
-poriji	to	food
-poro	te	the living plant
-poro	to	the vegetable (as food)
-prumu	te	the living plant
-prumu	to	the fruit (as food)
-pudin	to	food
-pure	to	food
-puto	te	the living plant
-puto	to	the fruit (as food)
-putojusu	to	food
-pyara	te	the living plant
-pyara	to	the fruit (as food)
-rasuberi	te	the living plant
-rasuberi	to	the fruit (as food)
-rehani	te	the living plant
-rehani	to	the herb (as food, cut or dried)
-revende	te	the living plant
-revende	to	the vegetable (as food)
-risi	te	the living plant
-risi	to	the grain (as food)
-rosa	te	the living plant
-rosa	to	a picked or cut flower
-rosbif	to	food
-rosmari	te	the living plant
-rosmari	to	the herb (as food, cut or dried)
-roti	to	food
-sabzi	to	food
-sadafamahi	te	the living animal
-sadafamahi	to	as food
-safran	te	the living plant
-safran	to	the spice
-salada	to	food
-salami	to	food
-sandwici	to	food
-sanobar	te	the living tree
-sanobar	to	a felled or dead tree
-sawsa	to	food
-seleri	te	the living plant
-seleri	to	the vegetable (as food)
-sentay	te	the living plant
-sentay	to	cut, picked or dead
-sesam	te	the living plant
-sesam	to	the spice
-sitafel	te	the living plant
-sitafel	to	the fruit (as food)
-soda	to	food
-solaflura	te	the living plant
-solaflura	to	a picked or cut flower
-solagenu	te	the living plant
-solagenu	to	the vegetable (as food)
-somu	te	the living plant
-somu	to	the spice
-somuroti	to	food
-soseji	to	food
-soya	te	the living plant
-soya	to	the seeds (as food)
-suheprumu	to	food
-suheputo	to	food
-sukwa	te	the living plant
-sukwa	to	the fruit (as food)
-sumake	te	the living plant
-sumake	to	the spice
-sumbole	to	part of a plant
-supa	to	food
-susana	te	the living plant
-susana	to	a picked or cut flower
-syahe prumu	te	the living plant
-syahe prumu	to	the fruit (as food)
-syaheberi	te	the living plant
-syaheberi	to	the fruit (as food)
-tabako	te	the living plant
-tabako	to	harvested (dried, smoked, etc.)
-tako	to	food
-tamal	to	food
-tamarin	te	the living plant
-tamarin	to	the fruit (as food)
-tamipatato	te	the living plant
-tamipatato	to	the vegetable (as food)
-tamixey	to	food
-tarahon	te	the living plant
-tarahon	to	the herb (as food, cut or dried)
-tarhaxkun	te	the living plant
-tarhaxkun	to	a picked or cut flower
-tawakeke	to	food
-taymi	te	the living plant
-taymi	to	the herb (as food, cut or dried)
-tengu	te	the living plant
-tengu	to	cut, picked or dead
-tomate	te	the living plant
-tomate	to	the fruit (as food)
-tortiya	to	food
-tostaroti	to	food
-tuberkul	to	part of a plant
-tulipa	te	the living plant
-tulipa	to	a picked or cut flower
-tute	te	the living plant
-tute	to	the fruit (as food)
-unabi	te	the living plant
-unabi	to	the fruit (as food)
-vanila	te	the living plant
-vanila	to	the spice
-vyoleta	te	the living plant
-vyoleta	to	a picked or cut flower
-wadisusana	te	the living plant
-wadisusana	to	a picked or cut flower
-wafle	to	food
-wasabi	te	the living plant
-wasabi	to	the spice
-wendu	te	the living plant
-wendu	to	the seeds (as food)
-wisterya	te	the living plant
-wisterya	to	cut, picked or dead
-xalgam	te	the living plant
-xalgam	to	the vegetable (as food)
-xarmu	te	the living plant
-xarmu	to	cut, picked or dead
-xayri	te	the living plant
-xayri	to	the grain (as food)
-xetocuente	to	food
-xube	to	part of a plant
-xupi	to	part of a plant
-xweki	to	part of a plant
-xyombu	te	the living plant
-xyombu	to	cut, picked or dead
-yogurtu	to	food
-yulaf	te	the living plant
-yulaf	to	the grain (as food)
-zenjebir	te	the living plant
-zenjebir	to	the spice
-zeytuni	te	the living plant
-zeytuni	to	the fruit (as food)
-zira	te	the living plant
-zira	to	the spice
-zukini	te	the living plant
-zukini	to	the fruit (as food)
-flura	te	the living plant
-flura	to	a picked or cut flower
-gunca	to	part of a plant
-jiu	to	food
-bija	to	part of a plant
-marine	to	food
-planta	te	the living plant
-planta	to	cut, picked or dead
-sui	to	food
-turxi	to	food
-estuf	to	food
+Word	Anaphor	Mena	Check
+acidikrimu	to	food	
+acidiroti	to	food	
+adasi	to	the produce (as food or spice)	
+adasisupa	to	food	
+akaci	te	the living plant	
+aloe	te	the living plant	
+ananas	to	the produce (as food or spice)	
+ananassui	to	food	
+anar	to	the produce (as food or spice)	
+anemon	te	the living plant	
+anisu	to	the produce (as food or spice)	
+aprikoti	to	the produce (as food or spice)	
+articoku	to	the produce (as food or spice)	
+avokato	to	the produce (as food or spice)	
+aysekrimu	to	food	
+badammilko	to	food	
+baklava	to	food	
+baluta	te	the living plant	
+balutajozi	to	part of a plant	
+bambu	te	the living plant	
+bamya	to	the produce (as food or spice)	
+banana	to	the produce (as food or spice)	
+baobabu	te	the living plant	
+barinjen	to	the produce (as food or spice)	
+beri	to	food	
+betula	te	the living plant	
+beygel	to	food	
+beykon	to	food	
+biskiti	to	food	
+bisteki	to	food	
+bitu	to	the produce (as food or spice)	
+blueberi	to	the produce (as food or spice)	
+bortokal	to	the produce (as food or spice)	
+bortokaljusu	to	food	
+bortokalsui	to	food	
+boysenberi	to	the produce (as food or spice)	
+bretzel	to	food	
+brokoli	to	the produce (as food or spice)	
+bune	te	the beech (tree)	
+bune	to	beechwood	
+burito	to	food	
+burplanta	te	the living plant	
+cawdar	to	the produce (as food or spice)	
+cay	to	food	
+cebula	to	the produce (as food or spice)	
+ceri	to	the produce (as food or spice)	
+cipresu	te	the living plant	
+cipsu	to	food	
+citrus	to	food	
+cokolate	to	food	
+dahun	to	part of a plant	
+dahunkabiji	to	the produce (as food or spice)	
+danyam	to	the produce (as food or spice)	
+darcini	to	the produce (as food or spice)	
+dardar	te	the living plant	
+dawara	to	the produce (as food or spice)	
+daykabaca	to	the produce (as food or spice)	
+daykanu	to	part of a plant	
+deysi	te	the living plant	
+dila	te	the living plant	?
+donatu	to	food	
+dragonfruta	to	the produce (as food or spice)	
+drevo	te	the living plant	
+duryan	to	the produce (as food or spice)	
+ebanus	te	the living plant	
+eleki	to	the produce (as food or spice)	
+encilada	to	food	
+espageti	to	food	
+esparago	to	the produce (as food or spice)	
+espinaka	to	the produce (as food or spice)	
+estarefruta	to	the produce (as food or spice)	
+estroberi	to	the produce (as food or spice)	
+ewkalitus	te	the living plant	
+falafel	to	food	
+fasul	to	the produce (as food or spice)	
+ferne	te	the living plant	
+fluragubar	to	part of a plant	
+flurakabiji	to	the produce (as food or spice)	
+fruta	to	food	
+funduku	te	the hazel (bush)	
+funduku	to	the hazelnut	
+furnoxey	to	food	
+futru	te	the living fungus	?
+gancaw	to	the produce (as food or spice)	
+gandum	to	the produce (as food or spice)	
+ganmoku	te	the living plant	
+genu	to	part of a plant	
+golenjan	to	the produce (as food or spice)	
+gras	te	the living plant	
+grosela	to	the produce (as food or spice)	
+gwaba	to	the produce (as food or spice)	
+gwakamole	to	food	
+halapenyo	to	the produce (as food or spice)	
+hambo	to	food	
+hamburger	to	food	
+hardal	to	the produce (as food or spice)	
+hirxamaso	to	food	
+hodaw	te	the walnut tree	?
+holoba	to	the produce (as food or spice)	
+hotdogu	to	food	
+humus	to	food	
+hurma	to	the produce (as food or spice)	
+hwehyon	to	the produce (as food or spice)	
+hyara	to	the produce (as food or spice)	
+iksir	to	food	
+injir	te	the fig tree (ficus)	
+injir	to	the fig (fruit)	
+irisplanta	te	the living plant	
+jaka	to	the produce (as food or spice)	
+jameyogurtu	to	food	
+jasumin	te	the living plant	
+jelatin	to	food	
+jinsen	te	the living plant	?
+jovari	to	the produce (as food or spice)	
+jozi	to	food	
+jubin	to	food	
+jubinhamburger	to	food	
+junidrevo	te	the living plant	
+jusu	to	food	
+jyenpatato	to	food	
+kabaca	to	the produce (as food or spice)	
+kabiji	to	the produce (as food or spice)	
+kafe	to	food	
+kafur	to	food	
+kaki	to	the produce (as food or spice)	
+kakutus	te	the living plant	
+kamomil	te	the living plant	?
+kanabis	te	the cannabis plant	
+kanabis	to	marijuana (dried, smoked)	
+kantaka	to	part of a plant	
+kantalupu	to	the produce (as food or spice)	
+kanu	to	part of a plant	
+karanfu	to	the produce (as food or spice)	
+karawi	te	the living plant	?
+karnexon	te	the living plant	
+karote	to	the produce (as food or spice)	
+kasava	to	the produce (as food or spice)	
+kayena	to	food	
+kebabu	to	food	
+keke	to	food	
+kendi	to	food	
+kesadiya	to	food	
+ketani	te	the living plant	
+kimci	to	food	
+kiwifruta	to	the produce (as food or spice)	
+klover	te	the living plant	
+koka	te	the living plant	?
+koko	to	the produce (as food or spice)	
+kokomilko	to	food	
+koktel	to	food	
+kola	te	the kola tree	
+kola	to	the kola nut, or cola (the drink)	
+kopakeke	to	food	
+korku	to	part of a plant	
+koryandro	te	the living plant	?
+krenberi	to	the produce (as food or spice)	
+krimujubin	to	food	
+kruasan	to	food	
+kukuhwa	te	the living plant	
+kunkwatu	to	the produce (as food or spice)	
+kurkuma	to	the produce (as food or spice)	
+kuskus	to	food	
+kustardi	to	food	
+lablabu	te	the living plant	
+lavenda	te	the living plant	
+lawrel	te	the laurel (plant)	
+lawrel	to	bay leaf	
+letuka	to	the produce (as food or spice)	
+lici	to	the produce (as food or spice)	
+likakendi	to	food	
+lilaku	te	the living plant	
+limon	to	the produce (as food or spice)	
+limonsui	to	food	
+limu	to	the produce (as food or spice)	
+limusui	to	food	
+linxam	te	the living plant	
+liu	te	the living plant	
+lotus	te	the living plant	
+mais	to	the produce (as food or spice)	
+majoram	te	the living plant	?
+maku	to	part of a plant	
+malzaxey	to	food	
+mandarin	to	the produce (as food or spice)	
+mango	to	the produce (as food or spice)	
+maple	te	the living plant	
+marsepan	to	food	
+marximalo	to	food	
+maryami	te	the living plant	?
+maso	to	food	
+melon	to	the produce (as food or spice)	
+milko	to	food	
+minta	te	the living plant	
+moksay	to	part of a plant	
+mudan	te	the living plant	
+mufin	to	food	
+mugunge	te	the living plant	
+mulin	to	the produce (as food or spice)	
+murto	te	the living plant	?
+muskada	to	the produce (as food or spice)	
+namake	to	food	
+nelufar	te	the living plant	
+netar	to	part of a plant	
+nohudu	to	the produce (as food or spice)	
+nudel	to	food	
+nyame	to	the produce (as food or spice)	
+omelete	to	food	
+oregano	te	the living plant	?
+orkide	te	the living plant	
+ovo	to	food	
+palme	te	the living plant	
+palo	to	part of a plant	
+palobija	to	food	
+papaya	to	the produce (as food or spice)	
+papirus	te	the papyrus plant	
+papirus	to	papyrus (the writing material)	
+paprika	to	food	
+patato	to	the produce (as food or spice)	
+pay	to	food	
+pekan	to	the pecan (nut)	?
+peresil	te	the living plant	?
+persika	to	the produce (as food or spice)	
+petalo	to	part of a plant	
+pilpil	to	the produce (as food or spice)	
+pimento	to	the produce (as food or spice)	
+pinatu	te	the peanut plant	
+pinatu	to	the peanut (as food)	
+pingo	to	the produce (as food or spice)	
+pitza	to	food	
+pommais	to	food	
+ponci	to	food	
+popi	te	the living plant	
+poriji	to	food	
+poro	to	the produce (as food or spice)	
+prumu	to	the produce (as food or spice)	
+pudin	to	food	
+pure	to	food	
+puto	to	the produce (as food or spice)	
+putojusu	to	food	
+pyara	to	the produce (as food or spice)	
+rasuberi	to	the produce (as food or spice)	
+rehani	te	the living plant	?
+revende	to	the produce (as food or spice)	
+risi	to	the produce (as food or spice)	
+rosa	te	the living plant	
+rosbif	to	food	
+rosmari	te	the living plant	?
+roti	to	food	
+sabzi	to	food	
+sadafamahi	to	as food	?
+safran	to	the produce (as food or spice)	
+salada	to	food	
+salami	to	food	
+sandwici	to	food	
+sanobar	te	the living plant	
+sawsa	to	food	
+seleri	to	the produce (as food or spice)	
+sentay	te	the living plant	
+sesam	to	the produce (as food or spice)	
+sitafel	to	the produce (as food or spice)	
+soda	to	food	
+solaflura	te	the living plant	
+solagenu	te	the plant (wild sunflower)	
+solagenu	to	the tuber (as food)	
+somu	to	the produce (as food or spice)	
+somuroti	to	food	
+soseji	to	food	
+soya	to	the produce (as food or spice)	
+suheprumu	to	food	
+suheputo	to	food	
+sukwa	to	the produce (as food or spice)	
+sumake	to	the produce (as food or spice)	
+sumbole	to	part of a plant	
+supa	to	food	
+susana	te	the living plant	
+syahe prumu	to	the produce (as food or spice)	
+syaheberi	to	the produce (as food or spice)	
+tabako	te	the living plant	?
+tako	to	food	
+tamal	to	food	
+tamarin	te	the tamarind tree	?
+tamipatato	to	the produce (as food or spice)	
+tamixey	to	food	
+tarahon	te	the living plant	?
+tarhaxkun	te	the living plant	
+tawakeke	to	food	
+taymi	te	the living plant	?
+tengu	te	the living plant	
+tomate	to	the produce (as food or spice)	
+tortiya	to	food	
+tostaroti	to	food	
+tuberkul	to	part of a plant	
+tulipa	te	the living plant	
+tute	to	the mulberry (fruit)	?
+unabi	to	the produce (as food or spice)	
+vanila	to	the produce (as food or spice)	
+vyoleta	te	the living plant	
+wadisusana	te	the living plant	
+wafle	to	food	
+wasabi	to	the produce (as food or spice)	
+wendu	to	the produce (as food or spice)	
+wisterya	te	the living plant	
+xalgam	to	the produce (as food or spice)	
+xarmu	te	the living plant	
+xayri	to	the produce (as food or spice)	
+xetocuente	to	food	
+xube	to	part of a plant	
+xupi	to	part of a plant	
+xweki	to	part of a plant	
+xyombu	te	the living plant	
+yogurtu	to	food	
+yulaf	to	the produce (as food or spice)	
+zenjebir	to	the produce (as food or spice)	
+zeytuni	to	the produce (as food or spice)	
+zira	to	the produce (as food or spice)	
+zukini	to	the produce (as food or spice)	
+flura	to	the blossom (a part of the plant)	?
+gunca	to	part of a plant	
+jiu	to	food	
+bija	to	part of a plant	
+marine	to	food	
+planta	te	the living plant	
+sui	to	food	
+turxi	to	food	
+estuf	to	food	
