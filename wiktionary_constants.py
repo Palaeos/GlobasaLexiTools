@@ -193,20 +193,46 @@ def extract_italic_annotation(text):
     return stripped, clarification
 
 
+_POS_PREFIX_RE = re.compile(r"^[a-z][a-z./ ]*(?:\([^)]*\))?\s*:\s*")
+
+
+def _is_gender_pair(masc, fem):
+    """True when fem is provably the feminine of masc (americano/americana,
+    español/española). Conservative: other pairs (campeón/campeona) are not
+    recognised rather than guessed."""
+    if not masc or not fem or " " in masc or " " in fem:
+        return False
+    return (masc.endswith("o") and fem == masc[:-1] + "a") or fem == masc + "a"
+
+
 def build_annotation_map(text):
     """Build {stripped_word: annotation_text} from a word-list translation field.
 
     E.g. 'absurdidad (_dicho o hecho absurdo_), ridiculez'
       -> {'absurdidad': 'dicho o hecho absurdo'}
+
+    The word list prefixes each segment with its part of speech
+    ('n prop: Adén (_golfo_)') and writes Spanish gendered pairs with one
+    annotation after the feminine ('americano, americana (_del continente
+    americano_)'): the prefix is stripped, and the annotation is given to
+    both members of a pair.
     """
     annotations = {}
-    for part in re.split(r'[,;]', text):
-        part = part.strip()
-        if not part:
-            continue
-        stripped, annotation = extract_italic_annotation(part)
-        if stripped and annotation:
-            annotations[stripped] = annotation
+    for segment in text.split(";"):
+        # Any order of PoS words: the Spanish column writes 'adj prop:',
+        # English 'prop adj:' (same pattern as the Word Viewer's).
+        body = _POS_PREFIX_RE.sub("", segment.strip())
+        items = [p.strip() for p in re.split(r",(?![^()]*\))", body)]
+        prev = ""
+        for part in items:
+            if not part:
+                continue
+            stripped, annotation = extract_italic_annotation(part)
+            if stripped and annotation:
+                annotations[stripped] = annotation
+                if _is_gender_pair(prev, stripped) and prev not in annotations:
+                    annotations[prev] = annotation
+            prev = stripped
     return annotations
 
 
