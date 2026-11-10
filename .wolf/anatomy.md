@@ -339,3 +339,6 @@
 
 - `test_han_display.py` — display_han / han_unconfirmed / LexiliAsel Han format (~400 tok)
 - `test_pivots.py` — pivot_support, rank tie-break after methodology, tuple sense pick (slow: de LMDB) (~450 tok)
+
+- `setup.sh` — one-step Word Viewer setup on a fresh clone: xwexi/doxo submodules, venv/ from requirements-viewer.txt, word-list.csv download (drops WordViewerLMDB when the list changed) (~450 tok)
+- `requirements-viewer.txt` — only the Word Viewer's packages (flask, pandas, lmdb, msgpack, requests, wget, fastenum, openpyxl, pillow) (~100 tok)

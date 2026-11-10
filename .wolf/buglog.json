@@ -3718,5 +3718,37 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-09T14:00:00"
+  },
+  {
+    "id": "bug-229",
+    "timestamp": "2026-11-10T20:30:00Z",
+    "error_message": "lmdb.ReadonlyError: mdb_dbi_open: Permission denied / lookups 404 after a failed first start",
+    "file": "Word Viewer.py",
+    "root_cause": "build_db wrote straight into WordViewerLMDB; a crash (missing input) left an empty or partial DB that later starts opened as if built",
+    "fix": "build into WordViewerLMDB.building and os.replace when complete; _open_built_db rebuilds a DB with missing sub-dbs or an empty wordlist",
+    "tags": [
+      "word-viewer",
+      "lmdb",
+      "fresh-clone"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-10T20:30:00Z"
+  },
+  {
+    "id": "bug-230",
+    "timestamp": "2026-11-10T20:30:00Z",
+    "error_message": "500 FileNotFoundError on /fonts/<missing font>",
+    "file": "Word Viewer.py",
+    "root_cause": "serve_font used send_file(os.path.join(...)); no 404 and no '..' guard",
+    "fix": "send_from_directory(font_dir, filename)",
+    "tags": [
+      "word-viewer",
+      "flask",
+      "fonts"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-10T20:30:00Z"
   }
 ]
