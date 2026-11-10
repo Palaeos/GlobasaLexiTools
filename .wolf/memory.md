@@ -2105,3 +2105,11 @@
 | 21:23 | Etymology cognates opt-in (concept etym_cognates, page checkbox), off by default | word_selection/pipeline.py, word_selector.html | uncommitted, tested | ~3k |
 | 21:25 | Dictionary links: bilingual X-English first, monolingual last (labelled) | word_selector.html | uncommitted | ~2k |
 | 21:31 | Session end: Hanzi-for-ko/vi request recorded as next session's first step; uncommitted: etym cognates opt-in, dictionary links (bilingual first), own-language senses, progress display | .wolf/cerebrum.md | recorded | ~1k |
+| 22:05 | Recorded next step: non-English pivot via seed words (editions de/fr/ja/zh exist) | .wolf/cerebrum.md | recorded | ~1k |
+| 22:15 | Added the user's pivot-chain example (горшок/Topf/vasija/cruche) to next session's notes | .wolf/cerebrum.md | recorded | <1k |
+| 22:16 | Corrected next-session note: seed TUPLE (en:pot, ru:горшок, de:Topf, es:vasija, fr:cruche) jointly pins one meaning; rank by pivots agreeing | .wolf/cerebrum.md | recorded | <1k |
+| 12:05 | Historical Han for ko/vi (display_han, sources table, chips, LexiliAsel 기질 氣質 “gijil”, dossier) | word_selection/pipeline.py, dossier.py, Word Selector.py, word_selector.html | d6bef79 | ~15k |
+| 12:20 | Han shown only when another Sinosphere word confirms it (독 ≠ 毒/獨); unconfirmed homographs in sources table only | same | a1caaef | ~5k |
+| 12:50 | Seed tuples: senses_in (any edition), tuple_senses (score by other seeds listed), pivot_support + rank tie-break after methodology, english_view bridge for sense_fit, edition selector, dossier Pivots | word_selection/{sources/wiktionary,sources/seeds,pipeline,select,dossier,methodology}.py, Word Selector.py, word_selector.html | d7d7156; 8 tests pass | ~40k |
+| 14:00 | Matrix (基質) regression: bisected to 7a31746 (coda stats) + 5c93d36 (alignment lost j/k/g precedent); fixed with surface-reflex coda stats + letter-level precedent fallback; kijitu first; eval 946->947, no losses | word_selection/precedent.py, blend.py, tests/test_sino_precedent.py | c44351e | ~40k |
+| 19:45 | Committed pending work atomically (nun toggle, viewer sidebar, AnkiMaker3+constructions.py, Lafuzu typed card, vocab subdecks, Doxo/images/anaphor data, requirements); viewer smoke-tested (/, /lookup ok; Apertium pair not reachable from sandbox) | many | 1db5628..871e066 | ~25k |

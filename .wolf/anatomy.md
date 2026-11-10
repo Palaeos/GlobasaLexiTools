@@ -334,3 +334,8 @@
 - `Wiktionary concept index.py` — one pass over raw-wiktextract dump -> WiktionaryLMDB_concepts/ (translations WITH roman, sense QIDs, entries with IPA/roman/etym for 16 langs + eo)
 - `Dictionary ingest.py` — downloads/indexes CC-CEDICT, JMdict, OMW (downloads blocked in sandbox; adapters not yet written)
 - `word_selection_eval.py` — `translit [lang]` per-language accuracy vs LexiliAsel romanizations; `roots [oracle|e2e] [N]` leave-one-out root proposals
+
+## word_selection/tests/
+
+- `test_han_display.py` — display_han / han_unconfirmed / LexiliAsel Han format (~400 tok)
+- `test_pivots.py` — pivot_support, rank tie-break after methodology, tuple sense pick (slow: de LMDB) (~450 tok)

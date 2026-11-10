@@ -3665,5 +3665,58 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-08T19:30:00"
+  },
+  {
+    "id": "bug-226",
+    "timestamp": "2026-11-09T12:00:00",
+    "error_message": "Native Korean 독 'jar' shown with historical Han 毒 / 獨 (단지 'jar' with 但只 / 團地)",
+    "file": "word_selection/pipeline.py",
+    "root_cause": "sinosphere's hanja table lists every Sino homograph of a Hangul spelling; display_han showed all spellings when none was shared with the cluster",
+    "fix": "display_han shows only spellings another Sinosphere word of the cluster/concept shares; the rest are 'Han homographs, unconfirmed' in the sources table only",
+    "tags": [
+      "word-selector",
+      "sinosphere",
+      "korean",
+      "hanja",
+      "false-positive"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-09T12:00:00"
+  },
+  {
+    "id": "bug-227",
+    "timestamp": "2026-11-09T12:30:00",
+    "error_message": "de:Topf 'kleines Gefäß' reported as bridging to no English table when en:pot was also a concept sense",
+    "file": "word_selection/sources/wiktionary.py",
+    "root_cause": "english_view deduplicated bridge rows against the concept's existing English rows before deciding bridged/unbridged",
+    "fix": "collect matches first (a match already present still counts as a bridge), dedupe only when appending",
+    "tags": [
+      "word-selector",
+      "pivots",
+      "wiktionary",
+      "sense-fit"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-09T12:30:00"
+  },
+  {
+    "id": "bug-228",
+    "timestamp": "2026-11-09T14:00:00",
+    "error_message": "User: kijitu should still be favoured for matrix (geology); proposals were gijil, jijitu, kijitu",
+    "file": "word_selection/precedent.py",
+    "root_cause": "(1) 7a31746 coda_stats counted roots whose Han spelling merely ends in an MC -t character (pilpil, tofa) as 'dropped', -tu share 4/15; (2) 5c93d36 sino_align training split the j/k/g initial column so no language was followed >=0.6 (ja 4/8), the precedent disappeared and gijil/jijit stopped paying a departure",
+    "fix": "coda_stats requires two surface reflexes (not cmn, not the reading); precedent.lookup gains a last letter-level fallback (letter_model) for >=3-language columns with >=2*MIN_COUNT roots; bisected with git archive copies + symlinked data in the scratchpad",
+    "tags": [
+      "word-selector",
+      "precedent",
+      "sinosphere",
+      "regression",
+      "coda"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-09T14:00:00"
   }
 ]
