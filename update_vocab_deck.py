@@ -10,7 +10,9 @@ existing notes and keep their scheduling -- never regenerate them.
 Anki's own library does the writing, so card generation follows the real
 conditional-template rules: a word that gains an image gains its Imajeli
 Rukone card, and one that loses its last image loses that card. Every card is
-filed in a subdeck named after its card type (Globasa::Vocabulary::Produti...).
+filed in a card-type subdeck: Produti and Rukone cards each share one, split
+into ::Imajeli (loads a web image) and ::Nenimajeli (works offline); the quick
+card types (Enfasis, Pornamelexi, Verb Type...) each keep their own.
 
 Fields are matched to columns BY NAME. The note type's ordinals have drifted
 once already (see bug-184), and a silent off-by-one would write glosses into
@@ -18,6 +20,7 @@ image slots.
 """
 import csv
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -204,26 +207,95 @@ if empty:
     col.remove_cards_and_orphaned_notes(empty)
     print(f"\nremoved {len(empty)} card(s) whose template the update left empty")
 
-# One subdeck per card type, named after its template, so a learner can study
-# or suspend a whole card type at once. The template's deck override sends cards
-# generated later (a new word, a word gaining an image) straight there; the move
-# below catches everything already in the package. Renaming a template in Anki
-# moves its cards on the next run and drops the emptied subdeck.
+# Card-type subdecks, so a learner can catch up in pieces: the quick cards
+# (Enfasis, Pornamelexi...) each have a subdeck of their own, while every
+# Produti template shares one and every Rukone template shares another. Produti
+# and Rukone are split once more, card by card, on whether the card loads an
+# image from the web: ::Imajeli cards need a connection, ::Nenimajeli cards
+# carry only media bundled in the package and can be studied offline. That is
+# a property of the note (a word with no picture yet makes an offline Produti
+# card), not of the template, so it is decided by rendering each card.
+#
+# The template's deck override files cards generated later (a new word, a word
+# gaining an image) by template alone; the per-card pass below re-files every
+# card on each run, so a word that gains or loses its picture changes subdeck.
+# Renaming a template in Anki re-files its cards and drops any emptied subdeck.
+WEB_MEDIA = re.compile(r"""\bsrc\s*=\s*["']?https?://""", re.IGNORECASE)
+
+
+def family_of(template):
+    """'Produti' or 'Rukone' for a template split by web media, else None."""
+    for family in ("Produti", "Rukone"):
+        if template.endswith(family):
+            return family
+    return None
+
+
+def subdeck_for(template, web_media):
+    family = family_of(template)
+    if family is None:
+        return template
+    return f"{family}::{'Imajeli' if web_media else 'Nenimajeli'}"
+
+
+def deck_id_for(subdeck):
+    return col.decks.id(f"{DECK}::{subdeck}", create=True)
+
+
+# The main gloss of each row (AnkiMaker3.emphasize_main_gloss). Headings are
+# bold and PoS labels italic, so the emphasis is size plus a thick underline:
+# distinct from both, and still readable on the coloured PoS cells.
+MAIN_GLOSS_CSS = """
+/* main-gloss: added by update_vocab_deck.py */
+.main-gloss {
+    font-size: 1.15em;
+    font-weight: normal;
+    font-style: normal;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+}
+"""
 notetype = col.models.get(notetype["id"])
-subdecks = {}
+if "main-gloss" not in notetype["css"]:
+    notetype["css"] = notetype["css"].rstrip() + "\n" + MAIN_GLOSS_CSS
+    col.models.update_dict(notetype)
+    print("\nadded the .main-gloss style to the note type")
+
+notetype = col.models.get(notetype["id"])
 for tmpl in notetype["tmpls"]:
-    did = col.decks.id(f"{DECK}::{tmpl['name']}", create=True)
-    subdecks[tmpl["ord"]] = did
-    tmpl["did"] = did
+    # The default for a card not yet re-filed: only the image card is
+    # guaranteed to show a web picture.
+    tmpl["did"] = deck_id_for(
+        subdeck_for(tmpl["name"], tmpl["name"] == "Imajeli Rukone"))
 col.models.update_dict(notetype)
 
+subdecks = {}
+by_target = {}
+for cid in col.find_cards(f'"note:{NOTETYPE}"'):
+    card = col.get_card(cid)
+    name = card.template()["name"]
+    web = family_of(name) is not None and bool(
+        WEB_MEDIA.search(card.question()) or WEB_MEDIA.search(card.answer()))
+    target = subdeck_for(name, web)
+    if target not in subdecks:
+        subdecks[target] = deck_id_for(target)
+    if card.did != subdecks[target]:
+        by_target.setdefault(subdecks[target], []).append(cid)
+
 moved = 0
-for ordinal, did in subdecks.items():
-    stray = col.find_cards(f'"note:{NOTETYPE}" card:{ordinal + 1} -did:{did}')
-    if stray:
-        col.set_deck(stray, did)
-        moved += len(stray)
+for did, cids in by_target.items():
+    col.set_deck(cids, did)
+    moved += len(cids)
 print(f"\nmoved {moved} card(s) into their card-type subdeck")
+for subdeck in sorted(subdecks):
+    n = len(col.find_cards(f"did:{subdecks[subdeck]}"))
+    print(f"  {subdeck}: {n}")
+
+# A family's parent deck holds no cards of its own but must not be removed:
+# removing a deck removes its children.
+for family in ("Produti", "Rukone"):
+    subdecks[family] = deck_id_for(family)
 
 wanted = set(subdecks.values()) | {deck_id}
 for d in col.decks.all_names_and_ids():
