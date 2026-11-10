@@ -2,6 +2,27 @@
 
 This repository contains various Python scripts that automate various Globasa related tasks.
 
+## Word Viewer
+
+A local dictionary for Globasa in the browser: translations in up to two of 16 languages, etymology, pictures, example sentences from the reader texts (Doxo), and the course lessons (Xwexi).
+
+Requires Python 3.10+ and git, on Linux or macOS.
+
+```bash
+git clone https://github.com/Palaeos/GlobasaLexiTools.git
+cd GlobasaLexiTools
+./setup.sh
+venv/bin/python "Word Viewer.py"
+```
+
+Then open <http://localhost:5000>. `setup.sh` fetches the lesson and reader-text submodules, creates `venv/` with only the viewer's packages ([`requirements-viewer.txt`](requirements-viewer.txt)), and downloads the current word list. Run it again to refresh the word list. The first start builds a cache (`WordViewerLMDB/`) in under a minute.
+
+Optional extras, which the viewer runs without:
+
+- `WV_AUDIO_DIR=/path/to/clips`: pronunciation recordings named `<word>.ogg`.
+- `WV_APERTIUM_DIR=/path/to/apertium-glb-eng`: a compiled Apertium pair, for the translation aide at `/translate`.
+- `menalariExtension.tsv`: translations beyond the official word list, built by [`Wiktionary extension builder.py`](Wiktionary%20extension%20builder.py).
+
 ## Apertium
 - [`dictionaryPreprocess.py`](dictionaryPreprocess.py) - Scrapes the Globasa wordlist to either generate monolingual or bilingual dictionary entries for Apertium
 ## Anki
