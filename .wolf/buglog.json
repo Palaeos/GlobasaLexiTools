@@ -3750,5 +3750,36 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-10T20:30:00Z"
+  },
+  {
+    "id": "bug-231",
+    "timestamp": "2026-11-10T21:10:00Z",
+    "error_message": "menalariExtension.tsv reorders senses/translations on every rebuild",
+    "file": "Wiktionary extension builder.py, wiktionary_constants.py",
+    "root_cause": "'|'.join(set) and ', '.join(set) in entry_to_string: set order depends on PYTHONHASHSEED",
+    "fix": "sorted() in both joins; two runs with different seeds now byte-identical",
+    "tags": [
+      "extension",
+      "determinism"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-10T21:10:00Z"
+  },
+  {
+    "id": "bug-232",
+    "timestamp": "2026-11-10T21:10:00Z",
+    "error_message": "vetted sense abece/alphabetize missing from the extension",
+    "file": "vetted_senses.py",
+    "root_cause": "Tier cell 'v ' (trailing space) failed the builder's tier in ('v','e') test",
+    "fix": "export strips Tier/App? whitespace and reports it; unknown tiers (sl) kept and reported",
+    "tags": [
+      "extension",
+      "vetting",
+      "data"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-10T21:10:00Z"
   }
 ]

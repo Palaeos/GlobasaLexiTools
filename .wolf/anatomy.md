@@ -342,3 +342,7 @@
 
 - `setup.sh` — one-step Word Viewer setup on a fresh clone: xwexi/doxo submodules, venv/ from requirements-viewer.txt, word-list.csv download (drops WordViewerLMDB when the list changed) (~450 tok)
 - `requirements-viewer.txt` — only the Word Viewer's packages (flask, pandas, lmdb, msgpack, requests, wget, fastenum, openpyxl, pillow) (~100 tok)
+- `vetted_senses.py` — the vetting decisions store: export() spreadsheets -> vetted_senses.tsv (Glb, Source, Eng, Prt of Sp, VerbType, Wiktionary Sense, App?, Tier; rows with a Tier only); sync() re-exports when GLB_*_WiktionarySenses.xlsx (dir from .senses_config.json) is newer; load_markings() for the sense generator, load_vetted() (App? s, Tier v/e) for the extension builder (~1300 tok)
+- `vetted_senses.tsv` — 13,075 committed vetting decisions (~800 KB); everything else in the senses spreadsheets is regenerated
+- `wiktionary_extract.py` — stream kaikki raw English dump (path, .gz or URL; never stored) into a WiktionaryDB; keys= keeps only given (word,pos); __main__ builds WiktionaryLMDB_vetted/ (35 MB, ~2.5 min) for the vetted senses (~1100 tok)
+- `wiktionary_db.py` — WiktionaryDB (LMDB: translations, senses, spanish_pos), msgpack (de)serializers, Translation/Example/Sense tuples (~1000 tok)
