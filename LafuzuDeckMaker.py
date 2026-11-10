@@ -1,13 +1,16 @@
 """Globasa__Lafuzu.apkg: match written and spoken Globasa with Hector's own
 recordings from the course (xwexi).
 
-Each note pairs a written form with its recording. Two card types, each in its
+Each note pairs a written form with its recording. Three card types, each in its
 own subdeck:
   Written -> Spoken   the text; say it, then hear Hector.
   Spoken -> Written   the recording; write or picture the text. Optional: made
                       only when the SpokenToWritten field is non-empty, which
                       SPOKEN_TO_WRITTEN sets for every note (blank it on a note
                       in Anki to drop just that card).
+  Spoken -> Typed     the recording; type the text, which Anki checks. Same
+                      option, through SpokenToTyped / SPOKEN_TO_TYPED. Study
+                      this subdeck or Spoken -> Written, and suspend the other.
 
 Sources, in course order (the first source of a text wins; a later recording
 of the same text is kept as an alternative):
@@ -54,11 +57,13 @@ NOTETYPE = "Globasa lafuzu"
 XWEXI = "xwexi-pages-grav"
 CLIPS_DIR = "/media/paleos/Warehouse2/Applications/Segmentation/Ektor_su_Lafuzu_processed"
 SPOKEN_TO_WRITTEN = True
+SPOKEN_TO_TYPED = True
 SYNTH_DECK = f"{DECK}::Synthesized"
 SYNTH_TAG = "synthesized"
 SYNTH_NOTE = "synthesized voice, not Hector"
 
-FIELDS = ["Globasa", "Basatayti", "Lafuzu", "AloLafuzu", "Asel", "SpokenToWritten"]
+FIELDS = ["Globasa", "Basatayti", "Lafuzu", "AloLafuzu", "Asel", "SpokenToWritten",
+          "Typed", "SpokenToTyped"]
 
 CSS = """.card { font-family: arial; font-size: 20px; line-height: 1.5; text-align: center; }
 .lexi { font-family: Open Sans; font-size: 30px; }
@@ -76,18 +81,36 @@ SPOKEN_FRONT = """{{#SpokenToWritten}}
 {{Lafuzu}}
 <div class= "lexi"><h2>?</h2></div>
 {{/SpokenToWritten}}"""
-SPOKEN_BACK = """{{Lafuzu}}
-<hr id=answer>
+# The answer is the text alone: repeating {{Lafuzu}} here would play the
+# recording a second time on reveal. R (replay) still plays it.
+SPOKEN_BACK = """<div class= "lexi"><h2>{{Globasa}}</h2></div>
+<div class= "mena">{{Basatayti}}</div>
+<div class= "asel">{{Asel}}</div>"""
+# The written answer typed in and checked: Typed is the text without the
+# punctuation no recording can carry ("To sen yukwe na xorkone yu").
+TYPED_FRONT = """{{#SpokenToTyped}}
+{{Lafuzu}}
+{{type:Typed}}
+{{/SpokenToTyped}}"""
+TYPED_BACK = """{{type:Typed}}
 <div class= "lexi"><h2>{{Globasa}}</h2></div>
 <div class= "mena">{{Basatayti}}</div>
 <div class= "asel">{{Asel}}</div>"""
 TEMPLATES = [("Written → Spoken", WRITTEN_FRONT, WRITTEN_BACK),
-             ("Spoken → Written", SPOKEN_FRONT, SPOKEN_BACK)]
+             ("Spoken → Written", SPOKEN_FRONT, SPOKEN_BACK),
+             ("Spoken → Typed", TYPED_FRONT, TYPED_BACK)]
 
 
 def spelling(text):
     """What a recording's filename and its text must agree on: letters only."""
     return re.sub(r"[^a-z]", "", unicodedata.normalize("NFKD", text.lower()))
+
+
+def typed_form(text):
+    """What to type for a recording: its words, without the punctuation and
+    ellipses no one can hear. Capitals stay -- Engli is spelt so. A hyphen
+    stays for suffix entries (-ya)."""
+    return " ".join(re.sub(r"[^\w\s-]", " ", text).split())
 
 
 def md(text):
@@ -222,8 +245,22 @@ def ensure_notetype(col):
         nt["css"] = CSS
         mm.add(nt)
         nt = mm.by_name(NOTETYPE)
+    # Templates and styling follow this file on every run, so a change here
+    # reaches a package built earlier.
+    layouts = {name: (front, back) for name, front, back in TEMPLATES}
+    for name in FIELDS:
+        if name not in mm.field_names(nt):
+            mm.add_field(nt, mm.new_field(name))
+    for name, front, back in TEMPLATES:
+        if name not in {t["name"] for t in nt["tmpls"]}:
+            t = mm.new_template(name)
+            t["qfmt"], t["afmt"] = front, back
+            mm.add_template(nt, t)
     for t in nt["tmpls"]:
+        if t["name"] in layouts:
+            t["qfmt"], t["afmt"] = layouts[t["name"]]
         t["did"] = col.decks.id(f"{DECK}::{t['name']}", create=True)
+    nt["css"] = CSS
     mm.update_dict(nt)
     return mm.by_name(NOTETYPE)
 
@@ -262,7 +299,9 @@ for text, gloss, audio, asel in sources:
                       "AloLafuzu": [f"{ipa} {t}".strip() for (_, ipa), t
                                     in zip(audio[1:], tags[1:])],
                       "Asel": asel,
-                      "SpokenToWritten": "y" if SPOKEN_TO_WRITTEN else ""}
+                      "SpokenToWritten": "y" if SPOKEN_TO_WRITTEN else "",
+                      "Typed": typed_form(text),
+                      "SpokenToTyped": "y" if SPOKEN_TO_TYPED else ""}
     else:
         # "bonaxam" beside "bon axam": label the recording with its own
         # spelling; a second recording of the same spelling, with its source.
