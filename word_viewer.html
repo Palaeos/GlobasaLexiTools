@@ -451,8 +451,13 @@ a:hover { text-decoration: underline; }
   align-items: start;
 }
 .entry-col-left { min-width: 0; }
-.entry-col-right { min-width: 14rem; }
-@media (max-width: 600px) {
+/* The sidebar hugs the etymology, but never past 20rem. A long etymology line
+   -- kroa's "Vietnamese  ngoe). kwasilexi - Fransesa (croa croa" -- used to size
+   the auto track past half the page, which squeezed the left track below the
+   translation table's minimum width, and the table then spilled out of its
+   column and printed over the etymology. Capped, the table always has room. */
+.entry-col-right { min-width: 14rem; max-width: 20rem; }
+@media (max-width: 48rem) {
   .entry-grid {
     grid-template-columns: 1fr;
   }
@@ -639,7 +644,9 @@ details.nsfw-wrap > summary {
 /* ============================================================
    Translation Table
    ============================================================ */
-.trans-section { margin-bottom: var(--section-gap); }
+/* Wide tables -- two languages plus a type column plus pictures -- scroll
+   inside their own column rather than overlapping the etymology beside them. */
+.trans-section { margin-bottom: var(--section-gap); overflow-x: auto; }
 
 .trans-table {
   width: 100%;
@@ -1125,7 +1132,7 @@ a.chip.tag-link:hover {
   color: var(--color-text);
   white-space: nowrap;
 }
-.etym-val { color: var(--color-muted); }
+.etym-val { color: var(--color-muted); overflow-wrap: break-word; }
 .etymology-compound {
   font-family: var(--font-serif);
   font-size: 1.1rem;
