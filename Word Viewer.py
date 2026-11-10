@@ -24,7 +24,7 @@ import lmdb
 import msgpack
 import pandas as pd
 import requests
-from flask import Flask, jsonify, send_file, abort, request
+from flask import Flask, jsonify, send_file, send_from_directory, abort, request
 
 from Lexilista_parser import (parseWordEntry, GlossPoS, VerbType,
                               ANNOTATION_MAP, _refine_verb_type,
@@ -1663,8 +1663,10 @@ def scripts_js():
 
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
+    # A font missing on this machine is a 404, so the page falls back to the
+    # next family in its stack; send_from_directory also refuses "..".
     font_dir = os.path.expanduser("~/.local/share/fonts")
-    return send_file(os.path.join(font_dir, filename))
+    return send_from_directory(font_dir, filename)
 
 
 @app.route("/etym_langs")
