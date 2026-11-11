@@ -9,8 +9,14 @@ parser read `romanization`, the dump uses `roman`), this keeps:
   - for every entry in those 17 languages: senses (gloss, tags, QID, 1 example),
     IPA, romanizations, and etymology links (bor/inh/der/cog/etymon).
 Entries whose senses are all inflected forms are skipped (disk is tight).
+Then the passes the Word Selector also reads: etymology reverse index,
+compound parts, and word_selection_cache/sinosphere.json and plurals.json.
 
 Run directly:  venv/bin/python "Wiktionary concept index.py"   (~1 h)
+               venv/bin/python "Wiktionary concept index.py" 100000   (test: first
+               100000 lines into WiktionaryLMDB_concepts_test/, main pass only)
+The dump is WIKTIONARY_DUMP, else this machine's copy, else streamed from
+kaikki.org (word_selection/dump.py); ./setup.sh --selector runs this.
 """
 
 import os
@@ -22,10 +28,11 @@ import time
 import orjson
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from word_selection import concept_index as ci
+from word_selection import concept_index as ci, plurals, sinosphere
+from word_selection.dump import open_lines, source
 from word_selection.languages import LANGS, DOSSIER_LANGS
 
-DUMP = "/media/paleos/Warehouse2/Language/raw-wiktextract-data.jsonl"
+DUMP = source("en")
 LIMIT = int(sys.argv[1]) if len(sys.argv) > 1 else None   # optional line limit for testing
 OUT = ci.DIR + ("_test" if LIMIT else "")
 
@@ -106,16 +113,18 @@ def merge_put(txn, db, k, items):
     txn.put(k, ci.pack(val), db=db)
 
 
-if os.path.exists(OUT):
-    shutil.rmtree(OUT)
-os.makedirs(OUT)
-idx = ci.ConceptIndex(OUT, readonly=False)
+print(f"Reading {DUMP}", flush=True)
+BUILDING = OUT + ".building"     # renamed to OUT when complete: a half-built index is never used
+if os.path.exists(BUILDING):
+    shutil.rmtree(BUILDING)
+os.makedirs(BUILDING)
+idx = ci.ConceptIndex(BUILDING, readonly=False)
 dbs = idx.dbs
 
 t0 = time.time()
 n_lines = n_entries = n_trans = pending = 0
 txn = idx.env.begin(write=True)
-with open(DUMP, "rb") as f:
+with open_lines(DUMP, binary=True) as f:
     for line in f:
         n_lines += 1
         if LIMIT and n_lines > LIMIT:
@@ -176,6 +185,16 @@ with open(DUMP, "rb") as f:
                   f"{time.time() - t0:7.0f}s", flush=True)
 txn.commit()
 idx.close()
-print(f"reverse index: {ci.build_reverse(OUT)} words")
-print(f"done: {n_lines} lines, {n_entries} entries, {n_trans} translation tables, "
-      f"{time.time() - t0:.0f}s -> {OUT}")
+print(f"main pass: {n_lines} lines, {n_entries} entries, {n_trans} translation tables, "
+      f"{time.time() - t0:.0f}s", flush=True)
+print(f"reverse index: {ci.build_reverse(BUILDING)} words", flush=True)
+print(f"etymology reverse index: {ci.build_etym_reverse(BUILDING)} etymons", flush=True)
+if not LIMIT:
+    print(f"compound parts: {ci.build_parts(DUMP, BUILDING)} words", flush=True)
+if os.path.exists(OUT):
+    shutil.rmtree(OUT)
+os.replace(BUILDING, OUT)
+print(f"done -> {OUT}  ({time.time() - t0:.0f}s)", flush=True)
+if not LIMIT:
+    print(f"sinosphere table: {sinosphere.build(DUMP)}", flush=True)
+    print(f"plurals table: {plurals.build(DUMP)} forms", flush=True)

@@ -59,7 +59,9 @@ lmdb_dir = config['lmdb_dir']
 # Locate JSONL file
 # ---------------------------------------------------------------------------
 
-JSONL_DIR = "/media/paleos/Warehouse2/Language"
+# WIKTIONARY_DUMP_DIR, else the maintainer's copies when present, else word_selection_cache/
+JSONL_DIR = os.environ.get("WIKTIONARY_DUMP_DIR") or next(
+    (d for d in ("/media/paleos/Warehouse2/Language",) if os.path.isdir(d)), "word_selection_cache")
 jsonl_path = os.path.join(JSONL_DIR, f"raw-wiktextract-data-{lang_code}.jsonl")
 jsonl_gz_path = jsonl_path + ".gz"
 

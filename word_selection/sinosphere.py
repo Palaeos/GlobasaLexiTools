@@ -19,7 +19,6 @@ import unicodedata
 from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DUMP = "/media/paleos/Warehouse2/Language/raw-wiktextract-data.jsonl"
 TABLE = os.path.join(ROOT, "word_selection_cache", "sinosphere.json")
 
 
@@ -54,7 +53,7 @@ def _etym_sino(d, name, n):
     return out
 
 
-def build(dump=DUMP, out=TABLE):
+def build(dump=None, out=TABLE):
     """One pass over the dump:
       mc        zh char -> [Baxter MC readings]
       s2t       simplified char -> [traditional chars] (from the traditional entry's forms)
@@ -62,8 +61,9 @@ def build(dump=DUMP, out=TABLE):
       ko        Korean word -> [hanja spellings] (hanja forms / ko-etym-Sino)
       vi        Vietnamese word -> [chữ Hán spellings], from vi-etym-sino only: the
                 entry's plain CJK forms mix in chữ Nôm spellings of native words"""
+    from .dump import open_lines, source
     mc, s2t, j2t, ko, vi = {}, {}, {}, {}, {}
-    with open(dump, encoding="utf-8") as f:
+    with open_lines(dump or source("en")) as f:
         for line in f:
             if '"lang_code": "zh"' in line:
                 if '"Middle-Chinese"' not in line:

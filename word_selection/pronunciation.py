@@ -14,7 +14,6 @@ import re
 from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DUMP_DIR = "/media/paleos/Warehouse2/Language"
 CACHE = os.path.join(ROOT, "word_selection_cache")
 EDITIONS = {"de": "de", "fr": "fr"}       # our language code -> edition (its own words)
 
@@ -23,13 +22,14 @@ def _path(ed):
     return os.path.join(CACHE, f"pronunciation_{ed}.json")
 
 
-def build(ed, dump_dir=DUMP_DIR):
-    """One pass over raw-wiktextract-data-<ed>.jsonl: word -> [IPA, ...] for entries
-    in the edition's own language (lang_code == ed)."""
-    src = os.path.join(dump_dir, f"raw-wiktextract-data-{ed}.jsonl")
+def build(ed, dump=None):
+    """One pass over the <ed> edition's raw wiktextract dump (dump.source(ed)):
+    word -> [IPA, ...] for entries in the edition's own language (lang_code == ed)."""
+    from .dump import open_lines, source
+    src = dump or source(ed)
     mark = f'"lang_code": "{ed}"'
     out = {}
-    with open(src, encoding="utf-8") as f:
+    with open_lines(src) as f:
         for line in f:
             if mark not in line or '"ipa"' not in line:
                 continue

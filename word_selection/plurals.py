@@ -9,16 +9,16 @@ import os
 from functools import lru_cache
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DUMP = "/media/paleos/Warehouse2/Language/raw-wiktextract-data.jsonl"
 OUT = os.path.join(ROOT, "word_selection_cache", "plurals.json")
 
 
-def build(dump=DUMP, out=OUT):
+def build(dump=None, out=OUT):
+    from .dump import open_lines, source
     from .languages import LANGS
     langs = {l["dump"]: l["code"] for l in LANGS}
     marks = [f'"lang_code": "{d}"' for d in langs]
     index = {}
-    with open(dump, encoding="utf-8") as f:
+    with open_lines(dump or source("en")) as f:
         for line in f:
             if '"pos": "noun"' not in line or '"plural"' not in line or not any(m in line for m in marks):
                 continue

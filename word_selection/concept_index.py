@@ -216,9 +216,10 @@ def build_parts(dump, path=DIR, langs=None):
     import json
     from .languages import LANGS
     langs = set(langs or {l["dump"] for l in LANGS})
+    from .dump import open_lines
     marks = [f'"lang_code": "{l}"' for l in langs]
     out = {}
-    with open(dump, encoding="utf-8") as f:
+    with open_lines(dump) as f:
         for line in f:
             if '"etymology_templates"' not in line or not any(m in line for m in marks):
                 continue
