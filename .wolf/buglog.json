@@ -3829,5 +3829,72 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-11T14:15:00"
+  },
+  {
+    "id": "bug-236",
+    "timestamp": "2026-11-11T15:23:04",
+    "error_message": "SyntaxError: Unexpected token '?' (node DOM-shim test for drill.js)",
+    "file": "scratchpad/drill_dom_test.js",
+    "root_cause": "system node is v12.22.9, which lacks nullish coalescing",
+    "fix": "replaced ?? with explicit `in` checks; drill.js itself is ES5 and was unaffected",
+    "tags": [
+      "node",
+      "test-harness",
+      "drill",
+      "es5"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T15:23:04"
+  },
+  {
+    "id": "bug-237",
+    "timestamp": "2026-11-11T15:39:34",
+    "error_message": "drill round counted only 2 target items ('2 / 2') after a miss on an 'other' item",
+    "file": "drill_templates/drill.js",
+    "root_cause": "retryNext overwrote the next slot whatever its list, so an 'other' retry could displace a target slot",
+    "fix": "retry takes a later slot of the same list moved up to pos+1; with none left, only a target retry may displace an 'other' item",
+    "tags": [
+      "drill",
+      "anki",
+      "javascript",
+      "round-composition"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T15:39:34"
+  },
+  {
+    "id": "bug-238",
+    "timestamp": "2026-11-11T15:57:43",
+    "error_message": "r-l listening group had only 12 items; then node tests failed (data-i attribute, 'drill-option' substring matched 'drill-options')",
+    "file": "DrillDeckMaker.py, scratchpad drill tests",
+    "root_cause": "r/l has a single partner letter, so requiring two same-group foils excluded most words; tests lagged the drill.js refactor",
+    "fix": "items need one own-group foil plus a second from any group (x list), JS always shows one own-group foil; tests use data-v and exact class match",
+    "tags": [
+      "drill",
+      "listening",
+      "foils",
+      "test-harness"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T15:57:43"
+  },
+  {
+    "id": "bug-239",
+    "timestamp": "2026-11-11T16:20:30",
+    "error_message": "dictation/listening node tests ran against stale rendered card HTML after a drill.js change",
+    "file": "scratchpad drill tests",
+    "root_cause": "drill_inspect.py re-renders only the stress card; listen/dictate HTML came from an earlier build",
+    "fix": "re-render every tested card from the fresh package before each test run",
+    "tags": [
+      "drill",
+      "test-harness",
+      "stale-render"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T16:20:30"
   }
 ]
