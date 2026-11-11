@@ -3781,5 +3781,53 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-10T21:10:00Z"
+  },
+  {
+    "id": "bug-233",
+    "timestamp": "2026-11-11T14:15:00",
+    "error_message": "sense_vetter.py unusable on a fresh clone: reads untracked 'GLB_ENG_WiktionarySenses (copy).xlsx'; its 988 verdicts never reached vetted_senses.tsv or the extension",
+    "file": "sense_vetter.py",
+    "root_cause": "vetter read a hand-made spreadsheet snapshot and kept its verdicts in an untracked, separate jsonl keyed only by (word,label)",
+    "fix": "sense_rows.py generates the senses; log entries carry [eng,pos,vt] keys (migrated); log tracked and overlaid by vetted_senses.load_rows(); setup.sh --vetter builds WiktionaryLMDB_senses",
+    "tags": [
+      "fresh-clone",
+      "vetter",
+      "vetting",
+      "setup"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T14:15:00"
+  },
+  {
+    "id": "bug-234",
+    "timestamp": "2026-11-11T14:15:00",
+    "error_message": "Word Selector on a fresh clone: empty clusters with errors: [], /api/senses and /api/entry 500; concept index builder hardcodes /media dump path; parts/etym_reverse never built",
+    "file": "Word Selector.py",
+    "root_cause": "WiktionaryLMDB_concepts and caches were built ad hoc on one machine; no setup step; server did not check for the index",
+    "fix": "word_selection/dump.py, concept index script builds all tables via .building rename, before_request 503 with instructions, JSON error handler, setup.sh --selector, requirements-selector.txt",
+    "tags": [
+      "fresh-clone",
+      "word-selector",
+      "setup"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T14:15:00"
+  },
+  {
+    "id": "bug-235",
+    "timestamp": "2026-11-11T14:15:00",
+    "error_message": "Word Viewer /translate returns empty output, /alignments empty with no explanation, clip export fails per row on clones",
+    "file": "Word Viewer.py",
+    "root_cause": "missing WV_APERTIUM_DIR / giza_output / WV_AUDIO_DIR were not reported",
+    "fix": "explicit errors and an alignments note; translation_aide.html shows the server's error",
+    "tags": [
+      "fresh-clone",
+      "word-viewer"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-11T14:15:00"
   }
 ]

@@ -105,7 +105,7 @@
 - `tmx_viewer.html` — Globasa TMX Viewer (~6112 tok)
 - `translation_aide.html` — Globasa Translation Aide; interactive Apertium frontend: polysemy dropdowns, plus un/nun marker chips for the article and present-tense markers Globasa leaves unmarked (~6900 tok)
 - `Wiktionary extension builder.py` — Wiktionary extension builder — reads vetted senses from xlsx files, (~2776 tok)
-- `Wiktionary sense based translation extender 3.py` — match_sense_to_definition, extract_definition_and_examples, crossvalidate, wl_get (~4974 tok)
+- `Wiktionary sense based translation extender 3.py` — prompts for the senses dir/start prefix, backs up, writes GLB_ENG_WiktionarySenses.xlsx from sense_rows.rows() with inherited markings (~1200 tok)
 - `wiktionary_constants.py` — Shared constants and helpers for Wiktionary sense extender scripts. (~3963 tok)
 - `Word Viewer.py` — Word Viewer — Flask-based local dictionary for Globasa. (~26198 tok)
 - `word_viewer_etym_langs.csv` (~299 tok)
@@ -156,7 +156,7 @@
 - `JSONL parser.py` — Parses Wiktionary JSONL dumps; Translation class (~1888 tok)
 - `JSONL tagInfo.py` — Extracts tag info from JSONL dumps; Translation class (~1441 tok)
 - `Lexilista_parser.py` — Shared wordlist parser; GlossPoS, parseEntry (~2118 tok)
-- `sense_vetter.py` — Local page on port 8090 for vetting Wiktionary senses, most obvious first, no model; scored partly by other glosses, taxa and tags against sibling senses; saves to sense_vetting.jsonl (verdicts s, n, u=unsure, clear), --check and --export modes (~6500 tok)
+- `sense_vetter.py` — Local page on port 8090 (SV_PORT) for vetting Wiktionary senses, most obvious first, no model; senses generated at start (~7 s) by sense_rows.py from word-list + WiktionaryLMDB or WiktionaryLMDB_senses; scored partly by other glosses, taxa and tags against sibling senses; saves to sense_vetting.jsonl with keys (verdicts s, n, u=unsure, clear), --check and --export (vetted_senses columns) modes (~7000 tok)
 - `sense_vetter.html` — Keyboard-driven page for sense_vetter.py, with Hide vetted toggle, Unsure mark, peek with marking, browse by tag, and views for words with no sense marked and for unsure senses (~4500 tok)
 - `sense_review_queue.py` — Scores Wiktionary senses against TMX usage with a decision model on llama-server, writes a blind annotator queue ordered by value per minute plus a scores TSV to sense_review/; resumable, memory-capped Reads sense_vetting.jsonl; --rotate tests option-order effects; caps passes at 25 senses; default 4 shuffles. Default prompt uses the model-card layout; --compare tests choice formats.
 - `LLM_sense_judge.py` — 6-tier Wiktionary sense applicability judge: core match, register/domain, Qdrant corpus, composite, WordNet oewn:2023, Qwen LLM. Uses single Tier column (a/l). (~16500 tok)
@@ -176,7 +176,6 @@
 - `ThirtyStoriesToTable.py` — Parses `Corpora/Thirty Short Stories in Globasa new` into `Doxo_passages.csv` (verbatim passage pairs) and a styled Typst edition, applying the preamble and paragraph breaks from `Corpora/thirty_paragraph_breaks.tsv` (~900 tok)
 - `Wiktionary extension builder.py` — Reads vetted senses from English + multi-source xlsx, fetches translations from LMDBs, writes menalariExtension.tsv (~4100 tok)
 - `Wiktionary sense based translation extender 2.py` — Updated translation extender (~3218 tok)
-- `Wiktionary sense based translation extender 3.py` — v3 English extender; PoS-aware cross-validation, imports from wiktionary_constants, outputs GLB_ENG_WiktionarySenses.xlsx only (~2200 tok)
 - `Wiktionary sense based translation extender.py` — Uses vetted tuples to query Wiktionary for extra translations (~2450 tok)
 - `Wiktionary senseKey preprocess 2.py` — Updated version of sense preprocessor (~4555 tok)
 - `Wiktionary senseKey preprocess.py` — Scrapes Wiktionary dump, outputs Eng word/PoS/sense tuples for vetting (~3286 tok)
@@ -331,7 +330,7 @@
 - `Word Selector.py` — Flask page on :8092 for automated word selection (concept builder, sources table, ranked etymon clusters, proposals, dossier, save to word_selection_decisions.jsonl); attaches methodology justifications; /api/methodology serves all passages. Module-level app.run(): import with exec minus that line for test_client (~1600 tok)
 - `word_selector.html` — single-page UI for the above (~6000 tok)
 - `word_selection/` — pipeline package: languages, concept_index (LMDB accessor + build_reverse), lexicon (LexiliAsel etymon parser, reverse index), translit (rule engine, 16 langs, gold-tuned), align (weighted NW + center-star MSA), cluster (etym links + avg linkage, thr 0.30), select (families/tie-breaks/fallback), blend, form_rules, collision (tiered minimal pairs; globasa_collision_check.py imports it), dossier, pipeline, sources/{wiktionary,wikidata,seeds}
-- `Wiktionary concept index.py` — one pass over raw-wiktextract dump -> WiktionaryLMDB_concepts/ (translations WITH roman, sense QIDs, entries with IPA/roman/etym for 16 langs + eo)
+- `Wiktionary concept index.py` — one pass over raw-wiktextract dump (word_selection/dump.py source) -> WiktionaryLMDB_concepts/ via .building rename (translations WITH roman, sense QIDs, entries with IPA/roman/etym for 16 langs + eo); then reverse, etym_reverse, parts, sinosphere.json, plurals.json; argv[1] line limit = test build (main pass only)
 - `Dictionary ingest.py` — downloads/indexes CC-CEDICT, JMdict, OMW (downloads blocked in sandbox; adapters not yet written)
 - `word_selection_eval.py` — `translit [lang]` per-language accuracy vs LexiliAsel romanizations; `roots [oracle|e2e] [N]` leave-one-out root proposals
 
@@ -340,9 +339,14 @@
 - `test_han_display.py` — display_han / han_unconfirmed / LexiliAsel Han format (~400 tok)
 - `test_pivots.py` — pivot_support, rank tie-break after methodology, tuple sense pick (slow: de LMDB) (~450 tok)
 
-- `setup.sh` — one-step Word Viewer setup on a fresh clone: xwexi/doxo submodules, venv/ from requirements-viewer.txt, word-list.csv download (drops WordViewerLMDB when the list changed) (~450 tok)
+- `setup.sh` — fresh-clone setup: xwexi/doxo submodules, venv/ from requirements-viewer.txt, word-list.csv download; options --extension (menalariExtension.tsv), --vetter (WiktionaryLMDB_senses/ unless WiktionaryLMDB exists), --selector (requirements-selector.txt, dump downloaded once to word_selection_cache/, concept index build ~1 h); WIKTIONARY_DUMP reused across options (~900 tok)
+- `requirements-selector.txt` — Word Selector packages on top of requirements-viewer.txt (orjson, cutlet, unidic-lite, korean_romanizer, pypinyin, transliterate, requests-cache) (~80 tok)
+- `sense_rows.py` — rows of the English senses view (moved out of extender 3): rows(db, markings, start_prefix) yields HEADER-shaped lists; lookup_keys() = (word,pos) entries rows() asks for; used by extender 3 and sense_vetter.py (~3500 tok)
+- `sense_vetting.jsonl` — tracked log of sense_vetter.py verdicts (s/n/u/clear, undo entries, keys) (~1000 lines)
+- `Doxo_course_ranking.csv` — tracked: course order of reader-text words (from untracked course_ranker.py) (376 KB)
+- `word_selection/dump.py` — dump source resolution: WIKTIONARY_DUMP[_DE..] env, else /media/paleos/Warehouse2/Language copy, else kaikki URL; open_lines(src, binary) handles .gz/URL (~400 tok)
 - `requirements-viewer.txt` — only the Word Viewer's packages (flask, pandas, lmdb, msgpack, requests, wget, fastenum, openpyxl, pillow) (~100 tok)
-- `vetted_senses.py` — the vetting decisions store: export() spreadsheets -> vetted_senses.tsv (Glb, Source, Eng, Prt of Sp, VerbType, Wiktionary Sense, App?, Tier; rows with a Tier only); sync() re-exports when GLB_*_WiktionarySenses.xlsx (dir from .senses_config.json) is newer; load_markings() for the sense generator, load_vetted() (App? s, Tier v/e) for the extension builder (~1300 tok)
+- `vetted_senses.py` — the vetting decisions store: export() spreadsheets -> vetted_senses.tsv (Glb, Source, Eng, Prt of Sp, VerbType, Wiktionary Sense, App?, Tier; rows with a Tier only); sync() re-exports when GLB_*_WiktionarySenses.xlsx (dir from .senses_config.json) is newer; load_rows(include_log=True) lays sense_vetting.jsonl (sense_vetter.py's log, entries carry keys [eng,pos,vt]) over the TSV (Tier e kept); load_markings() for the sense generator, load_vetted() (App? s, Tier v/e) for the extension builder (~1700 tok)
 - `vetted_senses.tsv` — 13,075 committed vetting decisions (~800 KB); everything else in the senses spreadsheets is regenerated
-- `wiktionary_extract.py` — stream kaikki raw English dump (path, .gz or URL; never stored) into a WiktionaryDB; keys= keeps only given (word,pos); __main__ builds WiktionaryLMDB_vetted/ (35 MB, ~2.5 min) for the vetted senses (~1100 tok)
+- `wiktionary_extract.py` — stream kaikki raw English dump (path, .gz or URL; never stored) into a WiktionaryDB; keys= keeps only given (word,pos); __main__ builds WiktionaryLMDB_vetted/ (vetted senses) or with --senses WiktionaryLMDB_senses/ (sense_rows.lookup_keys() + vetted) (~1200 tok)
 - `wiktionary_db.py` — WiktionaryDB (LMDB: translations, senses, spanish_pos), msgpack (de)serializers, Translation/Example/Sense tuples (~1000 tok)
