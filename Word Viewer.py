@@ -597,6 +597,9 @@ def _run_pipeline_half(text, direction, half):
             ["bash", "-c", cmd],
             input=text, capture_output=True, text=True, timeout=10,
         )
+        if proc.returncode and not proc.stdout.strip():
+            lines = proc.stderr.strip().splitlines()
+            return f"[Error: {lines[-1] if lines else f'exit {proc.returncode}'}]"
         return proc.stdout.strip()
     except (subprocess.TimeoutExpired, Exception) as e:
         return f"[Error: {e}]"
@@ -2009,10 +2012,15 @@ def api_alignments():
     start = (page - 1) * per_page
     end = start + per_page
     page_data = data[start:end]
+    # Alignments are built on each machine (giza_output*/ is never committed).
+    note = "" if total or q or context_filter else (
+        f"No alignments built for Globasa-{lang} on this machine: use Rebuild "
+        f"(it needs the eflomal package: venv/bin/pip install eflomal).")
 
     return jsonify({
         "lang": lang,
         "source": source,
+        "note": note,
         "total": total,
         "page": page,
         "per_page": per_page,
@@ -2881,6 +2889,9 @@ def api_translate():
         return jsonify({"error": "Invalid direction"}), 400
     if len(text) > 5000:
         return jsonify({"error": "Text too long (max 5000 chars)"}), 400
+    if not os.path.isdir(APERTIUM_DIR):
+        return jsonify({"error": "No Apertium pair on this machine: set WV_APERTIUM_DIR="
+                                 "/path/to/apertium-glb-eng (compiled) and restart"}), 503
 
     # Run front half (stages 1-6) to get biltrans
     biltrans_str = _run_pipeline_half(text, direction, "front")
@@ -3823,6 +3834,9 @@ def api_split_export(n):
         # belong there.
         return jsonify({"error": f"lesson {n}'s recording is synthesized, not "
                                  f"Hector's: not exported"}), 409
+    if not os.path.isdir(AUDIO_DIR):
+        return jsonify({"error": f"No pronunciation folder {AUDIO_DIR}: set WV_AUDIO_DIR "
+                                 f"and restart"}), 409
     overwrite = bool((request.get_json(silent=True) or {}).get("overwrite"))
     written, exists, failed, unchecked, bad = [], [], [], 0, []
     for r in data["rows"]:

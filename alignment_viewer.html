@@ -521,7 +521,7 @@ main {
     nextBtn.disabled = currentPage >= totalPages;
 
     if (!data.entries || !data.entries.length) {
-      statusMsg.textContent = "No entries found.";
+      statusMsg.textContent = data.note || "No entries found.";
       statusMsg.style.display = "";
       return;
     }
