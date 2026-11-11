@@ -4,11 +4,26 @@
 #
 #     ./setup.sh --extension   also builds menalariExtension.tsv (translations
 #                              in ~50 more languages) from the Wiktionary dump
+#     ./setup.sh --vetter      also prepares the Wiktionary sense vetter:
+#                              venv/bin/python sense_vetter.py  (http://localhost:8090)
+#
+# Both options read the English Wiktionary dump (~2.4 GB), streamed from
+# kaikki.org or read from WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz).
+# Given together, the dump is read once.
 #
 # Safe to run again: it refreshes the word list from the Globasa CDN and, if
 # the list changed, drops the viewer's cache so the next start rebuilds it.
 set -euo pipefail
 cd "$(dirname "$0")"
+
+EXTENSION=0; VETTER=0
+for arg in "$@"; do
+    case "$arg" in
+        --extension) EXTENSION=1 ;;
+        --vetter) VETTER=1 ;;
+        *) echo "Unknown option $arg (use --extension and/or --vetter)" >&2; exit 1 ;;
+    esac
+done
 
 PY=${PYTHON:-python3}
 if ! "$PY" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null; then
@@ -47,13 +62,22 @@ else:
         print("  Already up to date.")
 EOF
 
-if [ "${1:-}" = "--extension" ]; then
-    # Translations beyond the word list: the vetted senses (vetted_senses.tsv)
-    # looked up in the English Wiktionary. The dump (~2.4 GB) is streamed from
-    # kaikki.org, or read from WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz);
-    # only the vetted entries are kept.
+if [ "$VETTER" = 1 ] && [ ! -d WiktionaryLMDB ]; then
+    # Every English gloss of the word list (and every vetted entry), so it
+    # also serves the extension. Not needed where the full WiktionaryLMDB/
+    # ("JSONL parser 2.py") exists.
+    echo "== English Wiktionary entries of the word list's glosses (takes a while)"
+    venv/bin/python wiktionary_extract.py --senses
+fi
+
+if [ "$EXTENSION" = 1 ]; then
+    # Translations beyond the word list: the vetted senses (vetted_senses.tsv
+    # and sense_vetting.jsonl) looked up in the English Wiktionary; only the
+    # vetted entries are kept.
     echo "== Menalari extension from the Wiktionary dump (takes a while)"
-    venv/bin/python wiktionary_extract.py
+    if [ ! -d WiktionaryLMDB ] && [ ! -d WiktionaryLMDB_senses ]; then
+        venv/bin/python wiktionary_extract.py
+    fi
     venv/bin/python "Wiktionary extension builder.py"
     rm -rf WordViewerLMDB
 fi
@@ -65,6 +89,8 @@ Done. Start the viewer with
 and open http://localhost:5000
 
 Translations beyond the word list: ./setup.sh --extension
+Wiktionary sense vetter (port 8090): ./setup.sh --vetter, then
+    venv/bin/python sense_vetter.py
 
 Optional, machine-specific extras (the viewer runs without them):
     WV_AUDIO_DIR=/path/to/clips       pronunciation recordings (<word>.ogg)

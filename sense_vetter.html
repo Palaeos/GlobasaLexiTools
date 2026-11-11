@@ -1,0 +1,392 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Globasa Sense Vetter</title>
+<style>
+:root {
+  --green: #2e7d32; --green-light: #d8ecd9; --red: #a33; --red-light: #f6dfdf;
+  --amber: #c68a00; --muted: #6b6b6b; --line: #dcdcdc; --radius: 6px; --bg: #fafafa; --panel: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.45 "Open Sans", system-ui, sans-serif; background: var(--bg); color: #222; }
+header { position: sticky; top: 0; z-index: 2; background: var(--green-light); padding: 0.5rem 1rem;
+         display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; align-items: center; }
+h1 { margin: 0; font-size: 1.05rem; color: var(--green); }
+#tally { font-variant-numeric: tabular-nums; }
+.keys { color: var(--muted); font-size: 0.82rem; }
+kbd { background: #fff; border: 1px solid var(--line); border-radius: 3px; padding: 0 0.3rem; font: inherit; }
+select, input, button { font: inherit; border: 1px solid var(--line); border-radius: var(--radius);
+                        background: #fff; padding: 0.15rem 0.5rem; }
+button { cursor: pointer; }
+main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
+.card { background: var(--panel); border: 1px solid var(--line); border-left: 5px solid var(--line);
+        border-radius: var(--radius); padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;
+        display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 0.2rem 1rem; }
+.card.focus { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-light); }
+.card.off { display: none; }
+.card.s { border-left-color: var(--green); background: #f3faf3; opacity: 0.65; }
+.card.n { border-left-color: var(--red); background: #fdf5f5; opacity: 0.65; }
+.card.u { border-left-color: var(--amber); background: #fdf8ea; }
+.word { font-weight: 700; font-size: 1.1rem; }
+.pos { color: var(--muted); font-size: 0.82rem; margin-left: 0.3rem; }
+.sense { font-weight: 600; margin-top: 0.15rem; }
+.def, .small, .usage, .gloss { font-size: 0.87rem; }
+.def { color: #333; }
+.small, .gloss b { color: var(--muted); font-weight: 400; }
+.hit { background: var(--green-light); color: #14501a; font-weight: 600; border-radius: 3px; padding: 0 0.15rem; }
+.chips { margin-top: 0.25rem; }
+.chip { font-size: 0.72rem; border-radius: 9px; padding: 0 0.4rem; margin-right: 0.2rem; white-space: nowrap; display: inline-block; }
+.chip.good { background: var(--green-light); color: #14501a; }
+.chip.bad { background: var(--red-light); color: #7a2020; }
+.usage { margin-top: 0.3rem; border-left: 2px solid var(--line); padding-left: 0.4rem; }
+.usage mark { background: #fff0a8; }
+.usage .en { color: var(--muted); }
+.actions { display: flex; flex-direction: column; gap: 0.25rem; }
+.actions .clear { display: none; }
+.card.s .actions .clear, .card.n .actions .clear, .card.u .actions .clear { display: block; }
+.actions .yes { background: var(--green); color: #fff; border-color: var(--green); }
+.peek-toggle { margin-top: 0.3rem; font-size: 0.8rem; color: var(--green); }
+#peek { grid-column: 1 / -1; margin-top: 0.4rem; border-top: 1px solid var(--line); padding-top: 0.3rem;
+        max-height: 40vh; overflow-y: auto; font-size: 0.87rem; }
+.peek-row { padding: 0.2rem 0 0.2rem 0.5rem; border-left: 3px solid var(--line); margin-bottom: 0.2rem; }
+.peek-row.s { border-left-color: var(--green); }
+.peek-row.n { border-left-color: var(--red); }
+.peek-row.u { border-left-color: var(--amber); }
+.peek-row b { font-weight: 600; }
+.peek-mark { font-size: 0.72rem; color: var(--muted); margin-left: 0.3rem; }
+.peek-actions { margin-top: 0.15rem; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.peek-actions button { font-size: 0.75rem; padding: 0 0.4rem; }
+.peek-actions .yes { background: var(--green); color: #fff; border-color: var(--green); }
+.tag-link { font-size: 0.72rem; padding: 0 0.35rem; margin: 0 0.2rem 0.1rem 0; color: var(--green); }
+.empty { text-align: center; color: var(--muted); padding: 2rem; }
+@media (max-width: 720px) { .card { grid-template-columns: minmax(0, 1fr); } .actions { flex-direction: row; } }
+</style>
+
+<header>
+  <h1>Sense Vetter</h1>
+  <span id="tally"></span>
+  <select id="scope" aria-label="Which words">
+    <option value="all">All words</option>
+    <option value="corpus">Words in the corpus</option>
+    <option value="noncorpus">Words not in the corpus</option>
+    <option value="unmarked">Words with no sense marked yet</option>
+    <option value="unsure">Senses marked unsure</option>
+  </select>
+  <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
+  <input id="q" placeholder="One word" size="12" aria-label="Show one word">
+  <label><input type="checkbox" id="hide" checked> Hide vetted</label>
+  <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
+  <button id="bulk" title="Accept every undecided sense currently loaded">Accept all loaded</button>
+  <span class="keys"><kbd>Y</kbd> applies <kbd>N</kbd> doesn't <kbd>M</kbd> unsure <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last</span>
+</header>
+<main id="list"></main>
+
+<script>
+const list = document.getElementById("list");
+const tally = document.getElementById("tally");
+const bulk = document.getElementById("bulk");
+const PAGE = 50;
+const hideBox = document.getElementById("hide");
+const undoButton = document.getElementById("undo");
+let rows = [], focus = 0, remaining = 0, matched = 0, done = {}, loading = false, bulkArmed = false;
+let pinned = -1;  // card kept on screen while its peek is in use, even if a mark just dropped its word
+try { hideBox.checked = localStorage.getItem("hideVetted") !== "0"; } catch (e) {}
+
+// Whether the server still lists this row, so offsets count only rows it has not dropped.
+function stillListed(r) {
+  if (scope.value === "unsure") return done[r.id] === "u";
+  if (scope.value === "unmarked") return !done[r.id] && !r.word_marked;
+  return !hideBox.checked || !done[r.id];
+}
+const isHidden = i => i !== pinned && hideBox.checked && !stillListed(rows[i]);
+function listedHeld() { return rows.filter(stillListed).length; }
+
+function esc(value) {
+  const d = document.createElement("div");
+  d.textContent = value == null ? "" : value;
+  return d.innerHTML;
+}
+
+function markWord(sentence, word) {
+  const pattern = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return esc(sentence).replace(new RegExp(`(^|[^\\p{L}-])(${pattern})(?![\\p{L}-])`, "iu"), "$1<mark>$2</mark>");
+}
+
+function cardHtml(r, i) {
+  const translations = r.translations.map(c =>
+    `<b>${esc(c.lang)}:</b> ` + c.terms.slice(0, 5).map(t => t.hit ? `<span class="hit">${esc(t.t)}</span>` : esc(t.t)).join(", ")
+  ).slice(0, 4).join(" &nbsp; ");
+  const usages = r.usages.map(u => `<div class="usage">${markWord(u.glb, r.word)}${u.en ? `<br><span class="en">${esc(u.en)}</span>` : ""}</div>`).join("");
+  return `<div class="card ${done[r.id] || ""}" id="c${i}" data-i="${i}">
+    <div>
+      <div><span class="word">${esc(r.word)}</span><span class="pos">${esc(r.pos)} · "${esc(r.eng)}"</span></div>
+      <div class="sense">${esc(r.label)}</div>
+      ${r.definition && r.definition.toLowerCase() !== r.label.toLowerCase() ? `<div class="def">${esc(r.definition.slice(0, 220))}</div>` : ""}
+      ${r.example ? `<div class="small">e.g. ${esc(r.example.slice(0, 140))}</div>` : ""}
+      <div class="small gloss">${translations}</div>
+      <div class="chips">${r.why.map(w => `<span class="chip ${w[0]}">${esc(w[1])}</span>`).join("")}</div>
+      ${r.other_count ? `<button class="peek-toggle" data-peek="${i}" title="Compare with this word's other senses (P)">Other senses (${r.other_count})</button>` : ""}
+    </div>
+    <div>
+      <div class="gloss"><b>en:</b> ${esc(r.gloss_en)}</div>
+      <div class="gloss"><b>eo:</b> ${esc(r.gloss_eo)}</div>
+      <div class="gloss"><b>es:</b> ${esc(r.gloss_es)}</div>
+      ${r.parts ? `<div class="gloss"><b>from:</b> ${esc(r.parts)}</div>` : ""}
+      ${r.tags.length ? `<div class="gloss"><b>tags:</b> ${r.tags.map(t => `<button class="tag-link" data-tag="${esc(t)}" title="Browse this tag">${esc(t)}</button>`).join("")}</div>` : ""}
+      ${r.accepted.length ? `<div class="small">Already accepted: ${r.accepted.map(esc).join("; ")}</div>` : ""}
+      ${usages || `<div class="small">Not in the corpus</div>`}
+      ${r.usage_count > r.usages.length ? `<div class="small">${r.usage_count} usages in all</div>` : ""}
+    </div>
+    <div class="actions">
+      <button class="yes" data-act="s" data-i="${i}">Applies</button>
+      <button data-act="n" data-i="${i}">No</button>
+      <button data-act="u" data-i="${i}" title="Set aside for later: not a judgement, and never exported">Unsure</button>
+      <button class="clear" data-act="clear" data-i="${i}" title="Remove this judgement">Clear</button>
+    </div>
+  </div>`;
+}
+
+function showTally(data) {
+  remaining = data.remaining;
+  matched = data.matched;
+  undoButton.disabled = !data.undoable;
+  undoButton.textContent = data.undoable ? `Undo (${data.undoable})` : "Undo";
+  tally.textContent = `${data.accepted} accepted · ${data.rejected} rejected · ${data.unsure} unsure` + (remaining ? ` · ${remaining} left` : "");
+}
+
+function nearestVisible(i, direction) {
+  for (let k = Math.max(0, i); k >= 0 && k < rows.length; k += direction) if (!isHidden(k)) return k;
+  return -1;
+}
+
+function closePeek() {
+  const open = document.getElementById("peek");
+  if (open) open.remove();
+  const unpinned = pinned;
+  pinned = -1;
+  if (unpinned >= 0) document.getElementById(`c${unpinned}`)?.classList.toggle("off", isHidden(unpinned));
+  return !!open;
+}
+
+// Closing a peek can reveal that its word has left this view; move on if so.
+function closePeekAndMove() {
+  const closed = closePeek();
+  if (closed && rows[focus] && isHidden(focus)) setFocus(focus + 1);
+  return closed;
+}
+
+const MARK_NAMES = { s: "applies", n: "doesn't apply", u: "unsure" };
+
+function peekRow(s) {
+  const definition = s.definition && s.definition.toLowerCase() !== s.label.toLowerCase() ? s.definition.slice(0, 220) : "";
+  return `<div class="peek-row ${s.verdict || ""}" id="p-${s.id}">
+    <b>${esc(s.label)}</b><span class="pos">${esc(s.pos)} · "${esc(s.eng)}"</span>
+    ${s.verdict ? `<span class="peek-mark">${MARK_NAMES[s.verdict] || ""}</span>` : ""}
+    ${definition ? `<div class="def">${esc(definition)}</div>` : ""}
+    <div class="chips">${(s.why || []).map(w => `<span class="chip ${w[0]}">${esc(w[1])}</span>`).join("")}</div>
+    <div class="peek-actions">
+      <button class="yes" data-peek-act="s" data-id="${s.id}">Applies</button>
+      <button data-peek-act="n" data-id="${s.id}">No</button>
+      <button data-peek-act="u" data-id="${s.id}">Unsure</button>
+      ${s.verdict ? `<button data-peek-act="clear" data-id="${s.id}" title="Remove this judgement">Clear</button>` : ""}
+    </div>
+  </div>`;
+}
+
+async function decideFromPeek(id, verdict) {
+  const data = await send([id], verdict);
+  if (!data) return;
+  data.cards.forEach(showInPeek);
+  showTally(data);
+}
+
+function showInPeek(c) {
+  pinned = focus;  // several senses can be marked in one peek; closing it moves on
+  applyCard(c, true);
+  const row = document.getElementById(`p-${c.id}`);
+  if (row) row.outerHTML = peekRow(c);
+}
+
+async function togglePeek(i) {
+  const r = rows[i];
+  if (closePeekAndMove() || !r || !r.other_count) return;
+  // Always fetched, so marks made since are current.
+  const data = await (await fetch(`/api/senses?word=${encodeURIComponent(r.word)}`)).json();
+  if (focus !== i || document.getElementById("peek")) return;
+  const others = data.senses.filter(s => s.id !== r.id);
+  document.getElementById(`c${i}`)?.insertAdjacentHTML("beforeend", `<div id="peek">${others.map(peekRow).join("")}</div>`);
+}
+
+function setFocus(i, direction = 1) {
+  document.getElementById(`c${focus}`)?.classList.remove("focus");
+  let next = nearestVisible(i, direction);
+  if (next < 0) next = nearestVisible(i, -direction);
+  if (next !== focus) closePeek();
+  if (next < 0) { focus = Math.max(0, rows.length - 1); loadMore(); return; }
+  focus = next;
+  const el = document.getElementById(`c${focus}`);
+  if (el) {
+    el.classList.add("focus");
+    const top = el.getBoundingClientRect().top;
+    if (top < 60 || top > innerHeight * 0.55) window.scrollTo({ top: scrollY + top - 70 });
+  }
+  if (rows.length - focus < 15 || listedHeld() < 15) loadMore();
+}
+
+async function loadMore() {
+  const offset = listedHeld();
+  if (loading || (rows.length && offset >= matched)) return;
+  loading = true;
+  const held = new Set(rows.map(r => r.id));
+  const url = `/api/rows?limit=${PAGE}&offset=${offset}&vetted=${hideBox.checked ? 0 : 1}&scope=${scope.value}&q=${encodeURIComponent(q.value)}&tag=${encodeURIComponent(tagBox.value)}`;
+  const data = await (await fetch(url)).json();
+  const fresh = data.rows.filter(r => !held.has(r.id));
+  const start = rows.length;
+  rows.push(...fresh);
+  for (const r of fresh) if (r.verdict) done[r.id] = r.verdict;
+  list.insertAdjacentHTML("beforeend", fresh.map((r, k) => cardHtml(r, start + k)).join(""));
+  showTally(data);
+  loading = false;
+}
+
+async function reload() {
+  rows = []; focus = 0; done = {}; pinned = -1; list.innerHTML = "";
+  await loadMore();
+  if (!rows.length) list.innerHTML = `<div class="empty">Nothing left to vet here.</div>`;
+  setFocus(0);
+}
+
+// Sent with every change so the reply can report this view's counts.
+const view = () => ({ scope: scope.value, q: q.value, vetted: !hideBox.checked, tag: tagBox.value });
+
+async function send(ids, verdict) {
+  const response = await fetch("/api/verdict", { method: "POST", body: JSON.stringify({ ids, verdict, ...view() }) });
+  if (!response.ok) { tally.textContent = "Save failed: is sense_vetter.py still running?"; return null; }
+  return response.json();
+}
+
+function syncWord(c) {
+  // A mark can drop or restore the word's other senses in the unmarked view.
+  rows.forEach((r, k) => {
+    if (r.word.toLowerCase() !== c.word.toLowerCase()) return;
+    r.word_marked = c.word_marked;
+    document.getElementById(`c${k}`)?.classList.toggle("off", isHidden(k));
+  });
+}
+
+function applyCard(c, fromPeek = false) {
+  if (!fromPeek) closePeek();  // its marks may now be out of date
+  // Show a sense's current state, adding it to the list if it is not loaded (older judgements).
+  let i = rows.findIndex(r => r.id === c.id);
+  if (i < 0) {
+    // A sense marked from the peek arrives in its turn, and a card out of order would shift paging.
+    if (fromPeek) { syncWord(c); return -1; }
+    i = rows.length;
+    rows.push(c);
+    list.insertAdjacentHTML("beforeend", cardHtml(c, i));
+  }
+  const el = document.getElementById(`c${i}`), before = done[c.id];
+  if (before) el.classList.remove(before);
+  if (c.verdict) { done[c.id] = c.verdict; el.classList.add(c.verdict); } else { delete done[c.id]; }
+  syncWord(c);
+  return i;
+}
+
+async function decide(i, verdict) {
+  const r = rows[i];
+  // Focus can rest on a hidden card once a view empties; a key press must not change it unseen.
+  if (!r || isHidden(i)) return;
+  const data = await send([r.id], verdict);
+  if (!data) return;
+  data.cards.forEach(applyCard);
+  showTally(data);
+  if (i === focus) setFocus(verdict === "clear" ? i : i + 1);
+}
+
+async function undo() {
+  const response = await fetch("/api/undo", { method: "POST", body: JSON.stringify(view()) });
+  if (!response.ok) { tally.textContent = "Undo failed: is sense_vetter.py still running?"; return; }
+  const data = await response.json();
+  const wordCard = c => rows.findIndex((r, k) => r.word === c.word && !isHidden(k));
+  const shown = data.cards.map(c => {
+    // Undoing inside an open peek just updates its row.
+    if (document.getElementById("peek") && rows[focus]?.word === c.word) {
+      showInPeek(c);
+      return focus;
+    }
+    // Undoing a peek mark on a sense not loaded yet: stay on the word, it arrives in its turn.
+    const sameWord = scope.value === "unmarked" || rows[focus]?.word === c.word;
+    if (sameWord && !rows.some(r => r.id === c.id)) {
+      closePeek();
+      syncWord(c);
+      const card = wordCard(c);
+      if (card >= 0 || rows.some(r => r.word === c.word)) return card;
+    }
+    const i = applyCard(c);
+    return scope.value === "unmarked" ? wordCard(c) : i;
+  }).filter(i => i >= 0);
+  showTally(data);
+  if (shown.length) setFocus(Math.min(...shown));
+}
+
+undoButton.addEventListener("click", undo);
+
+bulk.addEventListener("click", async () => {
+  const open = rows.map((r, i) => i).filter(i => !done[rows[i].id] && !isHidden(i));
+  if (!bulkArmed) {
+    bulkArmed = true;
+    bulk.textContent = `Really accept ${open.length}?`;
+    setTimeout(() => { bulkArmed = false; bulk.textContent = "Accept all loaded"; }, 4000);
+    return;
+  }
+  bulkArmed = false;
+  bulk.textContent = "Accept all loaded";
+  const data = await send(open.map(i => rows[i].id), "s");
+  if (!data) return;
+  data.cards.forEach(applyCard);
+  showTally(data);
+  await loadMore();
+  setFocus(open.length ? open[open.length - 1] + 1 : focus);
+});
+
+document.addEventListener("click", e => {
+  const act = e.target.dataset?.act;
+  if (act) { decide(+e.target.dataset.i, act); return; }
+  if (e.target.dataset?.peekAct) { decideFromPeek(e.target.dataset.id, e.target.dataset.peekAct); return; }
+  if (e.target.dataset?.tag) { tagBox.value = e.target.dataset.tag; reload(); return; }
+  if (e.target.dataset?.peek) {
+    const i = +e.target.dataset.peek;
+    if (i !== focus) setFocus(i);
+    togglePeek(i);
+    return;
+  }
+  const c = e.target.closest?.(".card");
+  if (c) setFocus(+c.dataset.i);
+});
+
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, select") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const key = e.key.toLowerCase();
+  if (key === "y") decide(focus, "s");
+  else if (key === "n") decide(focus, "n");
+  else if (key === "m" || key === "?") decide(focus, "u");
+  else if (key === "p") togglePeek(focus);
+  else if (e.key === "Escape") closePeekAndMove();
+  else if (key === "s" || key === "j" || e.key === "ArrowDown") { e.preventDefault(); setFocus(focus + 1); }
+  else if (key === "k" || e.key === "ArrowUp") { e.preventDefault(); setFocus(focus - 1, -1); }
+  else if (key === "u") undo();
+});
+
+const scope = document.getElementById("scope"), q = document.getElementById("q"), tagBox = document.getElementById("tag");
+// Letting go of the menu after choosing, or the keys would keep going to it.
+for (const box of [scope, tagBox]) box.addEventListener("change", () => { box.blur(); reload(); });
+fetch("/api/tags").then(response => response.json()).then(data => {
+  tagBox.insertAdjacentHTML("beforeend", data.tags.map(t =>
+    `<option value="${esc(t.tag)}">${esc(t.tag)}${t.gloss ? ` (${esc(t.gloss)})` : ""}: ${t.words}</option>`).join(""));
+});
+q.addEventListener("change", reload);
+hideBox.addEventListener("change", () => {
+  try { localStorage.setItem("hideVetted", hideBox.checked ? "1" : "0"); } catch (e) {}
+  reload();
+});
+reload();
+</script>
