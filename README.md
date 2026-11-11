@@ -62,6 +62,21 @@ Then open <http://localhost:8092> (set `WS_PORT` to use another port). `--select
 
 Optional: senses from other Wiktionary editions (`WiktionaryLMDB_de`, `_fr`, `_ja`, `_zh`), built by [`JSONL parser non-English.py`](JSONL%20parser%20non-English.py), which offers to download each edition's dump into `WIKTIONARY_DUMP_DIR` (default `word_selection_cache/`).
 
+## Lute
+
+A [Lute](https://github.com/LuteOrg/lute-v3) library of the Doxo texts, read with the Word Viewer as Lute's dictionary, and Lute's word statuses copied to the Anki vocabulary deck.
+
+```bash
+python3 -m venv venv-lute && venv-lute/bin/pip install lute3==3.10.3
+venv-lute/bin/python lute_doxo_sync.py        # Doxo -> Lute books (re-run after updating doxo-pages-grav)
+venv-lute/bin/python -m lute.main --config LuteGlobasa/config.yml --local
+venv/bin/python lute_anki_marks.py            # Lute statuses -> Anki tags (Anki open, with AnkiConnect)
+```
+
+[`lute_doxo_sync.py`](lute_doxo_sync.py) makes every Doxo section a book (fables, stories, poems, UDHR articles), joins its recordings into one track with a bookmark per part when their names settle which section they belong to, and adds the Globasa language from [`LuteGlobasa/globasa.yaml`](LuteGlobasa/globasa.yaml) (Word Viewer embedded, Menalari in a popup). Lute's data stays in `LuteGlobasa/data/`. A book is added once; texts Doxo later changes or drops are reported, never overwritten. Open Lute at <http://localhost:5001>.
+
+[`lute_anki_marks.py`](lute_anki_marks.py) tags each "Globasa lexi" note with its word's Lute status (`lute::1` … `lute::5`, `lute::known`, `lute::ignored`) and `lute::study` while the word is at 1–4. Study those with a filtered deck searching `"note:Globasa lexi" tag:lute::study`.
+
 ## Apertium
 - [`dictionaryPreprocess.py`](dictionaryPreprocess.py) - Scrapes the Globasa wordlist to either generate monolingual or bilingual dictionary entries for Apertium
 ## Anki

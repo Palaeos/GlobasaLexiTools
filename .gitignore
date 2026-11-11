@@ -23,3 +23,9 @@ WiktionaryLMDB_senses.building/
 # Expanded vetting views: regenerated from vetted_senses.tsv + the dump
 GLB_ENG_WiktionarySenses*.tsv
 GLB_ENG_WiktionarySenses*.xlsx
+
+# Lute (lute_doxo_sync.py): its own virtualenv, its data (database, book audio,
+# backups) and the config written with this machine's absolute path
+venv-lute/
+LuteGlobasa/data/
+LuteGlobasa/config.yml

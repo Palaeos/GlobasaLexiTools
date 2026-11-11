@@ -1,0 +1,28 @@
+# Globasa for Lute (https://github.com/LuteOrg/lute-v3), in the format of
+# Lute's own lute/db/language_defs/*/definition.yaml. lute_doxo_sync.py adds it
+# to the Lute database when no language of this name exists; after that, edit
+# the language in Lute's settings (this file is not re-applied).
+name: Globasa
+dictionaries:
+# The local Word Viewer (python "Word Viewer.py", port 5000): images, te/to,
+# verb types, constructions. Embedded in Lute's side panel.
+- for: terms
+  type: embedded
+  url: http://127.0.0.1:5000/?word=[LUTE]
+  active: true
+# The official dictionary, in a popup (it may refuse to be embedded).
+- for: terms
+  type: popup
+  url: https://menalari.globasa.net/eng/lexi/[LUTE]
+  active: true
+show_romanization: false
+right_to_left: false
+parser_type: spacedel
+# Typographic quotes and apostrophes to plain ones.
+character_substitutions: ´='|`='|’='|‘='|...=…|..=‥
+split_sentences: .!?
+split_sentence_exceptions: ''
+# Letters only. A hyphen splits a word, so a written compound such as
+# oko-nenible is read as its dictionary words (oko, nenible), each a term
+# that can match an Anki vocabulary note.
+word_chars: a-zA-Z
