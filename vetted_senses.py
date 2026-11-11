@@ -19,6 +19,12 @@ is newer than vetted_senses.tsv, sync() exports the decisions again, so the
 TSV follows the spreadsheets without a manual step. On a fresh clone there are
 no spreadsheets and the TSV is the only source.
 
+The other place to vet is the browser page of sense_vetter.py. It appends to
+sense_vetting.jsonl, a log that load_rows() lays over the TSV: the latest
+verdict on a sense wins over the spreadsheet's (an expert's Tier e excepted),
+and "clear" or "unsure" leaves the spreadsheet's decision. It stays a separate
+file because sync() rewrites the TSV wholesale from the spreadsheets.
+
 Run directly to export now:  python vetted_senses.py
 """
 import csv
@@ -32,6 +38,7 @@ from wiktionary_constants import _load_markings_from_rows
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VETTED_TSV = os.path.join(BASE_DIR, "vetted_senses.tsv")
 CONFIG_FILE = os.path.join(BASE_DIR, ".senses_config.json")
+VETTING_LOG = os.path.join(BASE_DIR, "sense_vetting.jsonl")
 ENG_XLSX = "GLB_ENG_WiktionarySenses.xlsx"
 MULTI_XLSX = "GLB_MULTI_WiktionarySenses.xlsx"
 
@@ -140,19 +147,57 @@ def sync(verbose=True):
             print("  " + note)
 
 
-def load_rows():
-    """Every decision as a dict keyed by COLUMNS (syncs first)."""
+def log_decisions(path=VETTING_LOG):
+    """{(glb, eng, pos, verb_type, sense): app} from the vetting page's log.
+
+    Replays the log, so the latest entry per sense wins and undos count.
+    Unsure ("u") and "clear" are no judgement and leave the spreadsheet's
+    decision. Each entry names the rows it covers in "keys" ([eng, pos,
+    verb_type] triples); a sense is one label of one word, met under each of
+    the word's English glosses that share it.
+    """
+    latest = {}
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                entry = json.loads(line)
+                latest[entry["id"]] = entry
+    decided = {}
+    for entry in latest.values():
+        if entry["verdict"] not in ("s", "n"):
+            continue
+        for eng, pos, vt in entry.get("keys", ()):
+            decided[(entry["word"], eng, pos, vt, entry["label"])] = entry["verdict"]
+    return decided
+
+
+def load_rows(include_log=True):
+    """Every decision as a dict keyed by COLUMNS (syncs first), with the
+    vetting page's verdicts laid over them unless include_log is False."""
     sync()
     with open(VETTED_TSV, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f, delimiter="\t"))
+        rows = list(csv.DictReader(f, delimiter="\t"))
+    if not include_log:
+        return rows
+    decided = log_decisions()
+    for r in rows:
+        key = (r["Glb"], r["Eng"], r["Prt of Sp"], r["VerbType"], r["Wiktionary Sense"])
+        if r["Source"] == "en" and key in decided:
+            app = decided.pop(key)
+            if r["Tier"] != "e":
+                r["App?"], r["Tier"] = app, "v"
+    for (glb, eng, pos, vt, sense), app in decided.items():
+        rows.append({"Glb": glb, "Source": "en", "Eng": eng, "Prt of Sp": pos,
+                     "VerbType": vt, "Wiktionary Sense": sense, "App?": app, "Tier": "v"})
+    return rows
 
 
-def load_markings(source="en"):
+def load_markings(source="en", include_log=True):
     """{(glb, eng, pos, verb_type, sense): (app, tier)} -- what the sense
     generator inherits when it rebuilds the spreadsheet."""
     return {(r["Glb"], r["Eng"], r["Prt of Sp"], r["VerbType"], r["Wiktionary Sense"]):
             (r["App?"], r["Tier"])
-            for r in load_rows() if r["Source"] == source}
+            for r in load_rows(include_log) if r["Source"] == source}
 
 
 def load_vetted():
