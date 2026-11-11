@@ -1,0 +1,10 @@
+# What the Word Selector needs on top of the Word Viewer's packages
+# (requirements-viewer.txt). Installed by ./setup.sh --selector.
+-r requirements-viewer.txt
+orjson~=3.12
+cutlet==0.5.0
+unidic-lite~=1.0.8
+korean_romanizer==0.25.1
+pypinyin~=0.55.0
+transliterate==1.10.2
+requests-cache~=1.2.1

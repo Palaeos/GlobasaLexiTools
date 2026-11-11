@@ -10,6 +10,7 @@ tuple_senses(): each seed's senses in its OWN Wiktionary edition (de:Topf in
   a seed tuple (en:pot, de:Topf, fr:cruche) pins one meaning across editions.
 """
 
+import os
 import re
 
 from ..languages import BY_CODE, CODES, WIKT_TO_CODE
@@ -84,8 +85,9 @@ def edition_of(lang):
 def editions():
     """{built: [...], not_built: [...]}: editions a seed's senses can come from."""
     from ..contrasts import EDITIONS, available
-    built = ["en"] + available()
-    return {"built": built, "not_built": [e for e in EDITIONS if e not in built]}
+    from ..concept_index import DIR
+    built = (["en"] if os.path.isdir(DIR) else []) + available()
+    return {"built": built, "not_built": [e for e in ["en", *EDITIONS] if e not in built]}
 
 
 def _norm(w):

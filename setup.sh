@@ -6,22 +6,26 @@
 #                              in ~50 more languages) from the Wiktionary dump
 #     ./setup.sh --vetter      also prepares the Wiktionary sense vetter:
 #                              venv/bin/python sense_vetter.py  (http://localhost:8090)
+#     ./setup.sh --selector    also prepares the Word Selector (about an hour):
+#                              venv/bin/python "Word Selector.py"  (http://localhost:8092)
 #
-# Both options read the English Wiktionary dump (~2.4 GB), streamed from
-# kaikki.org or read from WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz).
-# Given together, the dump is read once.
+# The options read the English Wiktionary dump (~2.4 GB) from
+# WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz), else from kaikki.org:
+# streamed for --extension and --vetter, downloaded once for --selector (which
+# reads it several times) into word_selection_cache/, where the others reuse it.
 #
 # Safe to run again: it refreshes the word list from the Globasa CDN and, if
 # the list changed, drops the viewer's cache so the next start rebuilds it.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-EXTENSION=0; VETTER=0
+EXTENSION=0; VETTER=0; SELECTOR=0
 for arg in "$@"; do
     case "$arg" in
         --extension) EXTENSION=1 ;;
         --vetter) VETTER=1 ;;
-        *) echo "Unknown option $arg (use --extension and/or --vetter)" >&2; exit 1 ;;
+        --selector) SELECTOR=1 ;;
+        *) echo "Unknown option $arg (use --extension, --vetter, --selector)" >&2; exit 1 ;;
     esac
 done
 
@@ -38,6 +42,9 @@ echo "== Python environment (venv/)"
 [ -d venv ] || "$PY" -m venv venv
 venv/bin/python -m pip install --quiet --upgrade pip
 venv/bin/python -m pip install --quiet -r requirements-viewer.txt
+if [ "$SELECTOR" = 1 ]; then
+    venv/bin/python -m pip install --quiet -r requirements-selector.txt
+fi
 
 echo "== Word list"
 venv/bin/python - <<'EOF'
@@ -61,6 +68,29 @@ else:
     else:
         print("  Already up to date.")
 EOF
+
+if [ -z "${WIKTIONARY_DUMP:-}" ] && [ -f word_selection_cache/raw-wiktextract-data.jsonl.gz ]; then
+    export WIKTIONARY_DUMP=word_selection_cache/raw-wiktextract-data.jsonl.gz
+fi
+
+if [ "$SELECTOR" = 1 ]; then
+    DUMP=$(venv/bin/python -c 'from word_selection.dump import source; print(source("en"))')
+    case "$DUMP" in
+        http*)
+            echo "== English Wiktionary dump (~2.4 GB, kept in word_selection_cache/)"
+            mkdir -p word_selection_cache
+            curl -fL -C - -o word_selection_cache/raw-wiktextract-data.jsonl.gz.part "$DUMP"
+            mv word_selection_cache/raw-wiktextract-data.jsonl.gz.part \
+               word_selection_cache/raw-wiktextract-data.jsonl.gz
+            export WIKTIONARY_DUMP=word_selection_cache/raw-wiktextract-data.jsonl.gz ;;
+    esac
+    if [ -d WiktionaryLMDB_concepts ]; then
+        echo "== Word Selector: WiktionaryLMDB_concepts/ exists (delete it to rebuild)"
+    else
+        echo "== Word Selector: Wiktionary concept index (about an hour)"
+        venv/bin/python "Wiktionary concept index.py"
+    fi
+fi
 
 if [ "$VETTER" = 1 ] && [ ! -d WiktionaryLMDB ]; then
     # Every English gloss of the word list (and every vetted entry), so it
@@ -91,6 +121,8 @@ and open http://localhost:5000
 Translations beyond the word list: ./setup.sh --extension
 Wiktionary sense vetter (port 8090): ./setup.sh --vetter, then
     venv/bin/python sense_vetter.py
+Word Selector (port 8092): ./setup.sh --selector, then
+    venv/bin/python "Word Selector.py"
 
 Optional, machine-specific extras (the viewer runs without them):
     WV_AUDIO_DIR=/path/to/clips       pronunciation recordings (<word>.ogg)

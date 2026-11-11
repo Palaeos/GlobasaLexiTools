@@ -297,7 +297,7 @@ function renderOwnSenses(own, box) {
 api("/api/editions").then(e => {
   const sel = $("wikiEd");
   e.built.filter(x => x !== "en").forEach(x => sel.insertAdjacentHTML("beforeend", `<option value="${x}">${x}.wiktionary</option>`));
-  e.not_built.forEach(x => sel.insertAdjacentHTML("beforeend", `<option value="${x}" disabled>${x}.wiktionary (not built)</option>`));
+  e.not_built.filter(x => x !== "en").forEach(x => sel.insertAdjacentHTML("beforeend", `<option value="${x}" disabled>${x}.wiktionary (not built)</option>`));
 }).catch(() => {});
 $("addArticle").onclick = async () => {
   const lang = $("wpLang").value, t = $("wpTitle").value.trim(); if (!t) return;

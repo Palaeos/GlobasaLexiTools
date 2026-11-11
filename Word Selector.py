@@ -2,6 +2,9 @@
 
     venv/bin/python "Word Selector.py"        then open http://localhost:8092
 
+On a fresh clone, ./setup.sh --selector first builds the Wiktionary concept
+index (WiktionaryLMDB_concepts/) and the tables it reads (about an hour).
+
 Build a concept from Wiktionary senses (any built wiki), Wikipedia articles /
 Wikidata QIDs and seed words; the page gathers the source words, renders them
 in Globasa letters, clusters etymons, ranks clusters by the methodology,
@@ -18,10 +21,11 @@ import os
 import sys
 
 from flask import Flask, jsonify, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from word_selection import collision, contrasts, dossier, methodology, pipeline
+from word_selection import collision, concept_index, contrasts, dossier, methodology, pipeline
 from word_selection.align import distance, edit_count
 from word_selection.languages import LANGS
 from word_selection.sources import seeds as seeds_src, wikidata, wiktionary
@@ -29,10 +33,31 @@ from word_selection.sources import seeds as seeds_src, wikidata, wiktionary
 DECISIONS = os.path.join(ROOT, "word_selection_decisions.jsonl")
 OVERRIDES = os.path.join(ROOT, "word_selection_overrides.jsonl")
 DOSSIERS = os.path.join(ROOT, "word_selection_dossiers")
-PORT = 8092
+PORT = int(os.environ.get("WS_PORT", 8092))
 
 app = Flask(__name__)
 _cache = {}
+
+NO_INDEX = ("The Wiktionary concept index (WiktionaryLMDB_concepts/) is not built: "
+            "run ./setup.sh --selector (about an hour), then restart.")
+# Everything that reads the concept index; the page shows the error instead of empty results.
+NEEDS_INDEX = {"/api/run", "/api/senses", "/api/entry", "/api/expand", "/api/contrasts",
+               "/api/dossier", "/api/check"}
+
+
+@app.before_request
+def require_index():
+    if request.path in NEEDS_INDEX and not os.path.isdir(concept_index.DIR):
+        return jsonify({"error": NO_INDEX}), 503
+
+
+@app.errorhandler(Exception)
+def api_error(e):
+    """A failing API call answers in JSON, which the page shows, rather than an HTML 500."""
+    if isinstance(e, HTTPException):
+        return e
+    app.logger.exception(e)
+    return jsonify({"error": f"{type(e).__name__}: {e}"}), 500
 
 
 def _key(concept, overrides):
@@ -244,5 +269,7 @@ def save():
     return jsonify({"ok": True, "dossier": rec["dossier"]})
 
 
+if not os.path.isdir(concept_index.DIR):
+    print("Warning: " + NO_INDEX)
 print(f"Word Selector on http://localhost:{PORT}")
 app.run(port=PORT, debug=False)
