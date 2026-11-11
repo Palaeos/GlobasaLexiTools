@@ -12,6 +12,9 @@ vetting decisions name, not the 20 GB dump or the 640 MB full database.
 
 Run directly to build WiktionaryLMDB_vetted/ for the vetted senses:
     python wiktionary_extract.py [dump path or URL]
+or WiktionaryLMDB_senses/ for every English gloss of the word list (what
+sense_vetter.py and the sense generator look up; also covers the vetted ones):
+    python wiktionary_extract.py --senses [dump path or URL]
 """
 import gzip
 import io
@@ -32,6 +35,7 @@ from wiktionary_db import (WiktionaryDB, Translation, Example, Sense,
 
 KAIKKI_EN_URL = "https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz"
 VETTED_LMDB = "./WiktionaryLMDB_vetted"
+SENSES_LMDB = "./WiktionaryLMDB_senses"
 
 
 def _open_lines(source):
@@ -134,9 +138,15 @@ def extract(source, out_dir, keys=None, max_lines=-1, progress=True):
 
 if __name__ == "__main__":
     import vetted_senses
-    source = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("WIKTIONARY_DUMP", KAIKKI_EN_URL)
+    args = [a for a in sys.argv[1:] if a != "--senses"]
+    source = args[0] if args else os.environ.get("WIKTIONARY_DUMP", KAIKKI_EN_URL)
     keys = {(s["lookup_word"], s["pos"]) for s in vetted_senses.load_vetted()
             if s["source"] == "en"}
-    print(f"Extracting {len(keys)} English entries for the vetted senses from {source}")
-    found = extract(source, VETTED_LMDB, keys)
+    out_dir = VETTED_LMDB
+    if "--senses" in sys.argv:
+        import sense_rows
+        keys |= sense_rows.lookup_keys()
+        out_dir = SENSES_LMDB
+    print(f"Extracting {len(keys)} English entries into {out_dir} from {source}")
+    found = extract(source, out_dir, keys)
     print(f"Done: {found} of {len(keys)} entries found.")

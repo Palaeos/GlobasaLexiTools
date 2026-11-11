@@ -4,8 +4,9 @@ fetches translations from LMDB, writes menalariExtension.tsv.
 Reads:
   - vetted_senses.tsv  (the decisions; re-exported from the senses
     spreadsheets first when those are newer, see vetted_senses.py)
-  - WiktionaryLMDB/  (English; or WiktionaryLMDB_vetted/, the extract of just
-    the vetted entries made by wiktionary_extract.py)
+  - WiktionaryLMDB/  (English; or an extract made by wiktionary_extract.py:
+    WiktionaryLMDB_senses/, every word-list gloss, or WiktionaryLMDB_vetted/,
+    just the vetted entries)
   - WiktionaryLMDB_{lang}/  (non-English, per source)
   - word-list.csv  (for annotation overlays and word ordering)
 
@@ -19,7 +20,7 @@ import csv
 
 from Lexilista_parser import parseWordEntry, VerbType as _VT
 from wiktionary_db import WiktionaryDB
-from wiktionary_extract import VETTED_LMDB
+from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
 from wiktionary_constants import (
     GLOSSPOS_TO_WIKT, EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
@@ -72,11 +73,15 @@ for s in all_senses:
 dbs = {}
 
 # The full English database ("JSONL parser 2.py") when this machine has it;
-# otherwise the extract of just the vetted entries (wiktionary_extract.py),
-# which yields the same rows when both come from the same dump.
+# otherwise an extract (wiktionary_extract.py), which yields the same rows
+# when both come from the same dump.
 if os.path.exists("./WiktionaryLMDB"):
     dbs['en'] = WiktionaryDB(readonly=True)
     print("  Opened English LMDB")
+elif os.path.exists(SENSES_LMDB):
+    dbs['en'] = WiktionaryDB(path=SENSES_LMDB, readonly=True)
+    print(f"  Opened English LMDB at {SENSES_LMDB} "
+          f"(fallback: no full WiktionaryLMDB, extract of the word list's glosses)")
 elif os.path.exists(VETTED_LMDB):
     dbs['en'] = WiktionaryDB(path=VETTED_LMDB, readonly=True)
     print(f"  Opened English LMDB at {VETTED_LMDB} "
