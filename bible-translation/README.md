@@ -111,6 +111,13 @@ basis of every change `data/Gen_1_glb_draft.md`.
   (not yet researched): אָדָם "the human" in Gen 2; 2:21–22 "side"; 3:15
   collective "offspring" and the same verb twice; 6:2–4 "sons of God";
   49:10 "Shiloh". Decided: the divine name `Yahwe` (rendering.md).
+- **A confessional version by triangulation with the Septuagint** (project
+  owner's idea): where the Masoretic Text and the LXX diverge, the
+  confessional version follows the LXX, the Old Testament of the early
+  church and of most NT quotations. Gen 1 examples: 1:1 Ἐν ἀρχῇ ἐποίησεν
+  (absolute reading); 1:2 πνεῦμα θεοῦ; στερέωμα "firmament"; 2:2 "on the
+  sixth day"; Κύριος → `Prabu`. The Hebrew-side project has apertium-grc
+  (vendor/) for analysing the Greek.
 
 ## Next
 
