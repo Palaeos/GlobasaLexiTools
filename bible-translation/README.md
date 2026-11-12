@@ -105,11 +105,20 @@ basis of every change `data/Gen_1_glb_draft.md`.
 0. **TMX output:** `translate.sh` should write a TMX file (one `<tu>` per
    verse: Hebrew source + Globasa machine draft, later the revised draft),
    like the Doxo TMX files in the repo root.
-0b. **Kantor 2025 (Cambridge) vs Holmstedt on Gen 1:1:** the project owner
-   reports a 2025 Cambridge study by Kantor challenging Holmstedt's
-   bare-relative thesis. Read it (full reference still to be found) and
-   re-check the preferred reading in `data/Gen_1_ambiguity.tsv` and the
-   1:1–3 rendering in `data/Gen_1_glb_draft.md`.
+0b. **Kantor 2025 (Cambridge) vs Holmstedt on Gen 1:1** (full reference still
+   to be found). From the abstract: the missing article in בראשית does *not*
+   require the construct/relative reading. In the Second Temple reading
+   traditions (Greek/Latin transcriptions, Palestinian, Babylonian,
+   Samaritan) an article-less prepositional phrase fits the adverbial
+   reading if ראשית is generic ("initially, God created") or globally unique
+   ("in THE beginning"). The construct/relative reading likely arose with
+   medieval commentators, after the article spread in inseparable
+   prepositional phrases in the precursors of Tiberian Hebrew.
+   Bearing: it removes the article argument for Holmstedt's bare relative;
+   the remaining evidence (pointed construct form, Hos 1:2; vs the tipcha
+   accent, LXX) is listed in `data/Gen_1_ambiguity.tsv`. Decide whether the
+   preferred reading of 1:1–3 changes; the main-clause alternative is
+   already written out in `data/Gen_1_glb_draft.md`.
 1. **Syntax-based transfer:** merge UD PTNK roles (nsubj, obj, obl, mark)
    and BHSA phrase functions / clause types into the stream by word id;
    rewrite the rtx clause rules on roles; map BHSA clause types to the *wa*
