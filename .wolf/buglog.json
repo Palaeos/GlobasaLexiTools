@@ -3896,5 +3896,114 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-11T16:20:30"
+  },
+  {
+    "id": "bug-240",
+    "timestamp": "2026-11-12T19:00:00",
+    "error_message": "build_glb_candidates.py: candidate order differs between runs (ארץ geo/Dunya dropped under some hash seeds)",
+    "file": "bible-translation/build_glb_candidates.py",
+    "root_cause": "sets of Globasa words iterated in hash order; Counter.most_common keeps insertion order on ties",
+    "fix": "explicit sort key (languages, PoS fit, gloss position, primary meaning, length, casefold)",
+    "tags": [
+      "bible-translation",
+      "nondeterminism",
+      "hash-seed"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T19:00:00"
+  },
+  {
+    "id": "bug-241",
+    "timestamp": "2026-11-12T19:00:00",
+    "error_message": "build_glb_candidates.py --wordlist word-list.csv: 0 matches, 'languages used:' empty, no error",
+    "file": "bible-translation/build_glb_candidates.py",
+    "root_cause": "always read with tab delimiter; new word list is comma-separated with PoS-labelled cells ('n: water; v.tr: ...')",
+    "fix": "sniff delimiter; wl_terms() strips PoS labels and keeps the class; exit with error if no usable column",
+    "tags": [
+      "bible-translation",
+      "word-list-format",
+      "silent-failure"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T19:00:00"
+  },
+  {
+    "id": "bug-242",
+    "timestamp": "2026-11-12T19:00:00",
+    "error_message": "Gen_1_glb.tsv candidates 'axamli ', 'bija ' with trailing spaces",
+    "file": "bible-translation/build_glb_candidates.py",
+    "root_cause": "Word cells in the word list end with spaces",
+    "fix": "strip Word on load",
+    "tags": [
+      "bible-translation",
+      "whitespace"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T19:00:00"
+  },
+  {
+    "id": "bug-243",
+    "timestamp": "2026-11-12T19:00:00",
+    "error_message": "Modern Hebrew homographs counted as agreement (את -> yu 'you', קרא -> doxo 'read')",
+    "file": "bible-translation/build_glb_candidates.py",
+    "root_cause": "menalariExtension Hebrew column is Modern Hebrew (user)",
+    "fix": "he only corroborates (tie-break); proposes candidates only when no SDBH gloss matches, labelled check-the-sense fallback",
+    "tags": [
+      "bible-translation",
+      "modern-hebrew",
+      "false-friends"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T19:00:00"
+  },
+  {
+    "id": "bug-244",
+    "timestamp": "2026-11-12T23:50:00",
+    "error_message": "rtx rules for wayyiqtol/jussive never fired (v.consec)",
+    "file": "bible-translation/apertium-hbo-glb",
+    "root_cause": "rtx tag patterns are adjacent",
+    "fix": "use v.*.consec; retag in prep",
+    "tags": [
+      "apertium",
+      "rtx"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T23:50:00"
+  },
+  {
+    "id": "bug-245",
+    "timestamp": "2026-11-12T23:50:00",
+    "error_message": "Gen 1:3 'am sen lumin' instead of 'am hay lumin'",
+    "file": "bible-translation/apertium-hbo-glb",
+    "root_cause": "NP-coordination rule kept an open branch that blocked the jussive clause rule",
+    "fix": "removed NP cnjcoo NP and NP-initial clause rules",
+    "tags": [
+      "apertium",
+      "rtx",
+      "bible-translation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T23:50:00"
+  },
+  {
+    "id": "bug-246",
+    "timestamp": "2026-11-12T23:50:00",
+    "error_message": "חשׁך not found in bidix",
+    "file": "bible-translation/apertium-hbo-glb",
+    "root_cause": "stream uses U+FB2A for shin+dot",
+    "fix": "NFC-normalise stream and bidix",
+    "tags": [
+      "unicode",
+      "hebrew"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-12T23:50:00"
   }
 ]
