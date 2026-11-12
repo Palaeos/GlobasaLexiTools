@@ -29,3 +29,6 @@ GLB_ENG_WiktionarySenses*.xlsx
 venv-lute/
 LuteGlobasa/data/
 LuteGlobasa/config.yml
+bible-translation/sources/
+bible-translation/apertium-hbo-glb/*.bin
+bible-translation/data/*.log
