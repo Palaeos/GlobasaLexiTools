@@ -1,0 +1,115 @@
+# Curated Hebrew -> Globasa bilingual list for apertium-hbo-glb (source of truth;
+# make_bidix.py turns it into apertium-hbo-glb.hbo-glb.dix).
+# Columns: hbo lemma (as in the apertium-hbo stream) | hbo PoS tag | Globasa lemma |
+#          Globasa PoS (full tags looked up in apertium-glb) | alternatives | basis
+# Basis: "lexicon" = top candidate of data/Gen_1_glb.tsv; "rendering" = a rule or
+# decision in rendering.md; "derived" = regular Globasa derivation not in the word
+# list; "todo" = no good candidate yet.  First row per (hbo, PoS) is the default.
+hbo	hbo_pos	glb	glb_pos	alternatives	basis
+# --- nouns
+אלהים	n	Teo	n	teo (other gods); manteo	rendering: God = Teo (project owner)
+ארץ	n	geo	n	dexa; turan; zona	lexicon
+מים	n	sui	n		lexicon
+יום	n	din	n	nuru; watu	lexicon
+שׁמים	n	asman	n	janatu	lexicon
+מין	n	jongu	n	tipo	lexicon
+רקיע	n	kube	n	sakfuarko (vault); expanse: see rendering.md disputed terms	lexicon
+אור	n	lumin	n		lexicon
+ערב	n	axam	n		lexicon
+בקר	n	soba	n		lexicon
+זרע	n	bija	n	danyam (grain)	lexicon (gloss order: seed first)
+עוף	n	piu	n		lexicon
+מאור	n	luminxey	n	lumin	derived: lumin + -xey "thing" (like yamxey); keeps luminary distinct from אור lumin
+חשׁך	n	luminkalya	n	(lexicon koge = "palate": Modern Hebrew homograph, wrong)	derived: luminkal "dark" + -ya
+פנים	n	perya	n	fronta; muka	lexicon (על פני -> fe perya de: rtx)
+ליל	n	noce	n		lexicon
+ים	n	bahari	n	hosu (lake)	lexicon
+עשׂב	n	gras	n	planta	lexicon; Epo herbo = herbaceous plant; vegetation research: seed-bearing non-woody plants
+דשׁא	n	planta	n	gras	vegetation research: the umbrella term "fresh green growth" (Dillmann, Skinner, TDOT III)
+עץ	n	drevo	n		lexicon
+פרי	n	fruta	n		lexicon
+נפשׁ	n	bekreayen	n	ruho	lexicon (נפש חיה "living creature")
+רמשׂ	n	retilyen	n		lexicon (zh)
+בהמה	n	mumu	n	hewan	lexicon: check (domestic animals)
+צלם	n	imaje	n	soxo; wakilyen; figura	rendering: צלם and דמות
+דמות	n	simya	n	modelo	rendering: צלם and דמות
+ממשׁלה	n	krasi	n		lexicon
+אדם	n	insan	n		lexicon
+דגה	n	mahi	n		lexicon
+אכלה	n	yamxey	n		lexicon
+ראשׁית	n	xoru	n		lexicon
+תהו	n	kaos	n	harabu	lexicon
+בהו	n	kalya	n		lexicon
+תהום	n	daybahari	n	bahari	lexicon (2nd: bahari is ים)
+רוח	n	vento	n	ruho (Spirit)	lexicon; disputed: rendering.md
+תוך	n	midiya	n		lexicon (בתוך -> fe midiya de: rtx)
+מקום	n	loka	n		lexicon
+מקוה	n	toncudu	n		rendering: construct table (provisional)
+אות	n	ixara	n	lefeixara	lexicon (2nd; lefeixara is "omen")
+מועד	n	mosem	n	watumon	todo: "appointed time, season"
+שׁנה	n	nyan	n		lexicon
+כוכב	n	estare	n		lexicon
+שׁרץ	n	lari	n		rendering: construct table (provisional)
+תנין	n	kayvutu	n		lexicon: check
+כנף	n	fleytul	n		lexicon
+אדמה	n	geo	n	turan	lexicon
+ירק	n	kijawiya	n		lexicon
+יבשׁה	n	suhegeo	n	geo	derived: suhe "dry" + geo "land" (not suikal = thirsty)
+חי	n	hewan	n	yaxu	rendering: construct table (חיה "beast")
+כל	n	moy	det		rendering: כל -> moy
+נקבה	n	femyen	n	fem	lexicon
+# --- verbs
+היה	v	sen	vbser	hay (existential: rtx); sencu	rendering
+אמר	v	loga	vblex	pala	lexicon
+ראה	v	oko	vblex		lexicon
+עשׂה	v	fale	vblex	krea; kostrui	research: generic make/do (Smith, Westermann, Hutzli); rendering
+ברא	v	julagi	vblex	vibaja (1:27c); krea; kostrui	rendering: van Wolde 2026
+בדל	v	julagi	vblex	aloyagi; vibaja	lexicon; open decision (ברא contrast)
+קרא	v	namegi	vblex		lexicon
+זרע	v	produti	vblex		lexicon (inexact): "yield seed" -> produti bija
+עוף	v	fley	vblex		lexicon
+אור	v	lumin	vblex		lexicon
+רמשׂ	v	retil	vblex		lexicon
+רבה	v	plucu	vblex		lexicon
+יצא	v	exgi	vblex	explasi	lexicon (inexact)
+נתן	v	gibe	vblex	plasi (1:17 "set")	lexicon
+שׁרץ	v	plucu	vblex		todo: "swarm, teem"
+ברך	v	baraka	vblex	salom	lexicon (2nd; salom is "greet")
+פרה	v	samrudi	vblex		lexicon
+מלא	v	pulgi	vblex		lexicon
+רדה	v	krasi	vblex		lexicon
+רחף	v	levita	vblex		lexicon
+קוה	v	toncu	vblex		lexicon
+דשׁא	v	gunca	vblex		lexicon
+משׁל	v	krasi	vblex		lexicon
+כבשׁ	v	infragi	vblex		lexicon
+# --- adjectives, numerals, adverbs
+חי	adj	jiwane	adj		word list
+טוב	adj	bon	adj		word list
+גדול	adj	day	adj		word list
+קטן	adj	lil	adj		word list
+זכר	adj	manyen	n	man	lexicon (2nd): pairs with femyen
+אחד	num	un	num		lexicon
+שׁנים	num	dua	num		lexicon
+שׁני	num	duayum	adj		lexicon
+שׁלישׁי	num	tigayum	adj		lexicon
+רביעי	num	careyum	adj		lexicon
+חמישׁי	num	limayum	adj		lexicon
+שׁשׁי	num	sisayum	adj		lexicon
+כן	adv	denmaner	adv	hinmaner	Doxo: denmaner adv "like that"; not denpul, adj "that kind of" (project owner); ויהי כן -> to okur denmaner (rtx)
+מאד	adv	daymo	adv		word list
+הנה	adv	oko	vblex		todo: "behold"
+# --- function words (rendering.md: Conjunctions, Prepositions)
+ו	cnjcoo	ji	cnjcoo		rendering
+כי	cnjsub	ki	cnjsub	koski	rendering: complement 'that'
+אשׁר	cnjsub	hu	cnjsub		rendering: relative
+ב	pr	in	pr	fe (time); per	rendering: Prepositions
+ל	pr	tas	pr	fol; cel; fe rol fe	rendering: Prepositions (rtx picks per use)
+מ	pr	of	pr	xorfe	rendering
+כ	pr	kom	pr		rendering
+על	pr	per	pr	supra	rendering
+בין	pr	intre	pr		rendering
+תחת	pr	bax	pr		rendering
+אל	pr	cel	pr		rendering
+את	pr	el	pr		rendering: object marker, dropped by rtx
+הוא	prn	prpers	prn		pronoun (person/number from the Hebrew tags)

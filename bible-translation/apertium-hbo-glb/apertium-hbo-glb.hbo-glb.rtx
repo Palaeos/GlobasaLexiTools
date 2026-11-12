@@ -1,0 +1,125 @@
+!! apertium-hbo-glb: Biblical Hebrew -> Globasa recursive transfer (Gen 1 scope).
+!! Modelled on apertium-glb-eng.eng-glb.rtx.  Tag patterns are sequential and
+!! adjacent: write `v.*.consec`, not `v.consec`.  Patterns match Hebrew (source)
+!! lemmas and tags; outputs are Globasa.  The rules implement rendering.md:
+!! narration bare (no past tense), jussive `am`, prepositions per use,
+!! construct chains `fe`/`de`, adjectives before nouns, VS -> SV.
+
+!!!!!!!!!!!!!!!
+!! ATTRIBUTE CATEGORIES
+!!!!!!!!!!!!!!!
+
+gender = ut nt m f GD;
+person = p1 p2 p3;
+number = sg pl du;
+gtense = pres past fut imp inf;
+
+! Hebrew lemma lists (NFC, as prep_stream.py writes them)
+rulev = רדה משׁל;
+rolen = אות מועד יום שׁנה מאור אכלה;
+
+!!!!!!!!!!!!!!!
+!! OUTPUT PATTERNS
+!!!!!!!!!!!!!!!
+
+n: _.gender;
+adj: _;
+adv: _;
+num: _;
+pr: _;
+cnjcoo: _;
+cnjsub: _;
+det: _;
+prn: _.person.<ut>.number;      ! Hebrew m/f -> Globasa animate ut (generator needs ut/nt)
+v: _;
+vblex: _;
+vbser: _;
+vbpr: _.gtense;
+sent: _;
+
+NP: _;
+AJ: _;
+PP: _;
+VP: _;
+CL: _;
+
+!!!!!!!!!!!!!!!
+!! NOUN PHRASES
+!!!!!!!!!!!!!!!
+
+! Adjectives precede the noun; construct chains: `de` for God (belonging),
+! `fe` otherwise (description, category); pronoun suffixes -> possessives;
+! כל -> moy; numerals precede (ordinals are adjectives in the bidix).
+NP -> 0.1: n { 1 } |
+      0.1: prn { 1 } |
+      5: n adj { 2 _ 1 } |
+      5: n adj adv { 3 _ 2 _ 1 } |
+      5: n num { 2 _ 1 } |
+      20: n.*.cons אלהים@n { 1 _ de@pr _ 2 } |
+      20: n.*.cons prn { prpers@det.pos.[2.person].ut.[2.number] _ 1 } |
+      20: כל@n NP { moy@det _ 2 } |
+      20: כל@n { moy@det } |
+      10: n.*.cons NP { 1 _ fe@pr _ 2 } |
+      num NP { 1 _ 2 } ;
+! No NP-coordination rule: it only kept the order, and its open branch blocked
+! clause rules after a noun (Gen 1:3 `am hay lumin`).  Likewise no clause rule
+! may start with NP.
+
+AJ -> 0.1: adj { 1 } | 5: adj adv { 2 _ 1 } ;
+
+!!!!!!!!!!!!!!!
+!! PREPOSITIONAL PHRASES (rendering.md: Prepositions)
+!!!!!!!!!!!!!!!
+
+PP -> 1: pr NP { 1 _ 2 } |
+      20: את@pr NP { 2 } |
+      20: על@pr פנים@n.*.cons NP { fe@pr _ 2 _ de@pr _ 3 } |
+      20: ב@pr תוך@n.*.cons NP { fe@pr _ 2 _ de@pr _ 3 } |
+      20: ב@pr ראשׁית@n.*.cons { fe@pr _ 2 } |
+      20: מ@pr תחת@pr ל@pr NP { 2 _ 4 } |
+      20: מ@pr על@pr ל@pr NP { supra@pr _ 4 } |
+      20: ל@pr מין@n.*.cons prn { fol@pr _ sesu@adj _ 2 } |
+      20: ל@pr [rolen]@n { fe@pr _ rol@n.GD _ fe@pr _ 2 } |
+      20: ל@pr ממשׁלה@n.*.cons NP { cel@pr _ u@vbpr.inf _ krasi@vblex _ 3 } |
+      20: ל@pr v.*.inf { cel@pr _ u@vbpr.inf _ 2 } |
+      20: ל@pr v.*.inf PP { cel@pr _ u@vbpr.inf _ 2 _ 3 } |
+      20: ב@pr NP cnjcoo ב@pr NP { 1 _ 2 _ 3 _ 5 } |
+      20: בין@pr NP cnjcoo בין@pr NP { 1 _ 2 _ 3 _ 5 } |
+      20: בין@pr NP ל@pr NP { 1 _ 2 _ ji@cnjcoo _ 4 } ;
+
+!!!!!!!!!!!!!!!
+!! CLAUSES (rendering.md: Tense in narration, Clause linkage)
+!!!!!!!!!!!!!!!
+
+! ל + אמר infinitive ("saying") introduces speech: not rendered.
+VP -> ל@pr אמר@v.*.inf { } ;
+
+CL -> ! fallbacks: bare Globasa verb, Hebrew tags dropped
+      0.1: v { 1 } |
+      ! wayyiqtol storyline: bare verb, subject first
+      10: v.*.consec NP { 2 _ 1 } |
+      ! existential היה: jussive `am hay X`, wayyiqtol `hay X`; ויהי כן `to okur denmaner`
+      30: היה@v.*.jus NP { u@vbpr.imp _ hay@vblex _ 2 } |
+      30: היה@v.*.consec NP { hay@vblex _ 2 } |
+      30: היה@v.*.consec כן@adv { prpers@prn.p3.nt.sg _ okur@vblex _ 2 } |
+      ! jussive with subject: `S am V`
+      20: v.*.jus NP { 2 _ u@vbpr.imp _ 1 } |
+      15: v.*.jus { u@vbpr.imp _ 1 } |
+      ! imperative
+      15: v.*.imp { u@vbpr.imp _ 1 } |
+      ! cohortative "let us make": `Imi am V`
+      20: v.*.impf.p1.*.pl { prpers@prn.p1.ut.pl _ u@vbpr.imp _ 1 } |
+      ! qatal 1sg in speech (performative "I give"): pronoun + bare verb
+      15: v.*.perf.p1.*.sg { prpers@prn.p1.ut.sg _ 1 } |
+      ! yiqtol (not wayyiqtol: those match the weightier rules above): future
+      1: v.*.impf.p3 { u@vbpr.fut _ 1 } |
+      ! naming: V S ל-X Y -> S namegi X Y; fronted ל-X V Y -> te namegi X Y
+      40: קרא@v.*.consec NP ל@pr NP NP { 2 _ 1 _ 4 _ 5 } |
+      40: ל@pr NP קרא@v.*.perf NP { prpers@prn.p3.ut.sg _ 3 _ 2 _ 4 } |
+      ! "rule over" governs ב: direct object of krasi
+      30: [rulev]@v ב@pr NP { 1 _ 3 } |
+      ! attributive participle with an object: relative clause `hu da V O`
+      20: v.*.part NP { hu@cnjsub _ da@prn _ 1 _ 2 } |
+      ! complement "that (it was) good": `ki to sen bon`
+      30: כי@cnjsub adj { 1 _ prpers@prn.p3.nt.sg _ sen@vbser _ 2 } |
+      30: כי@cnjsub adj adv { 1 _ prpers@prn.p3.nt.sg _ sen@vbser _ 3 _ 2 } ;
