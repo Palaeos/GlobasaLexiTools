@@ -2153,3 +2153,4 @@
 - Open: TMX output (Next 0); Kantor 2025 vs Holmstedt on 1:1 (0b); syntax-based rtx via UD PTNK + BHSA (1). Parked: philological-vs-confessional survey, LXX-triangulated confessional version, NT approach (Nyland + LXX Greek via hbo-glb).
 - Uncommitted on purpose: copyrighted research texts in bible-translation/ (schmidt.txt, tdot11.txt, tdot2.pdf, walton.pdf, westermann.txt) — user to move or delete.
 - Next step: TMX output from translate.sh.
+| 22:58 | Recorded follow-on texts (Pinocchio via a new ita-glb pair, UDHR, Andersen/Grimm) in Claude memory; no repo files changed besides this log | .wolf/memory.md | plan only | ~2k |
