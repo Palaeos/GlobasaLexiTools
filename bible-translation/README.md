@@ -114,9 +114,15 @@ basis of every change `data/Gen_1_glb_draft.md`.
    ("in THE beginning"). The construct/relative reading likely arose with
    medieval commentators, after the article spread in inseparable
    prepositional phrases in the precursors of Tiberian Hebrew.
-   Bearing: it removes the article argument for Holmstedt's bare relative;
-   the remaining evidence (pointed construct form, Hos 1:2; vs the tipcha
-   accent, LXX) is listed in `data/Gen_1_ambiguity.tsv`. Decide whether the
+   Method: the argument rests on the non-Masoretic reading traditions. The
+   article in an inseparable preposition (בְּ vs בַּ) shows only in the
+   vocalisation, so "no article" and the "pointed construct form" are facts
+   of the Tiberian reading, a later stage.
+   Bearing: this undercuts the vocalisation evidence for Holmstedt's bare
+   relative (shva, "same pointed form tagged construct elsewhere in OSHB" in
+   `data/Gen_1_ambiguity.tsv`). What remains: for construct, the syntactic
+   parallel Hos 1:2 (construct + finite verb); for the adverbial reading,
+   the LXX and the Masoretic accent (tipcha), itself also Tiberian. Decide whether the
    preferred reading of 1:1–3 changes; the main-clause alternative is
    already written out in `data/Gen_1_glb_draft.md`.
 1. **Syntax-based transfer:** merge UD PTNK roles (nsubj, obj, obl, mark)
