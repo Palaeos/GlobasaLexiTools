@@ -282,6 +282,10 @@ Flags:
 - **Capitalised divine glosses:** never the default (parsimony). They are
   offered as alternatives. This concerns the choice of *sense* (e.g. רוּחַ
   "Spirit" vs "wind"), not the spelling of God's name.
+- **The divine name is `Yahwe`** (project owner): יְהוָה is rendered as a
+  name, not as a title ("LORD", Kyrios, Adonai). יְהוָה אֱלֹהִים (Gen 2–3)
+  → `Teo Yahwe`. This keeps the name/title difference the source-critical
+  reading of Gen 1 (אֱלֹהִים) and Gen 2–3 (יְהוָה אֱלֹהִים) depends on.
 - **God is `Teo`.** אֱלֹהִים referring to the God of Israel is written
   `Teo` (project owner; Doxo: "O Teo!", "fe Teo"). Other gods, and אֱלֹהִים
   in a generic sense, are `teo`. The lexicon prints the lowercase word-list

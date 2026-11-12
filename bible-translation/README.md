@@ -100,6 +100,18 @@ The earlier word-list-only run (Dec 2024 list, en+es) had 67 / 8 / 21 none.
 Gen 1: machine output `data/Gen_1_glb_machine.txt`; revised draft with the
 basis of every change `data/Gen_1_glb_draft.md`.
 
+## Parked (longer term)
+
+- **Philological vs confessional renderings in Genesis:** survey where the
+  philological reading is better supported than the confessional one and
+  record defaults and labelled alternatives. Gen 1 candidates (from this
+  project's research): רוּחַ אֱלֹהִים "wind of God"; רָקִיעַ "dome"; 2:2 no
+  pluperfect; 1:26 "us" without Trinitarian capitals; תַּנִּינִם "sea
+  monsters"; נֶפֶשׁ חַיָּה "living being" for animals and humans. Beyond Gen 1
+  (not yet researched): אָדָם "the human" in Gen 2; 2:21–22 "side"; 3:15
+  collective "offspring" and the same verb twice; 6:2–4 "sons of God";
+  49:10 "Shiloh". Decided: the divine name `Yahwe` (rendering.md).
+
 ## Next
 
 0. **TMX output:** `translate.sh` should write a TMX file (one `<tu>` per
