@@ -124,6 +124,12 @@ basis of every change `data/Gen_1_glb_draft.md`.
   The same word can be either; evidence for the Septuagintal sense: an OT
   quotation or allusion in context, a Hebraism in the construction, and a
   sense attested in the LXX but not in the documentary papyri.
+  Style (project owner): the Gospels imitate Septuagint style and
+  narratives, so Septuagintal narrative syntax should get the same Globasa
+  conventions as Hebrew narrative (rendering.md: *wa*, tense in narration):
+  καὶ ἐγένετο (= וַיְהִי) + time clause, paratactic καί chains (= *wa*),
+  ἰδού (= הִנֵּה → `Am oko,`), "answered and said". Keep these recognisably
+  parallel to the Globasa Old Testament rather than normalising them.
 - **A confessional version by triangulation with the Septuagint** (project
   owner's idea): where the Masoretic Text and the LXX diverge, the
   confessional version follows the LXX, the Old Testament of the early
