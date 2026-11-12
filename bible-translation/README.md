@@ -119,6 +119,11 @@ basis of every change `data/Gen_1_glb_draft.md`.
   same Globasa word in both Testaments. Needs: a Greek→Hebrew equivalence
   list for LXX vocabulary (e.g. Hatch–Redpath style), and a way to mark
   which Greek words are "Septuagintal" in a given passage.
+  Caution (project owner): decide per occurrence, not per word, whether a
+  word is ordinary Koine of the time or Septuagint-influenced Judeo-Greek.
+  The same word can be either; evidence for the Septuagintal sense: an OT
+  quotation or allusion in context, a Hebraism in the construction, and a
+  sense attested in the LXX but not in the documentary papyri.
 - **A confessional version by triangulation with the Septuagint** (project
   owner's idea): where the Masoretic Text and the LXX diverge, the
   confessional version follows the LXX, the Old Testament of the early
