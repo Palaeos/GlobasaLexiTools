@@ -2147,3 +2147,9 @@
 | 21:45 | ברא -> julagi throughout (one sense); draft 1:27c, rendering.md, reconstruct curated updated. Next session: merge UD/BHSA syntax into stream, rewrite rtx on roles (plan given in chat) | bible-translation/* | ok | ~3000 |
 | 22:40 | Planned fra-glb Apertium pair + Le Petit Prince pipeline (Apertium keeps fra-glb alignment, SimAlign fra-pivots votes on polysemy, transfer rules for order/inflection, OpenJev as tie-breaker); recorded in Claude memory project_french_pair_little_prince.md | none in repo | plan only, nothing built | ~8k |
 | 22:43 | Corrected plan: glb-fra pair already exists at ~/ApplicationSource/GlobasaTranslation/apertium-glb-fra (sandbox-blocked); noted in cerebrum and Claude memory | .wolf/cerebrum.md | next step: inspect that pair with sandbox disabled | ~2k |
+
+## Session 2026-11-12 (bible-translation) — summary
+- Built: Globasa lexicon from SDBH (en/es/fr/zh) + Wiktionary extension; rendering.md (wa per Isaksson, tense/aspect, conjunctions, prepositions, de/fe, image/likeness, bara=julagi, Teo/Yahwe/Prabu); apertium-hbo-glb pair; Gen 1 machine output + revised draft. Branch `bible-translation`, commits 7d159a7..HEAD.
+- Open: TMX output (Next 0); Kantor 2025 vs Holmstedt on 1:1 (0b); syntax-based rtx via UD PTNK + BHSA (1). Parked: philological-vs-confessional survey, LXX-triangulated confessional version, NT approach (Nyland + LXX Greek via hbo-glb).
+- Uncommitted on purpose: copyrighted research texts in bible-translation/ (schmidt.txt, tdot11.txt, tdot2.pdf, walton.pdf, westermann.txt) — user to move or delete.
+- Next step: TMX output from translate.sh.

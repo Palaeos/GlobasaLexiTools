@@ -111,6 +111,14 @@ basis of every change `data/Gen_1_glb_draft.md`.
   (not yet researched): אָדָם "the human" in Gen 2; 2:21–22 "side"; 3:15
   collective "offspring" and the same verb twice; 6:2–4 "sons of God";
   49:10 "Shiloh". Decided: the divine name `Yahwe` (rendering.md).
+- **New Testament approach** (project owner): ordinary vocabulary after
+  Nyland's *The Source New Testament* (meanings from contemporary
+  documentary Greek: papyri, inscriptions); Septuagint-influenced Greek
+  (Semitisms, Septuagintal idioms and terms) routed through the Hebrew
+  equivalent and the hbo-glb lexicon, so the same Hebrew concept gets the
+  same Globasa word in both Testaments. Needs: a Greek→Hebrew equivalence
+  list for LXX vocabulary (e.g. Hatch–Redpath style), and a way to mark
+  which Greek words are "Septuagintal" in a given passage.
 - **A confessional version by triangulation with the Septuagint** (project
   owner's idea): where the Masoretic Text and the LXX diverge, the
   confessional version follows the LXX, the Old Testament of the early
