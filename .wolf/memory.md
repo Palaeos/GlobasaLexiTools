@@ -2154,3 +2154,4 @@
 - Uncommitted on purpose: copyrighted research texts in bible-translation/ (schmidt.txt, tdot11.txt, tdot2.pdf, walton.pdf, westermann.txt) — user to move or delete.
 - Next step: TMX output from translate.sh.
 | 22:58 | Recorded follow-on texts (Pinocchio via a new ita-glb pair, UDHR, Andersen/Grimm) in Claude memory; no repo files changed besides this log | .wolf/memory.md | plan only | ~2k |
+| 23:01 | Recorded Time Machine translation plan (UK base, US variants as paraphrases) in Claude memory | .wolf/memory.md | plan only | ~2k |
