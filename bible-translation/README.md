@@ -130,6 +130,12 @@ basis of every change `data/Gen_1_glb_draft.md`.
   καὶ ἐγένετο (= וַיְהִי) + time clause, paratactic καί chains (= *wa*),
   ἰδού (= הִנֵּה → `Am oko,`), "answered and said". Keep these recognisably
   parallel to the Globasa Old Testament rather than normalising them.
+- **Other Greek texts (Homer and later)** (project owner): a grc→glb pair
+  whose analyser and bidix use Apertium preferences/variants (`v=` on dix
+  entries, compiled per variant with `lt-comp -v`) for stages and dialects:
+  Homeric/Epic-Ionic, Attic, Koine, Septuagintal. Starting point:
+  apertium-grc in the Hebrew-side project's vendor/. The NT pair would be one
+  variant of the same pair.
 - **A confessional version by triangulation with the Septuagint** (project
   owner's idea): where the Masoretic Text and the LXX diverge, the
   confessional version follows the LXX, the Old Testament of the early
