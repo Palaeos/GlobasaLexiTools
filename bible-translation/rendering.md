@@ -284,7 +284,9 @@ Flags:
   "Spirit" vs "wind"), not the spelling of God's name.
 - **The divine name is `Yahwe`** (project owner): יְהוָה is rendered as a
   name, not as a title ("LORD", Kyrios, Adonai). יְהוָה אֱלֹהִים (Gen 2–3)
-  → `Teo Yahwe`. This keeps the name/title difference the source-critical
+  → `Teo Yahwe`. Confessional comparison: `Prabu` "Lord" (the title, after
+  *Kyrios*/*Adonai*; Doxo: "Prabu loga, “Am oko, …”"), `Prabu Teo` for
+  יְהוָה אֱלֹהִים; recorded as the labelled alternative. This keeps the name/title difference the source-critical
   reading of Gen 1 (אֱלֹהִים) and Gen 2–3 (יְהוָה אֱלֹהִים) depends on.
 - **God is `Teo`.** אֱלֹהִים referring to the God of Israel is written
   `Teo` (project owner; Doxo: "O Teo!", "fe Teo"). Other gods, and אֱלֹהִים
