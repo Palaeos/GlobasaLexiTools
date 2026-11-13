@@ -140,6 +140,35 @@ for _name, _wikt in _cfg['glosspos_to_wikt'].items():
     if _member is not None:
         GLOSSPOS_TO_WIKT[_member] = _wikt
 
+# Verb-type names as the vetting spreadsheets write them (VerbType column).
+from Lexilista_parser import VerbType as _VT, parseWordEntry as _parseWordEntry
+VT_NAMES = {
+    _VT.INTRANSITIVE: "intransitive", _VT.TRANSITIVE: "transitive",
+    _VT.ECHO_TRANSITIVE: "echo-transitive", _VT.COPULAR: "copular",
+    _VT.AUXILIARY: "auxiliary", _VT.INTRANSITIVE_CU: "intransitive (-cu)",
+    _VT.FEELING: "feeling (hisi)", _VT.STATE: "state (jotay)",
+}
+
+
+def pos_groups(eng_text, wordclass):
+    """The PoS groups of a word-list entry, in order: one per distinct
+    (Wiktionary PoS, verb-type name) of its English glosses.
+
+    menalariExtension.tsv writes one '; '-separated group per entry of this
+    list, so the Wiktionary extension builder (writer) and build_bidix.py
+    (reader) both call this, and the positions cannot drift apart.
+    Returns [(wikt_pos, vt_name, first ParsedGloss of the group), ...]."""
+    groups = []
+    seen = set()
+    eng_glosses = _parseWordEntry(eng_text, wordclass, {}).translations.get("Eng", [])
+    for g in eng_glosses:
+        wikt_pos = GLOSSPOS_TO_WIKT.get(g.pos)
+        vt_name = VT_NAMES.get(g.verb_type, '') if g.verb_type else ''
+        if wikt_pos and (wikt_pos, vt_name) not in seen:
+            seen.add((wikt_pos, vt_name))
+            groups.append((wikt_pos, vt_name, g))
+    return groups
+
 # Config display names (for dialects and xlsx-specified names)
 _XLSX_DISPLAY_NAMES = _cfg['display_names']
 

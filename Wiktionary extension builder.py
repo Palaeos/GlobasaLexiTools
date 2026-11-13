@@ -18,22 +18,14 @@ import os
 import sys
 import csv
 
-from Lexilista_parser import parseWordEntry, VerbType as _VT
 from wiktionary_db import WiktionaryDB
 from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
 from wiktionary_constants import (
-    GLOSSPOS_TO_WIKT, EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
+    EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
-    build_annotation_map, entry_to_string,
+    build_annotation_map, entry_to_string, pos_groups,
 )
-
-_VT_NAMES = {
-    _VT.INTRANSITIVE: "intransitive", _VT.TRANSITIVE: "transitive",
-    _VT.ECHO_TRANSITIVE: "echo-transitive", _VT.COPULAR: "copular",
-    _VT.AUXILIARY: "auxiliary", _VT.INTRANSITIVE_CU: "intransitive (-cu)",
-    _VT.FEELING: "feeling (hisi)", _VT.STATE: "state (jotay)",
-}
 
 # ---------------------------------------------------------------------------
 # csv.field_size_limit fix
@@ -154,18 +146,10 @@ with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
         # Determine PoS groups from word-list.csv English glosses
         # The wordlist defines the group structure (via WordClass → VerbType).
         # The xlsx VerbType column tells us which group each sense belongs to.
-        eng_text = wl.get('eng', '')
-        wordclass = wl.get('wordclass', '')
-        parsed = parseWordEntry(eng_text, wordclass, {})
-        eng_glosses = parsed.translations.get("Eng", [])
-
-        group_key_to_idx = {}
-        for g in eng_glosses:
-            wikt_pos = GLOSSPOS_TO_WIKT.get(g.pos)
-            vt_name = _VT_NAMES.get(g.verb_type, '') if g.verb_type else ''
-            key = (wikt_pos, vt_name)
-            if wikt_pos and key not in group_key_to_idx:
-                group_key_to_idx[key] = len(group_key_to_idx)
+        # build_bidix.py reads the groups back with the same pos_groups().
+        group_key_to_idx = {
+            (wikt_pos, vt_name): i for i, (wikt_pos, vt_name, _)
+            in enumerate(pos_groups(wl.get('eng', ''), wl.get('wordclass', '')))}
         num_groups = max(len(group_key_to_idx), 1)
 
         # Accumulators: per-group sets for each language
