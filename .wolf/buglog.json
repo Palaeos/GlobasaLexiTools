@@ -4005,5 +4005,23 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-12T23:50:00"
+  },
+  {
+    "id": "bug-247",
+    "timestamp": "2026-11-13",
+    "error_message": "glb-fra bidix contained corrupted French entries like 'estudio<b/>(_arte' and Dutch came from a stale extension file",
+    "file": "apertium_common.py",
+    "root_cause": "expand_gloss_tokens split on ', ' before removing (_…_) annotations, which contain commas; dictionaryPreprocess read menalariExtension_edited.tsv instead of menalariExtension.tsv",
+    "fix": "Paren-aware split in expand_gloss_tokens; bilingual content moved to build_bidix.py reading menalariExtension.tsv by column name",
+    "tags": [
+      "apertium",
+      "bidix",
+      "gloss-split",
+      "annotation",
+      "menalariExtension"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-13"
   }
 ]

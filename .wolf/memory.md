@@ -2155,3 +2155,4 @@
 - Next step: TMX output from translate.sh.
 | 22:58 | Recorded follow-on texts (Pinocchio via a new ita-glb pair, UDHR, Andersen/Grimm) in Claude memory; no repo files changed besides this log | .wolf/memory.md | plan only | ~2k |
 | 23:01 | Recorded Time Machine translation plan (UK base, US variants as paraphrases) in Claude memory | .wolf/memory.md | plan only | ~2k |
+| 23:40 | Bidix pipeline: apertium_common.py + pos_groups (0ee107a, parity byte-identical); build_bidix.py (curated part above marker, word list both ways, Wiktionary RL, analyser check, report); preprocess trimmed; paren-aware gloss split | build_bidix.py, apertium_common.py, dictionaryPreprocess.py | 33.5k entries eng/deu/fra/nld, validated+compiled on scratch copies; merge pending (GlobasaTranslation not visible) | ~60k |
