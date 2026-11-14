@@ -58,7 +58,7 @@ df.index = df.index.astype(str).str.strip()
 gender_frame = pd.read_csv("menalariPronouns_edited.tsv", sep="\t",
                            index_col=0, keep_default_na=False)
 # Duplicate WORDS, not duplicate rows: drop_duplicates() compares the columns only, so two
-# words with the same English gloss and pronoun (medisdom/hospital "hospital", to) lost one of
+# words with the same English gloss and pronoun (bimaryendom/hospital "hospital", to) lost one of
 # them, which then got the GD paradigm (55 words). build_bidix.py dedups the same way.
 gender_frame = gender_frame[~gender_frame.index.duplicated(keep="first")]
 
