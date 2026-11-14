@@ -19,6 +19,8 @@ Directions:
 Every target lemma is checked with the target analyser ({lang}.automorf.bin);
 lemmas it cannot analyse as that lemma and PoS are dropped and reported.
 
+Run:    python3 build_bidix.py [lang ...]   (default: every pair)
+
 Reads:  word-list.csv, menalariExtension.tsv (Wiktionary extension builder.py),
         menalariPronouns_edited.tsv, the pair dixes and target analysers
 Writes: dictionary_{lang}_bidix.xml   generated entries, one file per pair
@@ -56,7 +58,30 @@ PAIRS = [
     ("deu", "De", "Deu", "TranslationDeu", "German"),
     ("fra", "Fr", "Fra", "TranslationFra", "French"),
     ("nld", "Nl", None,  None,             "Dutch"),
+    ("jpn", "Ja", None,  None,             "Japanese"),
 ]
+
+# Optional: build only the pairs named on the command line (build_bidix.py jpn).
+if sys.argv[1:]:
+    PAIRS = [p for p in PAIRS if p[0] in sys.argv[1:]]
+
+# Target-side PoS symbol where the target analyser differs from Globasa's.
+TARGET_SYMBOLS = {
+    "jpn": {"vblex": "v", "np": "pn"},
+}
+
+# Targets whose gender-like analyser tags are not grammatical gender
+# (apertium-jpn tags 父<n><m> for meaning only): no gender on <r>.
+NO_TARGET_GENDER = {"jpn"}
+
+# Attributive endings a Wiktionary translation may carry that the analyser
+# files under the bare lemma (偉大な → 偉大<adj><adj_na>, 青の → 青).
+ATTRIBUTIVE_ENDINGS = {"jpn": ("な", "の")}
+
+# Pairs whose dix gets the merge (every pair's xml and TSV rows are still
+# written). BIDIX_MERGE=fra merges into glb-fra only; unset = all pairs.
+MERGE_LANGS = set(filter(None, os.environ.get("BIDIX_MERGE", "").split(","))) \
+    or {lang for lang, *_ in PAIRS}
 
 # Per-language cleanup of a Wiktionary translation before lookup, e.g. for
 # Russian stress marks or Latin macrons once those pairs exist.
@@ -311,15 +336,21 @@ def analyse(lang, lemmas):
     return result
 
 
-def target_check(readings, target, sym):
+def target_check(readings, target, sym, lang=None):
     """(lemma, genders, sint, reason); lemma None when the target is dropped.
     The lemma is the target itself, except for gendered noun forms the
-    analyser files under another lemma (cuisinière → cuisinier<n><f>)."""
+    analyser files under another lemma (cuisinière → cuisinier<n><f>) and
+    attributive adjective forms filed under the bare lemma (偉大な → 偉大).
+    sym is the target-side symbol (TARGET_SYMBOLS)."""
     if readings == "multiword" or readings is None:
         return None, [], False, "multiword not in the analyser"
     if not readings:
         return None, [], False, "unknown to the analyser"
     same = [tags for rl, tags in readings if rl == target and tags and tags[0] == sym]
+    if not same and sym == "adj" and target.endswith(ATTRIBUTIVE_ENDINGS.get(lang, ())):
+        bare = target[:-1]
+        if [tags for rl, tags in readings if rl == bare and tags and tags[0] == sym]:
+            return bare, [], False, ""
     if same:
         genders = sorted({t for tags in same for t in tags if t in TARGET_GENDERS})
         sint = any("sint" in tags for tags in same)
@@ -360,7 +391,8 @@ for lang, label, *_ in PAIRS:
 
     for c in cands:
         glb, sym, target, origin = c["glb"], c["sym"], c["target"], c["origin"]
-        lemma, genders, sint, reason = target_check(analysis.get(target), target, sym)
+        tsym = TARGET_SYMBOLS.get(lang, {}).get(sym, sym)
+        lemma, genders, sint, reason = target_check(analysis.get(target), target, tsym, lang)
         if lemma is None:
             drop(lang, glb, sym, target, origin, reason)
             stats[f"dropped: {reason.split(':')[0]}"] += 1
@@ -369,11 +401,11 @@ for lang, label, *_ in PAIRS:
         note = ""
         if lemma != target:
             note = f"analyser files {target} under {lemma}"
-            stats["gendered form under another lemma"] += 1
+            stats["form filed under another lemma"] += 1
             target, c = lemma, dict(c, wikt_genders=[])
 
         can_lr = origin == "wordlist" and (glb, sym) not in glb_curated
-        can_rl = (target, sym) not in target_curated
+        can_rl = (target, tsym) not in target_curated
         if not can_lr and not can_rl:
             drop(lang, glb, sym, target, origin, "curated part covers it")
             stats["dropped: curated"] += 1
@@ -384,7 +416,9 @@ for lang, label, *_ in PAIRS:
                 note, f"{restriction} only: curated part covers the other direction"]))
 
         # Target gender: the analyser's, narrowed by Wiktionary's marker.
-        if sym in NOUN_SYMBOLS and genders:
+        if lang in NO_TARGET_GENDER:
+            genders = []
+        elif sym in NOUN_SYMBOLS and genders:
             narrowed = [g for g in c["wikt_genders"] if g in genders]
             if narrowed:
                 genders = narrowed
@@ -398,7 +432,7 @@ for lang, label, *_ in PAIRS:
         glb_gs = globasa_genders(glb) if sym in NOUN_SYMBOLS else [None]
         for gg in glb_gs:
             for tg in (genders or [None]):
-                line = bilingual_entry(label, glb, sym, gg, target, sym, tg,
+                line = bilingual_entry(label, glb, sym, gg, target, tsym, tg,
                                        restriction, sint=sint)
                 if line in emitted:
                     continue
@@ -406,7 +440,7 @@ for lang, label, *_ in PAIRS:
                 (lines_both if origin == "wordlist" else lines_rl).append(line)
                 entry_rows.append({"lang": lang, "glb": glb, "glb_pos": sym,
                                    "glb_gender": gg or "", "target": target,
-                                   "target_pos": sym, "target_gender": tg or "",
+                                   "target_pos": tsym, "target_gender": tg or "",
                                    "origin": origin, "dir": restriction or "both",
                                    "note": note})
                 stats[f"{origin} {restriction or 'both'}"] += 1
@@ -419,7 +453,10 @@ for lang, label, *_ in PAIRS:
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines_both + lines_rl) + "\n")
     summary[lang] = stats
-    if merge_target[lang]:
+    if merge_target[lang] and lang not in MERGE_LANGS:
+        notes[lang].append(f"not merged (BIDIX_MERGE={','.join(sorted(MERGE_LANGS))});"
+                           f" {xml_path} written")
+    elif merge_target[lang]:
         merge_into_dix(merge_target[lang], xml_path, require_marker=True)
 
 
