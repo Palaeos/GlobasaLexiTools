@@ -83,6 +83,10 @@ NO_TARGET_GENDER = {"jpn"}
 # a Globasa proper noun may take a target <n> when the analyser has no proper-noun reading.
 PROPER_AS_COMMON = {"jpn"}
 
+# Targets whose analyser splits compounds into joined parts (加入者 → 加入+者<suff>): the entry
+# keeps the whole compound, which apertium-glb-jpn's compounds.py re-joins at run time.
+REJOINED_COMPOUNDS = {"jpn"}
+
 # Attributive endings a Wiktionary translation may carry that the analyser
 # files under the bare lemma (偉大な → 偉大<adj><adj_na>, 青の → 青).
 ATTRIBUTIVE_ENDINGS = {"jpn": ("な", "の")}
@@ -379,6 +383,9 @@ def target_check(readings, target, sym, lang=None):
     if other_pos:
         return None, [], False, f"analyser has it only as: {', '.join(other_pos)}"
     other_lemmas = sorted({rl for rl, _ in readings})
+    if lang in REJOINED_COMPOUNDS and any("+" in rl and rl.replace("+", "") == target
+                                         for rl in other_lemmas):
+        return target, [], False, "compound"
     return None, [], False, f"analyser lemma differs: {', '.join(other_lemmas[:3])}"
 
 
@@ -408,6 +415,9 @@ for lang, label, *_ in PAIRS:
             if lemma is not None:
                 tsym = "n"
                 fallback = "(fallback: the target files this proper noun as a common noun <n>)"
+        if reason == "compound":
+            fallback = "; ".join(filter(None, [fallback,
+                "compound the analyser splits (re-joined at run time by compounds.py)"]))
         if lemma is None:
             drop(lang, glb, sym, target, origin, reason)
             stats[f"dropped: {reason.split(':')[0]}"] += 1
