@@ -65,6 +65,11 @@ PAIRS = [
 if sys.argv[1:]:
     PAIRS = [p for p in PAIRS if p[0] in sys.argv[1:]]
 
+# Globasa-side symbol: apertium-glb files proper nouns under the common-noun
+# paradigms (apertium-glb ed4f24f), so its analyser and generator say
+# Maria<n><ut>, never <np>.
+GLB_SYMBOLS = {"np": "n"}
+
 # Target-side PoS symbol where the target analyser differs from Globasa's.
 TARGET_SYMBOLS = {
     "jpn": {"vblex": "v", "np": "pn"},
@@ -432,8 +437,8 @@ for lang, label, *_ in PAIRS:
         glb_gs = globasa_genders(glb) if sym in NOUN_SYMBOLS else [None]
         for gg in glb_gs:
             for tg in (genders or [None]):
-                line = bilingual_entry(label, glb, sym, gg, target, tsym, tg,
-                                       restriction, sint=sint)
+                line = bilingual_entry(label, glb, GLB_SYMBOLS.get(sym, sym), gg,
+                                       target, tsym, tg, restriction, sint=sint)
                 if line in emitted:
                     continue
                 emitted.add(line)
