@@ -1,0 +1,7 @@
+# Pronoun gender by interpretation (pronouns.py; see its docstring and rendering.md "Pronoun gender").
+# WORD-ID<TAB>Globasa pronoun<TAB>note        — list a passage's pronouns: python3 pronouns.py suggest STREAM
+#
+# Defaults without an entry: te/ete/yu/uyu/mi/imi. te covers any life form (xwexi darsu 05: "animate: any
+# life form"), so plants and animals need no entry; to/oto only for things. A masculine plural is mixed
+# by default (ete, uyu): manete/manuyu only where the group is all male by interpretation. GENDER=1 adds
+# the second person the grammar settles: 2 m sg manyu, 2 f sg femyu, 2 f pl femuyu.

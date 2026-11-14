@@ -217,6 +217,15 @@ translated as a fixed `ji`.
 - **הִנֵּה** "behold" → `Am oko,` (Doxo).
 - **"all that"** → `moyto hu … da` (Doxo).
 
+## Pronoun gender
+
+Hebrew marks gender in the second and third person (verbs agree as well); the first person has none. How much of it to render is decided as follows (user, 2026-11-14):
+
+- **Default: unmarked.** *te/ete* (any life form: xwexi darsu 05), *yu/uyu*, *mi/imi*; *to/oto* only for things. *te* stays right for concise prose and for generic statements.
+- **Masculine plural is mixed by default** (*ete*, *uyu*): it addresses mixed groups (Gen 1:28 "be fruitful", to humanity created "male and female"). *manete/manuyu* only where the group is all male by interpretation.
+- **What the grammar settles** (`GENDER=1 ./translate.sh`): the addressee's sex in the second person: 2 m sg → *manyu*, 2 f sg → *femyu*, 2 f pl → *femuyu*.
+- **Everything else is interpretation, per occurrence:** `apertium-hbo-glb/curated/pronouns.tsv` (word id → *mante*, *femte*, *manete*, *femete*, *manuyu*, *to* …). Third-person gender is grammatical (הוּא is also "it"), so *mante/femte* are chosen for persons where the translator wants the sex marked. An entry on a verb sets the subject pronoun the rules insert from its agreement (Gen 1:5 "te namegi").
+
 ## Fronting and focus
 
 | Hebrew | Default | Alternatives |

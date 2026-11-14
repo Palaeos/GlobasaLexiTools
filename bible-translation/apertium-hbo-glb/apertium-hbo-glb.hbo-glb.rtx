@@ -57,6 +57,27 @@ NP -> 0.1: n { 1 } |
       5: n num { 2 _ 1 } |
       20: n.*.cons אלהים@n { 1 _ de@pr _ 2 } |
       20: n.*.cons prn { prpers@det.pos.[2.person].ut.[2.number] _ 1 } |
+      ! Gendered second person, mode GENDER=1 only (rules named "p_gender"; the default
+      ! binary is rtx-comp -e p_gender). Second-person gender is the addressee's sex:
+      ! אַתָּה manyu, אַתְּ femyu, אַתֶּן femuyu. The masculine plural also addresses mixed
+      ! groups (Gen 1:28, to humanity "male and female"), so אַתֶּם stays uyu. Third
+      ! person stays te/ete: Hebrew gender there is grammatical (לְמִינֵהוּ "its kind").
+      ! Gender by interpretation (curated/pronouns.tsv via pronouns.py: <igm> <igf> <igut>
+      ! <ignt> on the word's pronoun or verb); outweighs the automatic rules.
+      30: prn.*.igm { prpers@prn.[1.person].m.[1.number] } |
+      30: prn.*.igf { prpers@prn.[1.person].f.[1.number] } |
+      30: prn.*.igut { prpers@prn.[1.person].ut.[1.number] } |
+      30: prn.*.ignt { prpers@prn.[1.person].nt.[1.number] } |
+      31: n.*.cons prn.*.igm { prpers@det.pos.[2.person].m.[2.number] _ 1 } |
+      31: n.*.cons prn.*.igf { prpers@det.pos.[2.person].f.[2.number] _ 1 } |
+      31: n.*.cons prn.*.igut { prpers@det.pos.[2.person].ut.[2.number] _ 1 } |
+      31: n.*.cons prn.*.ignt { prpers@det.pos.[2.person].nt.[2.number] _ 1 } |
+      "p_gender" 1: prn.pers.p2.m.sg { prpers@prn.p2.m.sg } |
+      "p_gender" 1: prn.pers.p2.f.sg { prpers@prn.p2.f.sg } |
+      "p_gender" 1: prn.pers.p2.f.pl { prpers@prn.p2.f.pl } |
+      "p_gender" 21: n.*.cons prn.pers.p2.m.sg { prpers@det.pos.p2.m.sg _ 1 } |
+      "p_gender" 21: n.*.cons prn.pers.p2.f.sg { prpers@det.pos.p2.f.sg _ 1 } |
+      "p_gender" 21: n.*.cons prn.pers.p2.f.pl { prpers@det.pos.p2.f.pl _ 1 } |
       20: כל@n NP { moy@det _ 2 } |
       20: כל@n { moy@det } |
       10: n.*.cons NP { 1 _ fe@pr _ 2 } |
@@ -116,6 +137,11 @@ CL -> ! fallbacks: bare Globasa verb, Hebrew tags dropped
       ! naming: V S ל-X Y -> S namegi X Y; fronted ל-X V Y -> te namegi X Y
       40: קרא@v.*.consec NP ל@pr NP NP { 2 _ 1 _ 4 _ 5 } |
       40: ל@pr NP קרא@v.*.perf NP { prpers@prn.p3.ut.sg _ 3 _ 2 _ 4 } |
+      ! the inserted subject, gendered by interpretation (pronouns.tsv entry on the verb)
+      41: ל@pr NP קרא@v.*.perf.*.igm NP { prpers@prn.p3.m.sg _ 3 _ 2 _ 4 } |
+      41: ל@pr NP קרא@v.*.perf.*.igf NP { prpers@prn.p3.f.sg _ 3 _ 2 _ 4 } |
+      41: ל@pr NP קרא@v.*.perf.*.igut NP { prpers@prn.p3.ut.sg _ 3 _ 2 _ 4 } |
+      41: ל@pr NP קרא@v.*.perf.*.ignt NP { prpers@prn.p3.nt.sg _ 3 _ 2 _ 4 } |
       ! "rule over" governs ב: direct object of krasi
       30: [rulev]@v ב@pr NP { 1 _ 3 } |
       ! attributive participle with an object: relative clause `hu da V O`
