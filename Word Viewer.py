@@ -62,7 +62,7 @@ ALIGNMENT_HTML = os.path.join(BASE_DIR, "alignment_viewer.html")
 TRANSLATE_HTML = os.path.join(BASE_DIR, "translation_aide.html")
 APERTIUM_DIR = os.environ.get(
     "WV_APERTIUM_DIR",
-    "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-eng")
+    os.path.join(BASE_DIR, "GlobasaTranslation", "apertium-glb-eng"))
 GIZA_IMPROVED_DIR = os.path.join(BASE_DIR, "giza_output_improved")
 ANNOTATE_HTML = os.path.join(BASE_DIR, "annotate_alignments.html")
 GOLD_DIR = os.path.join(BASE_DIR, "gold_alignments")

@@ -41,13 +41,12 @@ from Lexilista_parser import parseWordEntry
 from apertium_common import (
     FUNCTION_POS, NOUN_SYMBOLS, apertium_symbol, expand_gloss_tokens,
     genderDict, split_foreign_gender, bilingual_entry,
-    APERTIUM_MARKER, merge_into_dix,
+    APERTIUM_MARKER, APERTIUM_ROOT, merge_into_dix,
 )
 from wiktionary_constants import pos_groups
 
 # ── Configuration ───────────────────────────────────────────────────────
 
-APERTIUM_ROOT = "/home/paleos/ApplicationSource/GlobasaTranslation"
 FALLBACK_ROOT = "/usr/local/old-apertium-2024/share/apertium"
 
 # (Apertium code, label for bilingual_entry, word-list parser code,

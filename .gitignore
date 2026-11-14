@@ -32,3 +32,10 @@ LuteGlobasa/config.yml
 bible-translation/sources/
 bible-translation/apertium-hbo-glb/*.bin
 bible-translation/data/*.log
+
+# Apertium checkouts: only the Globasa pairs are tracked (as submodules);
+# upstream monolinguals, the apertium .deb, glb-en and mtnprox stay local.
+GlobasaTranslation/*
+!GlobasaTranslation/apertium-glb
+!GlobasaTranslation/apertium-glb-*
+GlobasaTranslation/apertium-glb-en

@@ -6,7 +6,7 @@ from Lexilista_parser import parseWordEntry
 from apertium_common import (
     FUNCTION_POS, NOUN_SYMBOLS, apertium_symbol, expand_gloss_tokens,
     genderDict, split_foreign_gender, lemma_repr, bilingual_entry,
-    merge_into_dix,
+    merge_into_dix, APERTIUM_ROOT,
 )
 
 
@@ -191,7 +191,6 @@ with contextlib.ExitStack() as stack:
 # closing </section> of section main in apertium-glb.glb.dix (.bak kept).
 # The glb-X bilingual dixes are built by build_bidix.py.
 
-APERTIUM_ROOT = "/home/paleos/ApplicationSource/GlobasaTranslation"
 
 print("\nMerging content entries into apertium-glb…")
 merge_into_dix(os.path.join(APERTIUM_ROOT, "apertium-glb/apertium-glb.glb.dix"),

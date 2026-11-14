@@ -11,6 +11,12 @@ from xml.sax.saxutils import escape as xml_escape
 
 from Lexilista_parser import GlossPoS, VerbType
 
+# Apertium checkouts. The Globasa pairs (apertium-glb, apertium-glb-eng/-fra/
+# -deu/-nld) are submodules here; the upstream monolinguals they build
+# against (apertium-eng, apertium-fra, ...) are plain, untracked clones.
+APERTIUM_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             "GlobasaTranslation")
+
 
 # ── PoS → Apertium symbol ────────────────────────────────────────────────
 GLOSS_TO_APERTIUM = {
@@ -133,10 +139,8 @@ def split_foreign_gender(tok):
 # paradigm whose body contains <s n="sint"/> are synthetic; anything routed
 # through `expensive__adj` (or any other non-sint paradigm) is analytic.
 
-APERTIUM_ENG_DIX = (
-    "/home/paleos/ApplicationSource/GlobasaTranslation/apertium-eng/"
-    "apertium-eng.eng.dix"
-)
+APERTIUM_ENG_DIX = os.path.join(APERTIUM_ROOT, "apertium-eng",
+                                "apertium-eng.eng.dix")
 _PARDEF_RE = re.compile(r'<pardef\s+n="([^"]+)"\s*>(.*?)</pardef>', re.DOTALL)
 _ADJ_ENTRY_RE = re.compile(
     r'<e\s+lm="([^"]+)"[^>]*>\s*<i>[^<]*</i>\s*<par\s+n="([^"]+)"\s*/>\s*</e>'
