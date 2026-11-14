@@ -7,3 +7,23 @@
 [submodule "giza-pp"]
 	path = giza-pp
 	url = https://github.com/moses-smt/giza-pp.git
+[submodule "GlobasaTranslation/apertium-glb"]
+	path = GlobasaTranslation/apertium-glb
+	url = https://github.com/Palaeos/apertium-glb.git
+	branch = master
+[submodule "GlobasaTranslation/apertium-glb-eng"]
+	path = GlobasaTranslation/apertium-glb-eng
+	url = https://github.com/Palaeos/apertium-glb-eng.git
+	branch = master
+[submodule "GlobasaTranslation/apertium-glb-fra"]
+	path = GlobasaTranslation/apertium-glb-fra
+	url = https://github.com/Palaeos/apertium-glb-fra.git
+	branch = master
+[submodule "GlobasaTranslation/apertium-glb-deu"]
+	path = GlobasaTranslation/apertium-glb-deu
+	url = https://github.com/Palaeos/apertium-glb-deu.git
+	branch = master
+[submodule "GlobasaTranslation/apertium-glb-nld"]
+	path = GlobasaTranslation/apertium-glb-nld
+	url = https://github.com/Palaeos/apertium-glb-nld.git
+	branch = master
