@@ -2157,3 +2157,10 @@
 | 23:01 | Recorded Time Machine translation plan (UK base, US variants as paraphrases) in Claude memory | .wolf/memory.md | plan only | ~2k |
 | 23:40 | Bidix pipeline: apertium_common.py + pos_groups (0ee107a, parity byte-identical); build_bidix.py (curated part above marker, word list both ways, Wiktionary RL, analyser check, report); preprocess trimmed; paren-aware gloss split | build_bidix.py, apertium_common.py, dictionaryPreprocess.py | 33.5k entries eng/deu/fra/nld, validated+compiled on scratch copies; merge pending (GlobasaTranslation not visible) | ~60k |
 | 21:40 | build_bidix.py end-to-end on the user's glb-fra curated base (scratch copy): curated part byte-identical, 8004 generated entries, validates, compiles LR+RL; curated blocks 13, demotes 10 word-list entries to one direction | build_bidix.py | pass; real merge pending (tree not visible) | ~8k |
+
+## Session: 2026-11-14 12:27
+
+| Time | Action | File(s) | Outcome | ~Tokens |
+|------|--------|---------|---------|--------|
+| 14:00 | Added 5 Palaeos/apertium-glb* repos as submodules under apertium/ (clones + staged gitlinks, all on master); .gitmodules is a read-only mount in the sandbox, so its block waits in the scratchpad for the user to paste | apertium/*, .gitmodules (pending) | partial | ~6k |
+| 14:30 | Dropped apertium/ clones; GlobasaTranslation/ moved into repo by user — its 5 Globasa pairs staged as submodules at local HEADs (glb +5, glb-eng +32 unpushed); APERTIUM_ROOT now repo-relative in apertium_common (build_bidix, dictionaryPreprocess import it; Word Viewer, TRAINING_PLAN repointed); .gitignore keeps upstream monolinguals out; .gitmodules block pending (read-only mount) | apertium_common.py, build_bidix.py, dictionaryPreprocess.py, Word Viewer.py, TRAINING_PLAN.md, .gitignore | staged, not committed | ~12k |
