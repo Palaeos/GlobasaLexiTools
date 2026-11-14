@@ -79,6 +79,10 @@ TARGET_SYMBOLS = {
 # (apertium-jpn tags 父<n><m> for meaning only): no gender on <r>.
 NO_TARGET_GENDER = {"jpn"}
 
+# Targets that file language, religion and scripture names as common nouns (英語, 仏教, 聖書):
+# a Globasa proper noun may take a target <n> when the analyser has no proper-noun reading.
+PROPER_AS_COMMON = {"jpn"}
+
 # Attributive endings a Wiktionary translation may carry that the analyser
 # files under the bare lemma (偉大な → 偉大<adj><adj_na>, 青の → 青).
 ATTRIBUTIVE_ENDINGS = {"jpn": ("な", "の")}
@@ -398,12 +402,18 @@ for lang, label, *_ in PAIRS:
         glb, sym, target, origin = c["glb"], c["sym"], c["target"], c["origin"]
         tsym = TARGET_SYMBOLS.get(lang, {}).get(sym, sym)
         lemma, genders, sint, reason = target_check(analysis.get(target), target, tsym, lang)
+        fallback = ""
+        if lemma is None and lang in PROPER_AS_COMMON and sym == "np":
+            lemma, genders, sint, reason = target_check(analysis.get(target), target, "n", lang)
+            if lemma is not None:
+                tsym = "n"
+                fallback = "(fallback: the target files this proper noun as a common noun <n>)"
         if lemma is None:
             drop(lang, glb, sym, target, origin, reason)
             stats[f"dropped: {reason.split(':')[0]}"] += 1
             continue
 
-        note = ""
+        note = fallback
         if lemma != target:
             note = f"analyser files {target} under {lemma}"
             stats["form filed under another lemma"] += 1
