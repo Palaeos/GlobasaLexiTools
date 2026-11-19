@@ -135,37 +135,57 @@ h1 {
 }
 
 /* ============================================================
-   Direction toggle
+   Language pair and preferences
    ============================================================ */
-.direction-toggle {
+.pair-bar {
   display: flex;
-  gap: 0;
-  margin-bottom: 1.2rem;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
 }
-.direction-toggle button {
-  flex: 1;
+.pair-bar label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.pair-bar select, .prefs-bar select {
   font-family: var(--font-sans);
   font-size: 0.95rem;
-  font-weight: 600;
-  padding: 0.55rem 1rem;
+  padding: 0.45rem 0.6rem;
   border: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
+  min-width: 0;
 }
-.direction-toggle button:first-child {
-  border-radius: var(--radius) 0 0 var(--radius);
-  border-right: none;
+.pair-bar select { flex: 1; font-weight: 600; }
+.pair-bar select:focus-visible, .prefs-bar select:focus-visible, .prefs-bar input:focus-visible {
+  outline: 2px solid var(--color-search-btn);
+  outline-offset: 1px;
 }
-.direction-toggle button:last-child {
-  border-radius: 0 var(--radius) var(--radius) 0;
+.pair-note {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
 }
-.direction-toggle button.active {
-  background: var(--color-search-btn);
-  color: #fff;
-  border-color: var(--color-search-btn);
+.prefs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.4rem;
+  align-items: center;
+  margin-bottom: 1.2rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-size: 0.92rem;
 }
+.prefs-bar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+.prefs-bar .pref-name { font-weight: 600; }
 
 /* ============================================================
    Input area
@@ -417,11 +437,16 @@ h1 {
 
 <div class="container">
 
-  <!-- Direction toggle -->
-  <div class="direction-toggle">
-    <button id="btn-eng-glb" class="active" onclick="setDirection('eng-glb')">English &rarr; Globasa</button>
-    <button id="btn-glb-eng" onclick="setDirection('glb-eng')">Globasa &rarr; English</button>
+  <!-- Language pair and its preferences -->
+  <div class="pair-bar">
+    <label for="pair-select">Pair</label>
+    <select id="pair-select" onchange="setDirection(this.value)">
+      <option value="eng-glb">English &rarr; Globasa</option>
+      <option value="glb-eng">Globasa &rarr; English</option>
+    </select>
   </div>
+  <p class="pair-note" id="pair-note" hidden></p>
+  <div class="prefs-bar" id="prefs-bar" hidden></div>
 
   <!-- Input -->
   <div class="input-area">
@@ -458,13 +483,109 @@ let lastTokens = [];
 let lastResponse = null;
 
 /* ============================================================
-   Direction toggle
+   Language pairs and preferences (from /api/pairs)
    ============================================================ */
+let pairs = {};
+let prefs = {};
+
+// Names for the preferences the page knows; others show their description.
+const PREF_NAMES = { eng_variety: 'English variety', victorian: 'Victorian senses' };
+const OPTION_NAMES = { GB: 'British', US: 'American', Victorian: 'Victorian' };
+// Offered as an option of another preference instead: victorian is the
+// English variety "Victorian" (eng_variety=Victorian). The pair keeps it for
+// per-word use from the command line (AP_SETVAR=victorian=presently:queer).
+const HIDDEN_PREFS = ['victorian'];
+
+function loadPairs() {
+  fetch('/api/pairs')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(list) {
+      if (!list.length) return;
+      const sel = document.getElementById('pair-select');
+      sel.innerHTML = '';
+      const groups = [['Into Globasa', function(p) { return p.tgt === 'glb'; }],
+                      ['From Globasa', function(p) { return p.src === 'glb'; }]];
+      groups.forEach(function(g) {
+        const og = document.createElement('optgroup');
+        og.label = g[0];
+        list.filter(g[1]).forEach(function(p) {
+          pairs[p.mode] = p;
+          const o = document.createElement('option');
+          o.value = p.mode;
+          o.textContent = p.label + (p.available ? '' : ' — not built');
+          o.disabled = !p.available;
+          if (!p.available) o.title = p.reason;
+          og.appendChild(o);
+        });
+        if (og.children.length) sel.appendChild(og);
+      });
+      let saved = null;
+      try { saved = localStorage.getItem('translationAidePair'); } catch (e) {}
+      const start = (saved && pairs[saved] && pairs[saved].available) ? saved : 'eng-glb';
+      sel.value = start;
+      setDirection(start);
+    })
+    .catch(function() {});
+}
+
 function setDirection(dir) {
   direction = dir;
-  document.getElementById('btn-eng-glb').classList.toggle('active', dir === 'eng-glb');
-  document.getElementById('btn-glb-eng').classList.toggle('active', dir === 'glb-eng');
+  document.getElementById('pair-select').value = dir;
+  try { localStorage.setItem('translationAidePair', dir); } catch (e) {}
+  const pair = pairs[dir] || { prefs: [], note: '' };
+  const note = document.getElementById('pair-note');
+  note.textContent = pair.note || '';
+  note.hidden = !pair.note;
+  prefs = {};
+  overrides = {};
+  articles = {};
+  tenses = {};
+  renderPrefs(pair);
+  if (lastResponse) retranslate();
 }
+
+function renderPrefs(pair) {
+  const bar = document.getElementById('prefs-bar');
+  bar.innerHTML = '';
+  const shown = (pair.prefs || []).filter(function(p) { return HIDDEN_PREFS.indexOf(p.id) < 0; });
+  shown.forEach(function(p) {
+    const name = PREF_NAMES[p.id] || p.description;
+    const label = document.createElement('label');
+    label.title = p.description;
+    if (p.kind === 'choice') {
+      const span = document.createElement('span');
+      span.className = 'pref-name';
+      span.textContent = name;
+      const sel = document.createElement('select');
+      sel.id = 'pref-' + p.id;
+      sel.innerHTML = '<option value="">Default</option>' + p.options.map(function(o) {
+        return '<option value="' + escapeHtml(o) + '">' + escapeHtml(OPTION_NAMES[o] || o) + '</option>';
+      }).join('');
+      sel.onchange = function() { setPref(p.id, sel.value); };
+      label.appendChild(span);
+      label.appendChild(sel);
+    } else {
+      const box = document.createElement('input');
+      box.type = 'checkbox';
+      box.id = 'pref-' + p.id;
+      box.onchange = function() { setPref(p.id, box.checked); };
+      const span = document.createElement('span');
+      span.className = 'pref-name';
+      span.textContent = name;
+      label.appendChild(box);
+      label.appendChild(span);
+    }
+    bar.appendChild(label);
+  });
+  bar.hidden = !shown.length;
+}
+
+function setPref(id, value) {
+  if (value) prefs[id] = value; else delete prefs[id];
+  if (lastResponse) retranslate();
+}
+
+document.addEventListener('DOMContentLoaded', loadPairs);
 
 /* ============================================================
    Translate (fresh, clears overrides)
@@ -498,6 +619,7 @@ function sendTranslate(text) {
       overrides: overrides,
       articles: articles,
       tenses: tenses,
+      prefs: prefs,
       stages: showStages
     })
   })

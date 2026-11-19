@@ -570,28 +570,177 @@ _APERTIUM_PIPELINES = {
 }
 
 
-def _run_apertium(text, mode):
-    """Run a full apertium translation."""
+# Steps the eng<->glb pair gained with its preferences (AP_SETVAR): the biprefs
+# CG opens the transfer half, so a user's lexical override (one reading) is
+# never undone; glb-eng-variety.py respells the output for eng_variety=US.
+# Added only when built, so an older compiled pair still works.
+for _dir, _t, _g in (("eng-glb", "eng-glb.biprefs.rlx.bin", None),
+                     ("glb-eng", "glb-eng.biprefs.rlx.bin", "glb-eng-variety.py")):
+    if os.path.exists(os.path.join(APERTIUM_DIR, _t)):
+        _APERTIUM_PIPELINES[_dir]["transfer"] = (
+            "cg-proc {d}/" + _t + " | " + _APERTIUM_PIPELINES[_dir]["transfer"])
+    if _g and os.path.exists(os.path.join(APERTIUM_DIR, _g)):
+        _APERTIUM_PIPELINES[_dir]["gen"] += " | python3 -I {d}/" + _g
+
+# Every built Globasa pair under WV_APERTIUM_ROOT (default: the folder that
+# holds the eng pair). Each installed mode is split into the same three halves
+# as the eng pair, from its own compiled mode file: front = up to and
+# including the bidix (lt-proc -b), gen = from the generator on.
+APERTIUM_ROOT = os.environ.get("WV_APERTIUM_ROOT", os.path.dirname(APERTIUM_DIR))
+LANG_NAMES = {"glb": "Globasa", "eng": "English", "deu": "German", "fra": "French",
+              "nld": "Dutch", "spa": "Spanish", "epo": "Esperanto", "jpn": "Japanese",
+              "zho": "Chinese", "hbo": "Biblical Hebrew", "grc": "Ancient Greek"}
+# How the page offers a preference: "choice" = one option at a time
+# (eng_variety=GB); anything else is an on/off switch (set without a value).
+PREF_KINDS = {"eng_variety": "choice"}
+# Source languages whose modes are corpus pipelines rather than text
+# translation: the grc modes read treebanks (AGDT, PROIEL) into JSON lines.
+NOT_TEXT_SOURCES = {"grc"}
+_STREAMCMD_RE = re.compile(r"\[<STREAMCMD:[^\]]*>\]")
+_pairs_cache = None
+
+
+def _mode_langs(name):
+    m = re.fullmatch(r"([a-z]{2,3})(?:_\w+)?-([a-z]{2,3})(?:_(\w+))?", name)
+    return (m.group(1), m.group(2), m.group(3)) if m else (None, None, None)
+
+
+def _read_prefs(path):
+    """[{id, kind, description, options}] from an installed prefs/<mode>.xml."""
+    if not os.path.exists(path):
+        return []
+    import xml.etree.ElementTree as ET
+    out = []
+    for pref in ET.parse(path).getroot().iter("preference"):
+        desc = next((d.text for d in pref.findall("description") if d.get("lang") == "eng"), None) \
+            or next((d.text for d in pref.findall("description")), "") or pref.get("id")
+        out.append({"id": pref.get("id"), "kind": PREF_KINDS.get(pref.get("id"), "switch"),
+                    "description": " ".join(desc.split()),
+                    "options": [o.get("id") for o in pref.iter("option")]})
+    return out
+
+
+def _split_mode(mode_text):
+    """Compiled mode pipeline -> {front, transfer, gen} or None."""
+    # pipes may end a line (jpn-glb); only whitespace-delimited "|" separates
+    # programs, so a "|" inside a sed or regex argument is left alone
+    flat = re.sub(r"\s+\|\s+", " | ", mode_text.replace("\n", " ").strip())
+    progs = [p.strip().replace("$1", "-g").replace("$2", "") for p in flat.split(" | ")]
+    bi = next((i for i, p in enumerate(progs) if p.startswith("lt-proc -b")), None)
+    if bi is None:
+        return None
+    gen = next((i for i, p in enumerate(progs) if i > bi and p.startswith("lt-proc -g")), None)
+    if gen is None:
+        return None
+    return {"front": " | ".join(progs[:bi + 1]), "transfer": " | ".join(progs[bi + 1:gen]),
+            "gen": " | ".join(progs[gen:])}
+
+
+def _pairs():
+    """{mode: {mode, dir, label, note, src, tgt, halves, available, reason, prefs}}."""
+    global _pairs_cache
+    if _pairs_cache is not None:
+        return _pairs_cache
+    import glob
+    dirs = sorted(d for d in glob.glob(os.path.join(APERTIUM_ROOT, "apertium-*"))
+                  if "glb" in os.path.basename(d) and os.path.exists(os.path.join(d, "modes.xml")))
+    if os.path.isdir(APERTIUM_DIR) and os.path.abspath(APERTIUM_DIR) not in map(os.path.abspath, dirs):
+        dirs.insert(0, APERTIUM_DIR)
+    pairs = {}
+    for d in dirs:
+        xml = open(os.path.join(d, "modes.xml"), encoding="utf-8").read()
+        for m in re.finditer(r'(?:<!--\s*(.*?)\s*-->\s*)?<mode name="([^"]+)"([^>]*)>', xml, re.S):
+            note, name, attrs = m.group(1) or "", m.group(2), m.group(3)
+            if 'install="yes"' not in attrs:
+                continue
+            src, tgt, variant = _mode_langs(name)
+            if "glb" not in (src, tgt):
+                continue
+            if src in NOT_TEXT_SOURCES:
+                continue
+            compiled = os.path.join(d, "modes", name + ".mode")
+            if not os.path.exists(compiled):
+                continue      # never built (e.g. the old apertium-glb-en)
+            text = open(compiled, encoding="utf-8").read()
+            # quoted absolute paths only (sed expressions are quoted too)
+            missing = [f for f in re.findall(r"'(/[^']+)'", text) if not os.path.exists(f)]
+            # The compiled mode is the pipeline the pair really runs (eng-glb gained its mwe,
+            # relative-clause, story and post-format steps there); the hand-written eng
+            # halves are only a fallback for a mode that cannot be split.
+            halves = _split_mode(text) if text else None
+            if not halves and name in _APERTIUM_PIPELINES \
+                    and os.path.abspath(d) == os.path.abspath(APERTIUM_DIR):
+                halves = {h: c.replace("{d}", d) for h, c in _APERTIUM_PIPELINES[name].items()}
+            reason = (f"not built: missing {os.path.basename(missing[0])}" if missing else
+                      "" if halves else "no bidix/generator stage to split")
+            label = f"{LANG_NAMES.get(src, src)} → {LANG_NAMES.get(tgt, tgt)}"
+            if variant:
+                label += f" ({variant})"
+            prefs = _read_prefs(os.path.join(d, "prefs", name + ".xml"))
+            # Story mode is shared by every pair into Globasa (apertium-glb's glb-story.py);
+            # only the eng pair declares it in a prefs file, so offer it wherever the step runs.
+            if "glb-story.py" in text and not any(p["id"] == "story" for p in prefs):
+                prefs.append({"id": "story", "kind": "switch", "options": [],
+                              "description": 'Story mode: narrative past without "le"'})
+            pairs[name] = {"mode": name, "dir": d, "label": label, "src": src, "tgt": tgt,
+                           "note": " ".join(note.split()) if variant else "",
+                           "halves": halves, "available": not reason, "reason": reason,
+                           "prefs": prefs}
+    order = lambda p: (p["mode"] not in ("eng-glb", "glb-eng"), p["label"])
+    _pairs_cache = {p["mode"]: p for p in sorted(pairs.values(), key=order)}
+    return _pairs_cache
+
+
+def _setvar(pair, prefs):
+    """AP_SETVAR value from the page's choices, limited to the pair's own prefs."""
+    parts = []
+    for pref in pair["prefs"]:
+        v = (prefs or {}).get(pref["id"])
+        if not v:
+            continue
+        if pref["kind"] == "choice":
+            if v in pref["options"]:
+                parts.append(f"{pref['id']}={v}")
+        else:
+            parts.append(pref["id"])
+    return ",".join(parts)
+
+
+def _run_apertium(text, mode, setvar=""):
+    """Run a full apertium mode of the pair that provides it."""
+    # debug modes are named <mode>-<stage>; the longest matching pair wins
+    names = [n for n in _pairs() if mode == n or mode.startswith(n + "-")]
+    pair = _pairs()[max(names, key=len)] if names else {"dir": APERTIUM_DIR}
+    env = dict(os.environ, AP_SETVAR=setvar) if setvar else None
     try:
         proc = subprocess.run(
-            ["apertium", "-d", APERTIUM_DIR, mode],
-            input=text, capture_output=True, text=True, timeout=10,
+            ["apertium", "-d", pair["dir"], mode],
+            input=text, capture_output=True, text=True, timeout=10, env=env,
         )
         return proc.stdout.strip()
     except (subprocess.TimeoutExpired, Exception) as e:
         return f"[Error: {e}]"
 
 
-def _run_pipeline_half(text, direction, half):
-    """Run one stage group of the Apertium pipeline.
+def _run_pipeline_half(text, direction, half, setvar=""):
+    """Run one stage group of a pair's pipeline.
 
-    half: "front" (analysis through bidix), "transfer" (lexical selection
-    through structural transfer) or "gen" (generation).
+    half: "front" (analysis through bidix), "transfer" (preferences, lexical
+    selection through structural transfer) or "gen" (generation). setvar is
+    put into the stream as Apertium's preferences mechanism does
+    ([<STREAMCMD:SETVAR:...>]) and stripped from the output again.
     """
-    pipeline = _APERTIUM_PIPELINES.get(direction, {}).get(half, "")
-    if not pipeline:
+    pair = _pairs().get(direction)
+    pipeline = (pair or {}).get("halves", {}) or {}
+    cmd = pipeline.get(half, "")
+    if not cmd:
         return ""
-    cmd = pipeline.format(d=APERTIUM_DIR)
+    if setvar:
+        text = f"[<STREAMCMD:SETVAR:{setvar}>]" + text
+    # lt-proc only emits the last token at a newline: without one the final "." was lost,
+    # and with it the context the tagger rules need ("I see that queer thing." -> ki).
+    if not text.endswith("\n"):
+        text += "\n"
     try:
         proc = subprocess.run(
             ["bash", "-c", cmd],
@@ -600,7 +749,7 @@ def _run_pipeline_half(text, direction, half):
         if proc.returncode and not proc.stdout.strip():
             lines = proc.stderr.strip().splitlines()
             return f"[Error: {lines[-1] if lines else f'exit {proc.returncode}'}]"
-        return proc.stdout.strip()
+        return _STREAMCMD_RE.sub("", proc.stdout).strip()
     except (subprocess.TimeoutExpired, Exception) as e:
         return f"[Error: {e}]"
 
@@ -777,12 +926,13 @@ def _apply_overrides(biltrans_tokens, overrides, articles, direction):
     for i, tok in enumerate(biltrans_tokens):
         idx_str = str(i)
 
-        # Apply lexical override: reorder alternatives so chosen is first
+        # Apply lexical override: keep only the chosen reading, so neither
+        # lexical selection nor a preference (biprefs CG, which never removes
+        # a cohort's last reading) can undo the user's choice
         if idx_str in overrides:
             chosen = overrides[idx_str]
             alts = tok["alternatives"]
-            reordered = [a for a in alts if a["lemma"] == chosen]
-            reordered += [a for a in alts if a["lemma"] != chosen]
+            reordered = [a for a in alts if a["lemma"] == chosen] or list(alts)
             if reordered:
                 src = tok["raw"].split("/")[0].lstrip("^")
                 raw = "^" + src + "/" + "/".join(a["raw"] for a in reordered) + "$"
@@ -812,7 +962,20 @@ def _apply_overrides(biltrans_tokens, overrides, articles, direction):
             raw = raw.replace("<sg>", "<sp>")
         result_units.append(raw)
 
-    return " ".join(result_units)
+    # Rejoin with a space between units, but none before closing punctuation: the
+    # original blanks are gone, and "xey ." / "Nerxali , mi" came out of a plain join.
+    # The analyser tags a straight " as <lquot> both times, so quotes alternate open/close.
+    out, glue_next, quote_open = "", True, False
+    for unit in result_units:
+        src = unit[1:].split("/", 1)[0]
+        opening = bool(re.search(r"<lpar>", src))
+        closing = bool(re.search(r"<(?:sent|cm|rpar|rquot)>", src))
+        if re.search(r"<lquot>", src):
+            opening, closing = not quote_open, quote_open
+            quote_open = not quote_open
+        out += unit if (glue_next or closing) else " " + unit
+        glue_next = opening
+    return out
 
 
 def _build_token_info(output_text, biltrans_tokens, direction, tense_toggles=()):
@@ -900,7 +1063,7 @@ def _build_token_info(output_text, biltrans_tokens, direction, tense_toggles=())
             if a["lemma"] in seen_lemmas:
                 continue
             seen_lemmas.add(a["lemma"])
-            if direction == "eng-glb":
+            if _mode_langs(direction)[1] == "glb":
                 gloss = _get_gloss(a["lemma"])
             else:
                 gloss = ""
@@ -1213,6 +1376,15 @@ def _build_db_into(path):
 # ---------------------------------------------------------------------------
 
 app = Flask(__name__)
+
+# The CDN may refuse scripted downloads, so the list may have to be fetched by
+# hand; say how rather than fail with a pandas traceback.
+if not os.path.isfile(WORDLIST_CSV):
+    sys.exit(f"""word-list.csv is missing ({WORDLIST_CSV}).
+Run ./setup.sh to download it. If the Globasa CDN refuses the download:
+  1. Open https://cdn.globasa.net/api2/word-list.csv in a web browser.
+  2. Save it, e.g. to ~/Downloads/word-list.csv.
+  3. Run:  ./setup.sh --word-list ~/Downloads/word-list.csv""")
 
 # Open DB at startup (will build if missing)
 if not os.path.exists(LMDB_DIR):
@@ -2869,11 +3041,20 @@ def translation_aide():
     return send_file(TRANSLATE_HTML)
 
 
+@app.route("/api/pairs")
+def api_pairs():
+    """Pairs and their preferences for the translation aide's menus."""
+    return jsonify([{k: p[k] for k in ("mode", "label", "note", "src", "tgt", "available", "reason", "prefs")}
+                    for p in _pairs().values()])
+
+
 @app.route("/api/translate", methods=["POST"])
 def api_translate():
-    """Translate text using the Apertium eng-glb pair.
+    """Translate text with any built Globasa Apertium pair (see /api/pairs).
 
-    Supports lexical overrides and article/number resolution.
+    Supports lexical overrides for every pair, article/number and
+    present-tense chips for eng<->glb, and the pair's preferences
+    (prefs: {id: option or true}).
     """
     data = request.get_json()
     text = (data.get("text", "") or "").strip()
@@ -2882,16 +3063,21 @@ def api_translate():
     articles = data.get("articles", {})
     tenses = data.get("tenses", {})
     show_stages = data.get("stages", False)
+    prefs = data.get("prefs", {}) or {}
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
-    if direction not in ("eng-glb", "glb-eng"):
-        return jsonify({"error": "Invalid direction"}), 400
+    pair = _pairs().get(direction)
+    if not pair:
+        if not _pairs():
+            return jsonify({"error": "No Apertium pair on this machine: set WV_APERTIUM_ROOT="
+                                     "/path/to/GlobasaTranslation (compiled pairs) and restart"}), 503
+        return jsonify({"error": f"Unknown pair {direction}"}), 400
+    if not pair["available"]:
+        return jsonify({"error": f"{pair['label']}: {pair['reason']}"}), 503
     if len(text) > 5000:
         return jsonify({"error": "Text too long (max 5000 chars)"}), 400
-    if not os.path.isdir(APERTIUM_DIR):
-        return jsonify({"error": "No Apertium pair on this machine: set WV_APERTIUM_DIR="
-                                 "/path/to/apertium-glb-eng (compiled) and restart"}), 503
+    setvar = _setvar(pair, prefs)
 
     # Run front half (stages 1-6) to get biltrans
     biltrans_str = _run_pipeline_half(text, direction, "front")
@@ -2905,11 +3091,13 @@ def api_translate():
     )
 
     # Run transfer, drop the unwanted present-tense preverb, then generate
-    transfer_str = _run_pipeline_half(modified_biltrans, direction, "transfer")
+    transfer_str = _run_pipeline_half(modified_biltrans, direction, "transfer", setvar)
     transfer_str, tense_toggles = _suppress_tense_markers(
         transfer_str, biltrans_tokens, tenses, direction
     )
-    raw_output = _run_pipeline_half(transfer_str, direction, "gen")
+    raw_output = _run_pipeline_half(transfer_str, direction, "gen", setvar)
+    # no reformatter runs here (the apertium wrapper would): undo the stream escapes (\@welcome)
+    raw_output = re.sub(r"\\(.)", r"\1", raw_output)
 
     # Build interactive token info
     output_words, interactions = _build_token_info(
@@ -2927,11 +3115,12 @@ def api_translate():
         }
         for suffix in ("morph", "disam", "biltrans", "transfer"):
             mode = f"{direction}-{suffix}"
-            stages[suffix] = _run_apertium(text, mode)
+            stages[suffix] = _STREAMCMD_RE.sub("", _run_apertium(text, mode, setvar))
 
     return jsonify({
         "input": text,
         "direction": direction,
+        "prefs": setvar,
         "output": output,
         "output_words": output_words,
         "interactions": interactions,
