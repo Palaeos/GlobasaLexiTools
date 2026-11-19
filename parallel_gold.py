@@ -15,7 +15,10 @@ A corpus is a translation reference only in the direction it was really translat
     errors; never a reference for wording or lexical choice). Episodes 1-5 and the
     UDHR (English original) -> source-side coverage only. CC-BY 4.0, committable.
 
-Output: parallel_gold_cache/{spa,epo}/ (git-ignored; Xwexi, Vanege and the Babel
+German and Dutch (sibling_sets): no German/Dutch-original Globasa text exists, so
+P&C and the UDHR give LOOSE deu->glb / nld->glb checks only.
+
+Output: parallel_gold_cache/{spa,epo,fra,eng,deu,nld}/ (git-ignored; Xwexi, Vanege and the Babel
 Spanish are not openly licensed). TSV lines are "source<TAB>gold | alt", the
 format of GlobasaTranslation/apertium-glb-*/test/check-gold.sh; '#' lines are
 comments naming the Xwexi page and heading.
@@ -262,6 +265,7 @@ def main():
         report.append((f"{code}-coverage.txt", len(cov)))
 
     report += english_sets(units)
+    report += sibling_sets(units)
     for name, n in report:
         print(f"{n:5d}  {name}")
 
@@ -323,6 +327,31 @@ def english_sets(units):
                                                            hdr + ["Rule development."])))
         report.append((f"eng-glb-{key}-test.tsv", write_tsv(out / f"eng-glb-{key}-test.tsv", test,
                                                             hdr + ["Held out: score per milestone only."])))
+    return report
+
+
+SIBLING_LANGS = {"deu": "de", "nld": "nl"}   # no German/Dutch-original Globasa text exists
+
+
+def sibling_sets(units):
+    """Loose deu->glb / nld->glb checks: Pepper & Carrot and the UDHR, whose German/Dutch
+    and Globasa are both translations of the same English/French original (siblings).
+    chrF trend, unknown words and #-errors only; never a reference for wording."""
+    report = []
+    for code, lang in SIBLING_LANGS.items():
+        for key, test in (("pnc", lambda c: c.startswith("Pilpil ji Karote")),
+                          ("udhr", lambda c: c.startswith("Globatotal Deklaradoku"))):
+            rows = [(ctx, t[lang], [t["glb"]]) for ctx, t in units
+                    if test(ctx) and t.get(lang) and t.get("glb")]
+            if not rows:
+                continue
+            hdr = [{"pnc": "Pepper & Carrot (David Revoy, CC-BY 4.0, www.peppercarrot.com)",
+                    "udhr": "Universal Declaration of Human Rights"}[key]
+                   + f": {code} and Globasa are siblings (both translated from the English/French "
+                   f"original). LOOSE {code}->glb check only (chrF trend, unknown words, #-errors), "
+                   "not a reference for wording."]
+            name = f"{code}-glb-{key}.tsv"
+            report.append((name, write_tsv(OUT / code / name, rows, hdr)))
     return report
 
 
