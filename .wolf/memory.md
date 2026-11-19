@@ -2239,3 +2239,4 @@
 | 23:06 | TODOs recorded: deu Perfekt/Präteritum→glb mode (deu memory note); Time Machine opening + em dashes in eng→glb (TM memory note). Session landed. Submodule WIP left uncommitted (see summary) | memory | noted | ~2k |
 | 23:09 | TODO recorded: story mode (glb-story.py) must leave quotations alone; quote-state plan in project_story_mode memory | memory | noted | ~1.5k |
 | 23:10 | TODO recorded: translations must carry over source markup (new memory project_markup_carryover) | memory | noted | ~1.5k |
+| 23:12 | TODO recorded: ML fe vs de via pivot-language projection (new memory project_fe_de_classifier) | memory | noted | ~1.5k |
