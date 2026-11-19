@@ -2232,3 +2232,8 @@
 | 21:47 | Added the 西遊記 traps and Globasa-stability ideas to tomorrow's plan | memory/project_fra_period_mode.md | written | ~1k |
 | 21:58 | setup.sh: validate word-list download (HTML block page no longer saved as CSV), print browser instructions on failure, --word-list FILE; Word Viewer.py exits with same instructions if word-list.csv missing; README note | setup.sh, Word Viewer.py, README.md | tested offline (bad/good/unchanged file) | ~3k |
 | 22:04 | TODO saved: neural classifier for eng 'the' → drop vs demonstrative (next session) | memory | noted | ~300 |
+| 22:30 | Q&A: AAVE source texts (PD songs/stories, rap licensing), AAVE+Spanish habitual evidence for teaching du- to learners; recorded in auto-memory project_eng_glb_aave as next-session first step; no repo files changed | memory/project_eng_glb_aave.md | noted | ~3k |
+| 22:31 | AAVE goal clarified: translate AAVE→glb to build a corpus with organically marked du- habituals (for learners); updated auto-memory note | memory/project_eng_glb_aave.md | noted | ~1k |
+| 22:32 | Decision: CORAAL transcripts are the main AAVE source (no rhyme or metre to preserve); rap dropped; next step is the licence check | memory/project_eng_glb_aave.md | noted | ~1k |
+| 22:34 | Correction: 'used to' marks past habitual in English/AAVE, so Spanish isn't needed for the past; noted the 'be used to' trap and the 'would' ambiguity | memory/project_eng_glb_aave.md | noted | ~1k |
+| 23:06 | TODOs recorded: deu Perfekt/Präteritum→glb mode (deu memory note); Time Machine opening + em dashes in eng→glb (TM memory note). Session landed. Submodule WIP left uncommitted (see summary) | memory | noted | ~2k |
