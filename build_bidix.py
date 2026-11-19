@@ -87,6 +87,13 @@ TARGET_SYMBOLS = {
 # (apertium-jpn tags 父<n><m> for meaning only): no gender on <r>.
 NO_TARGET_GENDER = {"jpn", "epo"}   # Esperanto has no grammatical gender
 
+# Targets whose analyser puts a subtype between <np> and the gender (apertium-fra:
+# Marie<np><ant><f><sg>, Paris<np><top><sg>): an <r> of Marie<np><f> never prefix-matches
+# the analysis, so no proper noun was translated. The entry stops at <np>, as apertium-spa's
+# (María<np><ant>) do, and matches every subtype. (apertium-eng and apertium-deu tag the
+# same way; their pairs are not rebuilt with this yet.)
+NP_SUBTYPED = {"fra"}
+
 # Targets whose analyser files invariable adjectives as <mf> (apertium-spa: grande<adj><mf>).
 MF_ADJECTIVES = {"spa"}
 
@@ -496,7 +503,7 @@ for lang, label, *_ in PAIRS:
                 note, f"{restriction} only: curated part covers the other direction"]))
 
         # Target gender: the analyser's, narrowed by Wiktionary's marker.
-        if lang in NO_TARGET_GENDER:
+        if lang in NO_TARGET_GENDER or (sym == "np" and lang in NP_SUBTYPED):
             genders = []
         elif sym == "adj" and lang in MF_ADJECTIVES:
             # invariable adjectives (grande<adj><mf>) keep <mf>: the generator needs it;
