@@ -7,7 +7,8 @@ from .passive import PassiveAgentRule
 from .adverb_mo import AdverbMoRule
 from .noun_pile import NounPileRule
 from .noun_as_verb import NounAsVerbRule
+from .style_tense_repeat import RepeatedTenseRule
 
 ALL_RULES = [TenseParticleRule, NegationRule, NPStructureRule, QuestionRule,
              ConditionalRule, PassiveAgentRule, AdverbMoRule, NounPileRule,
-             NounAsVerbRule]
+             NounAsVerbRule, RepeatedTenseRule]

@@ -18,6 +18,8 @@ if not matches:
     print("No grammar issues found.")
 else:
     for m in matches:
-        print(f"[{m.rule_id}] offset {m.offset}: {m.message}")
+        kind = "style hint" if getattr(m, "issue_type", "grammar") == "style" else "error"
+        print(f"[{m.rule_id}] ({kind}) offset {m.offset}: {m.message}")
         if m.suggestions:
-            print(f"  Suggestion: {m.suggestions[0]}")
+            fix = m.suggestions[0]
+            print(f"  Suggestion: {fix}" if fix else f"  Suggestion: remove '{text[m.offset:m.offset + m.length].strip()}'")
