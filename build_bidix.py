@@ -12,7 +12,13 @@ written by hand blocks generated glb→X entries for it, a (target lemma, PoS)
 written by hand blocks generated X→glb entries for it.
 
 Directions:
-  - word-list glosses: both ways (glb→X yields the word-list gloss);
+  - word-list glosses: both ways (glb→X yields the word-list gloss), except
+    a gloss with a register label (sexual, vulgar, informal) of a word that
+    also has a plain gloss in that part of speech (`n (sexual): pussy` beside
+    `n: flower` under flura): X→glb only, so the slang sense is understood but
+    never produced (user, 2026-11-14). A word whose only gloss in that part
+    of speech is labelled is itself informal (soso 'brother, sister', momo)
+    and keeps both ways;
   - Wiktionary-only translations (menalariExtension.tsv): X→glb only
     (r="RL"), so Wiktionary synonyms are understood but never produced.
 
@@ -39,7 +45,7 @@ from xml.sax.saxutils import unescape as xml_unescape
 
 import pandas as pd
 
-from Lexilista_parser import parseWordEntry
+from Lexilista_parser import parseWordEntry, normalize_register
 from apertium_common import (
     FUNCTION_POS, NOUN_SYMBOLS, apertium_symbol, expand_gloss_tokens,
     genderDict, split_foreign_gender, bilingual_entry,
@@ -164,17 +170,36 @@ def drop(lang, glb, sym, target, origin, reason):
                    "target": target, "origin": origin, "reason": reason})
 
 
-def add_candidate(lang, glb, sym, target, origin, wikt_genders=()):
+# A register label the parser left at the start of a gloss: Lexilista_parser reads the
+# English-style labels of the French/Russian/Chinese columns only positionally, so
+# 'n (sexuel): chatte' keeps its label in the text and no qualifier.
+_LEADING_QUALIFIER_RE = re.compile(r"^\s*[a-z][a-z. ]*\(([^)]*)\)\s*:")
+
+
+def gloss_register(pg):
+    """The register (sexual, vulgar, informal) a word-list gloss is labelled with, or None."""
+    reg = normalize_register(pg.qualifier)
+    if not reg:
+        m = _LEADING_QUALIFIER_RE.match(pg.gloss or "")
+        reg = normalize_register(m.group(1)) if m else None
+    return reg
+
+
+def add_candidate(lang, glb, sym, target, origin, wikt_genders=(), register=None):
     key = (glb, sym, target)
     known = candidates[lang].get(key)
     if known:
+        # The same target as a plain gloss as well: it may be produced after all.
+        if known.get("register") and not register and origin == "wordlist":
+            known["register"] = None
         # A Wiktionary duplicate of a word-list gloss still tells the gender.
         for g in wikt_genders:
             if g not in known["wikt_genders"]:
                 known["wikt_genders"].append(g)
         return
     candidates[lang][key] = {"glb": glb, "sym": sym, "target": target,
-                             "origin": origin, "wikt_genders": list(wikt_genders)}
+                             "origin": origin, "wikt_genders": list(wikt_genders),
+                             "register": register}
 
 
 _ITEM_SPLIT_RE = re.compile(r",\s*(?![^()]*\))")
@@ -208,6 +233,7 @@ for glb, row in wordlist.iterrows():
             sym = apertium_symbol(pg)
             if sym is None:
                 continue
+            register = gloss_register(pg)
             for tok in expand_gloss_tokens(pg.gloss):
                 tok, _ = split_foreign_gender(tok)
                 if not tok:
@@ -215,7 +241,7 @@ for glb, row in wordlist.iterrows():
                 if function_head or sym in FUNCTION_SYMBOLS:
                     drop(lang, glb, sym, tok, "wordlist", "function word: curated only")
                 else:
-                    add_candidate(lang, glb, sym, tok, "wordlist")
+                    add_candidate(lang, glb, sym, tok, "wordlist", register=register)
 
     # Wiktionary extension: one '; '-separated part per pos_groups() group.
     if glb not in extension.index:
@@ -390,6 +416,10 @@ def target_check(readings, target, sym, lang=None):
 
 
 # ── Stage C: decide directions, write entries, merge ────────────────────
+# (Globasa word, symbol) pairs with at least one word-list gloss without a register label.
+plain_glosses = {lang: {(c["glb"], c["sym"]) for c in candidates[lang].values()
+                        if c["origin"] == "wordlist" and not c.get("register")}
+                 for lang, *_ in PAIRS}
 entry_rows = []
 summary = {}
 
@@ -429,14 +459,20 @@ for lang, label, *_ in PAIRS:
             stats["form filed under another lemma"] += 1
             target, c = lemma, dict(c, wikt_genders=[])
 
-        can_lr = origin == "wordlist" and (glb, sym) not in glb_curated
+        # A labelled gloss is a slang sense only beside a plain one; else the word itself is slang.
+        register = c.get("register") if (glb, sym) in plain_glosses[lang] else None
+        can_lr = origin == "wordlist" and not register and (glb, sym) not in glb_curated
         can_rl = (target, tsym) not in target_curated
         if not can_lr and not can_rl:
             drop(lang, glb, sym, target, origin, "curated part covers it")
             stats["dropped: curated"] += 1
             continue
         restriction = None if can_lr and can_rl else ("LR" if can_lr else "RL")
-        if origin == "wordlist" and restriction:
+        if register:
+            note = "; ".join(filter(None, [
+                note, f"RL only: {register} register, understood but never produced"]))
+            stats[f"register ({register}): RL only"] += 1
+        elif origin == "wordlist" and restriction:
             note = "; ".join(filter(None, [
                 note, f"{restriction} only: curated part covers the other direction"]))
 
