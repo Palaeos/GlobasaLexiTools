@@ -66,6 +66,7 @@
 
 ## Key Learnings
 - **AAVE→glb purpose (2026-11-19):** the user wants to translate AAVE into Globasa to build a corpus in which habitual du- occurs naturally, as reading input for learners whose first language has no habitual marker. It is corpus-building, not the eng→glb rules and not explicit teaching. Choose sources dense in habitual be.
+- **Spoken-corpus fillers (2026-11-19):** when translating speech transcripts into Globasa, keep the fillers and translate them (uh → e, um → em); don't strip them. Look up Globasa fillers in the word list or Xwexi, never invent them.
 - [2026-11-19] Globasa "know": **jixi** = know a fact/how (default; eng-glb dev gold 22×), **kone** = be acquainted with a person/place (5×). The eng→glb lrx currently always picks kone — fix pending. AAVE negative concord = plain negation (variable, non-emphatic) → single nil-word; negative inversion (*Don't nobody know*) = emphatic → he + nil-word (*He nilte kone*).
 - cg-proc rewrites a multi-word bidix target with tags on both words ("denpul<adj> kom<cnjsub>") to "denpul kom<adj><cnjsub>" even when no rule fires; only 2 such entries in glb-eng.dix (like pr/cnjsub). Otherwise a rule-less biprefs CG leaves the stream unchanged.
 - Sandbox: curl to localhost needs --noproxy '*' (the proxy answers 502). `pkill -f "<cmd>"` also kills the shell whose own command line contains <cmd>; anchor the pattern (pgrep -f "^venv/bin/python Word Viewer.py").
@@ -450,6 +451,7 @@
 - [2026-11-19] Curated deu/nld bidix entries can carry wrong genders (Mensch<n><nt>, 43 of 4891 nouns) and then never match the analyser; check with the untrimmed analyser before assuming a word is translated.
 
 - [2026-11-19] Globasa **per** = literal, physical "on" (on the table), not instrument or means. **fe** covers abstract "on", e.g. dates (on Monday). Check the word list (Eng column) before giving any preposition a gloss from memory.
+- [2026-11-19] A preposition governed by a source verb often disappears in Globasa: *warten auf X* → *intizar X* (transitive). Check the Globasa verb's VerbTransitivity before choosing any preposition for a verb's complement.
 
 ## Decision Log
 - [2026-11-14] **Slang senses go only into Globasa (user).** build_bidix.py: a word-list gloss with a register label (sexual/vulgar/informal via Lexilista_parser.normalize_register, or a label left at the start of the gloss as in the French column's 'n (sexuel): chatte') is RL only WHEN the word also has a plain gloss in that PoS (flura: flower + 'n (sexual): pussy'). A word whose only gloss in the PoS is labelled is itself informal (soso, momo, titi, nene, pepe) and keeps both ways — making those RL-only left 31 words untranslatable out of Globasa. Result: 20 RL-only entries (eng/deu); glb-eng 'Mi oko un flura.' → 'I see flower.' again.

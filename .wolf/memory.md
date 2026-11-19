@@ -2246,3 +2246,4 @@
 | 23:13 | Decision: keep CORAAL fillers and translate them into Globasa (uh → e) instead of stripping them; look up other fillers, never invent them | memory/project_eng_glb_aave.md, .wolf/cerebrum.md | noted | ~1k |
 | 23:14 | Filler: um → em (from the user) | memory/project_eng_glb_aave.md, .wolf/cerebrum.md | noted | ~0.5k |
 | 23:17 | User note: deu auf → per or fe by context; removed as pivot, rule added: measure pivot agreement against gold first | memory | noted | ~600 |
+| 23:19 | User correction: warten auf → transitive intizar (no prep); ∅ label + VerbTransitivity lookup added; Do-Not-Repeat | memory, .wolf/cerebrum.md | fixed | ~700 |
