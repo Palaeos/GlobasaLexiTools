@@ -4023,5 +4023,816 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-13"
+  },
+  {
+    "id": "bug-248",
+    "timestamp": "2026-11-14T13:00:00",
+    "error_message": "apertium -d . fra-glb: Cannot open file '/home/paleos/ApplicationSource/GlobasaTranslation/apertium-glb-fra/fra-glb.autoseq.bin'",
+    "file": "GlobasaTranslation/apertium-glb-fra/modes/*.mode",
+    "root_cause": "The pair moved into the repo (GlobasaTranslation/) but its generated mode files keep the absolute path from the old location; ./configure + make does not regenerate existing modes",
+    "fix": "./configure --with-lang1=$(realpath ../apertium-glb) --with-lang2=$(realpath ../apertium-fra); rm -f modes/*.mode; make",
+    "tags": [
+      "apertium",
+      "modes",
+      "moved-checkout",
+      "glb-fra"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-249",
+    "timestamp": "2026-11-14T13:20:00",
+    "error_message": "SyntaxError risk: f-string with r[\"...\"] inside double quotes (venv is Python 3.10)",
+    "file": "parallel_lexsel/coverage_todo.py",
+    "root_cause": "sed rename put double-quoted key inside a double-quoted f-string; nested same quotes need Python 3.12",
+    "fix": "use single quotes for the key inside the f-string",
+    "tags": [
+      "python3.10",
+      "f-string",
+      "sed"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-250",
+    "timestamp": "2026-11-14T15:30:00",
+    "error_message": "apertium -d . jpn-disam: Cannot open file '/home/paleos/ApplicationSource/GlobasaTranslation/apertium-jpn/jpn.automorf.bin'",
+    "file": "GlobasaTranslation/apertium-jpn/modes/",
+    "root_cause": "modes/*.mode keep absolute paths from before the checkout moved into the repo",
+    "fix": "rm -rf modes && make modes/jpn-morph.mode (configure alone does not regenerate them)",
+    "tags": [
+      "apertium",
+      "modes",
+      "paths"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T15:30:00"
+  },
+  {
+    "id": "bug-251",
+    "timestamp": "2026-11-14T15:30:00",
+    "error_message": "Proper nouns generate as #Maria in jpn→glb",
+    "file": "build_bidix.py",
+    "root_cause": "apertium-glb ed4f24f moved proper nouns to the noun paradigms (Maria<n><ut>), but build_bidix still wrote <np> on the Globasa side, matching nothing in either direction (all pairs)",
+    "fix": "GLB_SYMBOLS = {'np': 'n'} in build_bidix.py; glb-jpn rebuilt; eng/fra/deu/nld need a rebuild",
+    "tags": [
+      "apertium",
+      "bidix",
+      "proper-nouns"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T15:30:00"
+  },
+  {
+    "id": "bug-252",
+    "timestamp": "2026-11-14T15:30:00",
+    "error_message": "それを書いたのは私じゃないです → 'He mi le … to' (negation lost)",
+    "file": "GlobasaTranslation/apertium-glb-jpn/apertium-glb-jpn.jpn-glb.rtx",
+    "root_cause": "cleft rules matched a negated copula (<cop><neg>) and dropped its polarity",
+    "fix": "negated focus → 'no he X' (no right before what it negates, xwexi 07); found by dev/cleft_check.py",
+    "tags": [
+      "rtx",
+      "cleft",
+      "he",
+      "false-positive"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T15:30:00"
+  },
+  {
+    "id": "bug-253",
+    "timestamp": "2026-11-14T15:30:00",
+    "error_message": "jpn-glb output lines scrambled (line breaks inside sentences)",
+    "file": "GlobasaTranslation/apertium-glb-jpn/modes.xml",
+    "root_cause": "tokenize.py puts a blank before 。; dropping it in an rtx output ({1 2}) shifted every later blank, rtx hands blanks out in queue order",
+    "fix": "sed step after mecab_filter removes the blank before 。、？！; no punctuation rules in rtx",
+    "tags": [
+      "rtx",
+      "blanks",
+      "japanese"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T15:30:00"
+  },
+  {
+    "id": "bug-254",
+    "timestamp": "2026-11-14T15:30:00",
+    "error_message": "Capitalisation sed in modes.xml has no effect via the apertium wrapper",
+    "file": "GlobasaTranslation/apertium-glb-jpn/modes.xml",
+    "root_cause": "the apertium wrapper mangles backslash escapes (\\1\\U\\2) in program names; at that stage line breaks are still [\\n] superblanks",
+    "fix": "sed -E -f apertium-glb-jpn.jpn-glb.case.sed with a bracket-tolerant pattern",
+    "tags": [
+      "apertium",
+      "modes",
+      "sed"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T15:30:00"
+  },
+  {
+    "id": "bug-255",
+    "timestamp": "2026-11-14T17:00:00",
+    "error_message": "Transliterated names came out as \\Tom",
+    "file": "GlobasaTranslation/apertium-glb-jpn/names.py",
+    "root_cause": "after generation the stream escapes @ and | (\\@⟦…\\|…⟧); the regex matched from @ and left the backslash",
+    "fix": "MARK_RE allows the escapes; captured parts are unescaped",
+    "tags": [
+      "apertium",
+      "stream",
+      "escaping",
+      "names"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T17:00:00"
+  },
+  {
+    "id": "bug-256",
+    "timestamp": "2026-11-14T17:00:00",
+    "error_message": "ブッシュ → Bxu, ルーク → Rku",
+    "file": "GlobasaTranslation/apertium-glb-jpn/names.py",
+    "root_cause": "epenthetic vowels were dropped left to right (the first u went before the final one could), and a vowel lengthened by ー counted as epenthetic",
+    "fix": "drop right to left; a mora followed by ー is never epenthetic",
+    "tags": [
+      "transliteration",
+      "katakana"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T17:00:00"
+  },
+  {
+    "id": "bug-257",
+    "timestamp": "2026-11-14T17:00:00",
+    "error_message": "README edits not committed",
+    "file": "GlobasaTranslation/apertium-glb-jpn/README",
+    "root_cause": "README.md is a symlink to README; git add README.md stages nothing",
+    "fix": "stage README",
+    "tags": [
+      "git",
+      "symlink"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T17:00:00"
+  },
+  {
+    "id": "bug-258",
+    "timestamp": "2026-11-14T19:00:00",
+    "error_message": "#hospital, #tonyen, #axkemon … from the Globasa generator (glb-jpn)",
+    "file": "dictionaryPreprocess.py",
+    "root_cause": "gender_frame.drop_duplicates() compared columns, not words: 55 words sharing English gloss + pronoun with another word (hospital/bimaryendom, tonyen/tongoyen) lost their row and got the GD noun paradigm; the monodix's generated part was also stale (predated the 2026-10-25 pronoun fixes)",
+    "fix": "dedup by index (as build_bidix.py); regenerated apertium-glb's generated part (4a087ba); 2596/2596 glb-jpn noun forms generate",
+    "tags": [
+      "apertium-glb",
+      "generator",
+      "gender",
+      "pandas"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T19:00:00"
+  },
+  {
+    "id": "bug-259",
+    "timestamp": "2026-11-14T19:00:00",
+    "error_message": "he<adv><emph> vanished from apertium-glb after dictionaryPreprocess.py",
+    "file": "GlobasaTranslation/apertium-glb/apertium-glb.glb.dix",
+    "root_cause": "I had inserted it below the Autogenerated marker (next to hata), and the regeneration rewrites that part",
+    "fix": "moved into the curated part next to durki (caf7464)",
+    "tags": [
+      "apertium-glb",
+      "marker",
+      "curated"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14T19:00:00"
+  },
+  {
+    "id": "bug-260",
+    "timestamp": "2026-11-14T20:00:00",
+    "error_message": "Gen 1:16 'Dua Teo fale day luminxey' — construct numeral שְׁנֵי moved before the subject",
+    "file": "bible-translation/apertium-hbo-glb/apertium-hbo-glb.hbo-glb.rtx",
+    "root_cause": "NP rule `n num {2 1}` (postposed יוֹם אֶחָד) also matched subject noun + construct numeral of the object",
+    "fix": "prep_stream.py tags absolute numerals <abs>; rule is now `n num.*.abs`; construct numerals use `num.*.cons NP`",
+    "tags": [
+      "apertium",
+      "rtx",
+      "hebrew",
+      "construct",
+      "numeral"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-261",
+    "timestamp": "2026-11-14T20:00:00",
+    "error_message": "לְמִינוֹ always rendered 'fol sesu jongu'; 1:27 בְּצַלְמוֹ 'tesu imaje'",
+    "file": "bible-translation/apertium-hbo-glb/apertium-hbo-glb.hbo-glb.rtx",
+    "root_cause": "hardcoded sesu in the ל מין rule ignored rendering.md 'Possessives' (sesu only for the clause subject); no way to choose sesu per occurrence",
+    "fix": "SUF nonterminal renders suffixes tesu/etesu by default; pronouns.tsv accepts `sesu` (<igse>); dasu rule after אשׁר",
+    "tags": [
+      "apertium",
+      "hebrew",
+      "possessive",
+      "sesu"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-262",
+    "timestamp": "2026-11-14T20:00:00",
+    "error_message": "rtx-comp segfault / 'String operator cannot take condition as operand'",
+    "file": "bible-translation/apertium-hbo-glb/apertium-hbo-glb.hbo-glb.rtx",
+    "root_cause": "rtx conditions have no operator precedence",
+    "fix": "bracket every comparison inside and/or/not",
+    "tags": [
+      "apertium",
+      "rtx",
+      "syntax"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-263",
+    "timestamp": "2026-11-14T22:00:00",
+    "error_message": "Gen 1:17/22/28 'Ete gibe Teo', 'Ete baraka Teo' — object pronoun rendered as subject",
+    "file": "bible-translation/apertium-hbo-glb/apertium-hbo-glb.hbo-glb.rtx",
+    "root_cause": "clause rule v.consec NP took the first NP after the verb as subject; את+suffix object precedes the subject",
+    "fix": "syntax.py merges UD PTNK roles; rule `v.*.consec NP NP` orders by srole (Sobj + Snsubj -> S V O)",
+    "tags": [
+      "apertium",
+      "rtx",
+      "hebrew",
+      "word-order",
+      "treebank"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-14"
+  },
+  {
+    "id": "bug-264",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "ERROR: File 'CAP@' not found (apertium spa-glb)",
+    "file": "GlobasaTranslation/apertium-glb-spa/spa-glb-sentcase.py",
+    "root_cause": "A superblank starting with @ ([@...]) is an Apertium file reference",
+    "fix": "Marker blank renamed to [CAP]",
+    "tags": [
+      "apertium",
+      "stream",
+      "superblank"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-265",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "Unknown option: -z (python3) when running apertium -z spa-glb",
+    "file": "GlobasaTranslation/apertium-glb-spa/test/score.py",
+    "root_cause": "apertium -z appends -z to every program in the mode, including python3 -I steps",
+    "fix": "score.py translates line by line in parallel instead of null-flush mode",
+    "tags": [
+      "apertium",
+      "null-flush",
+      "python"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-266",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "Bidix default wrong: padre→atre, mujer→gami, beber→jiu",
+    "file": "build_bidix.py",
+    "root_cause": "lt-proc -b lists alternatives alphabetically when weights are equal; file order is ignored",
+    "fix": "Entries get w = gloss rank (position, slot, qualifier, register, wiktionary, man-/fem-), lower weight listed first",
+    "tags": [
+      "apertium",
+      "bidix",
+      "lexical-selection",
+      "weights"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-267",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "Pro-drop pronoun missing before a conjunction/preposition (Creo que…, Hablo en…)",
+    "file": "GlobasaTranslation/apertium-glb-spa/apertium-glb-spa.spa-glb.rtx",
+    "root_cause": "A token no rtx rule consumes ends the parse; the flush kept the raw VP branch, not CLAUSE",
+    "fix": "SEQ rules absorb cnj/adv/ij, PP rule added, CLAUSE -> VP weight 1",
+    "tags": [
+      "apertium",
+      "rtx",
+      "parse"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-268",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "rtx: Syntax error 'rule has multiple sources for attribute gen'",
+    "file": "GlobasaTranslation/apertium-glb-spa/apertium-glb-spa.glb-spa.rtx",
+    "root_cause": "Pattern element bound with .$gen while the rule also assigned [$gen=…]",
+    "fix": "Drop the binding; assign defaults in the rule and pass with 1[gen=$gen] in output",
+    "tags": [
+      "apertium",
+      "rtx"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:00:00"
+  },
+  {
+    "id": "bug-269",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "glb-epo nouns generated as #pomo (tag <NOM>)",
+    "file": "GlobasaTranslation/apertium-glb-epo/apertium-glb-epo.glb-epo.rtx",
+    "root_cause": "Nonterminal NOM collided case-insensitively with attribute value nom of category case",
+    "fix": "Renamed the nonterminal to NP",
+    "tags": [
+      "apertium",
+      "rtx",
+      "naming"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:00:00"
+  },
+  {
+    "id": "bug-270",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "Capital letter in the middle of the sentence ('multi Nyan')",
+    "file": "GlobasaTranslation/apertium-glb-*/…-sentcase.py",
+    "root_cause": "rtx emits superblanks at the next _ in output order; a [CAP] marker blank drifted",
+    "fix": "Capitalise every sentence start in post-format; only a line-initial [NOCAP] marker for lowercase fragments",
+    "tags": [
+      "apertium",
+      "superblank",
+      "capitalisation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:00:00"
+  },
+  {
+    "id": "bug-271",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "Spanish CG rule for nada (nadar) never fired",
+    "file": "GlobasaTranslation/apertium-glb-spa/apertium-glb-spa.spa-glb.rlx",
+    "root_cause": "Upstream apertium-spa rule nada_2 REMOVEs the verb reading in an earlier section",
+    "fix": "Moved the rule into BEFORE-SECTIONS",
+    "tags": [
+      "cg3",
+      "apertium-spa"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:00:00"
+  },
+  {
+    "id": "bug-272",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "fra→glb: no French proper noun translated (*Marie)",
+    "file": "build_bidix.py",
+    "root_cause": "apertium-fra tags Marie<np><ant><f><sg>; bidix <r>Marie<np><f> does not prefix-match",
+    "fix": "NP_SUBTYPED={'fra'}: np entries written as bare <np>",
+    "tags": [
+      "apertium",
+      "bidix",
+      "np",
+      "fra"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-273",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "fra→glb: #<det>, #prpers, #Ke, #da in output",
+    "file": "GlobasaTranslation/apertium-glb-fra/apertium-glb-fra.fra-glb.rtx",
+    "root_cause": "tokens no rtx rule consumes keep their French tags",
+    "fix": "SEQ leftover rules per PoS; lone le/un dropped",
+    "tags": [
+      "rtx",
+      "generation",
+      "fra"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-274",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "fra→glb: parce que, parfois, forêt failed",
+    "file": "GlobasaTranslation/apertium-glb-fra/apertium-glb-fra.glb-fra.dix",
+    "root_cause": "curated entries: 'parce que' with space not <b/> and cnjsub vs analyser cnjadv; 'ban<b/>mara' not in apertium-glb; drevogeo<GD> not in generator",
+    "fix": "parce<b/>que<cnjadv>; dumarali; drevogeo<nt>",
+    "tags": [
+      "bidix",
+      "curated",
+      "fra"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-275",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "eng-glb: copular be, prepositions, interjections, modals untranslated (@be x316, @with, @for)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+    "root_cause": "Hand-made function entries (vbser, vbmod, pr, prn, cnjsub) sat below '<!-- Autogenerated common words -->'; the 2026-11-14 build_bidix merge wiped them (FUNCTION_SYMBOLS are curated-only)",
+    "fix": "Restored 414 entries from HEAD above the marker; added curated eng->glb (r=RL) prepositions/conjunctions",
+    "tags": [
+      "apertium",
+      "bidix",
+      "build_bidix",
+      "marker"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-276",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "eng-glb: BE rules never fired (be@copula, copula.$tense)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+    "root_cause": "'copula' is an attribute category, not a tag; rtx patterns match literal tags",
+    "fix": "BE -> be@vblex.$tense | be@vbser.$tense; DVP rules use BE",
+    "tags": [
+      "apertium",
+      "rtx",
+      "copula"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-277",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "eng-glb: sentence-final punctuation and (), - came out as #. / #( / @.",
+    "file": "apertium-glb-eng dix + apertium-glb monodix",
+    "root_cause": "Text deformatter appends '.', English analyser merges it ('!.', '..'); bidix sent regex matched one char; monodix had no generation entries for lpar/rpar/guio",
+    "fix": "bidix sent regex '+' and lquot/rquot/lpar/rpar/guio entries; generation-only (r=RL) regexes in apertium-glb final section",
+    "tags": [
+      "apertium",
+      "punctuation",
+      "generation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-278",
+    "timestamp": "2026-11-19T23:59:00",
+    "error_message": "eng-glb: verbs/modals/determiners failed generation (#idi, #musi, #moy, #Moyte)",
+    "file": "apertium-glb-eng rtx + dix",
+    "root_cause": "rtx output kept inf/ger/pres/past and det qnt tags the Globasa generator rejects; correlatives curated as moyte<prn> while monodix has moy<prn><ut><sg>",
+    "fix": "vblex output bare except pp/pprs; vbmod/det bare; curated prn entries rewritten to monodix analyses",
+    "tags": [
+      "apertium",
+      "generation",
+      "rtx"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T23:59:00"
+  },
+  {
+    "id": "bug-279",
+    "timestamp": "2026-11-19",
+    "error_message": "obscure_resolved.tsv: 211 lines gained backslashes before double quotes after rewrite",
+    "file": "time-machine/obscure_resolved.tsv",
+    "root_cause": "csv.DictWriter with QUOTE_NONE and escapechar escapes quotechar occurrences",
+    "fix": "rebuilt from agent outputs and rewrote with plain tab join",
+    "tags": [
+      "csv",
+      "tsv",
+      "quoting"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-280",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "rtx-comp: Syntax error on line 191: empty pattern (half of the DVP rules gone)",
+    "file": "GlobasaTranslation/apertium-glb-deu/apertium-glb-deu.deu-glb.rtx",
+    "root_cause": "re.sub with re.S and a greedy .* to delete two rule lines matched to the end of the file",
+    "fix": "restored the tail from the session's own text; delete rtx lines with exact string replace, never re.S + .*",
+    "tags": [
+      "rtx",
+      "regex",
+      "re.S",
+      "truncation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-281",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "IndexError list index out of range in germanic-v2-reorder.py process()",
+    "file": "GlobasaTranslation/apertium-glb-deu/germanic-v2-reorder.py",
+    "root_cause": "blanks were re-applied by position; an inserted unit (question kam token) made more units than blanks",
+    "fix": "each unit carries the blank before it; units that move take their blank, dropped units pass a non-space blank to the next unit",
+    "tags": [
+      "apertium",
+      "stream",
+      "blanks",
+      "reorder"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-282",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "Globasa 'ku kam' / 'denwatu hu' generated as only 'ku' / 'denwatu'",
+    "file": "GlobasaTranslation/apertium-glb-deu/apertium-glb-deu.glb-deu.dix",
+    "root_cause": "a <j/> bidix target becomes one '+'-joined unit; the rtx output pattern keeps only the first part",
+    "fix": "single bidix target plus an rtx rule that emits the two units (CONJ -> ob@cnjsub { ku@cnjsub _ kam@cnjcoo })",
+    "tags": [
+      "apertium",
+      "bidix",
+      "j/",
+      "rtx",
+      "generation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-283",
+    "timestamp": "2026-11-19T23:00:00",
+    "error_message": "#nundin, #cel, #moy, #prpers: German case tags reach the Globasa generator",
+    "file": "GlobasaTranslation/apertium-glb-deu/apertium-glb-deu.deu-glb.rtx",
+    "root_cause": "units no rtx rule matched leave transfer with all TL tags (cel<pr><dat>); an adverb whose target is a noun lost <nt>",
+    "fix": "LEAF catch-all rules (pr, cnj*, ij, num, det, vbmod) and an adv output macro that keeps gender for noun targets; not det/adj/adv in LEAF (single-token rules win before DP/AVP/TIME)",
+    "tags": [
+      "rtx",
+      "catch-all",
+      "generation",
+      "case tags"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-284",
+    "timestamp": "2026-11-19",
+    "error_message": "OverflowError: Python integer 1873 out of bounds for int8",
+    "file": "time-machine/align_translations.py",
+    "root_cause": "DP backtrace stored step sizes as int8; i - di stayed numpy int8",
+    "fix": "cast back[i,j] components to int",
+    "tags": [
+      "numpy",
+      "dtype",
+      "alignment"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-285",
+    "timestamp": "2026-11-19",
+    "error_message": "eng-glb: 'Dad' translated Mapa instead of Papa after adding unrelated bidix entries",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.lrx",
+    "root_cause": "no lrx rule for dad; default = lt-proc -b alternative order, which follows transducer structure and changed with the new entries",
+    "fix": "lrx default rule dad → papa; noted 1321 other exposed lemmas",
+    "tags": [
+      "apertium",
+      "lrx",
+      "bidix",
+      "default"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-286",
+    "timestamp": "2026-11-19",
+    "error_message": "eng-glb: conjunction that -> feki (gold: ki)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.lrx",
+    "root_cause": "no lrx rule; bidix alternative order made feki the default",
+    "fix": "lrx default that<cnjsub> -> ki",
+    "tags": [
+      "apertium",
+      "lrx",
+      "that",
+      "ki"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-287",
+    "timestamp": "2026-11-19",
+    "error_message": "eng-glb: relative that printed #da / pronoun that -> #da / 'them' -> #da",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-glb-relative.py",
+    "root_cause": "rtx-proc branch filter drops a REL chunk whenever words follow it (even weight 30); that<prn><dem><sg> fell to the da<prn> prefix entry; CG list matched lemma 'that', and the analyser reads 'them' as that<prn><dem><pl>",
+    "fix": "relatives rewritten after the bidix by eng-glb-relative.py (hu da / hu S V da / hu pr da); bidix that/this prn sg -> dento/hinto; CG matches word form \"<that>\"i",
+    "tags": [
+      "apertium",
+      "rtx",
+      "relative",
+      "cg"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-288",
+    "timestamp": "2026-11-19",
+    "error_message": "jpn-glb: sentence-initial word lower case whenever AP_SETVAR is set",
+    "file": "GlobasaTranslation/apertium-glb-jpn/apertium-glb-jpn.jpn-glb.case.sed",
+    "root_cause": "apertium wrapper prefixes the stream with [<STREAMCMD:SETVAR:...>]; the case sed only allowed bare brackets before the first letter",
+    "fix": "sed allows whole superblanks at line start",
+    "tags": [
+      "apertium",
+      "AP_SETVAR",
+      "superblank",
+      "case"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-289",
+    "timestamp": "2026-11-19",
+    "error_message": "eng-glb: 2 dev sentences translate to empty output",
+    "file": "GlobasaTranslation/apertium-glb-eng (apertium-tagger)",
+    "root_cause": "apertium-tagger -g eng-glb.prob segfaults on e.g. 'held-in sound that comes from the bottom ...' (also with the committed CG) — not fixed",
+    "fix": "none yet (pre-existing)",
+    "tags": [
+      "apertium",
+      "tagger",
+      "segfault"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-290",
+    "timestamp": "2026-11-19",
+    "error_message": "Translation aide: 'I see that queer thing.' -> ki (CLI: den); final '.' missing; story checkbox no effect; 'Mi' capitalised mid-sentence",
+    "file": "Word Viewer.py",
+    "root_cause": "aide fed the pipeline without a trailing newline (lt-proc dropped the last token, so CG lost the sentence end); eng-glb used a stale hand-written pipeline without mwe/relative/story/postformat steps; glb-story.py read only the AP_SETVAR env, not the in-stream SETVAR the aide sends",
+    "fix": "append newline in _run_pipeline_half; split the compiled mode for every pair (hand-written halves only as fallback); glb-story.py honours [<STREAMCMD:SETVAR:...>]; aide offers story for pairs whose mode runs glb-story.py; unescape \\@; rejoin rebuilt stream without spaces before punctuation / inside quotes and brackets",
+    "tags": [
+      "translation-aide",
+      "apertium",
+      "newline",
+      "AP_SETVAR"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19"
+  },
+  {
+    "id": "bug-291",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "HTTP Error 502: Bad Gateway from urllib POST to http://127.0.0.1:8597",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-glb-neural.py",
+    "root_cause": "urllib honours http_proxy env; the sandbox proxy intercepted localhost",
+    "fix": "urllib.request.build_opener(ProxyHandler({})) for the local service; curl needs --noproxy '*'",
+    "tags": [
+      "proxy",
+      "localhost",
+      "urllib",
+      "sandbox"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-292",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "curl: (52) Empty reply from server; sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-nlp-service.py",
+    "root_cause": "ThreadingHTTPServer handled requests in new threads; wn's sqlite connection was opened in the main thread",
+    "fix": "plain HTTPServer (requests serialized anyway)",
+    "tags": [
+      "wn",
+      "sqlite",
+      "threading",
+      "http.server"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-293",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "eng-glb empty output for a dev line after neural pos pruning (apertium-tagger Segmentation fault)",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-glb-neural.py",
+    "root_cause": "apertium-tagger -g segfaults on some ambiguity-class sequences (no single cohort is to blame; pre-existing on 2 dev lines)",
+    "fix": "pos stage runs cg-proc+tagger on its output and reverts lines that crash (trace: fallback)",
+    "tags": [
+      "apertium-tagger",
+      "segfault",
+      "pruning"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-294",
+    "timestamp": "2026-11-19T19:30:00",
+    "error_message": "neural pos pruning regressions: @fun, @home, burning forest -> @the yake @forest, has had -> #musi, After waiting -> @Afterintizarne, Snow untranslated",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-glb-neural.py",
+    "root_cause": "(1) kept readings with no bidix entry; (2) -ing n/adj readings removed though the rtx needs them; (3) verb-form filter applied to auxiliaries (Apertium have/be conventions differ from PTB) and read <sep> as the form; (4) NN left <np> so the HMM picked the proper noun",
+    "fix": "translatability guard + same-class untranslatable duplicates dropped; VBG removes finite only; form filter only on vblex, form() finds the first form tag, subs nominal; NN removes np",
+    "tags": [
+      "pos",
+      "pruning",
+      "apertium",
+      "rtx"
+    ],
+    "related_bugs": [
+      "bug-293"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T19:30:00"
+  },
+  {
+    "id": "bug-295",
+    "timestamp": "2026-11-19T20:10:00",
+    "error_message": "ENOSPC: no space left on device (Write tool; HF snapshot_download File reconstruction error os error 28)",
+    "file": "~/.cache/huggingface (same disk as the project, /dev/sdb2)",
+    "root_cause": "/dev/sdb2 had ~2.2 GB free; a 2.2 GB HF download left a .incomplete blob that filled it",
+    "fix": "removed the partial models--BAAI--bge-reranker-v2-m3 dir; downloaded into the session scratchpad (tmpfs) with HF_HOME and HF_HUB_DISABLE_XET=1",
+    "tags": [
+      "disk",
+      "huggingface",
+      "ENOSPC"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T20:10:00"
+  },
+  {
+    "id": "bug-296",
+    "timestamp": "2026-11-19T22:00:00",
+    "error_message": "eng-glb empty output for some lines (apertium-tagger Segmentation fault), every time with any AP_SETVAR on the UDHR line 'Nothing in this Declaration ...'",
+    "file": "GlobasaTranslation/apertium-glb-eng/eng-glb.prob (copy of apertium-eng/eng.prob)",
+    "root_cause": "2018 perceptron tagger model incompatible with lttoolbox 3.8.4: invalid reads in Alphabet::deserialise (valgrind); crash depends on environment/locale layout",
+    "fix": "user choice: latest upstream tagger (apertium-eng origin c5828ef, 2025-04-05: eng.prob = HMM, old perceptron renamed eng.perceptron.prob); only those two files checked out, rest of apertium-eng still at 63ed265 (2024-02-10). No crashes; dev chrF 57.1 (perceptron 59.5 when it did not crash); UDHR test 51.1, legal 52.6",
+    "tags": [
+      "apertium-tagger",
+      "segfault",
+      "perceptron",
+      "lttoolbox",
+      "valgrind"
+    ],
+    "related_bugs": [
+      "bug-293"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-19T22:00:00"
   }
 ]
