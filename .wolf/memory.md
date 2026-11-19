@@ -2242,3 +2242,4 @@
 | 23:12 | TODO recorded: ML fe vs de via pivot-language projection (new memory project_fe_de_classifier) | memory | noted | ~1.5k |
 | 23:13 | TODO extended: classifier also decides fe vs per (memory project_fe_de_classifier) | memory | noted | ~800 |
 | 23:14 | TODO extended: classifier also decides fe vs in (labels fe/de/per/in) | memory | noted | ~600 |
+| 23:15 | User correction: per = literal 'on', fe = abstract 'on' (dates); fixed classifier memory, Do-Not-Repeat added | memory, .wolf/cerebrum.md | fixed | ~1k |

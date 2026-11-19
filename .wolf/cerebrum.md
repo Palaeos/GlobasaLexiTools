@@ -449,6 +449,8 @@
 - [2026-11-19] Never delete rtx/dix lines with re.sub(..., flags=re.S) and a greedy .* : it ate the end of apertium-glb-deu.deu-glb.rtx. Use exact string replacement.
 - [2026-11-19] Curated deu/nld bidix entries can carry wrong genders (Mensch<n><nt>, 43 of 4891 nouns) and then never match the analyser; check with the untrimmed analyser before assuming a word is translated.
 
+- [2026-11-19] Globasa **per** = literal, physical "on" (on the table), not instrument or means. **fe** covers abstract "on", e.g. dates (on Monday). Check the word list (Eng column) before giving any preposition a gloss from memory.
+
 ## Decision Log
 - [2026-11-14] **Slang senses go only into Globasa (user).** build_bidix.py: a word-list gloss with a register label (sexual/vulgar/informal via Lexilista_parser.normalize_register, or a label left at the start of the gloss as in the French column's 'n (sexuel): chatte') is RL only WHEN the word also has a plain gloss in that PoS (flura: flower + 'n (sexual): pussy'). A word whose only gloss in the PoS is labelled is itself informal (soso, momo, titi, nene, pepe) and keeps both ways — making those RL-only left 31 words untranslatable out of Globasa. Result: 20 RL-only entries (eng/deu); glb-eng 'Mi oko un flura.' → 'I see flower.' again.
 - [2026-11-13] **Bidix pipeline split:** dictionaryPreprocess.py = Globasa monodix + fn drafts; build_bidix.py = generated glb-X content. Merge refuses a dix without the marker (deu/nld/fra need a one-time hand split). Glosses dropped by the analyser go to bidix_report.tsv as the monodix to-do list.
