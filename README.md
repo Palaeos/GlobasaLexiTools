@@ -15,7 +15,7 @@ cd GlobasaLexiTools
 venv/bin/python "Word Viewer.py"
 ```
 
-Then open <http://localhost:5000>. `setup.sh` fetches the lesson and reader-text submodules, creates `venv/` with only the viewer's packages ([`requirements-viewer.txt`](requirements-viewer.txt)), and downloads the current word list. Run it again to refresh the word list. The first start builds a cache (`WordViewerLMDB/`) in under a minute.
+Then open <http://localhost:5000>. `setup.sh` fetches the lesson and reader-text submodules, creates `venv/` with only the viewer's packages ([`requirements-viewer.txt`](requirements-viewer.txt)), and downloads the current word list. Run it again to refresh the word list. If the Globasa CDN refuses the download (it blocks some automated clients), the script says so: open <https://cdn.globasa.net/api2/word-list.csv> in a browser, save it, and run `./setup.sh --word-list ~/Downloads/word-list.csv`. The first start builds a cache (`WordViewerLMDB/`) in under a minute.
 
 Optional extras, which the viewer runs without:
 

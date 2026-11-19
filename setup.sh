@@ -16,18 +16,27 @@
 #
 # Safe to run again: it refreshes the word list from the Globasa CDN and, if
 # the list changed, drops the viewer's cache so the next start rebuilds it.
+# The CDN may refuse scripted downloads; the script then prints where to get
+# the list in a browser, and
+#     ./setup.sh --word-list ~/Downloads/word-list.csv
+# installs that file instead of downloading.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-EXTENSION=0; VETTER=0; SELECTOR=0
-for arg in "$@"; do
-    case "$arg" in
+EXTENSION=0; VETTER=0; SELECTOR=0; WORD_LIST_FILE=""
+while [ $# -gt 0 ]; do
+    case "$1" in
         --extension) EXTENSION=1 ;;
         --vetter) VETTER=1 ;;
         --selector) SELECTOR=1 ;;
-        *) echo "Unknown option $arg (use --extension, --vetter, --selector)" >&2; exit 1 ;;
+        --word-list)
+            [ $# -ge 2 ] || { echo "--word-list needs a file" >&2; exit 1; }
+            WORD_LIST_FILE=$2; shift ;;
+        *) echo "Unknown option $1 (use --extension, --vetter, --selector, --word-list FILE)" >&2; exit 1 ;;
     esac
+    shift
 done
+export WORD_LIST_FILE
 
 PY=${PYTHON:-python3}
 if ! "$PY" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null; then
@@ -48,25 +57,61 @@ fi
 
 echo "== Word list"
 venv/bin/python - <<'EOF'
-import hashlib, os, shutil, urllib.request
+import os, shutil, sys, urllib.request
 
 URL = "https://cdn.globasa.net/api2/word-list.csv"
-old = open("word-list.csv", "rb").read() if os.path.exists("word-list.csv") else None
-try:
-    with urllib.request.urlopen(URL, timeout=60) as r:
-        new = r.read()
-except OSError as e:
-    if old is None:
-        raise SystemExit(f"Could not download {URL}: {e}")
-    print(f"  Could not refresh the word list ({e}); keeping the current one.")
+DEST = os.path.abspath("word-list.csv")
+HOW_TO = f"""
+  The Globasa CDN refuses some automated downloads. To get the list by hand:
+    1. Open {URL} in a web browser.
+    2. Save it, e.g. to ~/Downloads/word-list.csv.
+    3. Run:  ./setup.sh --word-list ~/Downloads/word-list.csv
+       (or save it directly as {DEST}
+        and delete WordViewerLMDB/ so the viewer rebuilds its cache)."""
+
+
+def looks_like_word_list(data):
+    # A block page arrives as HTML, sometimes with status 200.
+    head = data[:200].lstrip(b"\xef\xbb\xbf")
+    return head.startswith(b"Word,") and b"<html" not in data[:2000].lower()
+
+
+old = open(DEST, "rb").read() if os.path.exists(DEST) else None
+given = os.environ.get("WORD_LIST_FILE")
+if given:
+    path = os.path.expanduser(given)
+    try:
+        new = open(path, "rb").read()
+    except OSError as e:
+        sys.exit(f"  Cannot read {path}: {e}")
+    if not looks_like_word_list(new):
+        sys.exit(f"  {path} is not the word list (it should begin with 'Word,')." + HOW_TO)
 else:
-    if new != old:
-        with open("word-list.csv", "wb") as f:
-            f.write(new)
-        shutil.rmtree("WordViewerLMDB", ignore_errors=True)
-        print("  Downloaded; the viewer rebuilds its cache on the next start.")
+    new, problem = None, None
+    try:
+        req = urllib.request.Request(URL, headers={"User-Agent": "GlobasaLexiTools-setup"})
+        with urllib.request.urlopen(req, timeout=60) as r:
+            data = r.read()
+    except OSError as e:
+        problem = str(e)
     else:
-        print("  Already up to date.")
+        if looks_like_word_list(data):
+            new = data
+        else:
+            problem = "the server answered with a page instead of the word list"
+    if new is None:
+        if old is None:
+            sys.exit(f"  Could not download the word list: {problem}." + HOW_TO)
+        print(f"  Could not refresh the word list ({problem}); keeping the current one." + HOW_TO)
+        new = old
+
+if new != old:
+    with open(DEST, "wb") as f:
+        f.write(new)
+    shutil.rmtree("WordViewerLMDB", ignore_errors=True)
+    print("  Word list updated; the viewer rebuilds its cache on the next start.")
+else:
+    print("  Already up to date.")
 EOF
 
 if [ -z "${WIKTIONARY_DUMP:-}" ] && [ -f word_selection_cache/raw-wiktextract-data.jsonl.gz ]; then
