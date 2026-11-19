@@ -5,6 +5,8 @@ LessonAudioLabels/.cache/
 
 # Word Selector caches and downloaded third-party data (never commit: e.g. GPL dictionaries)
 word_selection_cache/
+# Parallel lexical selection (Le Petit Prince etc.): corpus downloads, alignments, drafts, TMX. Text stays out of git.
+parallel_lexsel_cache/
 
 # Word Viewer: local environment, downloaded word list and the cache built from it
 venv/
