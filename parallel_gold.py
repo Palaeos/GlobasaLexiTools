@@ -261,8 +261,69 @@ def main():
         (out / f"{code}-coverage.txt").write_text("\n".join(cov) + "\n", encoding="utf-8")
         report.append((f"{code}-coverage.txt", len(cov)))
 
+    report += english_sets(units)
     for name, n in report:
         print(f"{n:5d}  {name}")
+
+
+HEADING_END = re.compile(r"[.!?:;\"”»)…]$")
+
+
+def english_sets(units):
+    """eng->glb dev/test from the four English-original corpora. Each corpus is split
+    into a contiguous dev part and a held-out test tail (whole sections where it has them):
+      Thirty Short Stories: stories written in English, translated into Globasa; the last 5 stories are test.
+      Pepper & Carrot 1-5: English originals; episodes 4-5 are test (5 alone is 3 lines).
+      UDHR: English original; articles 25-30 are test.
+      Siri-Logane Tutum (Poe, The Tell-Tale Heart): the last fifth is test.
+    Headings (no sentence-final punctuation) are kept as rows but count as section breaks."""
+    out = OUT / "eng"
+    corpora = {}
+    for ctx, t in units:
+        if not (t.get("en") and t.get("glb")):
+            continue
+        if ctx.startswith("Pilpil ji Karote") and pnc_episode(ctx) < PNC_FRENCH_FROM:
+            corpora.setdefault("pnc", []).append((ctx, t))
+        elif ctx in ("Thirty Short Stories in Globasa", "Globatotal Deklaradoku tem Insanli Haki",
+                     "Siri-Logane Tutum"):
+            key = {"T": "thirty", "G": "udhr", "S": "telltale"}[ctx[0]]
+            corpora.setdefault(key, []).append((ctx, t))
+    headers = {
+        "thirty": "Thirty Short Stories in Globasa (Vanege): stories written in English, translated into Globasa. Keep local.",
+        "pnc": "Pepper & Carrot (David Revoy, CC-BY 4.0, www.peppercarrot.com) episodes 1-5: English originals.",
+        "udhr": "Universal Declaration of Human Rights: English original, Globasa translation.",
+        "telltale": "Siri-Logane Tutum: Poe's The Tell-Tale Heart (public domain) in Globasa. Keep local.",
+    }
+    report = []
+    for key, rows in corpora.items():
+        # label each row with its section; a heading starts a new section
+        labelled, section, label = [], 0, rows[0][0]
+        for ctx, t in rows:
+            if key == "pnc":
+                section, label = pnc_episode(ctx), ctx
+            elif (re.fullmatch(r"Article \d+|Preamble", t["en"]) if key == "udhr"
+                  else not HEADING_END.search(t["glb"])):
+                section += 1
+                label = f"{t['en']} / {t['glb']}"
+            labelled.append((section, label, t))
+        last = labelled[-1][0]
+        if key == "telltale":
+            cut = len(labelled) * 4 // 5
+            test_rows = set(range(cut, len(labelled)))
+        else:
+            if key == "udhr":
+                first_test = next(s for s, _, t in labelled if t["glb"].startswith("Mon 25"))
+            else:
+                first_test = {"thirty": last - 4, "pnc": 4}[key]
+            test_rows = {i for i, (s, _, _) in enumerate(labelled) if s >= first_test}
+        dev = [(l, t["en"], [t["glb"]]) for i, (s, l, t) in enumerate(labelled) if i not in test_rows]
+        test = [(l, t["en"], [t["glb"]]) for i, (s, l, t) in enumerate(labelled) if i in test_rows]
+        hdr = [headers[key], "eng->glb reference (free translation: chrF)."]
+        report.append((f"eng-glb-{key}-dev.tsv", write_tsv(out / f"eng-glb-{key}-dev.tsv", dev,
+                                                           hdr + ["Rule development."])))
+        report.append((f"eng-glb-{key}-test.tsv", write_tsv(out / f"eng-glb-{key}-test.tsv", test,
+                                                            hdr + ["Held out: score per milestone only."])))
+    return report
 
 
 main()
