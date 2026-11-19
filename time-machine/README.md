@@ -134,6 +134,7 @@ echo "He will be here presently." | apertium -d . eng-glb                       
 echo "He will be here presently." | AP_SETVAR=victorian apertium -d . eng-glb           # … nerxali
 echo "It was a queer thing."      | AP_SETVAR=victorian=presently apertium -d . eng-glb # only presently switches
 echo "It was a queer thing."      | AP_SETVAR=victorian=-queer apertium -d . eng-glb    # all but queer
+echo "It was a queer thing."      | AP_SETVAR=eng_variety=Victorian apertium -d . eng-glb  # = victorian
 ```
 
 - **What is exported:** `termbase_to_apertium.py` exports the word list's `apertium=pref` and `apertium=add` rows, using the list's own tags and never reading the dictionary. It writes:
@@ -142,6 +143,8 @@ echo "It was a queer thing."      | AP_SETVAR=victorian=-queer apertium -d . eng
   - `eng-glb.preferences.xml`, installed as `prefs/eng-glb.xml`.
 - **Approval rule:** the period sense must be the normal Victorian reading of the word. A lemma-level switch must not carry a sense that only fits one passage, such as *carriage* → posture or *company* → crowd. An ungated addition must not mistranslate modern text. That excludes *ever* → always and *scarce* → hardly, for example. *fancy* needs a modern rival entry first.
 - **First export:** 7 preferences (*presently, queer, curious, awfully, frightfully, apartment, purpose* as a verb) and 12 new English→Globasa entries for words that had none (*smite, behold, bough, feign, meddle*, …).
+- **Victorian as a variety of English:** for English→Globasa input, `eng_variety` offers `GB`, `US` and `Victorian`. `Victorian` is the same as `AP_SETVAR=victorian`, and the translation aide shows it in its English-variety menu. The separate `victorian` preference stays declared for per-word selection from the command line. Globasa→English output offers only GB and US.
+- **Shared with the English-variety preference:** Victorian English is British English. The British-sense rules for English input (*fall* ≠ autumn, *gas* ≠ petrol) are generated once, by `eng_variety_to_apertium.py` (repo root), from `eng_variety_patch.tsv`. They fire for `AP_SETVAR=eng_variety=GB`, for `eng_variety=Victorian`, **and** for any `victorian` setting. Each generator writes its own fragment: `apertium-glb-eng.eng-glb.victorian.rlx` and `….variety.rlx`, plus `eng-glb.victorian.preferences.xml` and `….variety.preferences.xml`. The pair's Makefile concatenates them into `eng-glb.biprefs.rlx.bin` and `prefs/eng-glb.xml`, which declares both `victorian` and `eng_variety`.
 - **What doesn't fit:** multiword expressions, period grammar and words missing from the English analyser are outside preferences. In current Apertium only constraint grammar reads stream variables. Those go to the multiword module, to rtx rules that only fire on archaic patterns, and to apertium-eng respectively.
 - **Regression check:** with `AP_SETVAR` unset, all-dev output is identical (0 of 1,117 lines changed). all-test changed only on *dad*, so an lrx default was added for it. chrF is 57.6 on dev and 57.8 on test.
 - **Caveat:** 1,321 ambiguous English lemma+POS pairs in the pair have no lexical-selection rule, so their default is transducer order and can flip whenever any entry is added.

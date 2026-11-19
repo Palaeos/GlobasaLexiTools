@@ -45,3 +45,6 @@ GlobasaTranslation/apertium-glb-en
 time-machine/cache/
 time-machine/victorian_glb.json
 time-machine/victorian_glb.html
+word-list.csv.pre-variety
+eng_variety_cache/
+eng_variety_report.tsv

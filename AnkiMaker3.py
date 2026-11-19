@@ -1,4 +1,5 @@
 import csv
+import os
 import re
 import markdown
 
@@ -9,6 +10,15 @@ import images_store
 from GlobasaTransliterators import globasaCountSyllables, globasaStressSentence
 
 import pandas as pd
+
+# English variety of the card glosses: ENG_VARIETY=GB or US picks the column
+# apply_eng_variety.py derives from TranslationEng (spelling and vocabulary
+# variants of the other variety dropped where a counterpart is present).
+# Unset: TranslationEng as downloaded, both varieties side by side.
+ENG_VARIETY = os.environ.get("ENG_VARIETY", "").strip().upper()
+ENG_COLUMN = {"GB": "TranslationEngGB", "US": "TranslationEngUS"}.get(ENG_VARIETY, "TranslationEng")
+if ENG_VARIETY and ENG_COLUMN == "TranslationEng":
+    print(f"ENG_VARIETY={ENG_VARIETY!r} is not GB or US (fallback: TranslationEng, both varieties)")
 
 
 class AnkiFields:
@@ -123,6 +133,10 @@ menalari_name = "word-list.csv"
 ranking_name = "Doxo_course_ranking.csv"
 
 df = pd.read_csv(menalari_name, index_col=0)
+if ENG_COLUMN not in df.columns:
+    print(f"{ENG_COLUMN} missing from {menalari_name} — run apply_eng_variety.py "
+          f"(fallback: TranslationEng, both varieties)")
+    ENG_COLUMN = "TranslationEng"
 df.index = df.index.astype(str).str.strip()
 df = df[~df.index.duplicated(keep="first")]
 df = df[df.index != "nan"]
@@ -412,7 +426,7 @@ with open("./" + ranking_name, newline="") as ranking_file, \
         # empty gloss once extract_constructions.py has run, which pandas hands
         # back as NaN -- and str(NaN) is the truthy string "nan", which would
         # parse into a bogus gloss.
-        raw_eng = selected_rows["TranslationEng"]
+        raw_eng = selected_rows[ENG_COLUMN]
         englishRawGlosses = "" if pd.isna(raw_eng) else str(raw_eng)
         # Safety net for a wordlist freshly downloaded from the CDN, which
         # carries the construction glosses again. Normally a no-op.
