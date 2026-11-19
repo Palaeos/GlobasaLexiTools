@@ -2238,3 +2238,4 @@
 | 22:34 | Correction: 'used to' marks past habitual in English/AAVE, so Spanish isn't needed for the past; noted the 'be used to' trap and the 'would' ambiguity | memory/project_eng_glb_aave.md | noted | ~1k |
 | 23:06 | TODOs recorded: deu Perfekt/Präteritum→glb mode (deu memory note); Time Machine opening + em dashes in eng→glb (TM memory note). Session landed. Submodule WIP left uncommitted (see summary) | memory | noted | ~2k |
 | 23:09 | TODO recorded: story mode (glb-story.py) must leave quotations alone; quote-state plan in project_story_mode memory | memory | noted | ~1.5k |
+| 23:10 | TODO recorded: translations must carry over source markup (new memory project_markup_carryover) | memory | noted | ~1.5k |
