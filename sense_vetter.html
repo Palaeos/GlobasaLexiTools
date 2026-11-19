@@ -57,6 +57,10 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
 .peek-actions button { font-size: 0.75rem; padding: 0 0.4rem; }
 .peek-actions .yes { background: var(--green); color: #fff; border-color: var(--green); }
 .tag-link { font-size: 0.72rem; padding: 0 0.35rem; margin: 0 0.2rem 0.1rem 0; color: var(--green); }
+#rebuild-status { margin: .5rem 1rem; padding: .5rem .75rem; border-radius: 6px; background: var(--card, #fff); border: 1px solid #ccc; font-size: .9rem; }
+#rebuild-status.failed { border-color: #c33; }
+#rebuild-status .new { margin-top: .3rem; }
+#rebuild-status pre { white-space: pre-wrap; font-size: .8rem; margin: .3rem 0 0; }
 .empty { text-align: center; color: var(--muted); padding: 2rem; }
 @media (max-width: 720px) { .card { grid-template-columns: minmax(0, 1fr); } .actions { flex-direction: row; } }
 </style>
@@ -68,17 +72,21 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
     <option value="all">All words</option>
     <option value="corpus">Words in the corpus</option>
     <option value="noncorpus">Words not in the corpus</option>
-    <option value="unmarked">Words with no sense marked yet</option>
+    <option value="unmarked">Words with no sense marked yet (per part of speech)</option>
     <option value="unsure">Senses marked unsure</option>
+    <option value="queue">Queue: French words Le Petit Prince lacks</option>
   </select>
   <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
   <input id="q" placeholder="One word" size="12" aria-label="Show one word">
   <label><input type="checkbox" id="hide" checked> Hide vetted</label>
   <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
   <button id="bulk" title="Accept every undecided sense currently loaded">Accept all loaded</button>
+  <button id="rebuild" title="Rerun the Wiktionary extension with your verdicts, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
   <span class="keys"><kbd>Y</kbd> applies <kbd>N</kbd> doesn't <kbd>M</kbd> unsure <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last</span>
 </header>
+<div id="rebuild-status" hidden></div>
 <main id="list"></main>
+<div id="more" class="empty" aria-live="polite"></div>
 
 <script>
 const list = document.getElementById("list");
@@ -115,6 +123,12 @@ function cardHtml(r, i) {
   const translations = r.translations.map(c =>
     `<b>${esc(c.lang)}:</b> ` + c.terms.slice(0, 5).map(t => t.hit ? `<span class="hit">${esc(t.t)}</span>` : esc(t.t)).join(", ")
   ).slice(0, 4).join(" &nbsp; ");
+  // Evidence from a queue (sense_vetter.py QUEUE_FILE): the French word this sense would supply,
+  // how often the text needs it, what the parallel translations aligned to it, and an example.
+  const queue = (r.queue || []).map(e => e.note ? `<div class="usage small">${esc(e.note)}</div>` : `<div class="usage"><b>fr ${esc(e.fr.split("<")[0])}</b>
+      <span class="small">×${esc(e.freq)} in the text · pivots point here in ${esc(e.support)} · ${esc(e.flag)}${e.unit_status ? ` · ${esc(e.unit_status)}` : ""}</span>
+      <br><span class="small">en: ${esc(e.en)} &nbsp; zh: ${esc(e.zh)}</span>
+      ${e.ex_fr ? `<br>${esc(e.ex_fr)}<br><span class="en">${esc(e.ex_en)}</span><br><span class="en">${esc(e.ex_zh)}</span>` : ""}</div>`).join("");
   const usages = r.usages.map(u => `<div class="usage">${markWord(u.glb, r.word)}${u.en ? `<br><span class="en">${esc(u.en)}</span>` : ""}</div>`).join("");
   return `<div class="card ${done[r.id] || ""}" id="c${i}" data-i="${i}">
     <div>
@@ -124,6 +138,7 @@ function cardHtml(r, i) {
       ${r.example ? `<div class="small">e.g. ${esc(r.example.slice(0, 140))}</div>` : ""}
       <div class="small gloss">${translations}</div>
       <div class="chips">${r.why.map(w => `<span class="chip ${w[0]}">${esc(w[1])}</span>`).join("")}</div>
+      ${queue}
       ${r.other_count ? `<button class="peek-toggle" data-peek="${i}" title="Compare with this word's other senses (P)">Other senses (${r.other_count})</button>` : ""}
     </div>
     <div>
@@ -246,7 +261,22 @@ async function loadMore() {
   list.insertAdjacentHTML("beforeend", fresh.map((r, k) => cardHtml(r, start + k)).join(""));
   showTally(data);
   loading = false;
+  showMore();
+  // Endless scroll: hidden (already vetted) cards can leave the end of the list on screen, and the
+  // observer only fires on a change, so keep loading while it stays in view.
+  if (fresh.length && moreInView()) loadMore();
 }
+
+// The line under the list: loading more when it scrolls into view, or the end of the view.
+const more = document.getElementById("more");
+const allLoaded = () => rows.length > 0 && listedHeld() >= matched;
+function moreInView() { return more.getBoundingClientRect().top < innerHeight + 600; }
+function showMore() {
+  more.textContent = !rows.length ? "" : allLoaded() ? `End of this view (${matched} senses)` : "Loading more…";
+}
+new IntersectionObserver(entries => {
+  if (entries.some(e => e.isIntersecting) && !allLoaded()) loadMore();
+}, { rootMargin: "0px 0px 600px 0px" }).observe(more);
 
 async function reload() {
   rows = []; focus = 0; done = {}; pinned = -1; list.innerHTML = "";
@@ -265,9 +295,10 @@ async function send(ids, verdict) {
 }
 
 function syncWord(c) {
-  // A mark can drop or restore the word's other senses in the unmarked view.
+  // A mark can drop or restore the word's other senses of the same part of speech in the
+  // unmarked view; a word counts as vetted per part of speech.
   rows.forEach((r, k) => {
-    if (r.word.toLowerCase() !== c.word.toLowerCase()) return;
+    if (r.word.toLowerCase() !== c.word.toLowerCase() || r.gloss_pos !== c.gloss_pos) return;
     r.word_marked = c.word_marked;
     document.getElementById(`c${k}`)?.classList.toggle("off", isHidden(k));
   });
@@ -306,7 +337,7 @@ async function undo() {
   const response = await fetch("/api/undo", { method: "POST", body: JSON.stringify(view()) });
   if (!response.ok) { tally.textContent = "Undo failed: is sense_vetter.py still running?"; return; }
   const data = await response.json();
-  const wordCard = c => rows.findIndex((r, k) => r.word === c.word && !isHidden(k));
+  const wordCard = c => rows.findIndex((r, k) => r.word === c.word && r.gloss_pos === c.gloss_pos && !isHidden(k));
   const shown = data.cards.map(c => {
     // Undoing inside an open peek just updates its row.
     if (document.getElementById("peek") && rows[focus]?.word === c.word) {
@@ -319,7 +350,7 @@ async function undo() {
       closePeek();
       syncWord(c);
       const card = wordCard(c);
-      if (card >= 0 || rows.some(r => r.word === c.word)) return card;
+      if (card >= 0 || rows.some(r => r.word === c.word && r.gloss_pos === c.gloss_pos)) return card;
     }
     const i = applyCard(c);
     return scope.value === "unmarked" ? wordCard(c) : i;
@@ -329,6 +360,62 @@ async function undo() {
 }
 
 undoButton.addEventListener("click", undo);
+
+// "Rebuild": the server reruns the extension, every bidix and pair; where the Le Petit Prince data
+// exists it also checks that book's French words and rebuilds the queue. The page polls until done.
+const rebuildButton = document.getElementById("rebuild");
+const rebuildBox = document.getElementById("rebuild-status");
+function lppHtml(l) {
+  if (!l) return "";
+  const total = l.resolved + l.missing, tokens = l.tokens_resolved + l.tokens_missing;
+  const newOnes = l.new.map(w => `<b>${esc(w.fr)}</b> ×${w.freq} → ${esc(w.glb.join(", "))}`).join(" · ");
+  return `<div class="new"><b>Le Petit Prince vocabulary</b> (checked ${esc(l.when.replace("T", " "))}):
+    ${l.resolved} of ${total} French words the glb-fra pair lacked are resolved (${l.tokens_resolved} of ${tokens}
+    tokens), ${l.missing} still missing.
+    ${l.new_count ? `${l.first_run ? "First check, resolved so far" : "Newly resolved"} (${l.new_count}): ${newOnes}${l.new_count > l.new.length ? " …" : ""}`
+      : "None newly resolved."}</div>`;
+}
+function showRebuild(st, justFinished) {
+  rebuildButton.disabled = st.running;
+  rebuildButton.textContent = st.running ? "Rebuilding…" : "Rebuild";
+  rebuildBox.classList.toggle("failed", st.ok === false);
+  if (st.running) {
+    rebuildBox.hidden = false;
+    rebuildBox.innerHTML = `Rebuilding: ${esc(st.step)}…`;
+    return;
+  }
+  const r = st.result;
+  if (st.ok === false) {
+    rebuildBox.hidden = false;
+    rebuildBox.innerHTML = `Rebuild failed.<pre>${esc(st.log.join("\n"))}</pre>`;
+    return;
+  }
+  if (!r || (!st.finished && !r.lpp)) return;
+  rebuildBox.hidden = false;
+  let html = "";
+  if (st.finished) {
+    const bidix = Object.entries(r.bidix || {}).map(([l, n]) => `${esc(l)} ${n}`).join(", ");
+    const pairs = Object.entries(r.pairs || {}).map(([p, v]) =>
+      v === "built" ? `${esc(p.replace("apertium-", ""))} ✓` : `<span title="${esc(v)}">${esc(p.replace("apertium-", ""))} ✗</span>`).join(" · ");
+    const failed = Object.entries(r.pairs || {}).filter(([, v]) => v !== "built");
+    html += `Rebuilt ${esc(st.finished.replace("T", " "))}: ${esc(r.extension || "extension rebuilt")}.
+      Bidix entries: ${bidix || "–"}. Pairs: ${pairs || "none configured"}.
+      ${failed.length ? `<pre>${failed.map(([p, v]) => `${p}: ${v}`).map(esc).join("\n")}</pre>` : ""}`;
+  }
+  rebuildBox.innerHTML = html + lppHtml(r.lpp);
+  if (justFinished && scope.value === "queue") reload();
+}
+async function pollRebuild(wasRunning = false) {
+  const st = await (await fetch("/api/rebuild")).json();
+  showRebuild(st, wasRunning && !st.running);
+  if (st.running) setTimeout(() => pollRebuild(true), 1500);
+}
+rebuildButton.addEventListener("click", async () => {
+  rebuildButton.blur();
+  await fetch("/api/rebuild", { method: "POST", body: "{}" });
+  pollRebuild(true);
+});
+pollRebuild();
 
 bulk.addEventListener("click", async () => {
   const open = rows.map((r, i) => i).filter(i => !done[rows[i].id] && !isHidden(i));

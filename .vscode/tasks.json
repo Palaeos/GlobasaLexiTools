@@ -155,6 +155,24 @@
       "problemMatcher": []
     },
     {
+    "label": "Sense Vetter",
+    "type": "process",
+    "command": "${workspaceFolder}/venv/bin/python3",
+    "args": ["-u", "sense_vetter.py"],
+    "options": { "cwd": "${workspaceFolder}" },
+    "group": "build",
+    "isBackground": true,
+    "presentation": { "reveal": "always", "panel": "dedicated", "focus": true },
+    "problemMatcher": {
+      "pattern": { "regexp": "^$" },
+      "background": {
+        "activeOnStart": true,
+        "beginsPattern": "Loading the sense sheet",
+        "endsPattern": "Ready: open"
+      }
+    }
+    },
+    {
       "label": "Run eflomal alignment (all language pairs)",
       "type": "process",
       "command": "${workspaceFolder}/venv/bin/python3",

@@ -18,6 +18,16 @@ Verdicts are appended to sense_vetting.jsonl as you go, so nothing is lost by cl
 page. vetted_senses.py lays that log over vetted_senses.tsv, so the sense generator and the
 Menalari extension see the page's verdicts too. Corpus examples (Doxo_passages.tmx) and the
 course order (Doxo_course_ranking.csv) are optional.
+
+The view "Queue" lists the senses of a queue file (SV_QUEUE, by default the one
+parallel_lexsel/vetting_queue.py writes) in the queue's order, each with its evidence: the
+French word of Le Petit Prince it would give the glb-fra pair, how often the text needs it, and
+what the English and Chinese translations aligned to it.
+
+The button "Rebuild" reruns the Wiktionary extension with the page's verdicts, build_bidix.py (every
+glb-X bidix) and make in every configured GlobasaTranslation/apertium-glb-X pair. Only when the
+Le Petit Prince data exists does it then run parallel_lexsel/resolution.py (which of the book's
+French words the glb-fra pair knows now) and vetting_queue.py (resolved words leave the queue).
 """
 import collections
 import csv
@@ -28,6 +38,8 @@ import re
 import sys
 import unicodedata
 import xml.etree.ElementTree as ET
+import subprocess
+import threading
 import time
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -48,6 +60,12 @@ VERDICTS_FILE = vetted_senses.VETTING_LOG
 EXPORT_FILE = "sense_vetting_export.tsv"
 PAGE_FILE = "sense_vetter.html"
 PORT = int(os.environ.get("SV_PORT", 8090))
+# Optional queue of senses proposed by another tool, shown as the view "queue" in its own order
+# with its evidence: by default parallel_lexsel/vetting_queue.py's senses that would give the
+# glb-fra pair the French words of Le Petit Prince it lacks.
+QUEUE_FILE = os.environ.get("SV_QUEUE", os.path.join("parallel_lexsel_cache", "lpp", "fra_glb",
+                                                     "vetting_queue.tsv"))
+QUEUE_EVIDENCE = 3  # French words shown per queued sense
 HUMAN_TIERS = ("v", "e")  # vetted, expert
 
 LLM_AUTHORED = "Thirty Short Stories in Globasa"
@@ -391,6 +409,38 @@ for word, group in senses_by_word.items():
     score_against_siblings(word, group, plain_words, tag_gloss_terms, tag_typical)
 
 
+def load_queue():
+    """Queued sense ids in queue order, and each one's evidence (one entry per French word, or a
+    note for a sense queued only so that its word gets vetted completely)."""
+    order, evidence = [], collections.defaultdict(list)
+    if not os.path.exists(QUEUE_FILE):
+        return order, evidence
+    with open(QUEUE_FILE, encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            if row["id"] not in evidence:
+                order.append(row["id"])
+            if not row.get("fr_lemma"):
+                # A queue of whole words (vetting_queue.py): this sense lists no French word itself,
+                # it is queued so the word gets vetted completely in this part of speech.
+                evidence[row["id"]].append({"note": (
+                    f"Other sense of {row.get('unit', row['glb'])}, {row.get('unit_status', '')}: "
+                    f"vet the whole word; the pivots tie {row.get('unit_tokens', '?')} French "
+                    f"occurrences to it")})
+                continue
+            evidence[row["id"]].append({
+                "unit": row.get("unit", ""), "unit_status": row.get("unit_status", ""),
+                "fr": row["fr_lemma"], "freq": row["fr_freq"], "support": row["support"],
+                "flag": row["flag"], "en": row["en_aligned"], "zh": row["zh_aligned"],
+                "ex_fr": row["example_fr"], "ex_en": row["example_en"], "ex_zh": row["example_zh"]})
+    missing = [key for key in order if key not in senses]
+    print(f"  Queue {QUEUE_FILE}: {len(order)} senses"
+          + (f" ({len(missing)} not among this sheet's senses, left out)" if missing else ""))
+    return [key for key in order if key in senses], evidence
+
+
+queue_order, queue_evidence = load_queue()
+
+
 def order_key(sense):
     return (-sense["score"], ranks.get(sense["word"].lower(), 10**6), sense["word"], sense["label"])
 
@@ -460,9 +510,10 @@ def card(sense):
         "usages": usages.get(word, [])[:MAX_USAGES], "script": sense["app"] if sense["tier"] == "a" else "",
         "sheet_verdict": sheet_verdict(sense),
         "verdict": current_verdict(sense),
-        "word_marked": word_is_marked(word),
+        "word_marked": word_is_marked(word, sense["gloss_pos"]), "gloss_pos": sense["gloss_pos"],
         "other_count": len(senses_by_word[word]) - 1,
         "tags": word_tags(word),
+        "queue": queue_evidence.get(sense["id"], [])[:QUEUE_EVIDENCE],
     }
 
 
@@ -489,9 +540,30 @@ def is_vetted(sense):
     return sense["tier"] in HUMAN_TIERS or sense["id"] in verdicts
 
 
-def word_is_marked(word):
-    """Any mark on any sense counts: applies, doesn't apply or unsure, from this page or the sheet."""
-    return any(is_vetted(s) for s in senses_by_word[word])
+ADV_LABEL = re.compile(r"(?:^|;\s*)adv\b")
+
+
+def gloss_pos(sense):
+    """The part of speech of the word-list gloss a sense was looked up for. The sense generator also
+    looks a noun gloss up under Wiktionary's proper names (and the reverse), and an adjective-only
+    word's gloss under adverbs, so those senses belong to the noun or the adjective."""
+    pos = sense["pos"]
+    if pos == "name":
+        return "noun"
+    if pos == "adv" and not ADV_LABEL.search(text(glosses.get(sense["word"].lower(), {}).get("TranslationEng"))):
+        return "adj"
+    return pos
+
+
+for sense in senses.values():
+    sense["gloss_pos"] = gloss_pos(sense)
+
+
+def word_is_marked(word, pos):
+    """Whether the word is vetted in this part of speech (gloss_pos): any mark on any of its senses
+    of that part of speech counts (applies, doesn't apply or unsure, from this page or the sheet).
+    A word vetted as a noun still waits to be vetted as a verb."""
+    return any(is_vetted(s) for s in senses_by_word[word] if s["gloss_pos"] == pos)
 
 
 def is_unsure(sense):
@@ -500,7 +572,11 @@ def is_unsure(sense):
 
 def matching(scope, query, include_vetted=False, tag=""):
     query = query.strip().lower()
-    for sense in tag_order(tag) if tag else ordered:
+    if scope == "queue":
+        source = [senses[key] for key in queue_order]
+    else:
+        source = tag_order(tag) if tag else ordered
+    for sense in source:
         if scope == "unsure":
             if not is_unsure(sense):
                 continue
@@ -513,7 +589,7 @@ def matching(scope, query, include_vetted=False, tag=""):
             continue
         if scope == "noncorpus" and word in usages:
             continue
-        if scope == "unmarked" and word_is_marked(word):
+        if scope == "unmarked" and word_is_marked(word, sense["gloss_pos"]):
             continue
         yield sense
 
@@ -523,6 +599,98 @@ def counts(scope, query, include_vetted, tag=""):
     found = list(matching(scope, query, include_vetted, tag))
     return found, {"matched": len(found),
                    "remaining": len(found) if scope == "unsure" else sum(not is_vetted(s) for s in found)}
+
+
+# "Rebuild": rerun the Wiktionary extension (with this page's verdicts), every glb-X bidix
+# (build_bidix.py) and every built pair (make), so the verdicts reach the translators. When the
+# Le Petit Prince data exists (parallel_lexsel), it then checks which French words of the book the
+# glb-fra pair knows now and rebuilds the queue: that part concerns only the book's vocabulary.
+# About a minute (pairs whose dix changed recompile); one run at a time, in a thread, polled by
+# the page. A pair that fails to build is reported and the others still build.
+PAIRS_ROOT = "GlobasaTranslation"
+LPP_DIR = os.path.join("parallel_lexsel_cache", "lpp", "fra_glb")
+RESOLUTION_FILE = os.path.join(LPP_DIR, "resolution_status.json")
+rebuild = {"running": False, "step": "", "ok": None, "log": [], "started": "", "finished": "",
+           "result": None}
+rebuild_lock = threading.Lock()
+
+
+def built_pairs():
+    """The glb-X pair checkouts that have been configured (a Makefile), e.g. apertium-glb-fra."""
+    if not os.path.isdir(PAIRS_ROOT):
+        return []
+    return sorted(d for d in os.listdir(PAIRS_ROOT)
+                  if d.startswith("apertium-glb-") and os.path.exists(os.path.join(PAIRS_ROOT, d, "Makefile")))
+
+
+def lpp_summary():
+    """Le Petit Prince vocabulary: which French words the glb-fra pair lacked it knows now."""
+    if not os.path.exists(RESOLUTION_FILE):
+        return None
+    with open(RESOLUTION_FILE, encoding="utf-8") as f:
+        status = json.load(f)
+    words = status["words"]
+    return {"when": status["when"], "resolved": status["resolved"], "missing": status["missing"],
+            "tokens_resolved": status["tokens_resolved"], "tokens_missing": status["tokens_missing"],
+            "first_run": status.get("first_run", False),
+            "new": [{"fr": k.split(" / ")[0].split("<")[0], "freq": words[k]["freq"], "glb": words[k]["glb"]}
+                    for k in status["new"][:60]], "new_count": len(status["new"])}
+
+
+def bidix_counts():
+    counts = collections.Counter()
+    if os.path.exists("bidix_entries.tsv"):
+        with open("bidix_entries.tsv", encoding="utf-8") as f:
+            for row in csv.DictReader(f, delimiter="\t"):
+                counts[row["lang"]] += 1
+    return dict(counts)
+
+
+def run_step(name, cmd, cwd="."):
+    rebuild["step"] = name
+    rebuild["log"].append(f"== {name}")
+    proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, encoding="utf-8")
+    out = (proc.stdout + proc.stderr).strip().splitlines()
+    rebuild["log"].extend(out[-6:])
+    if proc.returncode != 0:
+        rebuild["log"].append(f"{name} failed (exit {proc.returncode})")
+    return proc.returncode == 0, out
+
+
+def run_rebuild():
+    global queue_order, queue_evidence
+    result = {"extension": "", "bidix": {}, "pairs": {}, "lpp": None}
+    ok, out = run_step("Wiktionary extension", [sys.executable, "-u", "Wiktionary extension builder.py"])
+    result["extension"] = next((l.strip() for l in out if l.startswith("Wrote menalariExtension")), "")
+    if ok:
+        ok, _ = run_step("bidixes (build_bidix.py)", [sys.executable, "-u", "build_bidix.py"])
+        result["bidix"] = bidix_counts()
+    if ok:
+        for pair in built_pairs():
+            built, out = run_step(f"build {pair}", ["make"], os.path.join(PAIRS_ROOT, pair))
+            result["pairs"][pair] = "built" if built else (out[-1] if out else "failed")
+        # Le Petit Prince vocabulary, only where that data exists
+        if os.path.exists(os.path.join(LPP_DIR, "resolve_list.tsv")):
+            lpp_ok, _ = run_step("Le Petit Prince: check the French words",
+                                 [sys.executable, "-u", os.path.join("parallel_lexsel", "resolution.py")])
+            if lpp_ok:
+                lpp_ok, _ = run_step("Le Petit Prince: rebuild the queue",
+                                     [sys.executable, "-u", os.path.join("parallel_lexsel", "vetting_queue.py")])
+            if lpp_ok:
+                queue_order, queue_evidence = load_queue()
+                result["lpp"] = lpp_summary()
+    rebuild.update(running=False, ok=ok, step="", result=result,
+                   finished=datetime.now().isoformat(timespec="seconds"))
+
+
+def start_rebuild():
+    with rebuild_lock:
+        if rebuild["running"]:
+            return False
+        rebuild.update(running=True, ok=None, log=[], result=None, step="starting",
+                       started=datetime.now().isoformat(timespec="seconds"), finished="")
+    threading.Thread(target=run_rebuild, daemon=True).start()
+    return True
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -556,6 +724,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_tally(rows=[card(s) for s in found[offset:offset + limit]], **view)
         elif url.path == "/api/tags":
             self.send_json({"tags": tag_list()})
+        elif url.path == "/api/rebuild":
+            # Before any rebuild in this session, the last Le Petit Prince check (if any) is shown.
+            last = None if rebuild["running"] or rebuild["result"] else {"lpp": lpp_summary()}
+            self.send_json(dict(rebuild, log=rebuild["log"][-40:], result=rebuild["result"] or last))
         elif url.path == "/api/senses":
             self.send_json({"senses": peek(parse_qs(url.query).get("word", [""])[0])})
         else:
@@ -594,6 +766,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path
+        if path == "/api/rebuild":
+            self.send_json({"started": start_rebuild(), "running": True})
+            return
         if path not in ("/api/undo", "/api/verdict"):
             self.send_error(404)
             return
