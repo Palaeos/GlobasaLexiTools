@@ -7,6 +7,7 @@ LessonAudioLabels/.cache/
 word_selection_cache/
 # Parallel lexical selection (Le Petit Prince etc.): corpus downloads, alignments, drafts, TMX. Text stays out of git.
 parallel_lexsel_cache/
+parallel_gold_cache/
 
 # Word Viewer: local environment, downloaded word list and the cache built from it
 venv/
