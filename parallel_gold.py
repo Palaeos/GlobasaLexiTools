@@ -8,8 +8,12 @@ A corpus is a translation reference only in the direction it was really translat
   - Hikaye fal Vanege (TMX): Esperanto originals translated into Globasa -> epo->glb
     dev (stories 1-10) and held-out test (stories 11-13).
   - Towa Babel (TMX): Globasa translated from a Spanish Bible -> spa->glb gold.
-  - Pepper & Carrot (French original) and the UDHR (English original): Spanish,
-    Esperanto and Globasa are sibling translations -> source-side coverage text only.
+  - Pepper & Carrot: episodes 1-5 are English originals, 6-24 were drafted in French.
+    The Globasa episodes were probably translated from the English, not the French
+    (user, 2026-11-19), so French and Globasa are siblings: French episodes 6+ ->
+    fra-glb-pnc.tsv, a LOOSE dev check only (chrF trend, unknown words, generation
+    errors; never a reference for wording or lexical choice). Episodes 1-5 and the
+    UDHR (English original) -> source-side coverage only. CC-BY 4.0, committable.
 
 Output: parallel_gold_cache/{spa,epo}/ (git-ignored; Xwexi, Vanege and the Babel
 Spanish are not openly licensed). TSV lines are "source<TAB>gold | alt", the
@@ -27,7 +31,13 @@ TMX = ROOT / "Doxo_passages_extended.tmx"
 OUT = ROOT / "parallel_gold_cache"
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 
-LANGS = {"spa": "es", "epo": "eo"}          # Apertium code -> TMX code
+LANGS = {"spa": "es", "epo": "eo", "fra": "fr"}   # Apertium code -> TMX code
+PNC_FRENCH_FROM = 6                         # P&C episodes 6-24 were drafted in French
+
+
+def pnc_episode(ctx):
+    m = re.match(r"Pilpil ji Karote: Mon (\d+)", ctx)
+    return int(m[1]) if m else None
 VOCAB_HEADINGS = re.compile(r"vocabul|vortlist|lexilista", re.I)
 VANEGE_TEST_FROM = 11                       # stories 11.. are held out
 
@@ -193,8 +203,8 @@ def main():
     for code, tmx_lang in LANGS.items():
         out = OUT / code
 
-        # Xwexi, both directions
-        pairs = xwexi_pairs(code)
+        # Xwexi, both directions (no French edition: fra gets none)
+        pairs = xwexi_pairs(code) if code != "fra" else []
         # sources: one row per full alternative of the gloss, optional parts kept;
         # slash alternatives are ambiguous as source text and skipped; gold: every variant
         x2g = [(page, max(variants(alt), key=len), variants(glb))
@@ -203,8 +213,9 @@ def main():
         g2x = [(page, max(variants(glb), key=len), variants(tr)) for page, kind, glb, tr in pairs]
         hdr = ["Xwexi (xwexi-pages-grav) examples: Globasa written for teaching, "
                f"{code} glosses. Grammar regression; not openly licensed, keep local."]
-        report.append((f"{code}-glb-xwexi.tsv", write_tsv(out / f"{code}-glb-xwexi.tsv", x2g, hdr)))
-        report.append((f"glb-{code}-xwexi.tsv", write_tsv(out / f"glb-{code}-xwexi.tsv", g2x, hdr)))
+        if pairs:
+            report.append((f"{code}-glb-xwexi.tsv", write_tsv(out / f"{code}-glb-xwexi.tsv", x2g, hdr)))
+            report.append((f"glb-{code}-xwexi.tsv", write_tsv(out / f"glb-{code}-xwexi.tsv", g2x, hdr)))
 
         # Gold in the real translation direction only
         if code == "spa":
@@ -232,9 +243,20 @@ def main():
             report.append(("epo-glb-vanege-test.tsv", write_tsv(out / "epo-glb-vanege-test.tsv", test,
                                                                 hdr + ["Stories 11-13: held out, score per milestone only."])))
 
+        if code == "fra":
+            rows = [(ctx, t[tmx_lang], [t["glb"]]) for ctx, t in units
+                    if (pnc_episode(ctx) or 0) >= PNC_FRENCH_FROM and t.get(tmx_lang) and t.get("glb")]
+            hdr = ["Pepper & Carrot (David Revoy, CC-BY 4.0, www.peppercarrot.com): episodes "
+                   f"{PNC_FRENCH_FROM}+ were drafted in French, but the Globasa was probably "
+                   "translated from the English: siblings, LOOSE fra->glb check only "
+                   "(chrF trend, unknown words, #-errors), not a reference for wording."]
+            report.append(("fra-glb-pnc.tsv", write_tsv(out / "fra-glb-pnc.tsv", rows, hdr)))
+
         # Sibling translations: source-side coverage text only
         cov = [t[tmx_lang] for ctx, t in units
-               if (ctx.startswith("Pilpil ji Karote") or ctx.startswith("Globatotal Deklaradoku"))
+               if ((ctx.startswith("Pilpil ji Karote")
+                    and not (code == "fra" and pnc_episode(ctx) >= PNC_FRENCH_FROM))
+                   or ctx.startswith("Globatotal Deklaradoku"))
                and t.get(tmx_lang)]
         (out / f"{code}-coverage.txt").write_text("\n".join(cov) + "\n", encoding="utf-8")
         report.append((f"{code}-coverage.txt", len(cov)))
