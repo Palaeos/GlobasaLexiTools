@@ -1,0 +1,8 @@
+# Construct chains by interpretation (constructs.py; see its docstring and rendering.md "Construct chains").
+# WORD-ID<TAB>options<TAB>note      — list a passage's chains with: python3 constructs.py suggest STREAM
+#
+# options: de | fe (relation), head | dep (where an adjective after the chain attaches), comma-separated.
+# Defaults without an entry: de when the dependent is in the rtx `persons` list, else fe; an adjective
+# goes to the head only when it agrees with the head and not with the dependent.
+100102117	fe	Gen 1:21 כָּל־עוֹף כָּנָף "every bird of wing": attributive (winged); construct reading (ETCBC/UD: absolute + apposition)
+100103017	fe	Gen 1:30 יֶרֶק עֵשֶׂב "green of plants", part (the leaves): rendering.md table (alt. de); construct reading (ETCBC/UD: absolute + apposition "all the green, the plants")

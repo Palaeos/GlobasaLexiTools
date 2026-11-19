@@ -13,10 +13,24 @@ gender = ut nt m f GD;
 person = p1 p2 p3;
 number = sg pl du;
 gtense = pres past fut imp inf;
+! Hebrew (source) gender, for adjective agreement in construct chains
+hgen = m f mf;
+! NP chunk attribute: the NP's head is a person (a construct dependent -> `de`)
+hum = hum;
+! Construct chains by interpretation (constructs.py, curated/constructs.tsv): relation
+! de/fe, and where an adjective after the chain attaches (head/dependent)
+crel = rde rfe;
+cadj = ahd adp;
+! Clause role from the treebank (syntax.py: UD PTNK), carried up by NP chunks from their
+! head word (for a numeral + noun the noun, as in UD); empty without the treebank
+srole = Snsubj Sobj Sobl Siobj Sxcomp;
 
 ! Hebrew lemma lists (NFC, as prep_stream.py writes them)
 rulev = רדה משׁל;
 rolen = אות מועד יום שׁנה מאור אכלה;
+! Construct dependents that possess (`X de Y`): God, humans, kin, office holders. Any other
+! dependent relates (`X fe Y`). constructs.py reads this line for its `suggest` defaults.
+persons = אלהים יהוה אדם אישׁ אשׁה אב אם בן בת אח אחות מלך עבד כהן נביא עם;
 
 !!!!!!!!!!!!!!!
 !! OUTPUT PATTERNS
@@ -37,7 +51,8 @@ vbser: _;
 vbpr: _.gtense;
 sent: _;
 
-NP: _;
+NP: _.hum.srole;
+SUF: _;
 AJ: _;
 PP: _;
 VP: _;
@@ -47,44 +62,87 @@ CL: _;
 !! NOUN PHRASES
 !!!!!!!!!!!!!!!
 
-! Adjectives precede the noun; construct chains: `de` for God (belonging),
-! `fe` otherwise (description, category); pronoun suffixes -> possessives;
-! כל -> moy; numerals precede (ordinals are adjectives in the bidix).
-NP -> 0.1: n { 1 } |
-      0.1: prn { 1 } |
-      5: n adj { 2 _ 1 } |
-      5: n adj adv { 3 _ 2 _ 1 } |
-      5: n num { 2 _ 1 } |
-      20: n.*.cons אלהים@n { 1 _ de@pr _ 2 } |
-      20: n.*.cons prn { prpers@det.pos.[2.person].ut.[2.number] _ 1 } |
-      ! Gendered second person, mode GENDER=1 only (rules named "p_gender"; the default
-      ! binary is rtx-comp -e p_gender). Second-person gender is the addressee's sex:
-      ! אַתָּה manyu, אַתְּ femyu, אַתֶּן femuyu. The masculine plural also addresses mixed
-      ! groups (Gen 1:28, to humanity "male and female"), so אַתֶּם stays uyu. Third
-      ! person stays te/ete: Hebrew gender there is grammatical (לְמִינֵהוּ "its kind").
-      ! Gender by interpretation (curated/pronouns.tsv via pronouns.py: <igm> <igf> <igut>
-      ! <ignt> on the word's pronoun or verb); outweighs the automatic rules.
-      30: prn.*.igm { prpers@prn.[1.person].m.[1.number] } |
-      30: prn.*.igf { prpers@prn.[1.person].f.[1.number] } |
-      30: prn.*.igut { prpers@prn.[1.person].ut.[1.number] } |
-      30: prn.*.ignt { prpers@prn.[1.person].nt.[1.number] } |
-      31: n.*.cons prn.*.igm { prpers@det.pos.[2.person].m.[2.number] _ 1 } |
-      31: n.*.cons prn.*.igf { prpers@det.pos.[2.person].f.[2.number] _ 1 } |
-      31: n.*.cons prn.*.igut { prpers@det.pos.[2.person].ut.[2.number] _ 1 } |
-      31: n.*.cons prn.*.ignt { prpers@det.pos.[2.person].nt.[2.number] _ 1 } |
-      "p_gender" 1: prn.pers.p2.m.sg { prpers@prn.p2.m.sg } |
-      "p_gender" 1: prn.pers.p2.f.sg { prpers@prn.p2.f.sg } |
-      "p_gender" 1: prn.pers.p2.f.pl { prpers@prn.p2.f.pl } |
-      "p_gender" 21: n.*.cons prn.pers.p2.m.sg { prpers@det.pos.p2.m.sg _ 1 } |
-      "p_gender" 21: n.*.cons prn.pers.p2.f.sg { prpers@det.pos.p2.f.sg _ 1 } |
-      "p_gender" 21: n.*.cons prn.pers.p2.f.pl { prpers@det.pos.p2.f.pl _ 1 } |
-      20: כל@n NP { moy@det _ 2 } |
-      20: כל@n { moy@det } |
-      10: n.*.cons NP { 1 _ fe@pr _ 2 } |
-      num NP { 1 _ 2 } ;
+! Adjectives precede the noun; numerals precede (ordinals are adjectives in the bidix);
+! כל -> moy.  Globasa order: possessive, numeral, adjective, noun (grammar 08).
+!
+! Construct chains (rendering.md "Construct chains"): `X de Y` when Y is a person
+! ([$hum=hum]: the `persons` list), `X fe Y` otherwise, or as curated per word
+! (constructs.py: <rde> <rfe> on the head). A chain inside a chain passes its head's
+! person-ness up, so בֵּית אֲבִי X is `baytu de patre de X`. An adjective after a two-noun
+! chain goes to the head when it agrees with the head only (or curated <ahd>), else to
+! the dependent: Hebrew adjectives agree in gender and number, dual nouns take plurals.
+NP -> 0.1: n [$hum="", $srole=1.srole] { 1 } |
+      0.2: [persons]@n [$hum=hum, $srole=1.srole] { 1 } |
+      0.1: prn [$hum="", $srole=1.srole] { 1 } |
+      ! יַבָּשָׁה "dry land": the phrase `suhe geo` (bidix: geo); the compound suhegeo is "desert"
+      1: יבשׁה@n [$hum="", $srole=1.srole] { suhe@adj _ 1 } |
+      5.2: יבשׁה@n adj [$hum="", $srole=1.srole] { 2 _ suhe@adj _ 1 } |
+      5: n adj [$hum="", $srole=1.srole] { 2 _ 1 } |
+      5.1: [persons]@n adj [$hum=hum, $srole=1.srole] { 2 _ 1 } |
+      5: n adj adv [$hum="", $srole=1.srole] { 3 _ 2 _ 1 } |
+      5: n num.*.abs [$hum="", $srole=1.srole] { 2 _ 1 } |
+      ! pronoun suffix: possessive before the noun (and before its adjective, numeral)
+      20: n.*.cons SUF [$hum="", $srole=1.srole] { 2 _ 1 } |
+      20.1: [persons]@n.*.cons SUF [$hum=hum, $srole=1.srole] { 2 _ 1 } |
+      22: n.*.cons SUF adj [$hum="", $srole=1.srole] { 2 _ 3 _ 1 } |
+      22.1: [persons]@n.*.cons SUF adj [$hum=hum, $srole=1.srole] { 2 _ 3 _ 1 } |
+      22: num.*.cons n.*.cons SUF [$hum="", $srole=2.srole] { 3 _ 1 _ 2 } |
+      ! construct chain
+      10: n.*.cons NP [$hum="", $srole=1.srole]
+          { 1 _ (if (1.crel = rde) [de@pr] elif (1.crel = rfe) [fe@pr]
+                 elif (2.hum = hum) [de@pr] else [fe@pr]) _ 2 } |
+      10.1: [persons]@n.*.cons NP [$hum=hum, $srole=1.srole]
+          { 1 _ (if (1.crel = rde) [de@pr] elif (1.crel = rfe) [fe@pr]
+                 elif (2.hum = hum) [de@pr] else [fe@pr]) _ 2 } |
+      ! chain + adjective: attach by agreement
+      15: n.*.cons n adj [$hum="", $srole=1.srole]
+          ! (rtx has no operator precedence: every comparison is bracketed)
+          { (if ((1.cadj = ahd) or ((not (1.cadj = adp)) and
+                 (((3.hgen/sl = 1.hgen/sl) and ((3.number/sl = 1.number/sl) or
+                    ((3.number/sl = pl) and (1.number/sl = du)))) and
+                  (not ((3.hgen/sl = 2.hgen/sl) and ((3.number/sl = 2.number/sl) or
+                    ((3.number/sl = pl) and (2.number/sl = du))))))))
+              [3 _ 1 _ (if (1.crel = rde) [de@pr] elif (1.crel = rfe) [fe@pr]
+                        elif (2.lem/sl in persons) [de@pr] else [fe@pr]) _ 2]
+             else
+              [1 _ (if (1.crel = rde) [de@pr] elif (1.crel = rfe) [fe@pr]
+                    elif (2.lem/sl in persons) [de@pr] else [fe@pr]) _ 3 _ 2]) } |
+      20: כל@n NP [$hum=2.hum, $srole=1.srole] { moy@det _ 2 } |
+      ! (outweighs the chain + adjective rule, which would take כל as a head noun)
+      25: כל@n n adj [$hum="", $srole=1.srole] { moy@det _ 3 _ 2 } |
+      25.1: כל@n [persons]@n adj [$hum=hum, $srole=1.srole] { moy@det _ 3 _ 2 } |
+      20: כל@n [$hum="", $srole=1.srole] { moy@det } |
+      15: num.*.cons NP [$hum=2.hum, $srole=2.srole] { 1 _ 2 } |
+      num NP [$hum=2.hum, $srole=2.srole] { 1 _ 2 } ;
 ! No NP-coordination rule: it only kept the order, and its open branch blocked
 ! clause rules after a noun (Gen 1:3 `am hay lumin`).  Likewise no clause rule
 ! may start with NP.
+
+! Possessive suffixes (prep_stream.py tags them <psuf>): tesu/etesu… by default
+! (rendering.md "Possessives"); `sesu` where the possessor is the clause subject, by
+! interpretation (curated/pronouns.tsv `sesu` -> <igse>); gender by interpretation
+! (<igm> <igf> <igut> <ignt>), outweighing the automatic second-person rules.
+! Gendered second person, mode GENDER=1 only (rules named "p_gender"; the default
+! binary is rtx-comp -e p_gender): אַתָּה manyu, אַתְּ femyu, אַתֶּן femuyu; the masculine
+! plural also addresses mixed groups (Gen 1:28), so it stays uyu.
+SUF -> 1: prn.*.psuf { prpers@det.pos.[1.person].ut.[1.number] } |
+       30: prn.*.igse.psuf { sesu@adj } |
+       30: prn.*.igm.psuf { prpers@det.pos.[1.person].m.[1.number] } |
+       30: prn.*.igf.psuf { prpers@det.pos.[1.person].f.[1.number] } |
+       30: prn.*.igut.psuf { prpers@det.pos.[1.person].ut.[1.number] } |
+       30: prn.*.ignt.psuf { prpers@det.pos.[1.person].nt.[1.number] } |
+       "p_gender" 2: prn.pers.p2.m.sg.psuf { prpers@det.pos.p2.m.sg } |
+       "p_gender" 2: prn.pers.p2.f.sg.psuf { prpers@det.pos.p2.f.sg } |
+       "p_gender" 2: prn.pers.p2.f.pl.psuf { prpers@det.pos.p2.f.pl } ;
+
+! Independent and object pronouns: gender by interpretation, GENDER=1 second person.
+NP -> 30: prn.*.igm [$hum="", $srole=1.srole] { prpers@prn.[1.person].m.[1.number] } |
+      30: prn.*.igf [$hum="", $srole=1.srole] { prpers@prn.[1.person].f.[1.number] } |
+      30: prn.*.igut [$hum="", $srole=1.srole] { prpers@prn.[1.person].ut.[1.number] } |
+      30: prn.*.ignt [$hum="", $srole=1.srole] { prpers@prn.[1.person].nt.[1.number] } |
+      "p_gender" 1: prn.pers.p2.m.sg [$hum="", $srole=1.srole] { prpers@prn.p2.m.sg } |
+      "p_gender" 1: prn.pers.p2.f.sg [$hum="", $srole=1.srole] { prpers@prn.p2.f.sg } |
+      "p_gender" 1: prn.pers.p2.f.pl [$hum="", $srole=1.srole] { prpers@prn.p2.f.pl } ;
 
 AJ -> 0.1: adj { 1 } | 5: adj adv { 2 _ 1 } ;
 
@@ -99,7 +157,8 @@ PP -> 1: pr NP { 1 _ 2 } |
       20: ב@pr ראשׁית@n.*.cons { fe@pr _ 2 } |
       20: מ@pr תחת@pr ל@pr NP { 2 _ 4 } |
       20: מ@pr על@pr ל@pr NP { supra@pr _ 4 } |
-      20: ל@pr מין@n.*.cons prn { fol@pr _ sesu@adj _ 2 } |
+      ! לְמִינוֹ "according to its kind": possessive by referent (rendering.md "Possessives")
+      20: ל@pr מין@n.*.cons SUF { fol@pr _ 3 _ 2 } |
       20: ל@pr [rolen]@n { fe@pr _ rol@n.GD _ fe@pr _ 2 } |
       20: ל@pr ממשׁלה@n.*.cons NP { cel@pr _ u@vbpr.inf _ krasi@vblex _ 3 } |
       20: ל@pr v.*.inf { cel@pr _ u@vbpr.inf _ 2 } |
@@ -112,17 +171,30 @@ PP -> 1: pr NP { 1 _ 2 } |
 !! CLAUSES (rendering.md: Tense in narration, Clause linkage)
 !!!!!!!!!!!!!!!
 
-! ל + אמר infinitive ("saying") introduces speech: not rendered.
-VP -> ל@pr אמר@v.*.inf { } ;
+! ל + אמר infinitive ("saying") introduces speech: `, loga: “…”` (rendering.md "Speech";
+! punctuation.py inserts the comma, colon and quotes). Outweighs PP `ל v.inf` (purpose).
+VP -> 30: ל@pr אמר@v.*.inf { loga@vblex } ;
 
 CL -> ! fallbacks: bare Globasa verb, Hebrew tags dropped
       0.1: v { 1 } |
       ! wayyiqtol storyline: bare verb, subject first
       10: v.*.consec NP { 2 _ 1 } |
+      ! two NPs: the treebank's roles decide the order; without them, the first is the
+      ! subject (fallback: word order). Gen 1:17 וַיִּתֵּן אֹתָם אֱלֹהִים -> `Teo gibe ete`
+      11: v.*.consec NP NP
+          { (if ((2.srole = Sobj) and (3.srole = Snsubj)) [3 _ 1 _ 2] else [2 _ 1 _ 3]) } |
+      ! addressee before the subject: וַיֹּאמֶר לָהֶם אֱלֹהִים -> `Teo loga tas ete` (the NP is
+      ! the subject by the treebank, or by position when there is none: fallback)
+      10: v.*.consec PP NP
+          { (if ((3.srole = Snsubj) or (3.srole = "")) [3 _ 1 _ 2] else [1 _ 2 _ 3]) } |
       ! existential היה: jussive `am hay X`, wayyiqtol `hay X`; ויהי כן `to okur denmaner`
       30: היה@v.*.jus NP { u@vbpr.imp _ hay@vblex _ 2 } |
       30: היה@v.*.consec NP { hay@vblex _ 2 } |
       30: היה@v.*.consec כן@adv { prpers@prn.p3.nt.sg _ okur@vblex _ 2 } |
+      ! day formula וַיְהִי־בֹקֶר יוֹם רְבִיעִי: יוֹם + numeral is a verbless summary of the
+      ! evening-morning pair, not a dependent of בֹקֶר (disjunctive accent on בֹ֖קֶר):
+      ! `hay soba: careyum din` (draft Gen 1:5-31), not `soba careyum din`
+      35: היה@v.*.consec NP יום@n num { hay@vblex _ 2 "\:"@sent _ 4 _ 3 } |
       ! jussive with subject: `S am V`
       20: v.*.jus NP { 2 _ u@vbpr.imp _ 1 } |
       15: v.*.jus { u@vbpr.imp _ 1 } |
@@ -134,6 +206,32 @@ CL -> ! fallbacks: bare Globasa verb, Hebrew tags dropped
       15: v.*.perf.p1.*.sg { prpers@prn.p1.ut.sg _ 1 } |
       ! yiqtol (not wayyiqtol: those match the weightier rules above): future
       1: v.*.impf.p3 { u@vbpr.fut _ 1 } |
+      ! qatal / yiqtol + NP by the treebank's role (else word order: fallback): its subject
+      ! goes first (1:21 אֲשֶׁר שָׁרְצוּ הַמַּיִם `hu sui plucu`; 1:20 יִשְׁרְצוּ הַמַּיִם `sui xa
+      ! plucu`); with an object and no subject, the subject pronoun from the verb's
+      ! agreement (1:27 בָּרָא אֹתוֹ `te julagi te`; te/ete by default, rendering.md)
+      12: v.*.perf NP
+          { (if (2.srole = Snsubj) [2 _ 1]
+             elif (2.srole = Sobj) [prpers@prn.[1.person].ut.[1.number] _ 1 _ 2]
+             else [1 _ 2]) } |
+      ! fronted predicative complement (treebank xcomp) X ו-Y V O -> `te V O X ji Y`; with
+      ! בָּרָא the resultative `cel` (van Wolde 2026: 1:27c "separated them into male and
+      ! female"; draft 1:27)
+      ! (anchored on syntax.py's clause boundary ¦: a rule starting with a bare adj opens a
+      ! competing parse at every adjective, 1:21 `day kayvutu` -> `kayvutu day`)
+      25: ¦@punct adj.*.Sxcomp cnjcoo n v.*.perf NP
+          { prpers@prn.[5.person].ut.[5.number] _ 5 _ 6 _
+            (if (5.lem/sl = ברא) [cel@pr _] else []) 2 _ 3 _ 4 } |
+      ! the same with a trailing adjective (1:27 בָּרָא אֹתוֹ זָכָר …: an AJ after the NP keeps
+      ! the parser from closing `v NP`)
+      12: v.*.perf NP AJ
+          { (if (2.srole = Snsubj) [2 _ 1 _ 3]
+             elif (2.srole = Sobj) [prpers@prn.[1.person].ut.[1.number] _ 1 _ 2 _ 3]
+             else [1 _ 2 _ 3]) } |
+      12: v.*.impf.p3 NP
+          { (if (2.srole = Snsubj) [2 _ u@vbpr.fut _ 1]
+             elif (2.srole = Sobj) [prpers@prn.p3.ut.[1.number] _ u@vbpr.fut _ 1 _ 2]
+             else [u@vbpr.fut _ 1 _ 2]) } |
       ! naming: V S ל-X Y -> S namegi X Y; fronted ל-X V Y -> te namegi X Y
       40: קרא@v.*.consec NP ל@pr NP NP { 2 _ 1 _ 4 _ 5 } |
       40: ל@pr NP קרא@v.*.perf NP { prpers@prn.p3.ut.sg _ 3 _ 2 _ 4 } |
@@ -144,6 +242,9 @@ CL -> ! fallbacks: bare Globasa verb, Hebrew tags dropped
       41: ל@pr NP קרא@v.*.perf.*.ignt NP { prpers@prn.p3.nt.sg _ 3 _ 2 _ 4 } |
       ! "rule over" governs ב: direct object of krasi
       30: [rulev]@v ב@pr NP { 1 _ 3 } |
+      ! resumptive possessive in a relative clause: אֲשֶׁר זַרְעוֹ "whose seed" -> `hu dasu bija`
+      ! (grammar 08: dasu)
+      25: אשׁר@cnjsub n.*.cons prn.pers.p3.*.psuf { 1 _ dasu@adj _ 2 } |
       ! attributive participle with an object: relative clause `hu da V O`
       20: v.*.part NP { hu@cnjsub _ da@prn _ 1 _ 2 } |
       ! complement "that (it was) good": `ki to sen bon`

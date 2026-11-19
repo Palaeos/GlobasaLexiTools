@@ -54,7 +54,7 @@ hbo	hbo_pos	glb	glb_pos	alternatives	basis
 כנף	n	fleytul	n		lexicon
 אדמה	n	geo	n	turan	lexicon
 ירק	n	kijawiya	n		lexicon
-יבשׁה	n	suhegeo	n	geo	derived: suhe "dry" + geo "land" (not suikal = thirsty)
+יבשׁה	n	geo	n	suhegeo (word list: desert)	rendering: "dry land" = the phrase `suhe geo` (rtx adds suhe; user 2026-11-14); not the compound suhegeo "desert", not suikal "thirsty"
 חי	n	hewan	n	yaxu	rendering: construct table (חיה "beast")
 כל	n	moy	det		rendering: כל -> moy
 נקבה	n	femyen	n	fem	lexicon

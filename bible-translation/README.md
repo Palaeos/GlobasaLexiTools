@@ -94,10 +94,31 @@ The earlier word-list-only run (Dec 2024 list, en+es) had 67 / 8 / 21 none.
   (tag patterns are adjacent: `v.*.consec`; no clause rule may start with NP).
 - `prep_stream.py`: first reading, NFC, drops article/maqaf/את and the
   verse-initial *wa*, retags wayyiqtol (`wayy`) and jussive.
-- `translate.sh [STREAM]`: prep → pretransfer → bidix → rtx → apertium-glb
-  generator → `postformat.py`. Unknown-to-generator words go to stderr.
+- `syntax.py`: UD Ancient Hebrew PTNK merged into the stream by word id
+  (roles nsubj/obj/obl/iobj/xcomp, adjective attachment after chains, a
+  boundary before clauses with a fronted constituent). Treebank cached in
+  `sources/ud/` (gitignored: CC BY-SA, with ETCBC morphology CC BY-NC);
+  fetch `hbo_ptnk-ud-*.conllu` from
+  github.com/UniversalDependencies/UD_Ancient_Hebrew-PTNK. Covers Genesis,
+  Exodus–Numbers, Deuteronomy, Ruth; without it the rules use word order.
+- `pronouns.py`, `curated/pronouns.tsv`: pronoun gender and `sesu` per
+  occurrence (rendering.md "Pronoun gender", "Possessives").
+- `constructs.py`, `curated/constructs.tsv`: construct chains `de`/`fe` and
+  adjective attachment per occurrence; `suggest` lists a passage's chains
+  (rendering.md "Construct chains").
+- `punctuation.py`, `curated/punctuation.tsv`: quotation marks inferred
+  from verbs of saying (rendering.md "Speech"); dashes, parentheses and quote
+  corrections per word (rendering.md "Relative clauses, parenthesis").
+- `translate.sh [STREAM]`: pronouns/constructs/punctuation tagging → prep → pretransfer →
+  bidix → rtx → apertium-glb generator → `postformat.py`. Unknown-to-generator
+  words go to stderr.
+- `tmx.py`: the draft as TMX (`FORMAT=tmx ./translate.sh`): one `<tu>` per
+  verse, `tuid`/x-ref the verse, Hebrew from the stream's surface forms,
+  petucha/setuma as x-paragraph.
+- `tests/run.sh`: construct chains and possessives on a hand-made stream.
 
-Gen 1: machine output `data/Gen_1_glb_machine.txt`; revised draft with the
+Gen 1: machine draft `data/Gen_1_glb_machine.tmx` (TMX 1.4, Hebrew verse +
+Globasa per `<tu>`: `FORMAT=tmx ./translate.sh > …`, `tmx.py`); revised draft with the
 basis of every change `data/Gen_1_glb_draft.md`.
 
 ## Parked (longer term)
@@ -169,10 +190,11 @@ basis of every change `data/Gen_1_glb_draft.md`.
    the LXX and the Masoretic accent (tipcha), itself also Tiberian. Decide whether the
    preferred reading of 1:1–3 changes; the main-clause alternative is
    already written out in `data/Gen_1_glb_draft.md`.
-1. **Syntax-based transfer:** merge UD PTNK roles (nsubj, obj, obl, mark)
-   and BHSA phrase functions / clause types into the stream by word id;
-   rewrite the rtx clause rules on roles; map BHSA clause types to the *wa*
-   table in `rendering.md`; compare Gen 1 with `data/Gen_1_glb_draft.md`.
+1. **Syntax-based transfer:** UD PTNK roles merged (`syntax.py`, 2026-11-14;
+   Gen 1: 434/434 words aligned; clause rules order by role; 8 verses
+   changed, see rendering.md "Syntax from the treebank"). Open: BHSA phrase
+   functions / clause types (Text-Fabric) for the *wa* table; quote spans
+   from `ccomp`; apposition (1:16) for automatic dashes.
 
 1. **Portuguese:** SDBH publishes it (pt JSON) and the extension has a
    Portuguese column; the word list has none.

@@ -1,0 +1,4 @@
+# Fixture entries (tests/constructs.hbo.txt)
+900002302	after	.	T.2.3: a wayyiqtol inside the speech (story retold); the speech ends after its clause
+900002302	after	”	T.2.3
+900002401	after	noquote	T.2.4: no inferred quote

@@ -1,0 +1,4 @@
+# Punctuation by interpretation (punctuation.py; see its docstring and rendering.md "Relative clauses, parenthesis").
+# WORD-ID<TAB>before|after<TAB>mark<TAB>note      marks: — ( ) : ; ,
+100101607	before	—	Gen 1:16 apposition: the two great lights, spelled out (draft 1:16); dash before the second אֶת
+100101617	before	—	Gen 1:16 closing dash before וְאֵת הַכּוֹכָבִים "and the stars" (draft 1:16)

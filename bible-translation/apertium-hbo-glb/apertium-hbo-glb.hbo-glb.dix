@@ -16,6 +16,7 @@
     <sdef n="num"/>
     <sdef n="pr"/>
     <sdef n="prn"/>
+    <sdef n="punct"/>
     <sdef n="sent"/>
     <sdef n="ut"/>
     <sdef n="v"/>
@@ -24,6 +25,16 @@
   </sdefs>
   <section id="main" type="standard">
     <e r="LR"><p><l>׃<s n="sent"/></l><r>.<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>—<s n="punct"/></l><r>—<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>(<s n="punct"/></l><r>(<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>)<s n="punct"/></l><r>)<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>:<s n="punct"/></l><r>:<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>;<s n="punct"/></l><r>;<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>,<s n="punct"/></l><r>,<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>.<s n="punct"/></l><r>.<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>“<s n="punct"/></l><r>“<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>”<s n="punct"/></l><r>”<s n="sent"/></r></p></e>
+    <e r="LR"><p><l>¦<s n="punct"/></l><r>¦<s n="sent"/></r></p></e>
     <e r="LR"><p><l>אלהים<s n="n"/></l><r>Teo<s n="n"/><s n="ut"/></r></p></e>  <!-- rendering: God = Teo (project owner) -->
     <e r="LR"><p><l>ארץ<s n="n"/></l><r>geo<s n="n"/><s n="nt"/></r></p></e>  <!-- lexicon -->
     <e r="LR"><p><l>מים<s n="n"/></l><r>sui<s n="n"/><s n="nt"/></r></p></e>  <!-- lexicon -->
@@ -71,7 +82,7 @@
     <e r="LR"><p><l>כנף<s n="n"/></l><r>fleytul<s n="n"/><s n="nt"/></r></p></e>  <!-- lexicon -->
     <e r="LR"><p><l>אדמה<s n="n"/></l><r>geo<s n="n"/><s n="nt"/></r></p></e>  <!-- lexicon -->
     <e r="LR"><p><l>ירק<s n="n"/></l><r>kijawiya<s n="n"/><s n="nt"/></r></p></e>  <!-- lexicon -->
-    <e r="LR"><p><l>יבשׁה<s n="n"/></l><r>suhegeo<s n="n"/><s n="nt"/></r></p></e>  <!-- derived: suhe "dry" + geo "land" (not suikal = thirsty) -->
+    <e r="LR"><p><l>יבשׁה<s n="n"/></l><r>geo<s n="n"/><s n="nt"/></r></p></e>  <!-- rendering: "dry land" = the phrase `suhe geo` (rtx adds suhe; user 2026-11-14); not the compound suhegeo "desert", not suikal "thirsty" -->
     <e r="LR"><p><l>חי<s n="n"/></l><r>hewan<s n="n"/><s n="ut"/></r></p></e>  <!-- rendering: construct table (חיה "beast") -->
     <e r="LR"><p><l>כל<s n="n"/></l><r>moy<s n="det"/></r></p></e>  <!-- rendering: כל -&gt; moy -->
     <e r="LR"><p><l>נקבה<s n="n"/></l><r>femyen<s n="n"/><s n="f"/></r></p></e>  <!-- lexicon -->

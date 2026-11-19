@@ -1,6 +1,6 @@
 # Genesis 1 — Globasa draft
 
-Machine output: `Gen_1_glb_machine.txt` (apertium-hbo-glb, `./translate.sh`).
+Machine output: `Gen_1_glb_machine.tmx` (apertium-hbo-glb, `FORMAT=tmx ./translate.sh`).
 This file is the revision of that output. Each verse gives the revised text,
 then what changed and why. Sources: `rendering.md` (R), Isaksson, *The Verb in
 Classical Hebrew* (2024) on the conjunction *wa* (I), the Doxo corpus (D),
@@ -82,16 +82,16 @@ Conventions applied throughout:
 
 **1:8** Teo namegi kube asman. Hay axam ji hay soba: duayum din.
 
-**1:9** Teo loga: “Sui bax asman am toncu cel un loka, celki suhegeo na precu.” Ji to okur denmaner.
+**1:9** Teo loga: “Sui bax asman am toncu cel un loka, celki suhe geo na precu.” Ji to okur denmaner.
 
 - *wa*-yiqtol after a jussive = purpose "so that the dry land appears"
   (I p. 236 ex. 117; p. 212 ex. 88) → `celki` + noun + infinitive (G).
 - Jussive with subject: `S am V` (G: "Te am yam"). Niphal קוה → `toncu` (`-cu`
   intransitive, G).
-- יַּבָּשָׁה → `suhegeo` (`suhe` "dry" + `geo`; not `suikal` "thirsty").
+- יַּבָּשָׁה → `suhe geo` "dry land" (`suhe` "dry" + `geo`; not the compound `suhegeo`, which the word list gives as "desert"; not `suikal` "thirsty").
   Machine: `of bax asman` → `bax asman` (מִתַּחַת without לְ).
 
-**1:10** Teo namegi suhegeo geo, ji te namegi he toncudu fe sui bahari. Ji Teo oko ki to sen bon.
+**1:10** Teo namegi suhe geo geo, ji te namegi he toncudu fe sui bahari. Ji Teo oko ki to sen bon.
 
 - Fronted object as in 1:5.
 

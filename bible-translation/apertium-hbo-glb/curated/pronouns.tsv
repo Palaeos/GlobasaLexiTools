@@ -5,3 +5,7 @@
 # life form"), so plants and animals need no entry; to/oto only for things. A masculine plural is mixed
 # by default (ete, uyu): manete/manuyu only where the group is all male by interpretation. GENDER=1 adds
 # the second person the grammar settles: 2 m sg manyu, 2 f sg femyu, 2 f pl femuyu.
+# sesu: the possessor is the clause subject (rendering.md "Possessives"); elsewhere tesu/etesu by
+# default (Gen 1:21, 24, 25 לְמִינָהּ: the subject is God, the waters or the earth, the kind is the creatures')
+100101113	sesu	Gen 1:11 עֵץ פְּרִי עֹשֶׂה פְּרִי לְמִינוֹ: the tree, subject of its own relative clause (draft 1:11). Not 1:12: there the kind belongs to the main clause, subject the earth (draft 1:12)
+100102705	sesu	Gen 1:27 בְּצַלְמוֹ: God created humanity in his own image (God is subject and possessor)

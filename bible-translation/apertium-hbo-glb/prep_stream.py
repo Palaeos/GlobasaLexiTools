@@ -15,6 +15,10 @@ the hbo-glb transfer:  stdin -> stdout.
 - retags verb forms so transfer patterns cannot confuse them: wayyiqtol
   <impf>…<consec> -> <wayy>…<consec>, weqatal <perf>…<consec> -> <weqt>…<consec>,
   jussive <impf>…<jus> -> …<jus> (rtx tag patterns cannot say "not consec");
+  likewise a pronoun suffixed to a noun or numeral gets <psuf> (possessive:
+  בְּצַלְמוֹ "in his image"; suffixes on prepositions and verbs are not
+  possessive), and a numeral not in the construct state gets <abs> (postposed
+  יוֹם אֶחָד "day one" vs construct שְׁנֵי הַמְּאֹרֹת "the two lights");
 - outputs the analysis only (as a tagger would), NFC-normalised: the stream
   writes שׁ as U+FB2A, the bidix as U+05E9 U+05C1;
 - verse references and Masoretic marks in [...] stay as superblanks.
@@ -35,6 +39,11 @@ def first_reading(m):
     if not parts or re.match(r"[^<]*<hyph>", parts[0]):
         return ""
     parts = [retag(p) for p in parts]
+    for i in range(1, len(parts)):
+        if "<prn>" in parts[i] and re.match(r"[^<]*<(n|num)>", parts[i - 1]):
+            parts[i] += "<psuf>"
+    parts = [p + "<abs>" if re.match(r"[^<]*<num>", p) and "<cons>" not in p else p
+             for p in parts]
     return "^" + "+".join(parts) + "$"
 
 

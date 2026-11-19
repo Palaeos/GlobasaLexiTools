@@ -19,6 +19,8 @@ curated/pronouns.tsv, one line per word, '#' comments:
   pronoun   mante femte te to · manete femete ete oto · manyu femyu yu · manuyu femuyu uyu
             · manmi femmi mi · imi (only its gender is used; person and number come from the
             Hebrew, and a mismatch is reported on stderr)
+            · sesu: a possessive suffix whose possessor is the clause subject (rendering.md
+            "Possessives": Gen 1:27 בְּצַלְמוֹ, God created … in his own image)
   note      free text: the reason (e.g. "Gen 1:27 humanity, generic → te")
 
 The entry applies to the word's pronoun part (suffix or independent pronoun), or, when the
@@ -45,6 +47,7 @@ PRONOUNS = {
     "manuyu": ("igm", "p2", "pl"), "femuyu": ("igf", "p2", "pl"), "uyu": ("igut", "p2", "pl"),
     "manmi": ("igm", "p1", "sg"), "femmi": ("igf", "p1", "sg"), "mi": ("igut", "p1", "sg"),
     "imi": ("igut", "p1", "pl"),
+    "sesu": ("igse", None, None),
 }
 
 
@@ -79,12 +82,14 @@ def tag_unit(m, table):
     for reading in readings:
         parts = parts_of(reading)
         target = next((i for i, p in enumerate(parts) if "<prn>" in p), None)
-        if target is None:
+        if target is None and person is None:
+            print(f"pronouns: {word_id} {surface}: {glb} needs a pronoun suffix", file=sys.stderr)
+        elif target is None:
             target = next((i for i, p in enumerate(parts) if "<v>" in p), None)
         if target is not None:
             p = parts[target]
             tags = re.findall(r"<([^>]+)>", p)
-            if (person in tags and number not in tags and "<prn>" in p
+            if (person and person in tags and number not in tags and "<prn>" in p
                     and not (number == "pl" and "du" in tags)):
                 print(f"pronouns: {word_id} {surface}: {glb} is {number}, the Hebrew is not",
                       file=sys.stderr)

@@ -108,7 +108,7 @@ interpretive and recorded per phrase.
 |---|---|---|---|
 | 1:2 רוּחַ אֱלֹהִים | belonging | `vento de Teo`; alt. superlative "mighty wind" → adjective, no `de` | lexicon: רוח `vento`, אלהים `teo` → `Teo` (see Lexicon) |
 | 1:27 צֶלֶם אֱלֹהִים | belonging | `imaje de Teo` | curated: צלם `imaje` (see Lexicon) |
-| 1:26–27 צַלְמֵנוּ, צַלְמוֹ; 1:11–25 מִינוֹ; 1:11 זַרְעוֹ | pronoun suffix | `imisu imaje`, `sesu imaje`, `fol sesu jongu`, `sesu bija` | lexicon: `jongu`, `bija` |
+| 1:26–27 צַלְמֵנוּ, צַלְמוֹ; 1:11–25 מִינוֹ; 1:11 זַרְעוֹ | pronoun suffix | `imisu imaje`, `sesu imaje` (1:27, God subject and possessor), `fol sesu jongu` (1:11, the tree's own clause) but `fol tesu`/`etesu jongu` where the subject is the earth or God (1:12, 21–25), `dasu bija` (1:11 after אֲשֶׁר) | lexicon: `jongu`, `bija` |
 | 1:11 עֵץ פְּרִי "fruit tree" | kind | `drevo fe fruta` | lexicon |
 | 1:29 פְרִי עֵץ "tree fruit" | kind | `fruta fe drevo` | lexicon |
 | 1:10 מִקְוֵה הַמַּיִם "gathering of the waters" | composition | `toncudu fe sui` (provisional) | word list `toncudu` "collection"; lexicon has no candidate for מקוה |
@@ -126,6 +126,70 @@ interpretive and recorded per phrase.
 
 - **Not attested in Doxo:** descriptive `X fe Y` with nature nouns, and
   `fe perya de`. Both follow the grammar's stated patterns.
+
+How the pair applies this (`apertium-hbo-glb`, 2026-11-14):
+
+- **Default relation:** `de` when the dependent is a person (rtx list
+  `persons`: God, YHWH, humans, kin, office holders, people), `fe`
+  otherwise. `fe` only says "relating to", so it is the safe default; `de`
+  claims belonging. Animacy is not the test: Globasa `ut` covers plants too,
+  and 1:29 פְרִי עֵץ is kind (`fruta fe drevo`), not belonging.
+- **Nested chains** pass the head's person-ness up: בֵּית אֲבִי X →
+  `baytu de patre de X`; פְּנֵי רוּחַ אֱלֹהִים → `perya fe vento de Teo`.
+- **Per occurrence:** `curated/constructs.tsv` (word id of the head → `de`
+  or `fe`, and `head`/`dep` for a following adjective). `de`/`fe` on a noun
+  the source tagged absolute makes it a chain. 1:30 יֶרֶק עֵשֶׂב and 1:21
+  עוֹף כָּנָף are such readings: ETCBC (state) and UD PTNK read the first noun
+  as absolute with עֵשֶׂב/כָּנָף in apposition ("all the green, the plants");
+  the table above takes the construct reading. `suggest` shows the
+  treebank's reading of each noun + noun pair.
+  `python3 constructs.py suggest STREAM` lists every chain with its default,
+  and noun + noun pairs whose first noun could still be a construct head
+  (no article, conjunctive accent).
+- **Adjective after a chain:** Hebrew adjectives agree in gender and number
+  (dual nouns take plural adjectives). The adjective goes to the head when it
+  agrees with the head only (`day vento de Teo`), otherwise to the
+  dependent; when it agrees with both, the dependent is a fallback, listed by
+  `suggest`.
+- **Pronoun suffixes:** possessive before the noun and before its adjective
+  and numeral (grammar 08 order): צַלְמוֹ הַגָּדוֹל `tesu day imaje`,
+  שְׁנֵי צְלָמָיו `tesu dua imaje`. A suffix on the dependent stays there:
+  פְּנֵי צַלְמוֹ `perya fe tesu imaje`. Which possessive: see "Possessives";
+  `sesu` per occurrence in `curated/pronouns.tsv`, `dasu` automatic for the
+  resumptive suffix after אֲשֶׁר (1:11 `hu dasu bija`).
+- **Construct numerals** (שְׁנֵי X) precede their noun; only an absolute
+  numeral is postposed in Hebrew (יוֹם אֶחָד).
+- Checks: Gen 1, and `tests/run.sh` (a hand-made stream for patterns Gen 1
+  lacks). Proper-noun dependents are not handled yet: the source tag set for
+  names (persons vs places: אֶרֶץ מִצְרַיִם is not belonging) is not known on
+  this side.
+
+## Syntax from the treebank
+
+`apertium-hbo-glb/syntax.py` merges UD Ancient Hebrew PTNK (Swanson &
+Tyers 2022; dependencies from MACULA, morphology ETCBC) into the stream by
+word id. What the rules take from it:
+
+- **Roles decide the order**, not position: 1:17, 22, 28 וַיִּתֵּן/וַיְבָרֶךְ
+  אֹתָם אֱלֹהִים → `Teo gibe ete`, `Teo baraka ete` (was `Ete … Teo`); a
+  qatal/yiqtol before its subject → subject first (1:9 `suhe geo xa oko`,
+  1:20 `Sui xa plucu`, 1:21 `hu sui plucu`); an object and no subject → the
+  pronoun from the verb's agreement (1:27 `te julagi te`). 1:1 becomes
+  `Fe xoru Teo julagi …`: the treebank's main-clause reading (the draft's
+  alternative; the preferred construct reading `Fe xoru feki …` needs the
+  1:1 clause rule).
+- **Fronted complements:** 1:27 זָכָר וּנְקֵבָה בָּרָא אֹתָם (`xcomp` of the
+  third בָּרָא) → `te julagi ete cel manyen ji femyen` (resultative `cel` for
+  בָּרָא, van Wolde). A boundary unit before a clause with a fronted
+  constituent keeps the rules from running across clauses.
+- **Adjective after a chain** attaches to the word the tree gives it
+  (agreement is the fallback without the treebank).
+- **Readings it does not decide:** where the tree and a decision here
+  differ, the curated tables win (1:30 יֶרֶק עֵשֶׂב: construct here,
+  apposition in ETCBC/UD). `constructs.py suggest` prints the tree's
+  relation beside each pair.
+- **Without the treebank** (other books, or `TREEBANK=/nonexistent`), the
+  output is the word-order output, unchanged.
 
 ## Tense in narration
 
@@ -207,6 +271,14 @@ translated as a fixed `ji`.
 
 - **Speech:** `loga: “…”` (Doxo: `loga:` 78, `loga,` 57). לֵאמֹר "saying" →
   `, loga:`.
+  The pair infers the quotes (`punctuation.py`): open after a wayyiqtol of
+  אמר with its subject and addressee (`Teo loga tas ete: “`) or after
+  לֵאמֹר; close with `.”` before the next wayyiqtol, since speech uses
+  jussives, imperatives, weqatal and yiqtol, or after the verse when the
+  next verse starts with one (1:14–15, 1:29–30). Gen 1: all 11 speeches as
+  in the draft. A wayyiqtol inside speech (a story retold, Gen 24:34–48)
+  needs a curated `”` (and `.`) in `curated/punctuation.tsv`; `noquote`
+  drops one.
 - **Possessives:** `sesu` only refers back to the clause's subject; otherwise
   `tesu`/`etesu` (animate), `tosu`/`otosu` (inanimate); in relative clauses
   `dasu` (grammar). "God set the light … according to *their* kind" →
@@ -214,6 +286,10 @@ translated as a fixed `ji`.
   `sesu`.
 - **וַיְהִי־כֵן** "and it was so" → `Ji to okur denmaner` (`denmaner` adv "like
   that"; not `denpul`, adj "that kind of").
+- **Day formula** וַיְהִי־עֶרֶב וַיְהִי־בֹקֶר יוֹם X → `Hay axam ji hay soba: X din`.
+  יוֹם X is a verbless summary of the pair, not a dependent of בֹקֶר
+  (disjunctive accent on בֹ֖קֶר); without the colon `soba careyum din` reads
+  as "morning of the fourth day". Rule in the rtx (וַיְהִי X יוֹם + numeral).
 - **הִנֵּה** "behold" → `Am oko,` (Doxo).
 - **"all that"** → `moyto hu … da` (Doxo).
 
@@ -258,6 +334,13 @@ Usage notes:
   - short insertions: `( … )`;
   - mid-clause insertions such as נְאֻם יְהוָה: dashes.
   - Asides between complete sentences are background, not parenthesis.
+- **In the pair:** dashes and parentheses are curated per word in
+  `apertium-hbo-glb/curated/punctuation.tsv` (`punctuation.py`): the stream
+  tags neither parenthesis nor apposition. Seeded with 1:16 (the two great
+  lights spelled out). Not seeded: the draft's 1:1–2 dashes, which belong
+  to the subordinate reading of 1:1 (`Fe xoru feki …`) that the rules do not
+  produce yet. Corpus: Globasa texts use `—` only to open dialogue lines
+  (one Doxo story); parenthetical dashes are unattested, as in the grammar.
 
 ## Voice
 

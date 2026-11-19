@@ -24,6 +24,7 @@ GLB_SHARE = os.environ.get("APERTIUM_GLB",
                            "/usr/local/old-apertium-2024/share/apertium/apertium-glb")
 AUTOMORF = os.path.join(GLB_SHARE, "glb.automorf.bin")
 GENDER_PREF = ["ut", "nt", "m", "f", "GD"]
+PUNCT = "—():;,.“”¦"
 
 
 def read_curated(path):
@@ -86,7 +87,7 @@ def main():
     a = ap.parse_args()
     rows = read_curated(a.curated)
     analyses = analyse(sorted({r["glb"].lower() for r in rows if r["glb_pos"] != "prn"}))
-    seen, entries, problems, sdefs = set(), [], [], {"sent"}
+    seen, entries, problems, sdefs = set(), [], [], {"sent", "punct"}
     for r in rows:
         key = (r["hbo"], r["hbo_pos"])
         if key in seen:
@@ -118,6 +119,9 @@ def main():
             f.write(f'    <sdef n="{s}"/>\n')
         f.write('  </sdefs>\n  <section id="main" type="standard">\n')
         f.write('    <e r="LR"><p><l>׃<s n="sent"/></l><r>.<s n="sent"/></r></p></e>\n')
+        # punctuation inserted by punctuation.py (curated/punctuation.tsv): passed through
+        for c in PUNCT:
+            f.write(f'    <e r="LR"><p><l>{xml(c)}<s n="punct"/></l><r>{xml(c)}<s n="sent"/></r></p></e>\n')
         f.write("\n".join(entries) + "\n  </section>\n</dictionary>\n")
     print(f"{len(entries)} entries -> {a.out}")
 
