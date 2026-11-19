@@ -1,0 +1,279 @@
+para	poe	modern	kind	zipf	flagged	glb_sentence	glb_words	tm_lemma	tm_glb
+1	True! nervous,	It's true! I was	substitution	4.42		To sen sati!	sati		
+1	dreadfully nervous	scared, and	substitution	2.70	yes	Mi le sen daymo, daymo ansyapul, ji mi haji sen denpul, mas yu fikir ki mi sen majnuni keseba?			
+1	say	think	substitution	5.89		Mi le sen daymo, daymo ansyapul, ji mi haji sen denpul, mas yu fikir ki mi sen majnuni keseba?	fikir		
+1	the heaven	Heaven	substitution	4.58		Mi le abil na ore moyto in Janatu ji in Dunya.	Janatu		
+1	in the earth.	on Earth.	substitution	5.06		Mi le abil na ore moyto in Janatu ji in Dunya.	Dunya		
+1	hell. How then	Hell. So, how	substitution	5.10		Mi le ore multi xey in Jahanom.	Jahanom		
+1	mad? Hearken!	crazy? Listen up,	substitution	2.29	yes	Finto, mi sen majnuni kemaner?	majnuni		
+1	observe how healthily,	pay attention to	substitution	2.58	yes	Am juiore, ji am jui ku mi abil na kemo trankwilo ji mingu loga tas yu total hikaye.	juiore jui		
+2	entered my brain, but, once conceived,	came from, but when	substitution	3.87		Mi no jixi ku idey le ofata keloka, mas denwatu hu to le precu, to le kostante lawfen mi.			
+2	none. Passion there	no reason for it. There	substitution	4.44		Le no hay seba kos to.	seba	passion	paniko
+2	none.	no strong feeling about it.	substitution	4.93		Le no hay bala ganjon tem to.	bala ganjon tem		
+2	loved	actually liked	substitution	5.00		Fe fato, mi le suki lao manixu.			
+2	wronged	hurt	substitution	3.09		Te le nilwatu guton mi.	guton		
+2	given	made	substitution	5.41		Te le nilwatu burganjongi mi.			
+2	insult. For	upset. I didn't want	substitution	3.99		Te le nilwatu burganjongi mi.			
+2	gold I had no desire.	money.	substitution	4.61		Mi le no vole tesu pesa.	pesa	desire	peti
+2	resembled that of	looked like	substitution	3.33		Un to of tesu oko okocu sim kom to de nasru, sefidemo blue oko har dambo cengu per to.	sim		
+2	vulture—a pale	vulture's, a light	substitution	3.18		Un to of tesu oko okocu sim kom to de nasru, sefidemo blue oko har dambo cengu per to.	nasru sefidemo		
+2	film	thin layer	substitution	5.20		Un to of tesu oko okocu sim kom to de nasru, sefidemo blue oko har dambo cengu per to.	dambo cengu		
+2	so by degrees,	I	substitution	4.54		Denwatu hu to le oko mi, mi le ganjoncu fobido, ji mi le karar xosu xafe xosu na morgi lao manixu cel na awgi tesu oko cel moywatu.			
+2	gradually, I made up my mind	slowly decided	substitution	4.21		Denwatu hu to le oko mi, mi le ganjoncu fobido, ji mi le karar xosu xafe xosu na morgi lao manixu cel na awgi tesu oko cel moywatu.	karar		
+2	take the life of	kill	substitution	5.89		Denwatu hu to le oko mi, mi le ganjoncu fobido, ji mi le karar xosu xafe xosu na morgi lao manixu cel na awgi tesu oko cel moywatu.	morgi	take	efeto
+2	man, and thus	man to get	substitution	4.91		Denwatu hu to le oko mi, mi le ganjoncu fobido, ji mi le karar xosu xafe xosu na morgi lao manixu cel na awgi tesu oko cel moywatu.	manixu awgi		
+2	myself	—	deletion	5.31					
+3	Now this is	Here's	substitution	6.18		Prehay cuyotyan.			
+3	fancy me mad. Madmen	think that I'm crazy. Crazy people	substitution	2.65	yes	Yu fikir ki mi sen majnuni.	fikir majnuni	fancy	fikir / imaje / imajeya
+3	wisely	cleverly	substitution	3.62		Yu le ingay na oko ku mi le aksyon kemo gomyo; daymo juipul, daymo cinonpul, daymo sirili, mi le ergo!	gomyo		
+3	went to work!	worked!	substitution	5.50		Yu le ingay na oko ku mi le aksyon kemo gomyo; daymo juipul, daymo cinonpul, daymo sirili, mi le ergo!			
+3	kinder	nicer	substitution	3.30		Mi le nilwatu sen maxmo lutufpul tas lao manixu kom dur total safta leki mi le morgi te.			
+3	it—oh,	it: oh,	substitution	5.43		Ji fe moy noce daju fe midinoce, mi le rota hantatul de tesu dwer, ji mi le buka to: o, daydenmo narem!	o		
+3	an opening sufficient	a hole big enough	substitution	4.32		Ji jaxali, denwatu hu mi le fale kufimo day bukaxey tas misu kapi, mi le ingi luminkal lenterna, kompletomo klosido celki nil lumin brila, ji jaxali, mi le pasgi misu kapi.	kufimo day		
+3	lantern all closed,	lantern, completely	substitution	3.61		Ji jaxali, denwatu hu mi le fale kufimo day bukaxey tas misu kapi, mi le ingi luminkal lenterna, kompletomo klosido celki nil lumin brila, ji jaxali, mi le pasgi misu kapi.	lenterna kompletomo		
+3	shone	shined	substitution	3.23		Ji jaxali, denwatu hu mi le fale kufimo day bukaxey tas misu kapi, mi le ingi luminkal lenterna, kompletomo klosido celki nil lumin brila, ji jaxali, mi le pasgi misu kapi.	brila		
+3	thrust in	put	substitution	3.86		Ji jaxali, denwatu hu mi le fale kufimo day bukaxey tas misu kapi, mi le ingi luminkal lenterna, kompletomo klosido celki nil lumin brila, ji jaxali, mi le pasgi misu kapi.	ingi pasgi		
+3	head.	head through.	substitution	5.51		Ji jaxali, denwatu hu mi le fale kufimo day bukaxey tas misu kapi, mi le ingi luminkal lenterna, kompletomo klosido celki nil lumin brila, ji jaxali, mi le pasgi misu kapi.	kapi pasgi kapi		
+3	would have laughed to see	should've seen	substitution	4.24		O, yu le ingay na oko ku mi le pasgi to kemo gomyo!			
+3	thrust	put	substitution	3.86		O, yu le ingay na oko ku mi le pasgi to kemo gomyo!	pasgi		
+3	might not disturb	wouldn't disrupt	substitution	3.56		Mi le harka to hanman, daymo, daymo hanman, celki mi no jundwan somno de manixu.	jundwan		
+3	place	put	substitution	5.71		Mi le pasa un satu cel na kufi pasgi misu kapi celki mi abil na oko te durki te le leta per sesu bistar.	pasgi		
+3	whole	—	deletion	5.46					
+3	within the opening	through enough	substitution	4.94		Mi le pasa un satu cel na kufi pasgi misu kapi celki mi abil na oko te durki te le leta per sesu bistar.	pasa kufi pasgi		
+3	far	—	deletion	5.50					
+3	lay upon	laid on	substitution	4.64		Mi le pasa un satu cel na kufi pasgi misu kapi celki mi abil na oko te durki te le leta per sesu bistar.			
+3	madman	crazy person	substitution	3.22		Kam majnuniyen ger le sen denmo gomyo kom hinto?	majnuniyen		
+3	so wise	as clever	substitution	4.51		Kam majnuniyen ger le sen denmo gomyo kom hinto?	gomyo		
+3	well	fully	substitution	6.03		Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.			
+3	undid	opened	substitution	2.53	yes	Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.			
+3	cautiously—oh, so cautiously—cautiously (for	carefully, very carefully (because	substitution	3.32		Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.	juipul juipul koski		
+3	creaked),	made noise);	substitution	2.04	yes	Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.			
+3	undid	opened	substitution	2.53	yes	Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.			
+3	so much that	enough for	substitution	6.00		Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.	kufi		
+3	single	—	deletion	5.41					
+3	fell upon	of light to reach	substitution	4.85		Ji jaxali, denwatu hu misu kapi le kompleto sen in kamer, mi le buka lenterna juipul, daymo juipul (koski bisagra le soti); mi le kufi buka to celki dambo radya fe lumin celidi oko de nasru.	lumin celidi		
+3	found	saw that	substitution	5.68		Ji mi le fale hinto dur sabe noce, moy noce preciso fe midinoce, mas mi le oko ki oko moywatu sen klosido; fe folo, na fale ergo le sen nenible.			
+3	work, for it was not	work. It wasn't	substitution	5.96		Ji mi le fale hinto dur sabe noce, moy noce preciso fe midinoce, mas mi le oko ki oko moywatu sen klosido; fe folo, na fale ergo le sen nenible.	ergo		
+3	who vexed me, but	that bothered me; it was	substitution	2.81	yes	To le no sen lao manixu hu da le lawfen mi; to le sen tesu Bur Oko.	lawfen		
+3	day broke,	daylight came,	substitution	4.85		Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.			
+3	went boldly into	confidently entered	substitution	3.28		Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.	sexinloypul inidi		
+3	chamber	room	substitution	4.47		Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.	kamer		
+3	courageously	boldly	substitution	2.65	yes	Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.	yunkipul		
+3	name in a hearty tone,	name,	substitution	3.38		Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.	name		
+3	inquiring	asked	substitution	2.99	yes	Ji fe moy soba, denwatu hu dinlumin le ata, mi le sexinloypul inidi kamer, ji mi le yunkipul pala tas te, le kweho voka tesu name ji le swal ku tesu noce sen kepul.			
+3	suspect	be really smart to find out	substitution	4.51		Te ger le musi na sen daymo cinonpul cel na gixim ki fe moy noce preciso fe midinoce, mi juioko te durki te somno.	daymo cinonpul		
+3	night, just	night	substitution	5.61		Te ger le musi na sen daymo cinonpul cel na gixim ki fe moy noce preciso fe midinoce, mi juioko te durki te somno.	noce		
+3	twelve,	exactly midnight,	substitution	4.35		Te ger le musi na sen daymo cinonpul cel na gixim ki fe moy noce preciso fe midinoce, mi juioko te durki te somno.	preciso midinoce		
+4	usually cautious in opening	usual when I opened	substitution	3.79		Fe ocoyum noce, mi le sen maxmo juipul kom xugwanpul denwatu hu mi le buka dwer.	xugwanpul		
+4	felt	never realized	substitution	5.13		Mi le nilwatu xoraham daraje de misu abilya ji sofi denpul kom fe den noce.	nilwatu xoraham		
+4	own powers, of my sagacity.	abilities and wisdom like I did that night.	substitution	2.03	yes	Mi le nilwatu xoraham daraje de misu abilya ji sofi denpul kom fe den noce.	abilya sofi denpul noce		
+4	scarcely	hardly	substitution	3.33		Mi le eskaso abil na krasi misu ganjon fe triunfa.	eskaso		
+4	To think that there I was	Imagine me	substitution	6.08		Mi le eskaso abil na krasi misu ganjon fe triunfa.			
+4	he not even to dream	him being unaware	substitution	4.91		Am imaje mi fe na buka dwer xosu xafe xosu, ji te fe na sen ixikal fe misu sirili aksyon ji fikir.	sen		
+4	deeds or	actions and	substitution	3.79		Am imaje mi fe na buka dwer xosu xafe xosu, ji te fe na sen ixikal fe misu sirili aksyon ji fikir.	aksyon		
+4	fairly	somewhat	substitution	4.50		Mi le bankwanti lilhaha kos den idey, ji te le ible ore mi koski te le abruto harka per sesu bistar kwasimo surprisado.			
+4	perhaps	—	deletion	5.09					
+4	suddenly	—	deletion	4.69					
+4	Now you may	You might	substitution	6.18		Mi le bankwanti lilhaha kos den idey, ji te le ible ore mi koski te le abruto harka per sesu bistar kwasimo surprisado.			
+4	drew back—but	retreated, but	substitution	4.46		Yu ible fikir ki mi le rukadam, mas no.			
+4	close fastened through	tightly closed because of a	substitution	3.02		Tesu kamer le sen kompletomo luminkal (janela le sen tangemo klosido kos fobi fe ofcoriyen), ji kos to, mi le jixi ki te no abil na oko dwer fe na buka, ji mi le duregi na pel to hanman, hanman.	tangemo klosido kos kos		
+4	opening of the door,	door opening,	substitution	4.94		Tesu kamer le sen kompletomo luminkal (janela le sen tangemo klosido kos fobi fe ofcoriyen), ji kos to, mi le jixi ki te no abil na oko dwer fe na buka, ji mi le duregi na pel to hanman, hanman.	dwer buka		
+5	had my head in, and	—	deletion	5.51					
+5	fastening,	lever,	substitution	2.79	yes	Misu kapi le sen fe inya, ji mi le jaxa buka lenterna, denwatu hu misu dayxuji deleza per estanoli liftitul, ji lao manixu le sidecu per bistar, fe na dayloga, "Kete sen denloka!?"	liftitul		
+5	sprang	sat	substitution	3.12		Misu kapi le sen fe inya, ji mi le jaxa buka lenterna, denwatu hu misu dayxuji deleza per estanoli liftitul, ji lao manixu le sidecu per bistar, fe na dayloga, "Kete sen denloka!?"			
+5	crying out,	shouting,	substitution	4.56		Misu kapi le sen fe inya, ji mi le jaxa buka lenterna, denwatu hu misu dayxuji deleza per estanoli liftitul, ji lao manixu le sidecu per bistar, fe na dayloga, "Kete sen denloka!?"			
+6	sitting up	sat	substitution	4.86		Te le haji side per bistar, fe na ore, preciso denmaner hu mi le fale to fe moy noce, dur na ore gubangu in divar.			
+6	have done	did	substitution	5.58		Te le haji side per bistar, fe na ore, preciso denmaner hu mi le fale to fe moy noce, dur na ore gubangu in divar.			
+6	night hearkening	night, listening	substitution	1.56	yes	Te le haji side per bistar, fe na ore, preciso denmaner hu mi le fale to fe moy noce, dur na ore gubangu in divar.	ore noce ore		
+6	death watches	beetles	substitution	4.10		Te le haji side per bistar, fe na ore, preciso denmaner hu mi le fale to fe moy noce, dur na ore gubangu in divar.	gubangu		
+7	Presently	Soon,	substitution	3.72		Nerxali, mi le ore daifu exnafasu, ji mi le jixi ki to sen exnafasu fe teror.	Nerxali	presently	nerxali
+7	slight groan,	weak exhale,	substitution	3.12		Nerxali, mi le ore daifu exnafasu, ji mi le jixi ki to sen exnafasu fe teror.	daifu exnafasu exnafasu		
+7	groan	exhale	substitution	3.12		Nerxali, mi le ore daifu exnafasu, ji mi le jixi ki to sen exnafasu fe teror.	exnafasu exnafasu		
+7	mortal	—	deletion	3.86					
+7	was not a groan	wasn't an exhale	substitution	3.12		To le no sen exnafasu fe guton or hazuniya, o no!	exnafasu		
+7	of grief—oh,	sadness, oh	substitution	4.08		To le no sen exnafasu fe guton or hazuniya, o no!	hazuniya o		
+7	low stifled	quiet, held-in	substitution	2.92	yes	To le sen sotilil, inhifazido soti hu da exata of amikuya de ruho denwatu hu to sen pul fe fobi.	sotilil		
+7	arises	comes	substitution	3.61		To le sen sotilil, inhifazido soti hu da exata of amikuya de ruho denwatu hu to sen pul fe fobi.			
+7	overcharged	filled	substitution	2.52	yes	To le sen sotilil, inhifazido soti hu da exata of amikuya de ruho denwatu hu to sen pul fe fobi.			
+7	awe.	fear.	substitution	3.80		To le sen sotilil, inhifazido soti hu da exata of amikuya de ruho denwatu hu to sen pul fe fobi.	fobi		
+7	a night, just	nights,	substitution	5.61		Fe multi noce, preciso fe midinoce, denwatu hu moyte le somno, to le xunjan in misu cati, fe na maxgi fobi hu da le lawfen mi yon sesu rusoti.	noce		
+7	say	tell you,	substitution	5.89		Mi loga tas yu, mi le kone to bon.	loga		
+7	chuckled at heart.	secretly thought that it was funny.	substitution	3.05		Mi le jixi ku lao manixu ganjon keto, ji mi le ganjon simpati tas te, fe hataya ki mi le sirili fikir ki to sen humorpul.	sirili fikir humorpul		
+7	lying	—	deletion	4.67					
+7	ever	—	deletion	5.66				ever	moywatu
+7	ever	growing	substitution	5.66		Tesu plu fobi le xunjan xorfe denwatu.		ever	moywatu
+7	growing upon him.	then. He had tried to convince himself that they were baseless, but he couldn't.	substitution	4.94		Tesu plu fobi le xunjan xorfe denwatu.			
+7	"It is nothing but	"It's just	substitution	5.55		Te le loga tas se, "To sen sol vento in dudantubo, to sen sol maux hu da trasidi dixan," or "To sen sol krigiri hu da le fale un solo krigirisa." Si, te le xidu na anwi se yon hin plu jadin, mas te le no xorhare sukses.			
+7	it is only	it's just	substitution	6.12		Te le loga tas se, "To sen sol vento in dudantubo, to sen sol maux hu da trasidi dixan," or "To sen sol krigiri hu da le fale un solo krigirisa." Si, te le xidu na anwi se yon hin plu jadin, mas te le no xorhare sukses.			
+7	"It is merely	"It's just	substitution	4.37		Te le loga tas se, "To sen sol vento in dudantubo, to sen sol maux hu da trasidi dixan," or "To sen sol krigiri hu da le fale un solo krigirisa." Si, te le xidu na anwi se yon hin plu jadin, mas te le no xorhare sukses.			
+7	found all	no success. It didn't work because Death, as he approached him, made his dark shadow	substitution	5.68		Te le loga tas se, "To sen sol vento in dudantubo, to sen sol maux hu da trasidi dixan," or "To sen sol krigiri hu da le fale un solo krigirisa." Si, te le xidu na anwi se yon hin plu jadin, mas te le no xorhare sukses.	sukses		
+7	enveloped the victim.	wrapped him in it.	substitution	2.92	yes	To le no funsyon koski Morya, durki te le nercu cel te, le fale sesu luminkal saye fe fronta de te, ji Morya le lifafa te in to.	lifafa		
+7	that caused	made	substitution	4.88		Ji den nenokodo saye le kosa ki te ganci misu presen in kamer, fe hataya ki te le noro oko nor ore mi.			
+7	to feel,	sense,	substitution	5.67		Ji den nenokodo saye le kosa ki te ganci misu presen in kamer, fe hataya ki te le noro oko nor ore mi.	ganci hataya		
+7	to feel the	my	substitution	5.67		Ji den nenokodo saye le kosa ki te ganci misu presen in kamer, fe hataya ki te le noro oko nor ore mi.			
+7	of my head within	in	substitution	5.44		Ji den nenokodo saye le kosa ki te ganci misu presen in kamer, fe hataya ki te le noro oko nor ore mi.			
+8	When I had waited	After waiting very patiently for	substitution	4.26		Xafe na intizar daymo sabar dur lungo watu wal na ore te na letacu, mi le karar na buka daylil daraki in lenterna.	Xafe sabar		
+8	very patiently	—	deletion	3.48					
+8	resolved	decided	substitution	4.10		Xafe na intizar daymo sabar dur lungo watu wal na ore te na letacu, mi le karar na buka daylil daraki in lenterna.	karar		
+8	little—a very,	—	deletion	5.75					
+8	little	small	substitution	5.75		Xafe na intizar daymo sabar dur lungo watu wal na ore te na letacu, mi le karar na buka daylil daraki in lenterna.			
+8	the spider shot	a spider, came	substitution	4.25		Mi le buka to daymo, daymo juipul finki un solo luminlil radya, denpul kom xilo de kumi, le exidi daraki ji le celidi nasruli oko.	kumi		
+8	fell upon	reached	substitution	4.85		Mi le buka to daymo, daymo juipul finki un solo luminlil radya, denpul kom xilo de kumi, le exidi daraki ji le celidi nasruli oko.	celidi		
+9	open, wide, wide	widely	substitution	4.96		To le sen pahnamo bukado, ji mi le sencu gadibu denwatu hu mi le juioko to.			
+9	grew furious as	got angry when	substitution	3.98		To le sen pahnamo bukado, ji mi le sencu gadibu denwatu hu mi le juioko to.	gadibu		
+9	gazed upon	looked at	substitution	2.83	yes	To le sen pahnamo bukado, ji mi le sencu gadibu denwatu hu mi le juioko to.			
+9	with perfect distinctness—all	perfectly. It was	substitution	1.76	yes	Mi le oko to perfeto.	perfeto		
+9	hideous veil	strange covering	substitution	3.45		To le sen daifumo blue har ajabu koberi per to hu da le day fobi mi, mas mi le no abil na oko resta de muka or jismu de lao manixu koski mi le lide radya preciso cel sahi lokabage wal na musi na fikir.	ajabu koberi		
+9	nothing else	the rest	substitution	5.38		To le sen daifumo blue har ajabu koberi per to hu da le day fobi mi, mas mi le no abil na oko resta de muka or jismu de lao manixu koski mi le lide radya preciso cel sahi lokabage wal na musi na fikir.	resta		
+9	person, for	body because	substitution	5.55		To le sen daifumo blue har ajabu koberi per to hu da le day fobi mi, mas mi le no abil na oko resta de muka or jismu de lao manixu koski mi le lide radya preciso cel sahi lokabage wal na musi na fikir.	jismu koski		
+9	as if by instinct precisely upon	at exactly	substitution	3.86		To le sen daifumo blue har ajabu koberi per to hu da le day fobi mi, mas mi le no abil na oko resta de muka or jismu de lao manixu koski mi le lide radya preciso cel sahi lokabage wal na musi na fikir.	preciso		
+9	damned spot.	right spot without having to think.	substitution	3.87		To le sen daifumo blue har ajabu koberi per to hu da le day fobi mi, mas mi le no abil na oko resta de muka or jismu de lao manixu koski mi le lide radya preciso cel sahi lokabage wal na musi na fikir.	har sahi wal fikir		
+10	now have	remember when	substitution	6.18		Ji kam yu memori to hu denwatu mi le loga ki dento hu yu fikir ki da sen majnuniya sen sol maxboncu fe gancikowa?	memori		
+10	not told you	said	substitution	5.54		Ji kam yu memori to hu denwatu mi le loga ki dento hu yu fikir ki da sen majnuniya sen sol maxboncu fe gancikowa?			
+10	mistake for madness	think	substitution	3.97		Ji kam yu memori to hu denwatu mi le loga ki dento hu yu fikir ki da sen majnuniya sen sol maxboncu fe gancikowa?	fikir		
+10	but over-acuteness of the	craziness is just increased	substitution	1.89	yes	Ji kam yu memori to hu denwatu mi le loga ki dento hu yu fikir ki da sen majnuniya sen sol maxboncu fe gancikowa?	majnuniya		
+10	now,	Well,	substitution	6.18		Ji kam yu memori to hu denwatu mi le loga ki dento hu yu fikir ki da sen majnuniya sen sol maxboncu fe gancikowa?			
+10	say, there came to my ears	heard	substitution	4.36		Nunto, mi le ore lil, velosi soti, denpul kom satumeter lifafado in koton.			
+10	low, dull, quick	brief little	substitution	3.94		Nunto, mi le ore lil, velosi soti, denpul kom satumeter lifafado in koton.	lil		
+10	such as	like	substitution	5.84		Nunto, mi le ore lil, velosi soti, denpul kom satumeter lifafado in koton.	denpul		
+10	makes when enveloped	wrapped	substitution	2.92	yes	Nunto, mi le ore lil, velosi soti, denpul kom satumeter lifafado in koton.	lifafado		
+10	increased my fury, as	made me angrier, like how	substitution	3.91		To le sengi mi maxmo gadibu, denmaner hu darbe fe drumu yunki askeriyen.	gadibu denmaner		
+10	stimulates the soldier into courage.	encourages a soldier.	substitution	3.14		To le sengi mi maxmo gadibu, denmaner hu darbe fe drumu yunki askeriyen.	yunki askeriyen		
+11	even yet	despite that,	substitution	5.54		Mas fe hataya fe dento, mi le estowoju mi ji le resta harkakal.	hataya		
+11	refrained	resisted	substitution	2.85	yes	Mas fe hataya fe dento, mi le estowoju mi ji le resta harkakal.			
+11	kept	stayed	substitution	5.00		Mas fe hataya fe dento, mi le estowoju mi ji le resta harkakal.			
+11	scarcely	barely	substitution	3.33		Mi le eskaso nafasu.	eskaso		
+11	held	kept	substitution	5.24		Mi le restagi lenterna harkakal.			
+11	motionless.	still.	substitution	2.97	yes	Mi le restagi lenterna harkakal.	harkakal		
+11	tried	tested	substitution	5.16		Mi le jaribi ku mi abil na restagi radya kemo harkakal per oko.			
+11	steadily	still	substitution	3.84		Mi le jaribi ku mi abil na restagi radya kemo harkakal per oko.	harkakal		
+11	maintain	keep	substitution	4.65		Mi le jaribi ku mi abil na restagi radya kemo harkakal per oko.	restagi		
+11	Meantime	Meanwhile,	substitution	4.04		Mi le jaribi ku mi abil na restagi radya kemo harkakal per oko.			
+11	hellish tattoo	beating	substitution	2.92	yes	Fe durya, nabiza de tutum le maxbalacu.			
+11	grew quicker	became faster	substitution	3.92		To le sencu maxmo ji maxmo velosi, maxmo ji maxmo sotipul, sekundo xafe sekundo.			
+11	quicker, and	faster,	substitution	3.92		To le sencu maxmo ji maxmo velosi, maxmo ji maxmo sotipul, sekundo xafe sekundo.			
+11	instant.	moment.	substitution	4.34		To le sencu maxmo ji maxmo velosi, maxmo ji maxmo sotipul, sekundo xafe sekundo.			
+11	old man's terror	man	substitution	4.26		Manixu le dayible sen kompletomo dayfobido!	Manixu		
+11	extreme!	absolutely terrified!	substitution	4.60		Manixu le dayible sen kompletomo dayfobido!	kompletomo dayfobido		
+11	say, louder	repeat, louder,	substitution	3.82		To le sencu maxmo sotipul, mi riloga, maxmo sotipul, fol moyun sekundo!			
+11	moment!—do	second! Do	substitution	5.24		To le sencu maxmo sotipul, mi riloga, maxmo sotipul, fol moyun sekundo!	sekundo		
+11	mark me well?	understand me?	substitution	5.05		Kam yu aham mi?	aham		
+11	have told you	already mentioned	substitution	5.54		Mi le uje zekaru ki mi asan sencu fobido, to sen sati.	uje zekaru		
+11	am nervous: so	easily get scared, and	substitution	4.42		Mi le uje zekaru ki mi asan sencu fobido, to sen sati.	asan sencu fobido		
+11	now at	in	substitution	6.18		Ji fe midiya de noce, in fobine sotikalya de den lama baytu, daydenmo ajabu soti le kompleto fobi mi.			
+11	dead hour	middle	substitution	5.18		Ji fe midiya de noce, in fobine sotikalya de den lama baytu, daydenmo ajabu soti le kompleto fobi mi.	midiya		
+11	amid	in	substitution	3.95		Ji fe midiya de noce, in fobine sotikalya de den lama baytu, daydenmo ajabu soti le kompleto fobi mi.			
+11	grew louder,	got louder and	substitution	3.82		Mas nabiza le sencu maxmo ji maxmo sotipul!			
+11	now a	then something	substitution	6.18		Ji jaxali, neo banto le yolyu mi: soti ible beore jara!	banto		
+11	anxiety seized me—the	worried me: the	substitution	4.03		Ji jaxali, neo banto le yolyu mi: soti ible beore jara!	yolyu		
+11	hour	death	substitution	5.18		Watu fe morcu de lao manixu le preata!	morcu		
+11	threw open	opened	substitution	4.46		Ton sotipul cihe, mi le buka lenterna ji le tyao cel in kamer.			
+11	leaped	jumped	substitution	2.77	yes	Ton sotipul cihe, mi le buka lenterna ji le tyao cel in kamer.			
+11	shrieked once—once only. In an instant	screamed once, and only once. The next moment,	substitution	2.35	yes	Te le ayay un mara, ji sol un mara.	ayay sol		
+11	dragged	pulled	substitution	4.00		Jaxali momento, mi le pospel te cel dixan ji le plasi wazenpul bistar per te.			
+11	pulled	put	substitution	4.67		Jaxali momento, mi le pospel te cel dixan ji le plasi wazenpul bistar per te.	plasi		
+11	gaily, to find	cheerfully, knowing that	substitution	2.20	yes	Jaxali, mi le tabasum kweho, fe na jixi ki fale kriban sen finido.	kweho		
+11	so far done.	was almost finished.	substitution	5.50		Jaxali, mi le tabasum kweho, fe na jixi ki fale kriban sen finido.	kriban finido		
+11	beat on	kept beating	substitution	5.01		Mas dur multi minuto, tutum le duregi na nabiza har koberido soti.			
+11	did not vex me;	didn't bother me, as	substitution	2.85	yes	Hatali, hinto le no lawfen mi koski to ger no beore pas divar.	lawfen		
+11	At length	Finally,	substitution	4.77		Hatali, hinto le no lawfen mi koski to ger no beore pas divar.			
+11	ceased.	stopped.	substitution	3.81		Fe fini, to le esto.			
+11	stone, stone	completely, completely	substitution	4.80		Si, te le sen kompletomo, kompletomo mor.	kompletomo kompletomo		
+11	placed	put	substitution	4.85		Mi le plasi misu hanta per tesu tutum ji le restagi to denloka dur multi minuto.	plasi		
+11	held	kept	substitution	5.24		Mi le plasi misu hanta per tesu tutum ji le restagi to denloka dur multi minuto.			
+11	pulsation.	pulse.	substitution	2.23	yes	Le no hay nabiza.	nabiza		
+11	stone	completely	substitution	4.80		Te le sen kompletomo mor.	kompletomo		
+11	trouble	not bother	substitution	4.79		Tesu oko le no haji lawfen mi.	lawfen		
+11	no more.	anymore.	substitution	6.36		Tesu oko le no haji lawfen mi.			
+12	wise precautions	clever things	substitution	3.59		Eger yu haji fikir ki mi sen majnuni, yu xa no haji fikir dento denwatu hu mi xa tosifu gomyo xey hu mi le fale da cel na sangu jismu.	gomyo xey		
+12	took for the concealment of	did to hide	substitution	2.92	yes	Eger yu haji fikir ki mi sen majnuni, yu xa no haji fikir dento denwatu hu mi xa tosifu gomyo xey hu mi le fale da cel na sangu jismu.	sangu		
+12	waned, and	passed,	substitution	2.87	yes	Durki noce le pasa, mi le ergo velosi mas sotikal.			
+12	hastily,	quickly	substitution	3.30		Durki noce le pasa, mi le ergo velosi mas sotikal.	velosi		
+12	in silence.	quietly.	substitution	4.46		Durki noce le pasa, mi le ergo velosi mas sotikal.	sotikal		
+13	took up	removed	substitution	5.51		Mi le ofplasi tiga tahta of dixan de kamer ji le plasi moyto in neo bukaxey.	ofplasi		
+13	flooring	floor	substitution	3.28		Mi le ofplasi tiga tahta of dixan de kamer ji le plasi moyto in neo bukaxey.	dixan		
+13	chamber,	room	substitution	4.47		Mi le ofplasi tiga tahta of dixan de kamer ji le plasi moyto in neo bukaxey.	kamer		
+13	deposited all between	put everything in	substitution	3.64		Mi le ofplasi tiga tahta of dixan de kamer ji le plasi moyto in neo bukaxey.	plasi moyto		
+13	scantlings.	opening. Then,	substitution	0.00	yes	Mi le ofplasi tiga tahta of dixan de kamer ji le plasi moyto in neo bukaxey.	bukaxey		
+13	then replaced	put	substitution	4.55		Jaxali, mi le ruplasi tahta daydenmo gomyo, ki fe folo nil insanli oko, no hata tesu to, ger abil na xorjui mal banto.			
+13	cleverly, so cunningly,	cunningly	substitution	2.35	yes	Jaxali, mi le ruplasi tahta daydenmo gomyo, ki fe folo nil insanli oko, no hata tesu to, ger abil na xorjui mal banto.	gomyo		
+13	detected	noticed	substitution	4.06		Jaxali, mi le ruplasi tahta daydenmo gomyo, ki fe folo nil insanli oko, no hata tesu to, ger abil na xorjui mal banto.	xorjui		
+13	wary	cautious	substitution	3.57		Mi le sen godomo juipul tem dento.	juipul		
+14	When	After	substitution	6.37		Xaki mi le fini misu ergo, to le sen satu care, haji denmo luminkal kom midinoce.	Xaki		
+14	sounded	rang at	substitution	4.12		Denwatu hu satu le rinjon, le hay toka per dwer fe fronta.			
+14	came	was	substitution	5.50		Denwatu hu satu le rinjon, le hay toka per dwer fe fronta.			
+14	knocking	knock	substitution	3.88		Denwatu hu satu le rinjon, le hay toka per dwer fe fronta.	toka		
+14	street	front	substitution	5.28		Denwatu hu satu le rinjon, le hay toka per dwer fe fronta.	fronta		
+14	it with a light heart—for	it, because	substitution	5.31		Mi le joxupul idi cel na buka to, koski mi le hare keto na befobi fe nunya?	koski		
+14	There entered three men,	Three men entered,	substitution	4.72		Mi le joxupul idi cel na buka to, koski mi le hare keto na befobi fe nunya?			
+14	themselves, with perfect suavity,	themselves	substitution	1.33	yes	Tiga manixu le inidi, hu da adebupul xorkonegi se denpul kom polisiyen.	se		
+14	officers of the police.	police officers.	substitution	4.87		Tiga manixu le inidi, hu da adebupul xorkonegi se denpul kom polisiyen.	polisiyen		
+14	shriek	scream	substitution	2.76	yes	Ayay le beore jara dur noce hu da maxgi fikir ki bur banto le befale; informe le begibe tas polisidom, ji polisiyen le beirsal cel na ofxerca zona.	Ayay		
+14	had been lodged at	was given to	substitution	3.49		Ayay le beore jara dur noce hu da maxgi fikir ki bur banto le befale; informe le begibe tas polisidom, ji polisiyen le beirsal cel na ofxerca zona.			
+14	office,	station,	substitution	5.40		Ayay le beore jara dur noce hu da maxgi fikir ki bur banto le befale; informe le begibe tas polisidom, ji polisiyen le beirsal cel na ofxerca zona.	polisidom		
+14	had been deputed	were sent	substitution	2.00	yes	Ayay le beore jara dur noce hu da maxgi fikir ki bur banto le befale; informe le begibe tas polisidom, ji polisiyen le beirsal cel na ofxerca zona.			
+14	premises.	area.	substitution	4.02		Ayay le beore jara dur noce hu da maxgi fikir ki bur banto le befale; informe le begibe tas polisidom, ji polisiyen le beirsal cel na ofxerca zona.	zona		
+15	smiled—for	smiled, because	substitution	3.86		Mi le tabasum, koski mi le hare keto na befobi?	tabasum koski		
+15	bade	welcomed	substitution	2.68	yes	Mi le bonatagi manixu.	bonatagi		
+15	gentlemen welcome. The shriek,	men.	substitution	2.76	yes	Mi le bonatagi manixu.			
+15	said,	told them that the scream	substitution	6.01		Mi le loga tas ete ki cihe le sen kos misu roya, ji ki lao manixu sen awsenli in nongyogeo.	cihe		
+15	own in a dream. The	dream, and that the	substitution	4.91		Mi le loga tas ete ki cihe le sen kos misu roya, ji ki lao manixu sen awsenli in nongyogeo.	roya		
+15	man, I mentioned,	man	substitution	4.83		Mi le loga tas ete ki cihe le sen kos misu roya, ji ki lao manixu sen awsenli in nongyogeo.	manixu		
+15	absent	away	substitution	3.98		Mi le loga tas ete ki cihe le sen kos misu roya, ji ki lao manixu sen awsenli in nongyogeo.	awsenli		
+15	took	guided	substitution	5.51		Mi le gida misu visitayen wey baytu.	gida		
+15	bade	told	substitution	2.68	yes	Mi le loga tas ete ki ete am xerca, ji am xerca bon.			
+15	search—search	to search, and to search	substitution	4.96		Mi le loga tas ete ki ete am xerca, ji am xerca bon.	xerca xerca		
+15	led them, at length,	guided them	substitution	4.77		Fe fini, mi le gida ete cel tesu kamer.	gida		
+15	chamber.	room.	substitution	4.47		Fe fini, mi le gida ete cel tesu kamer.	kamer		
+15	desired	offered	substitution	4.16		Daymo sexinloypul, mi le preporta kursi cel in kamer ji le teyan ki ete am sidecu ji laxocu, durki mi, fe na ganjoncu triunfapul, le plasi misu kursi supra to hu denloka morjismu de korbani le leta.	teyan		
+15	rest from their fatigues,	sit down and relax,	substitution	2.53	yes	Daymo sexinloypul, mi le preporta kursi cel in kamer ji le teyan ki ete am sidecu ji laxocu, durki mi, fe na ganjoncu triunfapul, le plasi misu kursi supra to hu denloka morjismu de korbani le leta.	sidecu laxocu		
+15	own seat upon	chair above where	substitution	4.82		Daymo sexinloypul, mi le preporta kursi cel in kamer ji le teyan ki ete am sidecu ji laxocu, durki mi, fe na ganjoncu triunfapul, le plasi misu kursi supra to hu denloka morjismu de korbani le leta.	kursi kursi supra		
+15	very spot beneath which reposed the	victim's	substitution	1.92	yes	Daymo sexinloypul, mi le preporta kursi cel in kamer ji le teyan ki ete am sidecu ji laxocu, durki mi, fe na ganjoncu triunfapul, le plasi misu kursi supra to hu denloka morjismu de korbani le leta.	korbani		
+15	of the victim.	lay.	substitution	4.56		Daymo sexinloypul, mi le preporta kursi cel in kamer ji le teyan ki ete am sidecu ji laxocu, durki mi, fe na ganjoncu triunfapul, le plasi misu kursi supra to hu denloka morjismu de korbani le leta.			
+16	manner had	behavior	substitution	4.55		Misu konduta le imanugi ete.	konduta		
+16	singularly at ease.	remarkably unstressed.	substitution	2.76	yes	Mi le sen juilayemo estreskal.	juilayemo	singularly	ajabumo / nenpimpanmo
+16	sat,	sat down,	substitution	4.64		Ete le sidecu, ji durki mi le jawabu kweho, imi le intrepala ordinari.			
+16	felt myself getting	started to become	substitution	5.13		Mas nerxali, mi le xoru na sencu cambay ji le vole ki ete am awidi.	xoru sencu		
+16	wished	wanted	substitution	4.00		Mas nerxali, mi le xoru na sencu cambay ji le vole ki ete am awidi.			
+16	gone.	to leave.	substitution	5.17		Mas nerxali, mi le xoru na sencu cambay ji le vole ki ete am awidi.	awidi		
+16	ached,	hurt,	substitution	2.41	yes	Misu kapi le guton, ji mi le fikir ki mi ore rinjon in misu ore; mas ete le duregi na pala.	guton		
+16	fancied	thought that I heard	substitution	3.13		Misu kapi le guton, ji mi le fikir ki mi ore rinjon in misu ore; mas ete le duregi na pala.	fikir	fancied	imaje
+16	still	—	deletion	5.92					
+16	sat, and still chatted.	kept talking.	substitution	3.17		Misu kapi le guton, ji mi le fikir ki mi ore rinjon in misu ore; mas ete le duregi na pala.			
+16	distinct;—it continued	—	deletion	4.29					
+16	became	—	deletion	5.15					
+16	distinct.	noticeable.	substitution	4.29		Rinjon le sencu maxmo ji maxmo xorjuiible.	xorjuiible		
+16	get rid of	stop	substitution	4.50		Mi le pala maxmo huru cel na esto ganjon, mas to le dure ji sencu hata maxmo xorjuiible, finki finili, mi le xoraham ki soti no ofata misu ore.	esto		
+16	gained definitiveness—until, at length,	became even more noticeable, until finally,	substitution	0.00	yes	Mi le pala maxmo huru cel na esto ganjon, mas to le dure ji sencu hata maxmo xorjuiible, finki finili, mi le xoraham ki soti no ofata misu ore.	maxmo hata maxmo xorjuiible finki finili		
+16	found	realized	substitution	5.68		Mi le pala maxmo huru cel na esto ganjon, mas to le dure ji sencu hata maxmo xorjuiible, finki finili, mi le xoraham ki soti no ofata misu ore.	xoraham		
+16	within	come from	substitution	5.44		Mi le pala maxmo huru cel na esto ganjon, mas to le dure ji sencu hata maxmo xorjuiible, finki finili, mi le xoraham ki soti no ofata misu ore.	esto ofata		
+17	No doubt	—	deletion	4.90					
+17	now grew	definitely became	substitution	4.69		Mi le xankakal sencu cambay, mas mi le pala maxmo velosi ji sotipul.	xankakal		
+17	fluently	quickly	substitution	2.91	yes	Mi le xankakal sencu cambay, mas mi le pala maxmo velosi ji sotipul.	velosi		
+17	with a heightened voice. Yet the	loudly. The	substitution	3.47		Mi le xankakal sencu cambay, mas mi le pala maxmo velosi ji sotipul.	sotipul		
+17	increased—and	became louder, and I didn't know	substitution	4.91		Soti le sencu maxmo sotipul, ji mi le no jixi ku na fale keto.	jixi		
+17	makes when enveloped	wrapped	substitution	2.92	yes	To le sen sotikal, nenmingu, velosi soti, denpul kom satumeter koberido in koton.			
+17	gasped for breath—and yet	breathed quickly, even though	substitution	2.94	yes	Mi le velosi nafasu, fe hataya ki polisiyen le no ore to.	velosi nafasu hataya		
+17	heard it not.	didn't hear it.	substitution	5.27		Mi le velosi nafasu, fe hataya ki polisiyen le no ore to.	ore		
+17	talked	spoke faster and	substitution	4.62		Mi le pala maxmo velosi ji maxmo joxupul, mas soti le foldarajeli sencu maxmo sotipul.			
+17	quickly—more vehemently;	passionately, but the sound gradually became louder. I stood up and argued about unimportant things loudly and with big gestures,	substitution	3.17		Mi le pala maxmo velosi ji maxmo joxupul, mas soti le foldarajeli sencu maxmo sotipul.	soti sotipul		
+17	steadily increased.	gradually became louder. Why wouldn't they leave?	substitution	3.84		Mi le estaycu ji xijere tem nenmuhim xey, sotipul ji yon day jestu, mas soti le foldarajeli sencu maxmo sotipul.			
+17	arose	walked back	substitution	3.73		Mi le anda suo ji kanan yon day kadam, kwas mi le sencu gadibu kos etesu komenta, mas soti le foldarajeli sencu maxmo sotipul.			
+17	violent gesticulations;	heavy steps, as if I got angry with their comments,	substitution	1.36	yes	Mi le anda suo ji kanan yon day kadam, kwas mi le sencu gadibu kos etesu komenta, mas soti le foldarajeli sencu maxmo sotipul.	kadam kwas gadibu komenta		
+17	foamed—I raved—I	panicked, I talked angrily, I	substitution	2.34	yes	Mi le paniko, mi le gadibu pala, mi le burlexi!	paniko gadibu		
+17	swung	grabbed	substitution	3.47		Mi le hantacudu kursi hu mi le side per da ji le garu tahta yon to, mas umumi, soti le durepul sencu maxmo sotipul.			
+17	had been sitting,	sat on	substitution	4.86		Mi le hantacudu kursi hu mi le side per da ji le garu tahta yon to, mas umumi, soti le durepul sencu maxmo sotipul.			
+17	grated	scraped	substitution	3.12		Mi le hantacudu kursi hu mi le side per da ji le garu tahta yon to, mas umumi, soti le durepul sencu maxmo sotipul.			
+17	grew louder—louder—louder!	became louder, louder, louder!	substitution	3.82		To le sencu maxmo sotipul, maxmo sotipul, maxmo sotipul!			
+17	the men chatted pleasantly,	talked pleasantly	substitution	3.17		Ji ete le haji pala yukwe ji le tabasum.	yukwe		
+17	heard not?	didn't hear it?	substitution	5.27		Kam to le sen ible ki ete no ore to?	ore		
+17	horror!—this	terror! That's what	substitution	4.43		Ete le coxo misu teror!	teror		
+17	agony!	suffering!	substitution	3.60		Mas he banto le sen maxmo bon kom hin suferi!	suferi		
+17	derision!	mockery!	substitution	2.80	yes	He banto le sen maxmo tahamulible kom hin coxo!	coxo		
+17	could bear	couldn't tolerate	substitution	4.71		Mi le no haji abil na tahamul den sewdo tabasum!	tahamul		
+17	hypocritical	fake	substitution	3.31		Mi le no haji abil na tahamul den sewdo tabasum!	sewdo		
+17	no longer!	anymore!	substitution	5.16		Mi le no haji abil na tahamul den sewdo tabasum!			
+18	shrieked, "dissemble no more!	screamed, "Stop pretending!	substitution	1.86	yes				
+18	deed!—tear up	crime! Remove	substitution	3.75		Mi le bonatagi manixu.			
+18	planks!—here, here!—it is	boards! Here, here! It's	substitution	3.13		Ete le ore to!			
+18	hideous	terrible	substitution	3.45		To le sen nabiza de tutum de lao manixu.			
