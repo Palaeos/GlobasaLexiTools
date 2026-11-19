@@ -43,3 +43,5 @@ GlobasaTranslation/*
 !GlobasaTranslation/apertium-glb-*
 GlobasaTranslation/apertium-glb-en
 time-machine/cache/
+time-machine/victorian_glb.json
+time-machine/victorian_glb.html

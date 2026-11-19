@@ -1,0 +1,218 @@
+<title>Victorian–Globasa Dictionary</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+DW+Pica:ital@0;1&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column like a dictionary page; sticky search bar; entries as headword + numbered senses with cited evidence. */
+:root {
+  --paper: #F1F2EE;
+  --sheet: #FAFAF8;
+  --ink: #1B2129;
+  --muted: #5B6470;
+  --rule: #D5D9D2;
+  --glb: #0D6470;
+  --period: #8C5F0E;
+  --rare: #48566A;
+  --tech: #56662A;
+  --ok: #2E7A4D;
+  --chip: #E6E8E2;
+  --display: "IM Fell DW Pica", "Iowan Old Style", Georgia, serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #14181D; --sheet: #1A1F25; --ink: #E3E6E9; --muted: #98A1AB; --rule: #2C333C;
+    --glb: #62C3CE; --period: #DDA94C; --rare: #A3B3C9; --tech: #AFC17A; --ok: #6CC793; --chip: #242B33;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #14181D; --sheet: #1A1F25; --ink: #E3E6E9; --muted: #98A1AB; --rule: #2C333C;
+  --glb: #62C3CE; --period: #DDA94C; --rare: #A3B3C9; --tech: #AFC17A; --ok: #6CC793; --chip: #242B33;
+}
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font: 15px/1.55 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper); }
+.wrap { max-width: 880px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header.top { padding-block: 40px 20px; display: grid; gap: 10px; }
+h1 { font: 400 clamp(2rem, 5vw, 2.9rem)/1.05 var(--display); margin: 0; letter-spacing: .005em; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 64ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 13px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.stats b { color: var(--ink); font-weight: 500; }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--rule); padding-block: 10px; }
+.bar .wrap { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+#q { flex: 1 1 240px; min-width: 0; font: 15px var(--body); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 8px 11px; }
+#q:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--glb); outline-offset: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters button { font: 500 13px var(--body); color: var(--ink); background: var(--chip); border: 1px solid transparent; border-radius: 999px; padding: 5px 11px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.filters button[aria-pressed="true"] { border-color: var(--ink); background: var(--sheet); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot.period { background: var(--period); } .dot.rare { background: var(--rare); } .dot.technical { background: var(--tech); }
+.letters { display: flex; flex-wrap: wrap; gap: 2px 8px; padding-block: 14px 4px; font: 400 17px var(--display); }
+.letters a { color: var(--muted); text-decoration: none; }
+.letters a:hover { color: var(--glb); }
+.count { font: 13px var(--mono); color: var(--muted); padding-block: 6px 0; }
+main { padding-block: 8px 64px; }
+.letter-head { font: 400 1.6rem var(--display); color: var(--muted); border-bottom: 1px solid var(--rule); margin: 28px 0 0; padding-bottom: 4px; }
+article.entry { padding-block: 18px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.hw { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.hw h2 { font: 400 1.65rem/1.1 var(--display); margin: 0; }
+.web { font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.web .src { font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+.lab { font: 500 11px var(--mono); letter-spacing: .04em; color: var(--period); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; margin-right: 4px; white-space: nowrap; }
+ol.senses { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.sense { display: grid; grid-template-columns: 26px 1fr; gap: 0 8px; }
+.sense .n { font: 400 1.15rem/1.6 var(--display); color: var(--muted); text-align: right; }
+.sense.single { grid-template-columns: 1fr; }
+.sense.single .n { display: none; }
+.body { display: grid; gap: 7px; min-width: 0; padding-left: 10px; border-left: 3px solid var(--rare); }
+.body.period { border-left-color: var(--period); } .body.technical { border-left-color: var(--tech); }
+.line1 { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.glb { font: 600 1.12rem/1.3 var(--body); color: var(--glb); }
+.how { font: 12px var(--mono); color: var(--muted); }
+.ap { font: 500 11px var(--mono); color: var(--glb); border: 1px solid currentColor; border-radius: 3px; padding: 0 5px; }
+.meaning { margin: 0; }
+.layer { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .07em; }
+.layer.period { color: var(--period); } .layer.rare { color: var(--rare); } .layer.technical { color: var(--tech); }
+blockquote { margin: 0; font: italic 400 1rem/1.45 var(--display); color: var(--ink); }
+blockquote cite { font: normal 12px var(--mono); color: var(--muted); margin-left: 6px; }
+.ev { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 13.5px; }
+.ev dt { font: 500 11px/1.9 var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.ev dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.w { white-space: nowrap; }
+.w.ok::after { content: " ✓"; color: var(--ok); font-size: 12px; }
+.w.un { color: var(--muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+details { font-size: 13px; color: var(--muted); }
+details summary { cursor: pointer; font: 500 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; }
+details p { margin: 6px 0 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+.empty { padding-block: 40px; color: var(--muted); }
+footer { color: var(--muted); font-size: 13px; padding-block: 0 40px; max-width: 70ch; }
+@media (max-width: 520px) {
+  .ev { grid-template-columns: 1fr; gap: 0 0; }
+  .ev dd { margin-bottom: 6px; }
+  .sense { grid-template-columns: 18px 1fr; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<header class="top wrap">
+  <h1>Victorian–Globasa Dictionary</h1>
+  <p class="lede">Victorian English words and senses that trip a modern reader, each with its Globasa rendering. Seeded from H. G. Wells, <i>The Time Machine</i> (Heinemann, 1895). Every sense is attested in the text and checked against two period translations and three period dictionaries.</p>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <input id="q" type="search" placeholder="Search English or Globasa — presently, fori, recondite…" aria-label="Search English or Globasa" autocomplete="off">
+    <div class="filters" role="group" aria-label="Filter by layer">
+      <button type="button" id="f-all" data-layer="all" aria-pressed="true">All</button>
+      <button type="button" id="f-period" data-layer="period" aria-pressed="false"><span class="dot period"></span>Period traps</button>
+      <button type="button" id="f-rare" data-layer="rare" aria-pressed="false"><span class="dot rare"></span>Rare words</button>
+      <button type="button" id="f-technical" data-layer="technical" aria-pressed="false"><span class="dot technical"></span>Technical</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <nav class="letters" id="letters" aria-label="Jump to letter"></nav>
+  <div class="count" id="count"></div>
+  <main id="list"></main>
+  <footer>
+    <p><b>Layers.</b> <i>Period trap</i>: a modern reader misreads or no longer knows the sense (dated sense, or Webster 1913 marks the word archaic or obsolete). <i>Rare word</i>: still current but unfamiliar. <i>Technical</i>: a scientific term.</p>
+    <p><b>Evidence.</b> Amos = E. W. Amos's Esperanto translation (about 1938); d'Albroi = J. d'Albroi's Spanish translation (1925/26); a ✓ means the translator's word matches the gloss of the Globasa rendering, and a dotted word is an unconfirmed alignment. Holt = the US first edition (1895). Rhodes (1908), O'Connor &amp; Hayes (1907) and Velázquez (1910) are period bilingual dictionaries; Webster = <i>Webster's Revised Unabridged</i> (1913).</p>
+    <p><b>Apertium.</b> A sense marked <i>preference</i> is used by the English→Globasa pair when <code>AP_SETVAR=victorian</code> is set; the modern translation stays the default otherwise. A sense marked <i>eng→glb entry</i> is always available.</p>
+    <p>Source of truth: <code>time-machine/victorian_wordlist.tsv</code>. This page, the exports and the Apertium files are generated from it.</p>
+  </footer>
+</div>
+
+<script>
+const DATA = /*DATA*/[];
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const LAYER = { period: "Period trap", rare: "Rare word", technical: "Technical" };
+
+const nSenses = DATA.reduce((a, e) => a + e.senses.length, 0);
+const per = { period: 0, rare: 0, technical: 0 };
+DATA.forEach((e) => e.senses.forEach((s) => per[s.layer]++));
+const confirmed = DATA.reduce((a, e) => a + e.senses.filter((s) => s.amos.some((w) => w.ok) || s.dalbroi.some((w) => w.ok)).length, 0);
+$("#stats").innerHTML =
+  `<span><b>${DATA.length}</b> headwords</span><span><b>${nSenses}</b> senses</span>` +
+  `<span><b>${per.period}</b> period traps</span><span><b>${per.rare}</b> rare</span><span><b>${per.technical}</b> technical</span>` +
+  `<span><b>${confirmed}</b> confirmed by a translator</span>`;
+
+function words(list) {
+  if (!list.length) return "";
+  return list.map((x) => `<span class="w ${x.ok ? "ok" : "un"}" title="${x.ok ? "matches the Globasa gloss" : "unconfirmed alignment"}">${esc(x.w)}</span>`).join(", ");
+}
+
+function senseHTML(s, i, single) {
+  const ev = [];
+  if (s.amos.length) ev.push(`<dt>Amos</dt><dd>${words(s.amos)}</dd>`);
+  if (s.dalbroi.length) ev.push(`<dt>d'Albroi</dt><dd>${words(s.dalbroi)}</dd>`);
+  if (s.holt.length) ev.push(`<dt>Holt</dt><dd>${s.holt.map(esc).join("; ")}</dd>`);
+  const dict = [];
+  if (s.dict_epo) dict.push(`<p><b>Rhodes / O'Connor</b> ${esc(s.dict_epo)}</p>`);
+  if (s.dict_spa) dict.push(`<p><b>Velázquez</b> ${esc(s.dict_spa)}</p>`);
+  const quotes = s.attest.slice(0, 3).map((a) => `<blockquote>“${esc(a.quote)}”<cite>${esc(a.ref)}</cite></blockquote>`).join("");
+  const more = s.attest.length > 3 ? `<p class="note">+ ${s.attest.length - 3} more attestations</p>` : "";
+  return `<li class="sense${single ? " single" : ""}"><span class="n">${i + 1}.</span>
+    <div class="body ${s.layer}">
+      <div class="line1"><span class="layer ${s.layer}">${LAYER[s.layer]}</span><span class="glb" lang="qgb">${esc(s.glb)}</span><span class="how">${esc(s.how)}</span>${s.apertium ? `<span class="ap" title="${esc(s.apertium_reason)}">Apertium: ${esc(s.apertium)}</span>` : ""}</div>
+      <p class="meaning">${esc(s.sense)}</p>
+      ${quotes}${more}
+      ${ev.length ? `<dl class="ev">${ev.join("")}</dl>` : ""}
+      ${dict.length ? `<details><summary>Period dictionaries</summary>${dict.join("")}</details>` : ""}
+      ${s.notes.length ? `<details><summary>Notes</summary>${s.notes.map((n) => `<p>${esc(n)}</p>`).join("")}</details>` : ""}
+    </div></li>`;
+}
+
+function entryHTML(e) {
+  const web = e.webster.length
+    ? `<div class="web"><span class="src">Webster 1913</span>${e.webster.slice(0, 3).map((w) => `<span>${w.n ? w.n + ". " : ""}${w.label ? `<span class="lab">${esc(w.label)}</span>` : ""}${esc(w.gloss.replace(/\s*\[(Archaic|Obs\.?|Poetic|R\.)\]\s*/g, " "))}</span>`).join("")}</div>`
+    : "";
+  return `<article class="entry" data-key="${esc(e.headword.toLowerCase())}">
+    <div class="hw"><h2>${esc(e.headword)}</h2></div>
+    ${web}
+    <ol class="senses">${e.senses.map((s, i) => senseHTML(s, i, e.senses.length === 1)).join("")}</ol>
+  </article>`;
+}
+
+const initial = (h) => (h.match(/[a-z]/i) || ["#"])[0].toUpperCase();
+const sorted = [...DATA].sort((a, b) => a.headword.toLowerCase().localeCompare(b.headword.toLowerCase()));
+const letters = [...new Set(sorted.map((e) => initial(e.headword)))];
+$("#letters").innerHTML = letters.map((l) => `<a href="#L-${l}">${l}</a>`).join("");
+
+let layer = "all";
+function render() {
+  const q = $("#q").value.trim().toLowerCase();
+  let html = "", last = "", shown = 0;
+  for (const e of sorted) {
+    const senses = e.senses.filter((s) => layer === "all" || s.layer === layer);
+    if (!senses.length) continue;
+    if (q) {
+      const hay = (e.headword + " " + senses.map((s) => s.glb + " " + s.sense).join(" ")).toLowerCase();
+      if (!hay.includes(q)) continue;
+    }
+    const l = initial(e.headword);
+    if (l !== last) { html += `<h3 class="letter-head" id="L-${l}">${l}</h3>`; last = l; }
+    html += entryHTML({ ...e, senses });
+    shown++;
+  }
+  $("#list").innerHTML = html || `<p class="empty">No entry matches “${esc(q)}”. Try the English headword or a Globasa word.</p>`;
+  $("#count").textContent = `${shown} of ${DATA.length} headwords`;
+}
+document.querySelectorAll(".filters button").forEach((b) =>
+  b.addEventListener("click", () => {
+    layer = b.dataset.layer;
+    document.querySelectorAll(".filters button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    render();
+  })
+);
+let t;
+$("#q").addEventListener("input", () => { clearTimeout(t); t = setTimeout(render, 120); });
+render();
+</script>
