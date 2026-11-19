@@ -65,6 +65,8 @@ PAIRS = [
     ("fra", "Fr", "Fra", "TranslationFra", "French"),
     ("nld", "Nl", None,  None,             "Dutch"),
     ("jpn", "Ja", None,  None,             "Japanese"),
+    ("spa", "Es", "Spa", "TranslationSpa", "Spanish"),
+    ("epo", "Eo", "Epo", "TranslationEpo", "Esperanto"),
 ]
 
 # Optional: build only the pairs named on the command line (build_bidix.py jpn).
@@ -83,7 +85,10 @@ TARGET_SYMBOLS = {
 
 # Targets whose gender-like analyser tags are not grammatical gender
 # (apertium-jpn tags 父<n><m> for meaning only): no gender on <r>.
-NO_TARGET_GENDER = {"jpn"}
+NO_TARGET_GENDER = {"jpn", "epo"}   # Esperanto has no grammatical gender
+
+# Targets whose analyser files invariable adjectives as <mf> (apertium-spa: grande<adj><mf>).
+MF_ADJECTIVES = {"spa"}
 
 # Targets that file language, religion and scripture names as common nouns (英語, 仏教, 聖書):
 # a Globasa proper noun may take a target <n> when the analyser has no proper-noun reading.
@@ -185,10 +190,13 @@ def gloss_register(pg):
     return reg
 
 
-def add_candidate(lang, glb, sym, target, origin, wikt_genders=(), register=None):
+def add_candidate(lang, glb, sym, target, origin, wikt_genders=(), register=None, rank=0.0):
+    """rank: lower = better default among a target's Globasa words (and a Globasa word's
+    targets); written as the entry weight w, which lt-proc -b sorts by."""
     key = (glb, sym, target)
     known = candidates[lang].get(key)
     if known:
+        known["rank"] = min(known["rank"], rank)
         # The same target as a plain gloss as well: it may be produced after all.
         if known.get("register") and not register and origin == "wordlist":
             known["register"] = None
@@ -199,7 +207,7 @@ def add_candidate(lang, glb, sym, target, origin, wikt_genders=(), register=None
         return
     candidates[lang][key] = {"glb": glb, "sym": sym, "target": target,
                              "origin": origin, "wikt_genders": list(wikt_genders),
-                             "register": register}
+                             "register": register, "rank": rank}
 
 
 _ITEM_SPLIT_RE = re.compile(r",\s*(?![^()]*\))")
@@ -226,22 +234,33 @@ for glb, row in wordlist.iterrows():
     function_head = eng_glosses[0].pos in FUNCTION_POS
 
     # Word-list glosses: one slot per (symbol, verb type) of the English side.
+    # A man-/fem- compound is the marked form of an unmarked word (xwexi 05): rank it lower.
+    marked = 1.0 if re.match(r"(man|fem)(?=.)", glb) and glb[3:] in wordlist.index else 0.0
     for lang, _, code, _, _ in PAIRS:
         if not code:
             continue
+        slots = Counter()
         for pg in parsed.get(code, []):
             sym = apertium_symbol(pg)
             if sym is None:
                 continue
+            slot = slots[sym]          # a later slot of the same PoS is a secondary sense
+            slots[sym] += 1
             register = gloss_register(pg)
-            for tok in expand_gloss_tokens(pg.gloss):
+            toks = expand_gloss_tokens(pg.gloss)
+            for i, tok in enumerate(toks):
                 tok, _ = split_foreign_gender(tok)
                 if not tok:
                     continue
                 if function_head or sym in FUNCTION_SYMBOLS:
                     drop(lang, glb, sym, tok, "wordlist", "function word: curated only")
                 else:
-                    add_candidate(lang, glb, sym, tok, "wordlist", register=register)
+                    # Default ranking: the first gloss of a short slot is the word's core sense;
+                    # a qualified gloss ("beber (alcohol)") or a register label is a narrower one.
+                    qualified = re.search(re.escape(tok) + r"\s*\(", pg.gloss) is not None
+                    rank = (i + 0.5 * (len(toks) - 1) + 3 * qualified + 5 * bool(register)
+                            + slot + marked)
+                    add_candidate(lang, glb, sym, tok, "wordlist", register=register, rank=rank)
 
     # Wiktionary extension: one '; '-separated part per pos_groups() group.
     if glb not in extension.index:
@@ -269,7 +288,7 @@ for glb, row in wordlist.iterrows():
                 elif function_head or sym in FUNCTION_SYMBOLS:
                     drop(lang, glb, sym, target, "wiktionary", "function word: curated only")
                 else:
-                    add_candidate(lang, glb, sym, target, "wiktionary", genders)
+                    add_candidate(lang, glb, sym, target, "wiktionary", genders, rank=10.0)
 
 
 # ── Stage A2: the curated part of each pair dix ─────────────────────────
@@ -479,6 +498,10 @@ for lang, label, *_ in PAIRS:
         # Target gender: the analyser's, narrowed by Wiktionary's marker.
         if lang in NO_TARGET_GENDER:
             genders = []
+        elif sym == "adj" and lang in MF_ADJECTIVES:
+            # invariable adjectives (grande<adj><mf>) keep <mf>: the generator needs it;
+            # variable ones (viejo) take the noun's gender in the glb→X transfer
+            genders = ["mf"] if genders == ["mf"] else []
         elif sym in NOUN_SYMBOLS and genders:
             narrowed = [g for g in c["wikt_genders"] if g in genders]
             if narrowed:
@@ -495,6 +518,8 @@ for lang, label, *_ in PAIRS:
             for tg in (genders or [None]):
                 line = bilingual_entry(label, glb, GLB_SYMBOLS.get(sym, sym), gg,
                                        target, tsym, tg, restriction, sint=sint)
+                if c.get("rank"):
+                    line = line.replace("<e", f'<e w="{c["rank"]:g}"', 1)
                 if line in emitted:
                     continue
                 emitted.add(line)
