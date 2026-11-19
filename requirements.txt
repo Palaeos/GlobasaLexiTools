@@ -26,3 +26,4 @@ requests-cache~=1.2.1
 pypinyin
 unidic-lite~=1.0.8
 orjson~=3.12
+wordfreq~=3.1
