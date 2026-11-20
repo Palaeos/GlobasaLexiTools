@@ -118,6 +118,30 @@ def match_sense_to_definition(sense_key, sense_list):
     return best_sense if best_score >= 0.5 else None
 
 
+def match_sense_strict(sense_key, sense_list):
+    """match_sense_to_definition tiers 1-2 only: the translation-table label must occur in a
+    gloss or raw gloss. The overlap tier mismatches tables to obsolete senses (it gave obsolete
+    'morning' the main 166-language table), so period work uses this one."""
+    lab = sense_key.lower().strip()
+    after = lab.split(":", 1)[1].strip() if ":" in lab else ""
+    if not lab:
+        return None
+    def hit(text):
+        t = text.lower()
+        return lab in t or (after and after in t)
+
+    # a sub-sense repeats its parent's gloss first ("An adult male human." / "All human males
+    # collectively"), so a sense's own (last) gloss wins over any gloss (man -> 'adult male human')
+    for sense in sense_list:
+        if sense.glosses and hit(sense.glosses[-1]):
+            return sense
+    for field in ("glosses", "raw_glosses"):
+        for sense in sense_list:
+            if any(hit(g) for g in getattr(sense, field)):
+                return sense
+    return None
+
+
 def extract_definition_and_examples(matched_sense):
     """Extract definition and up to 3 examples from a matched Sense.
     Returns (definition, example1, example2, example3)."""

@@ -1,0 +1,124 @@
+en -> es: 29353 seed pairs, held-out P@1 0.73 (500 words)
+en -> eo: 9955 seed pairs, held-out P@1 0.44 (500 words)
+
+strength x verdict: ok  low  other  split  n/a
+  A:    51      4      1      4      1
+  B:    64     49      2      2      1
+  C:   501     36     17     26     64
+  D:  4691    798    526    477    302
+
+-- B low
+   like (verb) “To please (same meaning as above but with subject and object” | es: lubi 0.30 | eo: lubi 0.22
+   right (adj) “Straight, not bent.” | es: sahi 0.18 | eo: sahi 0.19
+   thus (adv) “As a result.” | es: denseba 0.32 | eo: denseba 0.18
+   party (noun) “With to: someone who takes part in an action or affair; an a” | es: rolyen 0.18 | eo: rolyen 0.17
+   field (noun) “The team in a match that throws the ball and tries to catch ” | es: gwancan 0.09 | eo: gwancan -0.03
+   study (verb) “To take a course or courses on a subject.” | es: xwexi 0.37 | eo: xwexi 0.30
+   green (adj) “Of bacon or similar smallgoods: unprocessed, raw, unsmoked; ” | es: nenkokido 0.48 | eo: nenkokido 0.30
+   address (verb) “To prepare oneself.” | es: jumbicu 0.52 | eo: jumbicu 0.18
+   actual (adj) “in action at the time being; now existing; current.” | es: real 0.30 | eo: real 0.26
+   sensible (adj) “Able to feel or perceive.” | es: hisifil 0.31 | eo: hisifil 0.21
+   cannon (noun) “A large muzzle-loading artillery piece.” | es: bol 0.14 | eo: bol 0.10
+   prudence (noun) “The quality or state of being prudent: circumspection and go” | es: riskojui 0.32 | eo: riskojui 0.26
+   fool (noun) “A jester; a person whose role was to entertain a sovereign a” | es: payaco 0.27 | eo: payaco 0.23
+   appropriate (adj) “Set apart for a particular use or person; reserved.” | es: nasibune 0.40 | eo: nasibune 0.27
+   depths (noun) “A very remote part.” | es: amikuje -0.00 | eo: amikuje -0.04
+   thither (adv) “To that place.” | es: denloka 0.32 | eo: denloka 0.29
+   pupil (noun) “A learner at a school under the supervision of a teacher.” | es: doxoyen 0.21 | eo: doxoyen 0.14
+   shaft (noun) “A beam or ray of light.” | es: radya 0.51 | eo: radya 0.29
+   destination (noun) “The act of destining or appointing.” | es: kismetu 0.02 | eo: kismetu 0.03
+   retirement (noun) “A place of seclusion or privacy; a retreat.” | es: privatoya 0.50 | eo: privatoya 0.28
+   research (noun) “A particular instance or piece of research.” | es: kentan 0.12 | eo: kentan 0.20
+   factor (noun) “A doer, maker; a person who does things for another person o” | es: byuroyen 0.33 | eo: byuroyen 0.14
+   receiver (noun) “An official whose job is to receive taxes or other monies; a” | es: beadresuyen 0.32 | eo: beadresuyen 0.20
+   knock (verb) “To bump or impact.” | es: darbe 0.36 | eo: darbe 0.19
+   vicious (adj) “Pertaining to vice; characterised by immorality or depravity” | es: bur 0.15 | eo: bur 0.10
+
+-- B other
+   planet (noun) “Each of the seven major bodies which move relative to the fi” | es: sura 0.46; estare 0.42; jivaki 0.34 | eo: sura 0.45; estare 0.39; jivaki 0.19
+   haunt (verb) “To live habitually; to stay, to remain.” | es: resta 0.68; ogar 0.58 | eo: resta 0.58; ogar 0.44
+
+-- C low
+   matter (noun) “Pus.” | es: nanahu 0.66 | eo: nanahu 0.25
+   cross (adj) “Opposing, adverse; being contrary to what one would hope or ” | es: antili 0.43 | eo: antili 0.29
+   continent (adj) “Serving to restrain or limit; restraining; opposing.” | es: antili 0.22 | eo: antili 0.31
+   breach (noun) “A hernia; a rupture.” | es: herni 0.56 | eo: herni 0.28
+   grandeur (noun) “Greatness; largeness; tallness; loftiness.” | es: gaoya 0.13 | eo: gaoya 0.11
+   romantic (adj) “Fictitious, imaginary.” | es: fiksyondo 0.68 | eo: fiksyondo 0.29
+   expert (adj) “Proven, experienced, veteran.” | es: jenmindo 0.46 | eo: jenmindo 0.22
+   sack (noun) “A kind of loose-fitting gown or dress with sleeves which han” | es: kapa 0.29 | eo: kapa 0.43
+   stale (verb) “To urinate, especially used of horses and cattle.” | es: pixi 0.40 | eo: pixi 0.27
+   elicit (adj) “Elicited; drawn out; made real; open; evident.” | es: mimbay 0.30 | eo: mimbay 0.29
+   pert (adj) “Open; evident; unhidden.” | es: mimbay 0.29 | eo: mimbay 0.39
+   affectedly (adv) “Lovingly; with tender care.” | es: lubine 0.57 | eo: lubine 0.22
+   benny (noun) “An overcoat.” | es: kotu 0.54 | eo: kotu 0.28
+   culver (noun) “A dove or pigeon, now specifically of the species Columba pa” | es: kabutar 0.46 | eo: kabutar 0.27
+   sicker (adv) “Securely.” | es: anjen 0.23 | eo: anjen 0.31
+   quitter (noun) “Matter flowing from a wound or sore; pus.” | es: nanahu 0.49 | eo: nanahu 0.25
+   contrariously (adv) “Contrarily; oppositely.” | es: antipul 0.20 | eo: antipul 0.10
+   recomfort (verb) “To console (someone); to comfort, look after.” | es: anwi 0.35 | eo: anwi 0.25
+   consolate (verb) “To console; to comfort.” | es: anwi 0.32 | eo: anwi 0.18
+   lamantin (noun) “The manatee.” | es: manati 0.53 | eo: manati 0.19
+
+-- C other
+   deal (noun) “A division, a portion, a share, a part, a piece.” | es: sahem 0.21 | eo: sahem 0.24
+   favor (noun) “Appearance; look; countenance; face.” | es: muka 0.67; okocu 0.61; precu 0.32 | eo: muka 0.35; okocu 0.32; precu 0.15
+   broad (noun) “A woman or girl.” | es: femixu 0.74; ixu 0.73; femnini 0.73; femyen 0.65; nini 0.63 | eo: femixu 0.68; ixu 0.66; femyen 0.63; femnini 0.53; nini 0.38
+   consul (noun) “A count or earl.” | es: mankonte 0.35; konte 0.32; hesabu 0.14 | eo: mankonte 0.35; konte 0.28; hesabu 0.20
+   qualification (noun) “A quality or attribute.” | es: kwalita 0.53; sifa 0.53 | eo: kwalita 0.48; sifa 0.39
+   tincture (noun) “A small flaw; a blemish, a stain.” | es: kotormarka 0.55; burtyan 0.55 | eo: kotormarka 0.28; burtyan 0.28
+   rattling (adj) “good, fine.” | es: okey 0.64; sifabon 0.61; bon 0.52; kwalitabon 0.35 | eo: okey 0.54; bon 0.54; kwalitabon 0.38
+   loft (noun) “air, the air; the sky, the heavens.” | es: asman 0.66; hawa 0.58 | eo: asman 0.56; hawa 0.50
+   hap (noun) “A person's lot (good or bad), luck, fortune, fate.” | es: kismetu 0.67; xanse 0.65 | eo: kismetu 0.55; xanse 0.27
+   pussy (noun) “A woman or girl, seen as having characteristics associated w” | es: femixu 0.47; ixu 0.47; femnini 0.46; femyen 0.46; nini 0.42 | eo: femixu 0.41; ixu 0.40; femyen 0.40; femnini 0.29; nini 0.25
+   trinket (noun) “A small vessel for drinking from; a cup, a mug, a porringer.” | es: glasu 0.62; fenjan 0.60 | eo: glasu 0.49; fenjan 0.49
+   a little matter (adv) “Somewhat; slightly; a little.” | es: xosumo 0.76; lilmo 0.76 | eo: xosumo 0.63; lilmo 0.63
+   a matter (adv) “Somewhat; slightly; a little.” | es: xosumo 0.76; lilmo 0.76 | eo: xosumo 0.63; lilmo 0.63
+   a small matter (adv) “Somewhat; slightly; a little.” | es: xosumo 0.76; lilmo 0.76 | eo: xosumo 0.63; lilmo 0.63
+   budgeree (adj) “Good, fine.” | es: okey 0.64; sifabon 0.61; bon 0.52; kwalitabon 0.35 | eo: okey 0.54; bon 0.54; kwalitabon 0.38
+   some little matter (adv) “Somewhat; slightly; a little.” | es: xosumo 0.76; lilmo 0.76 | eo: xosumo 0.63; lilmo 0.63
+   some small matter (adv) “Somewhat; slightly; a little.” | es: xosumo 0.76; lilmo 0.76 | eo: xosumo 0.63; lilmo 0.63
+
+-- D ok
+   more (noun) “A carrot; a parsnip.” | es: karote 0.61 | eo: karote 0.52
+   can (verb) “To know.” | es: jixi 0.73; kone 0.53 | eo: jixi 0.57; kone 0.47
+   do (noun) “An act of swindling; a fraud or deception.” | es: krimencipen 0.67 | eo: krimencipen 0.38
+   great (adj) “Pregnant; large with young; full of.” | es: hamile 0.46 | eo: hamile 0.41
+   most (adj) “The greatest; the best.” | es: maxim bon 0.58 | eo: maxim bon 0.53
+   part (noun) “A factor.” | es: kosamon 0.66 | eo: kosamon 0.47
+   much (adv) “Almost.” | es: kriban 0.80 | eo: kriban 0.61
+   own (adj) “Peculiar, domestic.” | es: ajabu 0.54; ogarli 0.42 | eo: ajabu 0.41; ogarli 0.28
+   place (noun) “A topic.” | es: tema 0.60 | eo: tema 0.56
+   might (adj) “Possible.” | es: ible 0.60 | eo: ible 0.45
+   state (noun) “A great person, a dignitary; a lord or prince.” | es: manprince 0.59; prince 0.57 | eo: manprince 0.44; prince 0.43
+   way (verb) “To travel.” | es: turi 0.67 | eo: turi 0.53
+   over (noun) “A shore, riverbank.” | es: kosta 0.47 | eo: kosta 0.45
+   even (adv) “Exactly, just, fully.” | es: sol 0.49 | eo: sol 0.47
+   even (noun) “Evening.” | es: axam 0.70 | eo: axam 0.52
+   even (verb) “To set right; to complete.” | es: kompletogi 0.51 | eo: kompletogi 0.42
+   like (verb) “To have an appearance or expression; to look; to seem to be ” | es: okocu 0.45 | eo: okocu 0.38
+   through (noun) “A coffin, sarcophagus or tomb of stone; a large slab of ston” | es: tabutu 0.52 | eo: tabutu 0.44
+   long (adj) “Not short; tall.” | es: gao 0.35 | eo: gao 0.35
+   power (noun) “An army, a military force.” | es: askeri 0.72 | eo: askeri 0.63
+   take (verb) “To visit; to include in a course of travel.” | es: visita 0.60 | eo: visita 0.49
+   work (noun) “A factory; a works.” | es: fabrikadom 0.60 | eo: fabrikadom 0.44
+   give (verb) “To shed tears; to weep.” | es: wawa 0.56 | eo: wawa 0.46
+   right (adj) “Most favourable or convenient; fortunate.” | es: xansebon 0.46 | eo: xansebon 0.34
+   law (noun) “A hill.” | es: liljabal 0.69 | eo: liljabal 0.56
+
+-- D other
+   what (noun) “Something; thing; stuff.” | es: xey 0.30; maderixey 0.15 | eo: xey 0.25; maderixey 0.14
+   first (noun) “Time; time granted; respite.” | es: watu 0.57; mara 0.31 | eo: watu 0.40; mara 0.15
+   well (adj) “Good to eat; tasty, delicious.” | es: xetoyukwe 0.78; xetocubon 0.78 | eo: xetoyukwe 0.69; xetocubon 0.69
+   good (adj) “Real; actual; serious.” | es: real 0.68; muhim 0.57; jidi 0.53 | eo: real 0.56; muhim 0.37; jidi 0.36
+   state (noun) “Estate, possession.” | es: suya 0.62; suxey 0.52 | eo: suya 0.45; suxey 0.43
+   come (noun) “Coming, arrival; approach.” | es: xorata 0.67; ata 0.49; metode 0.22 | eo: xorata 0.45; ata 0.27; metode 0.21
+   down (adj) “Downright; absolute; positive.” | es: kompleto 0.50; bon 0.47 | eo: kompleto 0.42; bon 0.31
+   go (noun) “A circumstance or occurrence; an incident, often unexpected.” | es: okur 0.69; halu 0.62 | eo: okur 0.49; halu 0.38
+   land (noun) “The ground or floor.” | es: dixan 0.71; cengu 0.58; geo 0.47 | eo: dixan 0.45; geo 0.44; cengu 0.38
+   cause (noun) “Any subject of discussion or debate; a matter; an affair.” | es: masele 0.57; maderi 0.26 | eo: masele 0.52; maderi 0.14
+   character (verb) “To write (using characters); to describe.” | es: tosifu 0.76; eskri 0.66 | eo: tosifu 0.51; eskri 0.42
+   able (verb) “To dress.” | es: inlabasgi 0.63; bendaji 0.09 | eo: inlabasgi 0.51
+   word (noun) “Something that someone said; a comment, utterance; speech.” | es: pala 0.52; komenta 0.46 | eo: pala 0.53; komenta 0.36
+   get (verb) “To make acquisitions; to gain; to profit.” | es: xorhare 0.51; cudu 0.44 | eo: xorhare 0.42; cudu 0.40
+   near (adj) “Immediate; direct; close; short.” | es: ner 0.53; fori 0.51; kurto 0.50; cote 0.21 | eo: ner 0.44; fori 0.44; kurto 0.36; cote 0.21
