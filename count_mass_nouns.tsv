@@ -1,0 +1,6 @@
+eng	counted	counted_tags	uncounted	uncounted_tags	weak	status	evidence	notes
+man	manixu	n.m	insan	n.ut	counted	add	user 2026-11-20: generic man = insan (number-neutral), a man = manixu	"One small step for man (insan), one great leap for mankind (insanlari)"; insanlari = mankind/humanity as a collective
+mankind	insanlari	n.GD	insanlari	n.GD		add	word list insanlari "humanity" (Epo homaro); no bidix entry for mankind before	single translation, no rule needed
+hair	tofamon	n.nt	tofa	n.nt	uncounted	add	word list: tofamon "(single) hair, strand", tofa "(head) hair" (Epo haro)	"his hair", "the hair on her head" = all of it; belo = body hair, fur (not chosen)
+chicken	kuku	n.ut	kukumaso	n.nt	counted	pending	word list: kukumaso "chicken (meat)", Epo kokaĵo	"the chicken was delicious" is meat after "the": needs context beyond the determiner
+fish	mahi	n.ut	mahimaso	n.nt	counted	pending	word list: mahimaso "fish (meat)", Epo fiŝaĵo	bare plural "Fish swim" is tagged <sg> by the analyser, so bare -> meat would be wrong
