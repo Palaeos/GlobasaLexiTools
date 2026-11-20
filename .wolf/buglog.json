@@ -4834,5 +4834,109 @@
     ],
     "occurrences": 1,
     "last_seen": "2026-11-19T22:00:00"
+  },
+  {
+    "id": "bug-297",
+    "timestamp": "2026-11-20T00:00:00",
+    "error_message": "eng->glb: 'his dog' -> @his, 'You' untranslated; clause around it lost its tense ('I saw his dog' -> Mi oko ...)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rlx",
+    "root_cause": "upstream HMM eng.prob (adopted 2026-11-19) prefers apertium-eng's newer pronoun readings (his<det><pos><sp>, you<prn><pers>) over prpers<...>; the bidix only has prpers",
+    "fix": "pair CG removes the newer readings when a prpers reading is in the cohort (before the tagger); dev chrF 57.1 -> 58.5",
+    "tags": [
+      "apertium",
+      "eng-glb",
+      "tagger",
+      "cg",
+      "pronoun"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20T00:00:00"
+  },
+  {
+    "id": "bug-298",
+    "timestamp": "2026-11-20T00:00:00",
+    "error_message": "eng->glb: past verb + determiner object loses le ('I saw the dog' -> Mi oko bwaw)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+    "root_cause": "rules opening with have@vblex/vbmod the@det right (c80df29) let the parser keep any vblex + det as an unreduced prepv chunk; lemma restrictions do not stop the shift",
+    "fix": "removed those rules; eng-glb-mwe.py joins 'have the right' into one verb (bidix haki); found by bisecting rtx versions on one sentence",
+    "tags": [
+      "apertium",
+      "rtx",
+      "eng-glb",
+      "tense",
+      "parser"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20T00:00:00"
+  },
+  {
+    "id": "bug-299",
+    "timestamp": "2026-11-20T13:00:00",
+    "error_message": "histwords_senses suggested tanke (military tank) for the liquid-container sense of tank (user correction: container = tanku)",
+    "file": "time-machine/histwords_senses.py",
+    "root_cause": "word-list parser stripped (_militar_) annotations before matching, so the domain-restricted Spa item 'tanque (_militar_)' voted like plain 'tanque'",
+    "fix": "split on commas outside parentheses, annotated items count half; Epo veto: when a candidate matches the sense's Esperanto translation, drop candidates whose own Epo column does not match. Same parser fix in histwords_crossling.py",
+    "tags": [
+      "word-list",
+      "annotation",
+      "pivot-vote",
+      "esperanto"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20T13:00:00"
+  },
+  {
+    "id": "bug-300",
+    "timestamp": "2026-11-20T18:40:00",
+    "error_message": "RAM was exceeded (user report) during archaic_crosscheck.py rerun; session restarted and the scratchpad (fastText vectors, HistWords) was wiped",
+    "file": "archaic_crosscheck.py",
+    "root_cause": "full-size zero matrices + normalise() float temporaries per language (several 240 MB copies each); large downloaded data kept only in session scratch",
+    "fix": "load() copies only the kept rows from the memmap and normalises in place; keep extracted vectors in git-ignored time-machine/cache instead of scratch",
+    "tags": [
+      "memory",
+      "oom",
+      "fasttext",
+      "scratchpad"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20"
+  },
+  {
+    "id": "bug-301",
+    "timestamp": "2026-11-20T19:10:00",
+    "error_message": "sense_periods: vetted man (ixu/manixu/manyen, label 'adult male human') joined to sub-sense 'All human males collectively: mankind'",
+    "file": "sense_rows.py",
+    "root_cause": "Wiktionary sub-senses repeat the parent gloss as glosses[0]; the strict matcher returned the first sense with the label in any gloss",
+    "fix": "match_sense_strict first looks for the label in each sense's own last gloss, then in any gloss; moved from archaic_senses.py into sense_rows.py",
+    "tags": [
+      "wiktionary",
+      "sense-matching",
+      "subsense"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20"
+  },
+  {
+    "id": "bug-302",
+    "timestamp": "2026-11-20T20:29:51",
+    "error_message": "wiktionary_constructions.py found almost no governed prepositions (de 25 senses; warten auf missing) although a scan of the 2024 dump found 286",
+    "file": "wiktionary_constructions.py",
+    "root_cause": "The 2025 wiktextract dump (raw-wiktextract-data.jsonl, Aug 2025) moved {{+obj}} out of the gloss text into sense.info_templates (args '2': ':auf(acc)'); the 2024 copy (raw-wiktextract-data.json.gz) still had '[+ auf (accusative)]' in glosses",
+    "fix": "_obj_template() reads info_templates name '+obj' args (prep, (acc|dat|gen)); the old [+ ...] text parse stays as fallback",
+    "tags": [
+      "wiktionary",
+      "wiktextract",
+      "dump-format",
+      "+obj",
+      "verb-constructions"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-20T20:29:51"
   }
 ]
