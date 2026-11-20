@@ -1,0 +1,62 @@
+rows: 13723
+dated: 7649
+fuzzy: 19
+no sense: 663
+throughout Modern English (1500-now, quoted by 1700): {'unknown': 5633, 'no': 7426, 'yes': 664}
+vetted: 5770 rows, 3076 with a start year, 22 with an end year
+archaic: 7610 rows, 4505 with a start year, 4313 with an end year
+curated: 343 rows, 68 with a start year, 17 with an end year
+
+ALL = holds throughout Modern English, ? = unknown, blank = ended
+
+== gay
+       adj  1667–1946   kolorpul       [curated, dated] Festive, bright, or colourful.
+       adj  1692–1974   kweho          [curated, dated] Happy, joyful, and lively.
+       adj  1806–1946   akxupul        [curated, obsolete] Sexually promiscuous (of any gender), (sometimes particularly) engaged
+       adj  1832–1903   day            [archaic D gloss choice, obsolete] Considerable, great, large in number, size, or degree. In this sense, 
+       adj  1873–2019   velosi         [curated, dated] Quick, fast.
+
+== queer
+       adj  1824–1965   ajabu          [curated, dated] Strange, odd, or different; whimsical.
+    ?  adj  ?–?         kwir           [vetted, ] 
+       verb ?–?         coxo           [archaic C gloss unique, dated] To ridicule; to banter; to rally.
+
+== man
+   ALL noun 1599–now    ixu            [vetted, current] An adult male human.
+   ALL noun 1599–now    manixu         [vetted, current] An adult male human.
+   ALL noun 1599–now    manyen         [vetted, current] An adult male human.
+       noun 1700–1897   sujeto         [archaic D gloss choice, historical] A vassal; a subject.
+
+== dumb
+       adj  1591–1881   palakal        [curated, dated] Unaccompanied by words or speech, silent, wordless.
+       adj  1594–1992   palanenabil    [curated, dated] Unable to speak; lacking power of speech (kept in "deaf, dumb, and bli
+       adj  1720–1720   luminlil       [archaic D gloss choice, obsolete] Lacking brightness or clearness as a colour; dim, dull.
+       adj  1843–1843   vokakal        [curated, dated] Having no input or voice in running things.
+       adj  1850–1850   sotikal        [curated, dated] Not producing any sound, silent.
+    ?  adj  ?–?         bobo           [vetted, current] Stupid.
+       adj  ?–?         nenpalafil     [curated, archaic] Not talkative; taciturn or unwilling to speak.
+       verb 1606–1911   xuxgi          [curated, dated] To silence.
+
+== nice
+       adj  1590–1590   bobo           [archaic D gloss choice, obsolete] Silly, ignorant; foolish.
+    ?  adj  1908–now    yukwe          [vetted, current] Pleasant, satisfactory.
+       adj  ?–?         bangura        [archaic D gloss choice, obsolete] Easily injured; delicate; dainty.
+
+== awful
+       adj  1839–1850   daybur         [archaic D gloss choice, dated] Causing fear or horror; appalling, terrible.
+    ?  adj  ?–?         daybur         [vetted, current] Very bad.
+
+== broadcast
+       verb 1789–2013   bija           [archaic B table, archaic] To sow seeds over a wide area.
+
+== film
+
+== fancy
+   ALL noun 1667–now    imajeya        [curated, current] The imagination.
+    ?  noun ?–?         fikir          [curated, ] 
+    ?  noun ?–?         imaje          [curated, ] 
+       verb 1705–1907   imaje          [archaic D gloss choice, dated] To imagine, suppose.
+
+== presently
+       adv  1599–1611   fori           [archaic D gloss choice, archaic] Immediately, at once; quickly.
+    ?  adv  ?–?         nerxali        [curated, ] 
