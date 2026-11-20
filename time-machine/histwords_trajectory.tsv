@@ -1,0 +1,187 @@
+word	sense	decade	sim	n_probes
+queer	strange (glb: ajabu)	1830	0.158	5
+queer	counterfeit (slang)	1830	0.110	4
+queer	strange (glb: ajabu)	1840	0.190	5
+queer	counterfeit (slang)	1840	0.079	4
+queer	strange (glb: ajabu)	1850	0.244	5
+queer	counterfeit (slang)	1850	0.042	4
+queer	strange (glb: ajabu)	1860	0.268	5
+queer	counterfeit (slang)	1860	0.042	4
+queer	strange (glb: ajabu)	1870	0.272	5
+queer	counterfeit (slang)	1870	0.049	4
+queer	strange (glb: ajabu)	1880	0.302	5
+queer	counterfeit (slang)	1880	0.073	4
+queer	strange (glb: ajabu)	1890	0.305	6
+queer	counterfeit (slang)	1890	0.067	4
+queer	strange (glb: ajabu)	1900	0.304	6
+queer	counterfeit (slang)	1900	0.102	4
+queer	strange (glb: ajabu)	1910	0.340	6
+queer	counterfeit (slang)	1910	0.084	4
+queer	strange (glb: ajabu)	1920	0.329	6
+queer	counterfeit (slang)	1920	0.086	4
+queer	strange (glb: ajabu)	1930	0.303	6
+queer	counterfeit (slang)	1930	0.051	4
+queer	strange (glb: ajabu)	1940	0.376	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1940	-0.030	2
+queer	counterfeit (slang)	1940	0.104	4
+queer	strange (glb: ajabu)	1950	0.317	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1950	0.067	2
+queer	counterfeit (slang)	1950	0.094	4
+queer	strange (glb: ajabu)	1960	0.304	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1960	0.067	3
+queer	counterfeit (slang)	1960	0.079	4
+queer	strange (glb: ajabu)	1970	0.282	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1970	0.052	5
+queer	counterfeit (slang)	1970	0.082	4
+queer	strange (glb: ajabu)	1980	0.297	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1980	0.031	5
+queer	counterfeit (slang)	1980	0.078	4
+queer	strange (glb: ajabu)	1990	0.244	6
+queer	homosexual / LGBT (glb: samajensifil; reclaimed umbrella = kwir)	1990	0.216	5
+queer	counterfeit (slang)	1990	0.015	4
+man	human being (glb: insan)	1800	0.270	5
+man	adult male (glb: manixu)	1800	0.312	5
+man	human being (glb: insan)	1810	0.240	5
+man	adult male (glb: manixu)	1810	0.303	5
+man	human being (glb: insan)	1820	0.219	5
+man	adult male (glb: manixu)	1820	0.275	5
+man	human being (glb: insan)	1830	0.274	5
+man	adult male (glb: manixu)	1830	0.288	5
+man	human being (glb: insan)	1840	0.213	5
+man	adult male (glb: manixu)	1840	0.334	5
+man	human being (glb: insan)	1850	0.296	5
+man	adult male (glb: manixu)	1850	0.277	5
+man	human being (glb: insan)	1860	0.218	5
+man	adult male (glb: manixu)	1860	0.333	5
+man	human being (glb: insan)	1870	0.270	5
+man	adult male (glb: manixu)	1870	0.317	5
+man	human being (glb: insan)	1880	0.260	5
+man	adult male (glb: manixu)	1880	0.346	5
+man	human being (glb: insan)	1890	0.236	5
+man	adult male (glb: manixu)	1890	0.303	5
+man	human being (glb: insan)	1900	0.215	5
+man	adult male (glb: manixu)	1900	0.374	5
+man	human being (glb: insan)	1910	0.211	6
+man	adult male (glb: manixu)	1910	0.363	5
+man	human being (glb: insan)	1920	0.226	6
+man	adult male (glb: manixu)	1920	0.357	5
+man	human being (glb: insan)	1930	0.213	6
+man	adult male (glb: manixu)	1930	0.343	5
+man	human being (glb: insan)	1940	0.262	6
+man	adult male (glb: manixu)	1940	0.363	5
+man	human being (glb: insan)	1950	0.284	6
+man	adult male (glb: manixu)	1950	0.351	5
+man	human being (glb: insan)	1960	0.274	7
+man	adult male (glb: manixu)	1960	0.340	5
+man	human being (glb: insan)	1970	0.267	7
+man	adult male (glb: manixu)	1970	0.343	5
+man	human being (glb: insan)	1980	0.254	7
+man	adult male (glb: manixu)	1980	0.392	5
+man	human being (glb: insan)	1990	0.276	7
+man	adult male (glb: manixu)	1990	0.390	5
+men	people (glb: insan)	1800	0.272	5
+men	adult males (glb: manixu)	1800	0.315	5
+men	people (glb: insan)	1810	0.230	5
+men	adult males (glb: manixu)	1810	0.251	5
+men	people (glb: insan)	1820	0.245	5
+men	adult males (glb: manixu)	1820	0.251	5
+men	people (glb: insan)	1830	0.217	5
+men	adult males (glb: manixu)	1830	0.293	5
+men	people (glb: insan)	1840	0.260	5
+men	adult males (glb: manixu)	1840	0.233	5
+men	people (glb: insan)	1850	0.206	5
+men	adult males (glb: manixu)	1850	0.299	5
+men	people (glb: insan)	1860	0.227	5
+men	adult males (glb: manixu)	1860	0.319	5
+men	people (glb: insan)	1870	0.246	5
+men	adult males (glb: manixu)	1870	0.316	5
+men	people (glb: insan)	1880	0.255	5
+men	adult males (glb: manixu)	1880	0.323	5
+men	people (glb: insan)	1890	0.289	5
+men	adult males (glb: manixu)	1890	0.351	5
+men	people (glb: insan)	1900	0.285	5
+men	adult males (glb: manixu)	1900	0.376	5
+men	people (glb: insan)	1910	0.239	6
+men	adult males (glb: manixu)	1910	0.369	5
+men	people (glb: insan)	1920	0.236	6
+men	adult males (glb: manixu)	1920	0.349	5
+men	people (glb: insan)	1930	0.227	6
+men	adult males (glb: manixu)	1930	0.341	5
+men	people (glb: insan)	1940	0.242	6
+men	adult males (glb: manixu)	1940	0.389	5
+men	people (glb: insan)	1950	0.248	6
+men	adult males (glb: manixu)	1950	0.359	5
+men	people (glb: insan)	1960	0.262	6
+men	adult males (glb: manixu)	1960	0.388	5
+men	people (glb: insan)	1970	0.237	6
+men	adult males (glb: manixu)	1970	0.371	5
+men	people (glb: insan)	1980	0.271	6
+men	adult males (glb: manixu)	1980	0.399	5
+men	people (glb: insan)	1990	0.227	6
+men	adult males (glb: manixu)	1990	0.373	5
+mankind	humanity (glb: insanlari)	1800	0.382	3
+mankind	males	1800	0.134	4
+mankind	humanity (glb: insanlari)	1810	0.367	3
+mankind	males	1810	0.080	4
+mankind	humanity (glb: insanlari)	1820	0.348	3
+mankind	males	1820	0.072	4
+mankind	humanity (glb: insanlari)	1830	0.415	3
+mankind	males	1830	0.097	4
+mankind	humanity (glb: insanlari)	1840	0.356	3
+mankind	males	1840	0.106	4
+mankind	humanity (glb: insanlari)	1850	0.430	3
+mankind	males	1850	0.110	4
+mankind	humanity (glb: insanlari)	1860	0.448	3
+mankind	males	1860	0.071	4
+mankind	humanity (glb: insanlari)	1870	0.439	3
+mankind	males	1870	0.077	4
+mankind	humanity (glb: insanlari)	1880	0.465	3
+mankind	males	1880	0.091	4
+mankind	humanity (glb: insanlari)	1890	0.482	3
+mankind	males	1890	0.109	4
+mankind	humanity (glb: insanlari)	1900	0.437	3
+mankind	males	1900	0.065	4
+mankind	humanity (glb: insanlari)	1910	0.489	3
+mankind	males	1910	0.108	4
+mankind	humanity (glb: insanlari)	1920	0.436	3
+mankind	males	1920	0.081	4
+mankind	humanity (glb: insanlari)	1930	0.514	3
+mankind	males	1930	0.068	4
+mankind	humanity (glb: insanlari)	1940	0.457	3
+mankind	males	1940	0.109	4
+mankind	humanity (glb: insanlari)	1950	0.458	3
+mankind	males	1950	0.091	4
+mankind	humanity (glb: insanlari)	1960	0.362	4
+mankind	males	1960	0.095	4
+mankind	humanity (glb: insanlari)	1970	0.370	4
+mankind	males	1970	0.061	4
+mankind	humanity (glb: insanlari)	1980	0.371	4
+mankind	males	1980	0.022	4
+mankind	humanity (glb: insanlari)	1990	0.372	4
+mankind	males	1990	0.050	4
+gay	cheerful	1800	0.348	5
+gay	cheerful	1810	0.300	6
+gay	cheerful	1820	0.248	6
+gay	cheerful	1830	0.349	6
+gay	cheerful	1840	0.308	6
+gay	cheerful	1850	0.333	6
+gay	cheerful	1860	0.345	6
+gay	cheerful	1870	0.346	6
+gay	cheerful	1880	0.374	6
+gay	cheerful	1890	0.360	6
+gay	cheerful	1900	0.361	6
+gay	cheerful	1910	0.357	6
+gay	cheerful	1920	0.346	6
+gay	cheerful	1930	0.357	6
+gay	cheerful	1940	0.369	6
+gay	homosexual (glb: gey, samajensifil)	1940	-0.052	2
+gay	cheerful	1950	0.358	6
+gay	homosexual (glb: gey, samajensifil)	1950	0.011	2
+gay	cheerful	1960	0.362	6
+gay	homosexual (glb: gey, samajensifil)	1960	0.018	3
+gay	cheerful	1970	0.311	6
+gay	homosexual (glb: gey, samajensifil)	1970	0.243	5
+gay	cheerful	1980	0.230	6
+gay	homosexual (glb: gey, samajensifil)	1980	0.353	5
+gay	cheerful	1990	0.106	6
+gay	homosexual (glb: gey, samajensifil)	1990	0.456	5

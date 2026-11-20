@@ -1,0 +1,365 @@
+== en: 11436 seed pairs from 12000 stable English words; 10936 train, 500 held-out English words
+   1890s English -> en: P@1 0.78, P@5 0.91 on 500 held-out words
+   [1890s] gay          (cos to today 0.09, today's form ranks 5304) -> colorful, cheerful, colourful, cheery, jaunty, whimsical, zany, lighthearted, carefree, artsy
+                         glb adj: kolorpul (colorful/colourful); joxufil (cheerful); kweho (cheerful)
+   [1890s] queer        (cos to today 0.19, today's form ranks 829) -> weird, wierd, strange, freaky, funny, creepy, odd, goofy, kinda, scary
+                         glb adj: ajabu (weird/strange/odd); humorpul (funny); fobine (scary)
+   [1890s] awful        (cos to today 0.37, today's form ranks 36) -> terrifying, ominous, dreadful, solemn, eerie, majestic, frightening, horrifying, looming, enormity
+                         glb adj: fobine (frightening)
+   [1890s] dumb         (cos to today 0.29, today's form ranks 13) -> deaf, voiceless, mute, speechless, illiterate, helpless, petrified, powerless, impotent, stricken
+                         glb adj: orenenabil (deaf); kowakal (powerless); doxonenabil (illiterate)
+   [1890s] intercourse  (cos to today 0.41, today's form ranks 1) -> intercourse, interaction, relations, communication, friendships, interactions, companionship, dealings, relationships, intimacy
+                         glb n: intreaksyon (interaction); komunika (communication); cinmiya (intimacy)
+   [1890s] wanted       (cos to today 0.56, today's form ranks 1) -> wanted, get, wants, want, needed, wanting, just, need, give, somebody
+                         glb v: vole (want); sencu (get); xorsen (get); -cu (get)
+                         glb adj: hajado (needed); adil (just)
+   [1890s] broadcast    (cos to today 0.11, today's form ranks 1983) -> grapevine, ploughed, sown, sowing, annuals, spread, swathes, planting, swathe, nurseries
+                         glb v: discu (spread); disgi (spread); diskonegi (spread); malza (spread)
+                         glb adj: nagaldo (ploughed)
+   [1890s] film         (cos to today 0.02, today's form ranks 15694) -> coating, layer, overlay, flake, coated, surface, substrate, dust, coatings, extruded
+                         glb n: cengu (layer); perya (surface); gubar (dust)
+   [1890s] tremendous   (cos to today 0.45, today's form ranks 3) -> thunderous, massive, tremendous, titanic, unstoppable, huge, barrage, blow, unleashed, immense
+                         glb adj: dayday (massive/huge/immense)
+   [1890s] terrific     (cos to today 0.23, today's form ranks 343) -> frightful, ferocious, thunderous, fearsome, howling, terrifying, roaring, deafening, cataclysmic, whirlwind
+   [1890s] liberal      (cos to today 0.52, today's form ranks 1) -> liberal, generous, progressive, inclusive, conservative, egalitarian, centrist, magnanimous, leftist, democratic
+                         glb adj: gibefil (generous); egalyali (egalitarian); demokrasili (democratic)
+   [1890s] race         (cos to today 0.45, today's form ranks 3) -> race, bloodlines, bloodline, genetics, ancestry, races, humanity, breed, multiracial, destiny
+                         glb n: rasa (race); insanlari (humanity); kismetu (destiny); sabike (race)
+   [1890s] man          (cos to today 0.62, today's form ranks 1) -> man, person, woman, guy, mans, believer, who, everyman, someone, bloke
+                         glb n: manyen (man/guy/bloke); ixu (man/woman); yen (guy/bloke); manixu (man)
+   [1890s] presently    (cos to today 0.14, today's form ranks 2567) -> briefly, whereupon, exited, proceeded, reappeared, afterwards, popped, noticed, redirected, soon
+                         glb adv: kurto (briefly); nerxali (soon); xali (afterwards)
+   [1890s] fancy        (cos to today 0.32, today's form ranks 17) -> imagination, conjure, imaginations, daydream, fanciful, conjured, fancy, imaginative, whimsical, fancies
+                         glb adj: zarif (fancy)
+                         glb n: duimaje (imagination); imajeya (imagination); nururoya (daydream)
+   [1890s] nice         (cos to today 0.51, today's form ranks 1) -> nice, lovely, fine, vey, picky, good, wonderfull, tricky, decent, neat
+                         glb adj: bon (fine/good); jotaybon (fine/good); sifabon (fine/good); lutuffil (nice)
+   [1890s] sick         (cos to today 0.63, today's form ranks 1) -> sick, ill, bedridden, dying, unwell, infirm, homebound, sickness, leper, lepers
+                         glb adj: bimar (sick/ill)
+   [1890s] cunning      (cos to today 0.58, today's form ranks 1) -> cunning, trickery, devious, sneaky, trick, wily, tricks, cleverness, clever, guile
+                         glb adj: gomyo (cunning/wily/clever)
+                         glb n: gomyoya (cunning/cleverness)
+   [1890s] mistress     (cos to today 0.52, today's form ranks 1) -> mistress, governess, maid, godmother, lover, suitor, hers, her, confidante, princess
+                         glb n: prabu (mistress); batizamatre (godmother); exkuyen (lover); lubiyen (lover)
+   [1890s] car          (cos to today 0.46, today's form ranks 1) -> driver, car, truck, vehicle, cab, passenger, trolley, bus, carriage, drivers
+                         glb n: mobil (car); lori (truck); musafer (passenger); tramu (trolley)
+   [1890s] tank         (cos to today 0.39, today's form ranks 7) -> reservoir, pump, cistern, pool, water, tank, sump, tub, fountain, spigot
+                         glb n: tanku (reservoir/cistern/tank); sui (water); pompu (pump); mamba (fountain)
+   [1890s] checked      (cos to today 0.17, today's form ranks 1376) -> curbed, inhibited, curtailed, impeded, halted, hindered, stifled, hampered, slowed, prevented
+                         glb adj: blokido (prevented)
+   [1890s] militant     (cos to today 0.20, today's form ranks 479) -> individualistic, hierarchical, orientated, egalitarian, typified, hierarchy, predominate, adversarial, collectivist, oriented
+                         glb adj: hyerarkili (hierarchical); egalyali (egalitarian)
+                         glb n: hyerarki (hierarchy); egalista (egalitarian)
+   [1890s] weird        (cos to today 0.34, today's form ranks 22) -> eerie, mesmerizing, haunting, kooky, spooky, entrancing, otherworldly, hauntingly, wondrous, mesmerising
+                         glb adj: meryone (mesmerizing)
+   [1890s] fantastic    (cos to today 0.16, today's form ranks 2213) -> fanciful, fantastical, outlandish, cartoonish, whimsical, grotesque, garish, wacky, zany, grandiose
+   1990s English -> en: P@1 0.89, P@5 0.96 on 500 held-out words
+   [1990s] gay          (cos to today 0.48, today's form ranks 1) -> gay, homosexual, queer, homosexuals, gays, lesbian, bisexual, transgender, lesbians, trans
+                         glb adj: samajensifil (gay/homosexual/lesbian); trasli (transgender/trans); gey (gay); kwir (queer)
+   [1990s] queer        (cos to today 0.35, today's form ranks 4) -> queer, weird, strange, surreal, creepy, slurs, funny, slur, puns, mishmash
+                         glb adj: ajabu (weird/strange); kwir (queer); humorpul (funny)
+   [1990s] awful        (cos to today 0.54, today's form ranks 1) -> awful, terrible, unbelievable, horrible, dreadful, mess, indescribable, unfathomable, appalling, terrifying
+                         glb adj: daybur (awful/terrible/horrible); imanunenible (unbelievable)
+   [1990s] dumb         (cos to today 0.43, today's form ranks 1) -> dumb, lame, ornery, stupid, darned, darn, pitiful, unintelligent, freaky, blind
+                         glb adj: bobo (dumb/stupid); cinonkal (stupid); cinonlil (stupid); mogekal (stupid)
+   [1990s] intercourse  (cos to today 0.69, today's form ranks 1) -> intercourse, consensual, sex, extramarital, sexual, foreplay, lovemaking, consenting, consent, flirting
+                         glb n: jensi (sex); sekso (sex); dongwi (consent); tonkarar (consent)
+   [1990s] wanted       (cos to today 0.68, today's form ranks 1) -> wanted, want, did, didn, wished, decided, wants, couldn, knew, would
+                         glb v: vole (want)
+                         glb adj: xiwondo (wished)
+   [1990s] broadcast    (cos to today 0.59, today's form ranks 1) -> broadcast, broadcasts, broadcasting, broadcasted, rebroadcast, airwaves, broadcasters, telecast, televised, radio
+                         glb v: disirsal (broadcast)
+   [1990s] film         (cos to today 0.61, today's form ranks 1) -> film, films, movie, documentary, celluloid, video, filmed, filming, stills, scene
+                         glb n: filme (film/movie); video (video); sahni (scene); dokufilme (documentary)
+   [1990s] tremendous   (cos to today 0.73, today's form ranks 1) -> tremendous, immense, enormous, huge, considerable, incredible, massive, immeasurable, phenomenal, overwhelming
+                         glb adj: dayday (immense/enormous/huge/massive); imanunenible (incredible); daywaone (phenomenal); fenomenli (phenomenal)
+   [1990s] terrific     (cos to today 0.34, today's form ranks 2) -> doozy, blown, terrific, howling, helluva, mighty, darned, braved, fantastic, braving
+                         glb adj: daybon (terrific/fantastic); fantasisim (fantastic); waone (fantastic); daybala (mighty)
+   [1990s] liberal      (cos to today 0.58, today's form ranks 1) -> liberal, progressive, conservative, centrist, libertarian, liberalism, socialist, conservatism, radical, progressives
+   [1990s] race         (cos to today 0.56, today's form ranks 1) -> race, ethnicity, races, racial, gender, creed, nationality, ancestry, ethnicities, religion
+                         glb n: rasa (race); etno (ethnicity); etnotim (ethnicity); jensi (gender)
+   [1990s] man          (cos to today 0.66, today's form ranks 1) -> man, woman, mans, guy, gentleman, fella, creature, lad, person, boy
+                         glb n: manyen (man/guy/lad/boy); ixu (man/woman); mannini (lad/boy); manixu (man)
+   [1990s] presently    (cos to today 0.48, today's form ranks 1) -> presently, currently, whereupon, commenced, underway, ceased, briefly, contemplates, contemplated, now
+                         glb adv: nunli (presently/currently/now); kurto (briefly); nun (now); hinwatu (now)
+   [1990s] fancy        (cos to today 0.56, today's form ranks 1) -> fancy, fancies, liven, whim, fanciful, conjure, extravagant, fancied, trifling, fussy
+                         glb adj: zarif (fancy)
+   [1990s] nice         (cos to today 0.65, today's form ranks 1) -> nice, good, lovely, really, neat, nicer, pleasant, wonderful, cool, definitely
+                         glb adj: yukwe (nice/pleasant); lutuffil (nice); lutufpul (nice); melibon (nice)
+   [1990s] sick         (cos to today 0.61, today's form ranks 1) -> sick, ill, infirm, unwell, bedridden, needy, homebound, ailing, elderly, recuperating
+                         glb adj: bimar (sick/ill); hajane (needy); hajapul (needy)
+   [1990s] cunning      (cos to today 0.54, today's form ranks 1) -> cunning, devious, skilful, wily, trickery, guile, fiendish, devilish, deft, diabolical
+                         glb adj: gomyo (cunning/wily); dyabolsim (devilish/diabolical); maharapul (skilful); dyabolli (diabolical)
+                         glb n: gomyoya (cunning)
+   [1990s] mistress     (cos to today 0.54, today's form ranks 1) -> mistress, consort, concubine, her, maid, sorceress, she, lover, priestess, governess
+                         glb n: prabu (mistress); exkuyen (lover); lubiyen (lover); koheni (priestess)
+   [1990s] car          (cos to today 0.63, today's form ranks 1) -> car, vehicle, parked, minivan, truck, driveway, tow, backseat, motorbike, garage
+                         glb n: mobil (car); calyo (vehicle); lori (truck); mobilkamer (garage)
+   [1990s] tank         (cos to today 0.55, today's form ranks 1) -> tank, tanks, sump, pumped, pump, chambered, reservoir, canister, pressurized, paintball
+                         glb n: tanku (tank/reservoir); pompu (pump); tanke (tank)
+   [1990s] computer     (cos to today 0.54, today's form ranks 1) -> computer, software, computers, workstation, module, device, computing, networked, controller, system
+                         glb n: komputatora (computer); komputer (computer); softwer (software); sistema (system)
+   [1990s] checked      (cos to today 0.55, today's form ranks 1) -> checked, checking, recheck, check, inspected, checks, sorted, logged, monitored, flagged
+                         glb v: moni (check); xahu (check)
+                         glb adj: monido (checked/inspected/monitored)
+   [1990s] militant     (cos to today 0.41, today's form ranks 1) -> militant, populist, egalitarian, charismatic, elitist, reformist, patriotic, pacifist, militaristic, activism
+                         glb adj: jangefil (militant); egalyali (egalitarian); dexafil (patriotic); karismapul (charismatic)
+                         glb n: egalista (egalitarian); kampaniismo (activism)
+   [1990s] weird        (cos to today 0.46, today's form ranks 3) -> scary, weird, freaky, strange, funny, creepy, wierd, silly, crazy, wacky
+                         glb adj: ajabu (weird/strange); fobine (scary); payacosim (silly); humorpul (funny)
+   [1990s] fantastic    (cos to today 0.33, today's form ranks 38) -> fantastical, fanciful, exotic, glamorous, glamourous, outlandish, fancy, wondrous, prosaic, marvellous
+                         glb adj: waone (marvellous); zarif (fancy)
+== es: 18491 seed pairs from 12000 stable English words; 17154 train, 500 held-out English words
+   1890s English -> es: P@1 0.57, P@5 0.76 on 500 held-out words
+   [1890s] gay          -> alegre, jovial, colorista, colorida, desenfadada, risueño, bohemio, risueña, desenfadado, despreocupado
+                         glb adj: kweho (alegre/jovial); hox (alegre); joxufil (alegre)
+   [1890s] queer        -> chistoso, feo, gracioso, chiste, freak, chistosas, payaso, idiota, cabrón, guay
+                         glb adj: amusane (gracioso); humorpul (gracioso); colo (feo); payacosim (payaso)
+   [1890s] awful        -> espantoso, sobrecogedor, terrible, aterrador, horroroso, terrorífico, angustioso, espeluznante, horrible, escalofriante
+                         glb adj: fobine (espantoso/aterrador); daybur (terrible/horrible); daycolo (espantoso)
+   [1890s] dumb         -> mudos, sordos, sorda, sordo, mudo, sordas, ciegos, muda, petrificado, perpleja
+                         glb adj: orenenabil (sordo)
+   [1890s] intercourse  -> relacionamiento, convivencia, amistad, interpersonal, interpersonales, amistosa, cooperación, intercambios, amistosas, intercambio
+                         glb n: dosteya (amistad); tonaksyon (cooperación); porgi (intercambio)
+   [1890s] wanted       -> sacarle, quería, necesitaba, sacarse, disfrazarse, tirarle, ganarse, necesita, desahogarse, darle
+   [1890s] broadcast    -> regados, sembradas, sembrados, extensiones, siembra, sembrado, siembran, sembrando, esparcidos, sembrar
+                         glb v: bija  (sembrar); planta (sembrar)
+   [1890s] film         -> translúcido, gotita, recubrimiento, lámina, gotitas, capa, superficial, adhesivo, oblea, reflectante
+                         glb n: cengu (capa); kapa (capa); adhesiente (adhesivo); adhesiabil (adhesivo)
+   [1890s] tremendous   -> tremendo, impacto, descomunal, demoledor, brutal, fortísimo, colosal, ensordecedor, golpe, durísimo
+                         glb adj: barbari (brutal); daybawlupul (brutal)
+   [1890s] terrific     -> ensordecedor, vendaval, infernal, truenos, estruendo, chaparrón, fortísimo, aullido, devastador, mortífero
+                         glb adj: jahanomsim (infernal); morgine (mortífero)
+   [1890s] liberal      -> liberal, progresista, pluralista, reformista, centrista, izquierdista, generoso, conservador, socialdemócrata, entusiasta
+                         glb adj: gibefil (generoso); joxufil (entusiasta)
+   [1890s] race         -> raza, estirpe, Raza, etnia, razas, humanidad, nación, progenie, tribu, racial
+                         glb n: rasa (raza); etno (etnia); etnotim (etnia); insanlari (humanidad)
+   [1890s] man          -> hombre, individuo, humano, persona, varón, creyente, sabio, simio, superhombre, mujer
+                         glb n: manyen (hombre/varón); ixu (hombre/mujer); person (individuo/persona); manixu (hombre)
+   [1890s] presently    -> pronto, enseguida, fugazmente, brevemente, seguidamente, súbitamente, asomar, nuevamente, Verá, Enseguida
+                         glb adv: nerxali (pronto); kurto (brevemente); rili (nuevamente); rimarali (nuevamente)
+   [1890s] fancy        -> fantasía, imaginación, fantasear, imaginacion, ensueño, fantasioso, imaginativo, fascina, alucinar, recrearse
+                         glb n: nururoya (fantasía/ensueño); duimaje (imaginación); imajeya (imaginación); fantasi (fantasía)
+   [1890s] nice         -> majo, buenísimo, chevere, chulo, lindo, buenisimo, riquísimo, bueno, sencillito, riquisimo
+                         glb adj: kaway (lindo); bon (bueno); melibon (bueno); -bon (bueno)
+   [1890s] sick         -> enfermo, enferma, Enfermo, enfermos, moribundo, convaleciente, cura, moribundos, paralítico, enferman
+                         glb adj: bimar (enfermo)
+   [1890s] cunning      -> astucia, astuto, astuta, astutos, ardid, maña, ingenio, pícaro, truco, artimañas
+                         glb adj: gomyo (astuto); tingiku (pícaro)
+                         glb n: gomyoya (astucia/ingenio)
+   [1890s] mistress     -> dueña, ama, amiga, princesita, amante, amiguita, querida, adora, enamorada, Ella
+                         glb n: femdoste (amiga); prabu (ama); exkuyen (amante); lubiyen (amante)
+   [1890s] car          -> coche, auto, vehículo, automóvil, autobus, furgoneta, camioneta, vagón, camión, taxi
+                         glb n: mobil (auto/automóvil); van (furgoneta/camioneta); calyo (vehículo); lori (camión)
+   [1890s] tank         -> tanque, estanque, pozo, cisterna, tubería, cubeta, lavadero, recipiente, cañería, bidón
+                         glb n: tanku (tanque/cisterna); lilhosu (estanque); sumul (pozo); paypu (tubería)
+   [1890s] checked      -> frena, frene, frenó, frenado, frenada, frenando, momentáneamente, frenan, retrocede, desbocado
+   [1890s] militant     -> colectivamente, institucionalizada, grupal, constructiva, jerárquica, históricamente, organizativa, instituida, evolucionó, jerarquización
+   [1890s] weird        -> sobrecogedora, aterradora, alucinante, terrorífica, inquietante, escalofriante, misteriosa, sobrecogedor, fantasmal, espeluznante
+                         glb adj: yolyune (inquietante); xabahuli (fantasmal)
+   [1890s] fantastic    -> extravagante, kitsch, extravagantes, grotesco, fantasioso, circense, caprichosas, grotesca, grotescos, escénico
+                         glb adj: dayajabu (extravagante)
+   1990s English -> es: P@1 0.59, P@5 0.78 on 500 held-out words
+   [1990s] gay          -> LGTB, LGBT, homosexual, gay, transgénero, LGTBI, heterosexual, LGBTI, igualitario, feminista
+                         glb adj: gey (homosexual/gay); samajensifil (homosexual/gay); alojensifil (heterosexual); trasjensili (transgénero)
+   [1990s] queer        -> queer, marica, maricón, bizarro, freak, grotesco, sexista, irónico, gay, humor
+                         glb adj: kwir (queer); ironipul (irónico); gey (gay); samajensifil (gay)
+   [1990s] awful        -> horrible, terrible, espantoso, horroroso, alucinante, indescriptible, tremendo, atroz, sobrecogedor, espantosa
+                         glb adj: daybur (horrible/terrible); daycolo (espantoso); fobine (espantoso)
+   [1990s] dumb         -> tonto, inculto, imbécil, bobo, estúpido, subnormal, hipócrita, maleducado, idiota, estupida
+                         glb adj: bobo (tonto/estúpido); cinonkal (tonto/estúpido); mogekal (tonto/estúpido); jixikal (inculto)
+   [1990s] intercourse  -> sexual, coito, noviazgo, sexuales, cópula, sexo, entablar, carnal, amorosa, mutuo
+                         glb n: sekso (coito/sexo); jensi (sexo); linkuli falelexi (cópula)
+   [1990s] wanted       -> hacerlo, fingir, salir, dar, quería, darle, querer, acabar, pegarme, aparentar
+                         glb v: kwasigi (fingir/aparentar); exata (salir); excu (salir); exidi (salir)
+                         glb adj: excu (salir); exidi (salir)
+   [1990s] broadcast    -> retransmisión, retransmitir, televisada, retransmitida, emisión, radiodifusión, programa, emisora, audio, radio
+                         glb v: disgongin (emisión)
+                         glb adj: disgongin (emisión)
+                         glb adv: disgongin (emisión)
+   [1990s] film         -> película, film, filme, celuloide, cortometraje, largometraje, fílmico, videoclip, clip, cinta
+                         glb n: filme (película/filme); bendu (cinta)
+   [1990s] tremendous   -> tremendo, enorme, tremenda, gran, descomunal, tanta, inmenso, ingente, impacto, grandísimo
+                         glb adj: dayday (enorme/inmenso); day (enorme); pahnaday (inmenso)
+   [1990s] terrific     -> guau, Guau, jaleo, wow, cagada, menuda, pum, estruendo, espantoso, Wow
+                         glb adj: daycolo (espantoso); fobine (espantoso)
+   [1990s] liberal      -> progresista, liberal, reformista, socialdemócrata, conservador, centrista, izquierdista, conservadora, centroizquierda, pluralista
+   [1990s] race         -> raza, género, razas, raciales, etnia, racial, Raza, inmigración, estirpe, racismo
+                         glb n: rasa (raza); etno (etnia); etnotim (etnia); jensi (género)
+   [1990s] man          -> hombre, simio, Hombre, mono, muchacho, gorila, hombrecito, superhombre, varón, humano
+                         glb n: manyen (hombre/varón); maymun (simio/mono); ixu (hombre); manixu (hombre)
+   [1990s] presently    -> prontamente, entretanto, presente, dirige, parará, cesará, hallándose, contemplado, tendido, perfeccionado
+   [1990s] fancy        -> extravagante, capricho, extravagancia, seduce, extravagantes, deslumbrar, alocado, desenfadado, deleita, chic
+                         glb adj: dayajabu (extravagante); zarif (chic)
+   [1990s] nice         -> bonito, lindo, agradable, estupendo, buenísimo, bueno, majo, delicioso, guay, bonita
+                         glb adj: meli (bonito); kaway (lindo); furahane (agradable); yukwe (agradable)
+   [1990s] sick         -> enfermo, enferma, Enfermo, desamparado, mareado, afligido, enfermas, moribundo, paralítico, fatigado
+                         glb adj: bimar (enfermo); cakarepul (mareado); dayhazuni (afligido); pilodo (fatigado)
+   [1990s] cunning      -> astucia, sagacidad, sagaz, astuto, torpeza, astuta, sutileza, ardid, osadía, sutil
+                         glb adj: gomyo (sagaz/astuto); wimyo (sutil)
+                         glb n: gomyoya (astucia); wimyoxey (sutileza); wimyoya (sutileza)
+   [1990s] mistress     -> amante, sirviente, amo, esposo, mayordomo, adorada, amada, reina, marido, esposa
+                         glb n: mangami (esposo/marido); gami (esposo/esposa); femgami (esposa); exkuyen (amante)
+   [1990s] car          -> coche, auto, carro, automóvil, moto, vehículo, camioneta, furgoneta, taxi, motocicleta
+                         glb n: mobil (auto/carro/automóvil); van (camioneta/furgoneta); calyo (vehículo); taksi (taxi)
+   [1990s] tank         -> tanque, Tanque, tanques, cisterna, flotador, bomba, torreta, amortiguador, reactor, refrigerante
+                         glb n: tanku (tanque/cisterna); gasolindom (bomba); bomba (bomba); pompu (bomba)
+   [1990s] computer     -> ordenador, computadora, informático, informática, computación, software, computador, computacional, módulo, hardware
+                         glb n: komputatora (ordenador/computadora); komputer (ordenador/computadora); komputerlogi (informática/computación); softwer (software)
+   [1990s] checked      -> chequear, manualmente, botiquín, correctamente, señalizado, verificado, habilitada, carné, carnet, comprobando
+   [1990s] militant     -> progresista, rebelde, reivindicativo, izquierdista, extremista, reformista, progre, beligerante, inconformista, reaccionario
+                         glb n: panlanyen (rebelde)
+   [1990s] weird        -> raro, gracioso, patético, extraño, divertido, curioso, bizarro, chocante, parecido, cursi
+                         glb adj: ajabu (raro/extraño); amusane (gracioso/divertido); humorpul (gracioso); nadir (raro)
+   [1990s] fantastic    -> inclasificable, exótico, artificio, grandilocuente, glamour, extravagante, Fantástico, fantástico, fascinante, exotismo
+                         glb adj: meryone (fascinante); daybon (fantástico); fantasisim (fantástico); dayajabu (extravagante)
+== eo: 7144 seed pairs from 12000 stable English words; 6381 train, 500 held-out English words
+   1890s English -> eo: P@1 0.39, P@5 0.62 on 500 held-out words
+   [1890s] gay          -> gaja, monduma, mezaĝa, laŭmoda, amuza, kortuŝa, bunta, eleganta, juneca, nigrablanka
+                         glb adj: zarif (laŭmoda/eleganta); hox (gaja); joxufil (gaja); kweho (gaja)
+   [1890s] queer        -> stranga, kurioza, fantazia, moka, amuza, mimiko, mojosa, ekzotika, ridinda, aspektanta
+                         glb adj: ajabu (stranga/kurioza); fantasisim (fantazia); amusane (amuza); coxone (moka)
+   [1890s] awful        -> timiga, terura, mistera, grandioza, malĝoja, tragika, okazintaĵo, miriga, paradiza, monstra
+                         glb adj: fobine (timiga); hazuni (malĝoja); ximbipul (mistera); tragedipul (tragika)
+   [1890s] dumb         -> igita, blindigita, frenezulo, lernita, kastrita, subpremata, knaba, lernata, koko, misformita
+                         glb adj: xwexido (lernita)
+   [1890s] intercourse  -> interŝanĝa, amikeca, interhelpo, interkomunikado, kontakto, interpopola, interhoma, rilataro, bonvola, komunikiĝi
+                         glb n: dostesim (amikeca); kontato (kontakto); porli (interŝanĝa)
+   [1890s] wanted       -> fari, amuziĝi, militi, logi, triki, diri, kapti, distri, gratuli, rakonti
+                         glb v: fale (fari); monkrea (fari); okurgi (fari); loga (diri)
+                         glb adj: okurgi (fari); amusacu (amuziĝi)
+   [1890s] broadcast    -> disvastiĝanta, tramtransporto, asiria, etendiĝo, papiruscipero, gazono, hakado, mikena, laŭtakse, dissemado
+   [1890s] film         -> surfaco, diafana, ingoto, izolaĵo, varmigo, surfaca, plato, maldika, fulgo, supraĵo
+                         glb n: perya (surfaco)
+   [1890s] tremendous   -> bruego, frapado, eksploda, lavango, resono, frapo, kanonado, enorma, diluvo, bato
+   [1890s] terrific     -> bruego, eksplode, furioza, resono, sono, terura, ŝtorma, pesta, submara, fortega
+                         glb adj: daygadibu (furioza); bofunpul (ŝtorma); daybala (fortega); baxbaharili (submara)
+   [1890s] liberal      -> progresema, akceptema, lobiado, liberala, klera, multrilate, multkultura, subteno, prudenta, fortigo
+                         glb adj: cinonday (klera); eskoldo (klera)
+   [1890s] race         -> raso, homaro, homo, plenkreskeco, nacio, prapatro, dinastia, civiliza, gento, socio
+                         glb n: rasa (raso); insanlari (homaro); insan (homo); lefeatre (prapatro)
+   [1890s] man          -> homo, viro, fortulo, virino, persono, ulo, vivanto, kreitulo, saĝa, bonkora
+                         glb n: ixu (viro/virino); insan (homo); manixu (viro); manyen (viro)
+   [1890s] presently    -> aŭdinte, alklakante, alveninte, veninte, alvenanta, poste, subite, alvenante, denove, maldekstre
+                         glb adv: abruto (subite); rili (denove); rimarali (denove); ripul (denove)
+   [1890s] fancy        -> imago, fantazio, pupo, elegante, ludema, hazardo, komiksa, fantazie, imagita, bildrakonto
+                         glb adj: yuxifil (ludema)
+                         glb n: imajeya (imago); imaje (imago); fantasi (fantazio); pupa (pupo)
+   [1890s] nice         -> teda, mojosa, gusto, bonega, linda, reao, bongusta, amuze, konsilinda, korekta
+                         glb adj: xetocubon (bongusta); xetoyukwe (bongusta); daybon (bonega); sahigili (korekta)
+   [1890s] sick         -> malsana, malsanulo, malriĉulo, kuraci, hospitalo, malsanulejo, maljunulino, paciento, resaniĝo, maljunulejo
+                         glb adj: bimar (malsana); rusehacu (resaniĝo)
+   [1890s] cunning      -> ruza, malnobla, trompado, trompo, burleska, lerte, artifiko, manovri, aŭdaco, trompe
+                         glb adj: gomyo (ruza)
+                         glb n: cipen (trompo)
+   [1890s] mistress     -> amantino, sinjorino, posedantino, mastrino, ĉambristino, guvernistino, majstrino, nobelulino, regantino, direktorino
+                         glb n: prabu (sinjorino/mastrino); exkuyen (amantino); femsenyor (sinjorino); senyor (sinjorino)
+   [1890s] car          -> vagono, buso, kaleŝo, aŭtobuso, stirado, tramo, trako, rulŝtuparo, relo, trajno
+                         glb n: wagon (vagono); reylu (relo); tren (trajno); tramu (tramo)
+   [1890s] tank         -> cisterno, akvo, kuvo, tubaro, ŝiplifto, kuracbanejo, akvujo, termofonto, krano, vejro
+                         glb n: sui (akvo); tanku (cisterno); keran (krano)
+   [1890s] checked      -> progresive, malprogreso, laŭgrade, haltigo, haltigita, subita, stagno, rekomenco, abrupta, fortege
+                         glb v: estodo (haltigita)
+                         glb adj: abruto (subita/abrupta); estodo (haltigita)
+   [1890s] militant     -> superrega, superreganta, subpremata, dominanta, superregata, unuiĝinta, superrego, socie, klasa, superregado
+                         glb adj: uncudo (unuiĝinta)
+                         glb n: uncudo (unuiĝinta)
+   [1890s] weird        -> mistera, kvazaŭe, sorĉa, fantoma, neforgesebla, sorĉistino, tenera, lulkanto, ravita, trista
+                         glb adj: ximbipul (mistera); hasaxi (tenera); xabahuli (fantoma); meryodo (ravita)
+   [1890s] fantastic    -> fantasta, fantazia, fantazie, bizara, fantazio, ridinda, stiligita, karaktera, fantasto, stranga
+                         glb adj: fantasisim (fantasta/fantazia); ajabu (bizara/stranga); dayajabu (bizara); coxolaye (ridinda)
+   1990s English -> eo: P@1 0.44, P@5 0.64 on 500 held-out words
+   [1990s] gay          -> geja, kontraŭkulturo, rasismo, kvira, transgenra, gejo, sekso, samseksema, lesba, homrajta
+                         glb adj: kwir (kvira); gey (geja); trasjensili (transgenra); trasli (transgenra)
+   [1990s] queer        -> moka, banala, slango, malklara, slanga, maldeca, naŭza, farso, obsedo, kaco
+                         glb adj: coxone (moka); kakupelne (naŭza); ufuene (naŭza)
+   [1990s] awful        -> naŭza, aĉa, malĝoja, moko, ĝoja, teda, trista, freneze, malgaja, freneza
+                         glb adj: hazuni (malĝoja/malgaja); kakupelne (naŭza); ufuene (naŭza); bur (aĉa)
+   [1990s] dumb         -> stulta, surda, malsaĝa, naŭza, pigra, almozulo, io, ŝati, azeno, kukolo
+                         glb adj: bobo (stulta); cinonkal (stulta); mogekal (stulta); sofikal (malsaĝa)
+   [1990s] intercourse  -> koito, seksumi, gravediĝo, samseksa, tabuo, edzineco, nevola, amorado, seksumado, kontakto
+                         glb n: hamilecu (gravediĝo); gamiya (edzineco); kontato (kontakto); tabu (tabuo)
+   [1990s] wanted       -> fari, deteni, ekvidi, revidi, plendi, drinki, iri, delogi, dronigi, forporti
+                         glb v: fale (fari); monkrea (fari); okurgi (fari); idi (iri)
+                         glb adj: okurgi (fari); rioko (revidi); garakugi (dronigi)
+   [1990s] broadcast    -> dissendado, elsendado, dissendata, disaŭdigo, interreto, radio, elsendi, radiostacio, interrete, elsendo
+   [1990s] film         -> filmo, aktorfilmo, aktoraro, kinofilmo, filmata, filma, reĝisora, sonfilmo, scena, spektado
+                         glb n: filme (filmo); juioko (spektado)
+   [1990s] tremendous   -> ega, impeto, grandega, resono, efekto, facileco, laboro, bonŝanco, kosto, enorme
+                         glb adj: dayday (grandega); day (ega)
+   [1990s] terrific     -> teda, aŭdaca, aŭdaco, fulmotondro, rimarkeble, ŝoka, rajdanto, moko, lulkanto, mirinde
+                         glb adj: xokuabil (ŝoka)
+   [1990s] liberal      -> liberalisma, socialisma, revoluciema, konservativismo, reformisma, distanciĝo, demokrata, radikala, liberala, reformema
+                         glb adj: demokrasili (demokrata)
+   [1990s] race         -> raso, rasa, haŭtkoloro, sameco, homaro, nacieco, etneco, kontinento, virineco, socio
+                         glb n: rasa (raso); insanlari (homaro); etno (etneco); nasyonya (nacieco)
+   [1990s] man          -> homo, viro, kreitulo, bonulo, maljunulo, etulo, blindigita, virino, mortema, avido
+                         glb n: ixu (viro/virino); insan (homo); manixu (viro); manyen (viro)
+   [1990s] presently    -> pretere, ĉifoje, mallongtempe, publike, mirinde, fariĝinte, apude, ree, kie, alvokita
+                         glb adv: ultrali (pretere); demoli (publike); kurtowatuli (mallongtempe); folli (apude)
+   [1990s] fancy        -> ĉarme, parodia, ĝuo, ruza, kortuŝa, ludema, moka, surprizi, plaĉo, amuzaĵo
+                         glb adj: meryone (ĉarme); yuxifil (ludema); gomyo (ruza); coxone (moka)
+                         glb n: meryone (ĉarme); furaha (ĝuo); amusaxey (amuzaĵo); hoxgi (plaĉo)
+   [1990s] nice         -> agrable, agrabla, mojosa, gaja, linda, amuze, ĉarme, plaĉa, lukse, babili
+                         glb adj: hox (gaja); joxufil (gaja); kweho (gaja); meryone (ĉarme)
+   [1990s] sick         -> malsanulo, malsana, sana, suferante, hospitalo, resaniĝi, malsanulejo, malriĉulo, morti, suferanta
+                         glb adj: bimar (malsana); seha (sana); rusehacu (resaniĝi)
+   [1990s] cunning      -> ruza, aŭdaco, lerte, malnobla, sagaca, lerto, trompisto, lerteco, majstra, krueleco
+                         glb adj: gomyo (ruza)
+                         glb n: agilya (lerteco); mahara (lerteco); cipenyen (trompisto); kruelya (krueleco)
+   [1990s] mistress     -> sinjorino, mastrino, ĉambristino, dommastrino, guvernistino, vartistino, posedantino, amantino, servistino, nobelulino
+                         glb n: prabu (sinjorino/mastrino); femsenyor (sinjorino); senyor (sinjorino); exkuyen (amantino)
+   [1990s] car          -> aŭto, veturilo, aŭte, veturigi, kajuto, stiri, ŝoforo, kofro, stirilo, kaleŝo
+                         glb n: mobil (aŭto); calyo (veturilo); sanduku (kofro); xoferyen (ŝoforo)
+   [1990s] tank         -> cisterno, tanko, tubaro, akumulatoro, ĉasio, paftubo, pumpi, krano, akvorado, kartoĉo
+                         glb n: tanku (cisterno); tanke (tanko); keran (krano)
+   [1990s] computer     -> aparataro, komputila, komputilo, kalkulilo, skanilo, komputile, printi, komputika, komputada, datenbazo
+                         glb n: hardwer (aparataro); eskantora (skanilo); komputatora (komputilo); komputer (komputilo)
+   [1990s] checked      -> kompleto, semaforo, horaro, hospico, monujo, kofro, logoo, kelke, dezirata, opcia
+                         glb adj: opsyonli (opcia)
+   [1990s] militant     -> dekstrema, kontraŭnazia, kontraŭkomunisma, sindikata, ribelema, maldekstrema, agada, laborista, bolŝevisma, ĉielarka
+   [1990s] weird        -> freneza, malgaja, trista, aĉa, ĉarma, kortuŝa, kurioza, naŭza, bizara, moka
+                         glb adj: ajabu (kurioza/bizara); hazuni (malgaja); majnuni (freneza); kaway (ĉarma)
+   [1990s] fantastic    -> fantasta, fantazia, ekzota, fantazio, bizara, sciencfikcia, fantazie, imaga, ekzotika, sentimentala
+                         glb adj: fantasisim (fantasta/fantazia); ajabu (bizara); dayajabu (bizara); imajeli (imaga)
+
+== agreement: Globasa words proposed by 2+ pivots (en/es/eo) per decade and PoS
+   [1890s] gay adj          joxufil (en+eo+es); kweho (en+eo+es); hox (eo+es)
+   [1990s] gay adj          gey (en+eo+es); samajensifil (en+es); trasli (en+eo); kwir (en+eo); trasjensili (eo+es)
+   [1890s] queer adj        ajabu (en+eo); humorpul (en+es); amusane (eo+es)
+   [1990s] queer adj        kwir (en+es)
+   [1890s] awful adj        fobine (en+eo+es)
+   [1990s] awful adj        daybur (en+es)
+   [1890s] dumb adj         orenenabil (en+es)
+   [1990s] dumb adj         bobo (en+eo+es); cinonkal (en+eo+es); mogekal (en+eo+es)
+   [1990s] intercourse n    jensi (en+es); sekso (en+es)
+   [1890s] film n           cengu (en+es); perya (en+eo)
+   [1990s] film n           filme (en+eo+es)
+   [1990s] tremendous adj   dayday (en+eo+es); day (eo+es)
+   [1890s] liberal adj      gibefil (en+es)
+   [1890s] race n           rasa (en+eo+es); insanlari (en+eo+es)
+   [1990s] race n           rasa (en+eo+es); etno (en+eo+es); etnotim (en+es); jensi (en+es)
+   [1890s] man n            manyen (en+eo+es); ixu (en+eo+es); manixu (en+eo+es)
+   [1990s] man n            manyen (en+eo+es); ixu (en+eo+es); manixu (en+eo+es)
+   [1890s] presently adv    kurto (en+es); nerxali (en+es); rili (eo+es); rimarali (eo+es)
+   [1890s] fancy n          imajeya (en+eo+es); duimaje (en+es); nururoya (en+es); fantasi (eo+es)
+   [1990s] fancy adj        zarif (en+es)
+   [1890s] nice adj         bon (en+es)
+   [1990s] nice adj         yukwe (en+es)
+   [1890s] sick adj         bimar (en+eo+es)
+   [1990s] sick adj         bimar (en+eo+es)
+   [1890s] cunning adj      gomyo (en+eo+es)
+   [1890s] cunning n        gomyoya (en+es)
+   [1990s] cunning adj      gomyo (en+eo+es)
+   [1990s] cunning n        gomyoya (en+es)
+   [1890s] mistress n       prabu (en+eo+es); exkuyen (en+eo+es); lubiyen (en+es)
+   [1990s] mistress n       exkuyen (en+eo+es); prabu (en+eo)
+   [1890s] car n            mobil (en+es); lori (en+es); tramu (en+eo)
+   [1990s] car n            mobil (en+eo+es); calyo (en+eo+es)
+   [1890s] tank n           tanku (en+eo+es); sui (en+eo)
+   [1990s] tank n           tanku (en+eo+es); pompu (en+es); tanke (en+eo)
+   [1990s] computer n       komputatora (en+eo+es); komputer (en+eo+es); softwer (en+es)
+   [1890s] weird adj        xabahuli (eo+es)
+   [1990s] weird adj        ajabu (en+eo+es); humorpul (en+es)
+   [1890s] fantastic adj    dayajabu (eo+es)
+   [1990s] fantastic adj    fantasisim (eo+es); dayajabu (eo+es)

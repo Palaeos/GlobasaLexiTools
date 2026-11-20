@@ -1,0 +1,580 @@
+Per sense: similarity x100 to its probes, 1800-40 avg | 1890s | 1950s | 1990s; trend = 1990s - 1890s. Only senses with >= 2 probes in HistWords have numbers.
+
+== race (noun)
+   1  11    8    4    3    -4  A contest between people, animals, vehicles, etc. where the goal is to  [countable, uncountable]
+       glb: sabike [3: eo:vetkuro es:carrera]
+   2   6    6    3    2    -4  Swift progress; rapid motion; an instance of moving or driving at high  [countable, uncountable]
+   3   1    1    1    0    -1  (electronics, computing) A race condition; a bug or problem that occur  [countable, uncountable]
+   4   7    8    2   -0    -8  A sequence of events; a progressive movement toward a goal.  [countable, uncountable]
+   5   3    5    0    2    -3  A fast-moving current of water.  [countable, uncountable]
+   6  -1    3   -1    3    -0  A water channel, especially one built to lead water to or from a point  [countable, uncountable]
+   7   .    .    .    .        A path that something or someone moves along.  [countable, uncountable]
+   8   .    .    .    .        A guide or channel that a component of a machine moves along:  [countable, uncountable]
+   9   .    .    .    .        A guide or channel that a component of a machine moves along:  [countable, uncountable]
+  10  -2    2    7    2    -1  (gambling) A keno gambling session.  [countable, uncountable]
+  11   6   10    9   11    +1  A group of sentient beings, particularly people, distinguished by comm  [countable, uncountable]
+       glb: rasa [7: ar:عِرْق de:Rasse eo:raso es:raza fr:race hi:जाति]
+  12   .    .    .    .        A group of sentient beings, particularly people, distinguished by comm  [countable, uncountable]
+  13   .    .    .    .        A group of sentient beings, particularly people, distinguished by comm  [countable, uncountable]
+  14   .    .    .    .        A group of sentient beings, particularly people, distinguished by comm  [countable, uncountable]
+  15   9    7    8    7    -0  A group of organisms distinguished by common characteristics; often an  [countable, uncountable]
+  16   .    .    .    .        A group of organisms distinguished by common characteristics; often an  [countable, uncountable]
+  17   .    .    .    .        A group of organisms distinguished by common characteristics; often an  [countable, uncountable]
+  18   .    .    .    .        A group of organisms distinguished by common characteristics; often an  [countable, uncountable]
+  19   .    .    .    .        A group of organisms distinguished by common characteristics; often an  [countable, uncountable]
+  20   2    7    5    6    -1  (by extension) A category or kind of thing distinguished by common cha  [broadly, countable, uncountable]
+  21   6   12   10   11    -1  (obsolete) Peculiar flavour, taste, or strength, as of wine; that qual  [countable, obsolete, uncountable]
+       glb: xetocu (fallback: English gloss); xetoya (fallback: English gloss)
+  22   .    .    .    .        (obsolete) Characteristic quality or disposition.  [countable, obsolete, uncountable]
+  23   6    9    8   12    +3  (obsolete) The sexual activity of conceiving and bearing biological of  [countable, obsolete, uncountable]
+  24   .    .    .    .        (archaic, uncountable) Ancestry, lineage.  [archaic, uncountable]
+  25  16   15    6    4   -11  (obsolete) A step in a lineage or succession; a generation.  [countable, obsolete, uncountable]
+       glb: generasi (fallback: English gloss)
+  26   .    .    .    .        (obsolete, uncountable) Progeny, offspring, descendants.  [obsolete, uncountable]
+  27   4    4    0    4    +0  (botany) A rhizome or root, especially of ginger.
+  28   7    8    8   -1    -8  bushings of a rolling element  [(table only)]
+  29  17   19   18   11    -9  a breed or strain of domesticated animal  [(table only)]
+       glb: rasa [2: de:Rasse fr:race]
+
+== dumb (adj)
+   1  21   19   16   16    -3  (dated) Unable to speak; lacking power of speech (kept in "deaf, dumb,  [dated]
+   2   .    1    8   15   +15  (archaic) Not talkative; taciturn or unwilling to speak.  [archaic]
+   3   5    5    7   10    +5  (dated) Having no input or voice in running things.  [dated]
+   4   6    4    1    2    -2  (dated, of things, actions, etc.) Unaccompanied by words or speech, si  [dated, usually]
+       glb: sotikal (fallback: English gloss)
+   5   4    3    6    9    +7  (dated) Not producing any sound, silent.  [dated]
+       glb: sotikal (fallback: English gloss)
+   6   9    5    7   11    +7  (informal, derogatory, especially of a person) Stupid.  [derogatory, especially, informal]
+       glb: bobo [3: eo:stulta es:tonto]; cinonkal [3: eo:stulta es:tonto]; mogekal [3: eo:stulta es:tonto]
+   7   4    2    3    3    +0  (figuratively) Pointless, foolish, lacking intellectual content or val  [figuratively]
+       glb: bobo [3: eo:stulta es:tonto]; cinonkal [3: eo:stulta es:tonto]; mogekal [3: eo:stulta es:tonto]
+   8  -0   -1   -1    2    +3  Lacking some functionality or property ordinarily characteristic of it
+   9   4    4   -4    2    -3  (of technology) Not equipped with intelligent behavior or processing c
+  10   7    6   16   11    +6  (obsolete, rare) Lacking brightness or clearness as a colour; dim, dul  [obsolete, rare]
+       glb: luminlil (fallback: English gloss)
+  11   5    6    8   11    +5  (African-American Vernacular, dated) An intensifier expressing contemp  [dated]
+
+== awful (adj)
+   1   .    .    .    .        Very bad.
+       glb: daybur [3: eo:malbonega es:terrible]
+   2   0   -1    1   10   +11  Exceedingly great; usually applied intensively.
+   3  17   17   22   25    +8  (dated) Causing fear or horror; appalling, terrible.  [dated]
+       glb: bur [2: eo:aĉa]
+   4  19   22   19   16    -7  (now rare) Awe-inspiring; filling with profound reverence or respect;   [archaic]
+   5  14    8   20   26   +18  (now rare) Struck or filled with awe or reverence.  [archaic]
+   6  13   12   15   16    +4  (obsolete) Terror-stricken.  [obsolete]
+
+== dreadful (adj)
+   1   .    .    .    .        Full of something causing dread, whether
+   2   .    .    .    .        Full of something causing dread, whether  [excessive]
+   3   .    .    .    .        Full of something causing dread, whether  [obsolete]
+   4   .    .    .    .        (obsolete) Full of dread, whether  [obsolete]
+   5   .    .    .    .        (obsolete) Full of dread, whether  [obsolete]
+   6   .    .    .    .        (obsolete) Full of dread, whether  [obsolete]
+
+== terrible (adj)
+   1  28   25   32   32    +7  Dreadful; causing terror, alarm and fear; awesome
+   2  25   24   26   20    -4  Formidable, powerful.
+       glb: kowapul (fallback: English gloss)
+   3  10   11    7    9    -2  Intense; extreme in degree or extent.
+   4   .    .    .    .        Unpleasant; disagreeable.
+       glb: nenyukwe (fallback: English gloss)
+   5   .    .    .    .        Very bad; lousy.
+       glb: bur [2: eo:aĉa]
+
+== terribly (adv)
+   1  -2    1    0    6    +6  (literary or dated) So as to cause terror or awe.  [dated, literary]
+   2   .    .    .    .        Very; extremely.
+       glb: daymo (fallback: English gloss); daydaymo (fallback: English gloss); kikudanmo (fallback: English gloss)
+   3   .    .    .    .        Very badly.
+   4   .    .    .    .        in a terrible manner  [(table only)]
+       glb: bur [2: eo:aĉe]; daybur [2: eo:malbonege]
+
+== fantastic (adj)
+   1   3    3    7   11    +8  Wonderful; marvelous; excellent; extraordinarily good or great (used e
+       glb: fantasisim [3: eo:fantasta es:fantástico]
+   2   4    4   -0   -4    -7  Existing in or constructed from fantasy; of or relating to fantasy; fa
+       glb: fantasisim [2: eo:fantazia]
+   3   9    5   13   13    +7  (archaic) Not believable; implausible; seemingly only possible in fant  [archaic]
+   4  25   20   21   20    -1  (archaic) Resembling fantasies in irregularity, caprice, or eccentrici  [archaic]
+
+== weird (adj)
+   1   .   16   14   14    -3  Having an unusually strange character or behaviour.
+       glb: ajabu [3: eo:stranga es:raro]
+   2   .    .    .    .        Deviating from the normal; bizarre.
+       glb: dayajabu (fallback: English gloss)
+   3   .    2    6   11    +9  Relating to weird fiction ("a macabre subgenre of speculative fiction"
+   4   .    .    .    .        (archaic) Of or pertaining to the Fates.  [archaic]
+   5   .    1    2    0    -0  (archaic) Connected with fate or destiny; able to influence fate.  [archaic]
+   6   .   20   17   18    -2  (archaic) Of or pertaining to witches or witchcraft; supernatural; une  [archaic]
+       glb: ultranaturali (fallback: English gloss)
+   7   .    .    .    .        (archaic) Having supernatural or preternatural power.  [archaic]
+
+== cunning (adj)
+   1  17   25   20   17    -8  Sly; crafty; clever in surreptitious behaviour.
+       glb: gomyo [3: eo:ruza es:astuto]
+   2   .    .    .    .        (obsolete) Skillful, artful.  [obsolete]
+       glb: maharapul (fallback: English gloss)
+   3  27   29   31   28    -1  (obsolete) Wrought with, or exhibiting, skill or ingenuity; ingenious.  [obsolete]
+   4  -9  -10   -2   -3    +7  (Maine, colloquial, dated) Cute, appealing.  [Maine, colloquial, dated]
+       glb: kaway (fallback: English gloss)
+
+== sick (adj)
+   1   7   10   10   12    +2  (less common in the UK and Ireland) In poor health; ill.  [uncommon]
+       glb: bimar (fallback: English gloss)
+   2  -2   -1   11   10   +11  Having an urge to vomit.
+   3   5    9   16   21   +12  (colloquial) Mentally unstable, disturbed.  [colloquial]
+       glb: parexan (fallback: English gloss)
+   4   6    6   16   14    +8  (colloquial) In bad taste.  [colloquial]
+   5  19   25   30   33    +8  Tired of or annoyed by something [with of].
+   6   4    8   12   10    +2  (slang) Very good, excellent, awesome, badass.  [slang]
+       glb: daybon (fallback: English gloss)
+   7   .    .    .    .        In poor condition.
+   8   2    0   -2    1    +1  (agriculture) Failing to sustain adequate harvests of crop, usually sp
+
+== wanted (verb)
+   1   .    .    .    .        (transitive) To wish for or desire (something); to feel a need or desi  [transitive]
+       glb: vole [3: eo:voli es:querer]
+   2   .    .    .    .        (transitive) To wish for or desire (something); to feel a need or desi  [broadly, transitive]
+   3   2    3    0    5    +2  (transitive, in particular) To wish, desire, or demand to see, have th  [transitive]
+       glb: xiwon (fallback: English gloss)
+   4   .    .    .    .        (intransitive) To desire (to experience desire); to wish.  [intransitive]
+       glb: xiwon (fallback: English gloss)
+   5   3    4   12   14   +10  (colloquial, usually second person, often future tense) To be advised   [colloquial, second-person, usually]
+   6   1    4   -4   -4    -8  (transitive, now colloquial) To lack and be in need of or require (som  [colloquial, transitive]
+   7  15    8    2    5    -4  (transitive, now rare) To have occasion for (something requisite or us  [archaic, transitive]
+   8  14    7   -0   -5   -11  (intransitive, dated) To be lacking or deficient or absent.  [dated, intransitive]
+   9   0   -2    2   -3    -1  (intransitive, dated) To be in a state of destitution; to be needy; to  [dated, intransitive]
+  10   .    .    .    .        (transitive, archaic) To lack and be without, to not have (something).  [archaic, transitive]
+       glb: wala (fallback: English gloss)
+  11   9   11   12   17    +5  (transitive, obsolete, by extension) To lack and perhaps be able or wi  [broadly, obsolete, transitive]
+  12  -1   -1   -0    3    +5  To desire a romantic or (especially) sexual relationship with someone;
+
+== straight (adj)
+   1  21   22   21   24    +2  Not crooked, curly, or bent; having a constant direction throughout it
+       glb: jinji [3: eo:rekta es:recto]; orto [3: eo:rekta es:recto]
+   2  23   21   23   18    -3  (of a path, trajectory, etc.) Direct, undeviating.  [usually]
+       glb: jinji (fallback: English gloss)
+   3  36   28   29   22    -7  Perfectly horizontal or vertical; not diagonal or oblique.
+   4  15   15   16   13    -2  (cricket) Describing the bat as held so as not to incline to either si
+       glb: ativo (fallback: English gloss)
+   5   2   -1   -6   -1    +0  (engineering, of an internal-combustion engine) Having all cylinders i
+   6   .    .    .    .        Direct in communication; unevasive, straightforward.
+   7   1   -4   -0    3    +8  Free from dishonesty; honest, law-abiding.
+       glb: cipenkal (fallback: English gloss)
+   8   .    .    .    .        Serious rather than comedic.
+   9   1    0   -2    2    +2  In proper order; as it should be.
+  10   4    5   13    6    +1  In a row, in unbroken sequence; consecutive.
+  11   4    5   10   11    +6  (tennis) Describing the sets in a match of which the winner did not lo
+  12   2   -0    1   -2    -1  (US, politics) Making no exceptions or deviations in one's support of   [US]
+  13  -0   -5    1    2    +7  (US, politics) Containing the names of all the regularly nominated can  [US]
+  14   .   -3    1    4    +7  (colloquial) Conventional; mainstream; socially acceptable.  [colloquial]
+  15   .    .    .    .        (colloquial) Heterosexual.  [colloquial]
+       glb: alojensifil (fallback: English gloss)
+  16   6    2    3    2    -1  (colloquial, of a romantic or sexual relation) Occurring between peopl  [colloquial]
+  17  -4   -5   -3   -3    +1  (slang, sex work) Related to conventional sexual intercourse.  [slang]
+  18  -5   -8  -14  -11    -3  (colloquial) Not using alcohol, drugs, etc.  [colloquial]
+  19  11   11   12   13    +2  (fashion) Not plus size; thin.
+       glb: dambo (fallback: English gloss)
+  20   1   -1    2   -1    -1  (rare, now chiefly religion) Strait; narrow.  [rare]
+       glb: sempay (fallback: English gloss)
+  21   7    6    9    7    +1  (obsolete) Stretched out; fully extended.  [obsolete]
+  22  -1   -7   -3   -5    +2  (slang) Thorough; utter; unqualified.  [slang]
+       glb: total (fallback: English gloss)
+  23   2    4   11   14   +10  Of spirits: undiluted, unmixed; neat.
+  24  -0    2    5    4    +1  (telegraphy, historical, of a telegram) Sent at a full rate for immedi  [historical]
+  25   2    1    1    1    -0  (sciences, mathematics) Concerning the property allowing the parallel 
+  26   5    1    3    1    -0  (informal, of a person) OK, all right, fine; in a good state or situat  [informal]
+       glb: okey (fallback: English gloss)
+  27   3   -4   -2    4    +8  (informal, of people, reciprocal) On good terms.  [informal, reciprocal]
+  28   .    .    .    .        as it should be  [(table only)]
+
+== queer (adj)
+   1  19   36   32   22   -14  (dated) Strange, odd, or different; whimsical.  [dated]
+       glb: ajabu (fallback: English gloss)
+   2   .    6    8    9    +3  (British, informal, dated) Slightly unwell.  [British, dated, informal]
+   3   .    .    .    .        (British, slang) Drunk.  [British, slang]
+       glb: gey [4: de:schwul eo:geja fr:gay]
+   4   .    .    .    .        (colloquial, sometimes derogatory) Homosexual.  [colloquial, derogatory, sometimes]
+       glb: samajensifil (fallback: English gloss)
+   5   .    .   -2   12        (colloquial, sometimes derogatory) Non-heterosexual or non-cisgender:   [colloquial, derogatory, sometimes]
+       glb: kwir [6: ar:كْوِير de:queer eo:kvira es:queer fr:queer]
+   6   3    6    0   10    +4  (loosely) Pertaining to sexual or gender behaviour or identity which d  [broadly]
+
+== gay (adj)
+   1   7   10    5   23   +13  Homosexual:
+       glb: gey [7: ar:مِثْلِيّ de:schwul eo:geja es:homosexual fr:gai ru:гей]; samajensifil [3: eo:samseksema es:homosexual]
+   2   .    .    .    .        Homosexual:
+       glb: samajensifil (fallback: English gloss)
+   3   .    .    .    .        Homosexual:  [broadly]
+       glb: samajensifil (fallback: English gloss)
+   4   .    .    .    .        Homosexual:
+       glb: samajensifil (fallback: English gloss)
+   5   .    .    .    .        Homosexual:  [colloquial]
+       glb: samajensifil (fallback: English gloss)
+   6   .    .    .    .        Homosexual:
+       glb: samajensifil (fallback: English gloss)
+   7   .    .    .    .        Homosexual:  [slang]
+       glb: samajensifil (fallback: English gloss)
+   8   .    .    .    .        Homosexual:  [humorous, slang]
+       glb: samajensifil (fallback: English gloss)
+   9   .    .    .    .        Homosexual:  [broadly]
+       glb: samajensifil (fallback: English gloss)
+  10   .    .    .    .        Homosexual:  [broadly]
+       glb: samajensifil (fallback: English gloss)
+  11   .    .    .    .        A pejorative:  [derogatory, pejorative, slang]
+  12   .    .    .    .        A pejorative:  [derogatory, pejorative, slang]
+  13  27   30   31   15   -15  (dated) Happy, joyful, and lively.  [dated]
+       glb: hox [3: eo:gaja es:alegre]; joxufil [3: eo:gaja es:alegre]; kweho [3: eo:gaja es:alegre]
+  14   5    8   13   -3   -11  (dated) Quick, fast.  [dated]
+       glb: velosi (fallback: English gloss)
+  15   .    .    .    .        (dated) Festive, bright, or colourful.  [dated]
+       glb: brilapul (fallback: English gloss)
+  16   2    2    2   18   +16  (obsolete) Sexually promiscuous (of any gender), (sometimes particular  [obsolete]
+  17   1    6    3   -4   -11  (of a dog's tail) Upright or curved over the back.
+  18  -2   -3   -7    0    +3  (Scotland, Northern England, possibly obsolete) Considerable, great, l  [Northern-England, Scotland, obsolete, possibly]
+       glb: day (fallback: English gloss); daybon (fallback: English gloss)
+  19   7    5    1    7    +3  behaving in a way associated with females  [(table only)]
+  20   1    1    3    5    +5  lame, uncool (used to express dislike)  [(table only)]
+       glb: pesima (fallback: English gloss)
+
+== intercourse (noun)
+   1  41   43   27   22   -21  Communication, conversation.  [countable, uncountable]
+       glb: logalari [2: ar:حِوَار hi:संवाद]
+   2   .    .    .    .        Dealings between countries.  [countable, uncountable]
+   3  22   22   14   14    -8  Dealings with people, including commerce and trade.  [countable, uncountable]
+   4   4    8   16   20   +12  Sexual intercourse usually involving humans.  [countable, uncountable]
+
+== partner (noun)
+   1   4    6    3    3    -3  Either of a pair of people or things that belong together.
+       glb: tongoyen [2: de:Partner ru:партнёр]; tonyen [2: de:Partner ru:партнёр]
+   2   .    .    .    .        Someone who is associated with another in a common activity or interes
+       glb: tongoyen [6: ar:رَفِيق de:Partner es:compañero fr:partenaire hi:साथी ru:партнёр]; tonyen [6: ar:رَفِيق de:Partner es:compañero fr:partenaire hi:साथी ru:партнёр]; lubidoste [4.5: ar:شَرِيك de:Partner fr:partenaire hi:साथी ru:партнёр]; exkudoste [3.5: ar:شَرِيك de:Partner hi:साथी ru:партнёр]
+   3   .    .    .    .        Someone who is associated with another in a common activity or interes
+   4   .    .    .    .        Someone who is associated with another in a common activity or interes
+   5   .    .    .    .        Someone who is associated with another in a common activity or interes
+   6   .    .    .    .        Someone who is associated with another in a common activity or interes
+   7  -2   -3   -5   -4    -1  (nautical) One of the pieces of wood comprising the framework which st
+   8   2   -1    4    8    +8  (Jamaica) A group financial arrangement in which each member contribut  [Jamaica]
+   9  11    8   14   15    +7  spouse, domestic, or romantic partner  [(table only)]
+       glb: tongoyen [6: de:Partner eo:kunulo es:compañero fr:compagnon ru:партнёр]; tonyen [6: de:Partner eo:kunulo es:compañero fr:compagnon ru:партнёр]; lubidoste [5.5: de:Partner eo:koramiko es:pareja fr:partenaire ru:партнёр]; exkudoste [4.5: de:Partner eo:koramiko es:pareja ru:партнёр]
+
+== mistress (noun)
+   1  -8  -10   -1   -1    +9  A woman, specifically one with great control, authority or ownership.
+       glb: prabu [5: ar:سَيِّدَة de:Meisterin eo:sinjorino fr:maîtresse]; femsenyor [4: ar:سَيِّدَة de:Frau eo:sinjorino]; senyor [3.5: ar:سَيِّدَة de:Frau eo:sinjorino]
+   2  16   21   22   21    +0  A female head of household.
+   3   .    .    .    .        A female teacher.
+   4   2    0   -2    1    +0  The other woman in an extramarital relationship, generally including s
+       glb: exkuyen [5: eo:amantino es:amante fr:amante hi:प्रेमिका]
+   5   .    .    .    .        A dominatrix.
+       glb: prabu [3: eo:mastrino es:ama]
+   6   6    7    9    3    -4  A woman well skilled in anything, or having the mastery over it.
+   7   8   17   18   18    +0  A woman regarded with love and devotion; a sweetheart.
+   8  20   26   25   26    +0  (Scotland) A married woman; a wife.  [Scotland]
+       glb: femgami (fallback: English gloss); gami (fallback: English gloss)
+   9  -1   -0    1    1    +1  (archaic) A respectful mode of address to a woman.  [archaic]
+  10   6    4    5    3    -0  (obsolete) The jack in the game of bowls.  [obsolete]
+  11  16   19   28   31   +12  A female companion to a master (a man with control, authority or owner
+  12   .    .    .    .        Female equivalent of master.  [feminine]
+  13   .    .    .    .        Female equivalent of mister.  [feminine]
+
+== sex (noun)
+   1   8   11   18   12    +1  (countable) A category into which sexually-reproducing organisms are d  [countable]
+       glb: jensi [6: ar:جِنْس de:Geschlecht es:sexo fr:sexe hi:लिंग ru:пол]
+   2   .    .    .    .        (countable) Another category, especially of humans and especially base  [countable]
+   3   8   10    8    5    -5  (countable) The members of such a category, taken collectively.  [countable]
+   4  20   20   22   17    -3  (uncountable) The distinction and relation between these categories, e  [uncountable]
+   5  21   20   17   16    -3  (obsolete or literary, uncountable, with "the") Women; the human femal  [literary, obsolete, uncountable, with-definite-article]
+   6   6    7   11   11    +3  (uncountable) Sexual activity, usually sexual intercourse unless prece  [uncountable]
+       glb: sekso [3: eo:seksumo es:sexo]; faku [2: eo:fiko]
+   7   6    2   18   21   +19  (countable, euphemistic or slang) Genitalia: a penis or vagina/vulva.  [countable, euphemistic, slang]
+   8   8    6    3    6    +0  (obsolete) Alternative form of sect.  [alt-of, alternative, obsolete]
+
+== camp (adj)
+   1  -2   -3   -6   -7    -4  Theatrical; making exaggerated gestures.
+       glb: teatroli (fallback: English gloss)
+   2   .    .    .    .        (of a man) Ostentatiously effeminate.
+   3  -8  -11   -8   -7    +5  Intentionally tasteless or vulgar; self-parodying.
+
+== closet (noun)
+   1  15   15   18   15    -0  A small room within a house used to store clothing, food, or other hou
+       glb: kamer [2: ar:حُجْرَة de:Kammer]
+   2  12   17   14   15    -2  (obsolete) Any private space, (particularly) bowers in the open air.  [obsolete]
+   3   .    .    .    .        (now rare) Any private or inner room, (particularly):  [archaic, obsolete]
+   4   .    .    .    .        (now rare) Any private or inner room, (particularly):  [archaic]
+   5   .    .    .    .        (now rare) Any private or inner room, (particularly):  [archaic, figuratively]
+   6   .    .    .    .        (now rare) Any private or inner room, (particularly):  [archaic]
+   7   .    .    .    .        (now rare) Any private or inner room, (particularly):  [archaic]
+   8   4    6    5    4    -2  (obsolete) A pew or side-chapel reserved for a monarch or other feudal  [obsolete]
+   9   .    .    .    .        A private cabinet, (particularly):  [obsolete]
+  10   .    .    .    .        A private cabinet, (particularly):  [archaic]
+  11   .    .    .    .        A private cabinet, (particularly):  [figuratively]
+  12   .    .    .    .        A private cabinet, (particularly):  [abbreviation, alt-of, clipping, slang, uncommon]
+  13   .    .    .    .        (now chiefly Scotland, Ireland) Any small room or side room.  [Ireland, Philippines, Scotland, US]
+  14   .    .    .    .        (now chiefly Scotland, Ireland) Any small room or side room.  [Ireland, Scotland, abbreviation, alt-of, clipping, obsolete]
+  15   1    5    3   -0    -5  (heraldry) An ordinary similar to a bar but half as broad.
+  16   .    .    .    .        (Scotland, obsolete) A sewer.  [Scotland, obsolete]
+       glb: siuyen (fallback: English gloss)
+  17   .    .    .    .        A state or condition of secrecy, privacy, or obscurity.
+       glb: privatoya (fallback: English gloss)
+  18   .    .    .    .        A state or condition of secrecy, privacy, or obscurity.
+       glb: privatoya (fallback: English gloss)
+  19   2   -2   -4   -1    +1  (archaic) A compendium of knowledge, possibly from closet as a room?  [archaic]
+  20   .    .    .    .        furniture  [(table only)]
+       glb: almari [7: ar:خِزَانَة de:Schrank eo:ŝranko es:armario fr:placard ru:шкаф]
+  21   .    .    .    .        figurative sense  [(table only)]
+
+== broadcast (verb)
+   1   .    3   22   22   +20  (transitive) To transmit a message or signal through radio waves or el  [transitive]
+   2   .    .    .    .        (transitive) To transmit a message over a wide area.  [transitive]
+   3   .    .    .    .        (transitive) To transmit a message over a wide area.  [specifically, transitive]
+   4   .   -4    9   11   +16  (intransitive) To appear as a performer, presenter, or speaker in a br  [intransitive]
+   5   .   14    6   -2   -17  (transitive, agriculture, horticulture, archaic) To sow seeds over a w  [archaic, transitive]
+
+== computer (noun)
+   1   .    .    .    .        (now rare, chiefly historical) A person employed to perform computatio  [archaic, historical]
+   2   .    .    .    .        (now rare, chiefly historical) A person employed to perform computatio  [archaic, historical]
+   3   .    .   22   22        A programmable electronic device that performs mathematical calculatio
+       glb: komputatora [7: ar:كَمْبْيُوتَر de:Computer eo:komputilo es:computadora fr:ordinateur hi:कंप्यूटर]; komputer [7: ar:كَمْبْيُوتَر de:Computer eo:komputilo es:computadora fr:ordinateur hi:कंप्यूटर]
+
+== typewriter (noun)
+   1   .    .   10   12        A device, at least partially mechanical, used to print text by pressin
+       glb: tayputora [7: ar:آلَة كَاتِبَة de:Schreibmaschine eo:skribmaŝino es:máquina de escribir fr:machine à écrire hi:टाइपराइटर]
+   2   .    .    7    9        (archaic) One who uses a typewriter; a typist.  [archaic]
+   3   .    .   13    8        (US, dated, slang) A machine gun or submachine gun (from the noise it   [US, dated, slang]
+   4   .    .    5   10        A prank in which fingers are jabbed roughly onto someone's chest follo
+
+== tank (noun)
+   1  12   17   21   15    -2  A closed container for liquids or gases.
+       glb: tanku [3: eo:cisterno es:cisterna]
+   2  21   17   16   11    -7  An open container or pool for storing water or other liquids.
+       glb: hoza [2: de:Becken ru:таз]
+   3  17   14    9    7    -7  A pond, pool, or small lake (either natural or artificial).
+       glb: lilhosu (fallback: English gloss); bilyardi (fallback: English gloss); birke (fallback: English gloss); suyondom (fallback: English gloss)
+   4   .    .    .    .        The fuel reservoir of a vehicle.
+   5   .    .    .    .        The amount held by a container; a tankful.
+   6   7    7   18   14    +7  An armoured fighting vehicle, armed with a gun designed for direct fir
+       glb: tanke [7.5: ar:دَبَّابَة de:Panzer eo:tanko es:tanque fr:tank hi:टैंक ru:танк zh:坦克]
+   7   6    7    3    5    -2  (Australia, India) A reservoir or dam.  [Australia, India]
+   8   5    5    3   -1    -6  (botany) A structure of tightly overlapping leaves used by some bromel
+   9   4    2   -1    4    +2  (colloquial) A very muscular and physically imposing person; somebody   [colloquial]
+  10  -4   -8   -3   -0    +8  (UK, slang, dated, by extension) A bouncer or doorman.  [UK, broadly, dated, slang]
+  11   1    5    3    2    -3  (roleplaying games, board games, video games) A unit or character desi
+  12   9   13    4    3   -10  (US, slang) A prison cell, or prison generally.  [US, slang]
+  13   1   -3   -1    0    +3  (poker, slang) A metaphorical place where a player goes to contemplate  [slang]
+  14  16   18   19   21    +3  (rail transport) Ellipsis of tank engine or tank locomotive.  [abbreviation, alt-of, ellipsis]
+  15   .    .    .    .        (clothing) Ellipsis of tank top.  [abbreviation, alt-of, ellipsis]
+  16   7   10    8    6    -5  A small Indian dry measure, averaging 240 grains in weight.
+  17   7    0    3    1    +1  A Bombay weight of 72 grains, for pearls.
+
+== car (noun)
+   1   4   13   24   23   +10  A wheeled vehicle that moves independently, with at least three wheels
+       glb: mobil [7: ar:سَيَّارَة de:Automobil eo:aŭtomobilo es:carro fr:voiture hi:गाड़ी]
+   2   .    .    .    .        (archaic) A wheeled vehicle, drawn by a horse or other animal.  [archaic]
+   3   .    .    .    .        (archaic) A wheeled vehicle, drawn by a horse or other animal.  [archaic]
+   4   .    .    .    .        (archaic) A wheeled vehicle, drawn by a horse or other animal.  [UK, archaic, obsolete]
+   5   .    .    .    .        (archaic) A wheeled vehicle, drawn by a horse or other animal.  [archaic]
+   6   .    .    .    .        Any vehicle designed to run on rails, especially an unpowered one towe  [Canada, US]
+   7   .    .    .    .        Any vehicle designed to run on rails, especially an unpowered one towe
+   8   .    .    .    .        Any vehicle designed to run on rails, especially an unpowered one towe
+   9   .    .    .    .        Any vehicle designed to run on rails, especially an unpowered one towe
+  10   .    .    .    .        Any vehicle designed to run on rails, especially an unpowered one towe
+  11   6   16   17   17    +0  The moving, load-carrying component of an elevator or other cable-draw
+  12  -1   10   13   16    +6  The passenger-carrying portion of certain amusement park rides, such a
+  13   5   14   17   14    -1  The part of an airship, such as a balloon or dirigible, which houses t
+  14   8   14   15   14    -1  (sailing) A sliding fitting that runs along a track.
+  15 -14   -8   -6   -6    +2  (uncountable, US, informal) The aggregate of desirable characteristics  [US, informal, uncountable]
+  16   6    7    8    8    +1  (US) A floating perforated box for living fish.  [US]
+  17   7    8   13    9    +1  (US, prison slang) A clique or gang.  [US, slang]
+  18   5   -2    6    6    +8  (Internet, humorous) Deliberate misspelling of cat.  [Internet, alt-of, deliberate, humorous, misspelling]
+  19  -3   -4    1   -2    +2  (programming) The first part of a cons in Lisp. The first element of a
+
+== wireless (noun)
+   1   .    .   17   22        (uncountable) The medium of radio communication.  [uncountable, usually]
+       glb: radyofon [2.5: de:Rundfunk fr:radio hi:रेडियो]
+   2   .    .   20   29        (uncountable, networking) Wireless connectivity to a computer network.  [uncountable, usually]
+   3   .    .    5    6        (dated, chiefly British) A radio set.  [British, dated, uncountable, usually]
+
+== film (noun)
+   1  30   31   21   10   -22  A thin layer of some substance; a pellicle; a membranous covering, cau  [countable, uncountable]
+   2   6    6   24   28   +22  (photography) A medium used to capture images in a camera.  [countable, uncountable]
+   3   8   12   18   15    +3  (uncountable) A visual art form that consists of a sequence of still i  [uncountable]
+   4  11   11   20   22   +11  (countable) The sequence of still images itself, which produces a movi  [countable]
+   5  14    9    0    8    -1  A slender thread, such as that of a cobweb.  [countable, uncountable]
+   6   .    .    .    .        photographic film  [(table only)]
+
+== record (noun)
+   1   7    7   12   12    +5  An item of information put into a temporary or permanent physical medi
+   2   8    9    8   10    +1  Any instance of a physical medium on which information was put for the
+   3  -2   -1    4    7    +8  Ellipsis of phonograph record (“a disc, usually made from vinyl, on wh  [abbreviation, alt-of, ellipsis]
+       glb: disko [3: ar:أُسْطُوَانَة fr:disque ru:диск]; vinildisko [2.5: ar:أُسْطُوَانَة de:Schallplatte hi:रिकॉर्ड]
+   4  10    9   10   10    +1  (computing) A set of data relating to a single individual or item.
+       glb: daftari [2: ar:دَفْتَر es:registro]
+   5   2    4   -1    2    -2  (programming) A data structure similar to a struct, in some programmin
+   6   6    8    4    6    -2  The most extreme known value of some variable, particularly that of an
+       glb: rekordi [7: ar:رَقْم قِيَاسِيّ de:Bestleistung eo:rekordo es:récord fr:record hi:कीर्तिमान]
+
+== screen (noun)
+   1   9    8    5    4    -4  A physical divider intended to block an area from view, or provide she
+       glb: ekrin [6.5: ar:شَاشَة de:Bildschirm eo:ekrano es:pantalla fr:écran hi:स्क्रीन]
+   2   .    .    .    .        A material woven from fine wires intended to block animals or large pa
+   3   .    .    .    .        A material woven from fine wires intended to block animals or large pa
+   4   .    .    .    .        A material woven from fine wires intended to block animals or large pa
+   5   .    .    .    .        (by analogy) Searching through a sample for a target; an act of screen
+   6   .    .    .    .        (by analogy) Searching through a sample for a target; an act of screen
+   7   .    .    .    .        Various forms or formats of information display
+   8   .    .    .    .        Various forms or formats of information display  [broadly]
+   9   .    .    .    .        Various forms or formats of information display
+  10   .    .    .    .        Various forms or formats of information display
+  11   .    .    .    .        Various forms or formats of information display
+  12   .    .    .    .        (figurative) A disguise; concealment.  [figuratively]
+       glb: sangu (fallback: English gloss)
+  13   .    .    .    .        Definitions related to standing in the path of an opposing player  [abbreviation, alt-of, ellipsis]
+  14   .    .    .    .        Definitions related to standing in the path of an opposing player
+  15  14   17   15   12    -5  (cricket) An erection of white canvas or wood placed on the boundary o
+  16  -3   -2    0    1    +3  (nautical) A collection of less-valuable vessels that travel with a mo
+  17   9   10    6    6    -4  (architecture) A dwarf wall or partition carried up to a certain heigh
+  18   8    3    3   -6    -8  (Scotland, archaic) A large scarf.  [Scotland, archaic]
+  19   1   -4    9   16   +20  region of a video game  [(table only)]
+       glb: daraje [2: eo:nivelo]
+  20   .    .    1    1        basketball: offensive tactic  [(table only)]
+       glb: basketobol (fallback: English gloss)
+  21   .    1   16    1    -0  baseball: protective netting  [(table only)]
+       glb: basibol (fallback: English gloss)
+  22   1   -4   -5    0    +4  mining: stone classification device  [(table only)]
+       glb: kangyo (fallback: English gloss)
+  23  -1   12   16   18    +6  printing: stencil upon framed mesh  [(table only)]
+       glb: printi (fallback: English gloss)
+  24   .    1    6    3    +2  genetics: technique used to identify genes  [(table only)]
+
+== terrific (adj)
+   1  15   14   16   15    +1  (now rare) Terrifying, causing terror; terrible; sublime, awe-inspirin  [archaic]
+   2  14   18   25   14    -4  Very strong or intense; excessive, tremendous.
+       glb: day [2: eo:ega]
+   3   2    8    4   15    +8  Extremely good; excellent, amazing.
+       glb: daybon [3: eo:bonega es:estupendo]
+
+== tremendous (adj)
+   1  21   31   31   18   -13  Awe-inspiring; terrific.
+   2   4    4    9   10    +6  Notable for its size, power, or excellence.
+   3   8   11   21   25   +14  Extremely large (in amount, extent, degree, etc.) or great
+
+== awesome (adj)
+   1   .    .    .   15        Causing awe or terror; inspiring wonder or excitement.
+       glb: waone [3: eo:miriga es:asombroso]; waopul [2: eo:miriga]
+   2   .    .    .    3        (colloquial, Canada, US, Australia) Excellent, exciting, remarkable.  [Australia, Canada, US, colloquial]
+       glb: daybon [2: eo:bonega]
+
+== holocaust (noun)
+   1   .    .    8   10        (religion) An offering or sacrifice to a deity that is completely burn
+   2   .    .    .    .        (by extension)  [also, broadly, figuratively]
+   3   .    .    .    .        (by extension)  [broadly]
+   4   .    .    .    .        (by extension)  [broadly, figuratively]
+   5   .    .    .    .        (by extension)  [alt-of, broadly, figuratively]
+   6   .    .    9   10        extensive destruction of a group of animals or people — see also massa  [(table only)]
+       glb: tosa (fallback: English gloss)
+
+== liquidate (verb)
+   1   .    .    .    .        (transitive)  [archaic, rare, transitive]
+   2   .    .    .    .        (transitive)  [figuratively, transitive]
+   3   .    .    .    .        (transitive)  [figuratively, transitive]
+   4   .    .    .    .        (transitive)  [figuratively, informal, transitive]
+   5   .    .    .    .        (transitive)  [figuratively, transitive]
+   6   .    .    .    .        (transitive)  [figuratively, transitive]
+   7   .    .    .    .        (transitive)  [figuratively, transitive]
+   8   .    .    .    .        (transitive)  [obsolete, transitive]
+   9   .    .    .    .        (transitive)  [obsolete, transitive]
+  10   .    .    .    .        (transitive)  [obsolete, transitive]
+  11   .    .   13   16        (intransitive, business, commercial law, finance) Of a corporation, pa  [intransitive]
+  12   .    .   -8   -3        to make (a sound) less harsh  [(table only)]
+  13   .    .   -1   -1        to kill (someone), usually violently — see also assassinate, kill, mur  [(table only)]
+       glb: morgi (fallback: English gloss)
+  14   .    .   20   17        to convert (assets) into cash — see also encash, realize, redeem  [(table only)]
+       glb: realcu (fallback: English gloss); realgi (fallback: English gloss); xoraham (fallback: English gloss); xorixi (fallback: English gloss)
+
+== propaganda (noun)
+   1   .    .    .    .        (as a neutral word dated) Agitation, publicity, public communication a  [uncountable, usually]
+       glb: hunfun (fallback: English gloss); kalapa (fallback: English gloss); parexangi (fallback: English gloss)
+   2   .    .    .    .        (as a neutral word dated) Agitation, publicity, public communication a  [historical, uncountable, usually]
+       glb: hunfun (fallback: English gloss); kalapa (fallback: English gloss); parexangi (fallback: English gloss)
+   3   .   -0    9    5    +5  (derogatory) Such communication specifically when it is biased, mislea  [derogatory, uncountable, usually]
+   4   .    7   10    8    +1  concerted set of messages  [(table only)]
+       glb: propaganda [3: eo:propagando es:propaganda]
+
+== camp (noun)
+   1  -6   -5   -4   -7    -3  An outdoor place acting as temporary accommodation in tents or other s  [countable, uncountable]
+       glb: kampidom [5: ar:مُخَيِّم de:Lager es:campamento fr:camp hi:शिविर]
+   2   3    3    5   -0    -4  An organised event, often taking place in tents or temporary accommoda  [countable, uncountable]
+       glb: kampi [3: eo:kampado es:acampada]
+   3  -1    4    6    7    +3  A base of a military group, not necessarily temporary.  [countable, uncountable]
+       glb: kampidom [2: de:Lager fr:camp]
+   4  -2   -1    6    4    +5  A place of politically motivated confinement in outdoorsy conditions,   [countable, uncountable]
+   5  14   17   18   16    -1  A single hut or shelter.  [countable, uncountable]
+   6   2    2    2   -3    -5  The company or body of persons encamped.  [countable, uncountable]
+   7  -2    2    2   -4    -6  A group of people with the same strong ideals or political leanings.  [countable, uncountable]
+   8   .    .    .    .        (obsolete) An army.  [countable, obsolete, uncountable]
+       glb: askeri (fallback: English gloss)
+   9   .    .    .    .        (uncommon) Clipping of campus  [abbreviation, alt-of, clipping, countable, uncommon, uncountable]
+  10   .    .    .    .        (prison slang) Any prison or prison camp.  [countable, slang, uncountable]
+  11  -2    1    2    5    +5  (agriculture, catachresis) Misconstruction of clamp (“mound of earth i  [alt-of, countable, misconstruction, uncountable]
+  12   5    7    9    7    +0  (British India) Anywhere that a colonist stayed when away from their p  [British, India, countable, uncountable]
+  13  17   13   15   10    -3  (obsolete) Conflict; battle.  [countable, obsolete, uncountable]
+       glb: konflito (fallback: English gloss); jangemon (fallback: English gloss); jento (fallback: English gloss)
+  14  -6   -7   -2   -4    +3  An online game, in some cases roleplay, in which people compete agains  [countable, uncountable]
+  15  -7  -10  -11   -6    +4  An affected, exaggerated, or intentionally tasteless style.  [uncountable]
+  16   6    6    8    6    -0  (slang, Falkland Islands) The areas of the Falkland Islands situated o  [countable, slang, uncountable]
+  17   7    4    5    8    +4  An electoral constituency of the legislative assembly of the Falkland   [countable, uncountable]
+
+== liberal (adj)
+   1  11    7    5    7    +0  (now rare outside set phrases) Pertaining to those arts and sciences t
+   2   .    .    .    .        Generous; permitting liberty; willing to give unsparingly.
+       glb: gibefil (fallback: English gloss)
+   3  10   11    3   -7   -18  Ample, abundant; generous in quantity.
+       glb: daykwantipul (fallback: English gloss)
+   4   .    .    .    .        (obsolete) Unrestrained, licentious.  [obsolete]
+   5   8   10   10    7    -2  Widely open to new ideas, willing to depart from established opinions 
+   6  14   17   16   22    +5  (politics) Open to political or social changes and reforms associated 
+
+== radical (adj)
+   1  24   26   21   13   -13  Favoring fundamental change, or change at the root cause of a matter.
+   2   7   -1  -10    0    +2  (botany, not comparable) Pertaining to a root (of a plant).  [not-comparable]
+   3  17   12    9    5    -7  Pertaining to the basic or intrinsic nature of something.
+   4  -2   14   12   13    -1  Thoroughgoing; far-reaching.
+   5   .    .    6    1        (lexicography, not comparable) Of or pertaining to the root of a word.  [not-comparable]
+   6  14    2   -3   -4    -6  (phonology, phonetics, not comparable, of a sound) Produced using the   [not-comparable]
+   7  12    8    9   13    +5  (chemistry, not comparable) Involving free radicals.  [not-comparable]
+   8   9    2    3   -2    -4  (mathematics) Relating to a radix or mathematical root.
+   9   .    .    .    .        (slang, 1980s & 1990s) Excellent; awesome.  [slang]
+       glb: daybon (fallback: English gloss)
+
+== man (noun)
+   1   .    .    .    .        An adult male human.  [collective]
+       glb: insan [8: ar:إنسان de:Mensch eo:homo es:ser humano fr:être humain hi:मनुष्य zh:人]; manixu [8: ar:رَجُل de:Mann eo:viro es:hombre fr:homme hi:आदमी zh:男人]; manyen [8: ar:رَجُل de:Mann eo:viro es:varón fr:homme hi:पुरुष zh:男人]; ixu [7: ar:رَجُل de:Mann eo:viro es:hombre fr:homme hi:आदमी]
+   2   .    .    .    .        An adult male human.
+   3   .    .    .    .        An adult male human.
+   4   .    .    .    .        An adult male human.
+   5   .    .    .    .        An adult male human.
+   6   .    .    .    .        A human, a person regardless of gender or sex, usually an adult.
+       glb: insan (fallback: English gloss)
+   7   .    .    .    .        A human, a person regardless of gender or sex, usually an adult.  [collective]
+       glb: insan (fallback: English gloss)
+   8   6    0    4    5    +5  (anthropology, archaeology, paleontology) A member of the genus Homo, 
+   9   3    2    7    3    +1  A male person, usually an adult; a (generally adult male) sentient bei
+  10   8    2    5    0    -2  (uncountable, obsolete, uncommon) Manliness; the quality or state of b  [obsolete, uncommon, uncountable]
+  11   .    .    .    .        A husband.
+       glb: gami (fallback: English gloss); mangami (fallback: English gloss)
+  12   .    .    .   31        A male lover; a boyfriend.
+       glb: exkudoste (fallback: English gloss); lubidoste (fallback: English gloss)
+  13   .    .    .    .        Used as the last element of a compound.
+  14   .    .    .    .        Used as the last element of a compound.
+  15  -1    4   -4    1    -3  A person, usually male, who can fulfill one's requirements with regard
+       glb: person (fallback: English gloss)
+  16  -4   -4  -10   -4    +0  (historical) A vassal; a subject.  [historical]
+       glb: sujeto (fallback: English gloss); tema (fallback: English gloss)
+  17   3    1    3    4    +3  A piece or token used in board games such as backgammon.
+       glb: pyon [2: es:peón fr:pion]
+  18   8   11    8   10    -1  (video games) One of the player's chances to play, lost when the playe
+  19   2    7    4    7    -1  A term of familiar address often implying on the part of the speaker s
+  20   2    1    4    7    +6  A term of familiar address usually reserved for other adult males. It 
+  21  -2   -5   -2    3    +8  (sports) A player on whom another is playing, with the intent of limit
+  22  12   10   12    9    -1  (military slang) A soldier below the rank of a non-commissioned office  [slang]
