@@ -13,7 +13,7 @@ The Globasa version should also get round the book's Victorian vocabulary. Wells
 
 | File | What it is |
 |---|---|
-| `fetch_texts.py` | Downloads both editions from English Wikisource ("The Time Machine (Heinemann text)" and "(Holt text)") into `text/`, with chapters in reading order. |
+| `fetch_texts.py` | Downloads three editions from English Wikisource ("The Time Machine (Heinemann text)", "(Holt text)" and the Atlantic Edition, vol. 1, 1924) into `text/`, with chapters in reading order. |
 | `text/heinemann.txt`, `text/holt.txt` | Plain text, one `## <chapter>` heading per chapter. |
 | `scan_obscure.py` | Script tier: proposes candidate words only and decides nothing. A candidate is a non-proper-noun token whose surface form and lemma both have a Zipf value below 3.0 in wordfreq (modern English, all registers). Ligatures are normalised (œ→oe). Each candidate gets its Wiktionary senses (from `../WiktionaryLMDB`) and a `base_hint` for forms that look like regular derivatives; the hint never filters a word out. Writes `obscure_candidates.tsv`. |
 | `obscure_candidates.tsv` | 599 candidates with zipf, count, editions (H/U), first context and Wiktionary senses. |
@@ -57,9 +57,11 @@ Two published translations show how a contemporary translator read each word. Th
 
 The check compares word shapes only. The Esperanto result carries the most weight, because Globasa's Epo glosses draw the finest sense distinctions.
 
-## Holt variants
+## Edition variants (Holt 1895, Atlantic Edition 1924)
 
-`holt_variants.py` matches each Heinemann sentence to the closest Holt sentence and labels every word-level change by shape only: spelling, punctuation, substitution, insertion or deletion. This gives 1,993 variants, written to `holt_variants.tsv`. The script also fills the `holt` column of the glossary when a short Holt substitution covers the row's word, e.g. *valves* → panels, *desiccated* → dried-up, *elated* → "elated by my discoveries".
+`witness_variants.py` (formerly `holt_variants.py`; the comparison itself is `../edition_variants.py`) compares Heinemann with each other witness by Wells. For the Atlantic Edition (1924, Wells's late revision, `text/atlantic.txt`), it finds only 316 variants and 20 short word changes. Wells barely revised the book, e.g. *Overworld* → Upper-world, *lit* → struck, *seas* → lakes, and one glossary row: *genuine, if uncivil* dropped. Holt remains the main source of plainer wording.
+
+For Holt, it matches each Heinemann sentence to the closest Holt sentence and labels every word-level change by shape only: spelling, punctuation, substitution, insertion or deletion. This gives 1,993 variants, written to `holt_variants.tsv`. The script also fills the `holt` column of the glossary when a short Holt substitution covers the row's word, e.g. *valves* → panels, *desiccated* → dried-up, *elated* → "elated by my discoveries".
 
 Rule of thumb: **follow Heinemann for content and for deliberate word choices, and follow Holt for the plain wording.** That covers Holt's synonyms, its explicitations, and its use of clauses where Heinemann has nominalisations ("her rescue" → "I rescued Weena"). Holt is the earlier state of the text and has misprints of its own.
 
@@ -162,7 +164,7 @@ python3 time-machine/ocr_spreads.py time-machine/cache/albroi.pdf spa time-machi
 venv/bin/python time-machine/align_translations.py epo time-machine/cache/amos_epo.txt
 venv/bin/python time-machine/align_translations.py spa time-machine/cache/albroi_spa.txt
 python3 time-machine/merge_evidence.py
-python3 time-machine/holt_variants.py          # holt_variants.tsv + glossary column holt
+python3 time-machine/witness_variants.py       # holt_/atlantic_variants.tsv + glossary columns holt, atlantic
 venv/bin/python time-machine/telltale_witness.py  # Siri-Logane Tutum chain
 python3 time-machine/fetch_sources.py           # PD primary sources + Webster 1913 (cache)
 python3 time-machine/period_dicts.py            # Rhodes/O'Connor/Velázquez → dict_epo, dict_spa, dict_check
