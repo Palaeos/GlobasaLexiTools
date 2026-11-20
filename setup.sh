@@ -54,6 +54,8 @@ venv/bin/python -m pip install --quiet -r requirements-viewer.txt
 if [ "$SELECTOR" = 1 ]; then
     venv/bin/python -m pip install --quiet -r requirements-selector.txt
 fi
+# memory guard for every script (memlimit.py; limit GLOBASA_MEM_GB, default 40% of RAM)
+venv/bin/python -c "import memlimit; memlimit.install()"
 
 echo "== Word list"
 venv/bin/python - <<'EOF'
