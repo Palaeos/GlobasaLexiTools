@@ -1,0 +1,8 @@
+work	author	written	published	variety	language	spelling	folder	text	notes
+The Time Machine	H. G. Wells	1894	1895	UK	en	British	time-machine/	time-machine/text/heinemann.txt	Heinemann 1895 base; Holt 1895 and Atlantic Edition 1924 witnesses
+The War of the Worlds	H. G. Wells	1895-1897	1897 (Pearson's serial); 1898 (Heinemann)	UK	en	British	war-of-the-worlds/	war-of-the-worlds/text/heinemann.txt	Heinemann 1898 base; Atlantic Edition 1924 witness (Epilogue only there)
+The Man of the Year Million	H. G. Wells	1893	1893 (Pall Mall Budget)	UK	en	British	wells-short-works/	wells-short-works/text/man_of_the_year_million.txt	text of the 1897 reprint "Of a Book Unwritten"
+The Call of Cthulhu	H. P. Lovecraft	1926	1928 (Weird Tales)	US	en	British (Anglophile: colour, connexion, programme)	lovecraft/	lovecraft/text/call_of_cthulhu_weird_tales.txt	American (New England) English with British spellings: vocabulary and senses American, often literary
+At the Mountains of Madness	H. P. Lovecraft	1931	1936 (Astounding Stories)	US	en	British (Anglophile)	lovecraft/private/	lovecraft/private/at_the_mountains_of_madness.txt	PRIVATE: US copyright until 2032; text, translation and outputs never committed
+The Tell-Tale Heart	Edgar Allan Poe	1843	1843 (The Pioneer)	US	en	American	time-machine/		used as a witness for the period scanner (telltale_witness.py); no plain text file
+Le Petit Prince	Antoine de Saint-Exupéry	1942	1943 (Reynal & Hitchcock, New York)	FR	fr	French	parallel_lexsel_cache/lpp/	parallel_lexsel_cache/lpp/sentences_fr.tsv	PRIVATE (git-ignored cache): still under copyright in France (wartime extension) and the US; French words can carry 1940s senses
