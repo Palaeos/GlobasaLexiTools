@@ -8,7 +8,12 @@ entry.
 Two consumers share this module so the matching rules cannot drift:
 `extract_constructions.py`, which lifts them out of `word-list.csv` after a
 fresh download, and `AnkiMaker3.py`, which fills the Maxpul Kostrui note fields.
+
+It also holds the word-list round trip (read_wordlist / write_wordlist) shared by
+every script that rewrites derived columns of `word-list.csv`:
+extract_constructions.py, apply_eng_variety.py, apply_eng_periods.py.
 """
+import csv
 import re
 
 import pandas as pd
@@ -113,3 +118,30 @@ def exclusions(frame):
         if isinstance(excl, str) and excl.strip():
             out[str(lexi).strip()] = excl
     return out
+
+
+def read_wordlist(path):
+    """Rows plus the two formatting facts a round-trip must preserve: the CDN
+    file is CRLF and has no terminator on its final line. The file object is
+    handed straight to csv.reader so a newline inside a quoted gloss stays part
+    of that field."""
+    with open(path, newline="", encoding="utf-8") as f:
+        rows = list(csv.reader(f))
+    with open(path, "rb") as f:
+        head = f.read(65536)
+        f.seek(-1, 2)
+        tail = f.read()
+    # The CDN file is CRLF, but its last line carries no terminator at all, so
+    # the line ending has to be read off the head and the final newline off the
+    # tail -- sniffing either one alone gets the other wrong.
+    terminator = "\r\n" if b"\r\n" in head else "\n"
+    return rows, terminator, tail.endswith(b"\n")
+
+
+def write_wordlist(path, rows, terminator, final_newline):
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        csv.writer(f, lineterminator=terminator).writerows(rows)
+    if not final_newline:
+        with open(path, "rb+") as f:
+            f.seek(-len(terminator), 2)
+            f.truncate()

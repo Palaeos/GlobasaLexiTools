@@ -53,6 +53,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import constructions
+from constructions import read_wordlist, write_wordlist
 
 WORDLIST = "word-list.csv"
 BACKUP = "word-list.csv.pre-variety"
@@ -64,25 +65,7 @@ SRC, VIEWS = "TranslationEng", {"GB": "TranslationEngGB", "US": "TranslationEngU
 PREFERRED = {"GB": {"B"}, "US": {"A"}}
 
 
-# ---- word-list round trip (same facts as extract_constructions.py: CRLF,
-# no terminator on the final line, newlines inside quoted fields)
-def read_wordlist(path):
-    with open(path, newline="", encoding="utf-8") as f:
-        rows = list(csv.reader(f))
-    with open(path, "rb") as f:
-        head = f.read(65536)
-        f.seek(-1, 2)
-        tail = f.read()
-    return rows, ("\r\n" if b"\r\n" in head else "\n"), tail.endswith(b"\n")
-
-
-def write_wordlist(path, rows, terminator, final_newline):
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        csv.writer(f, lineterminator=terminator).writerows(rows)
-    if not final_newline:
-        with open(path, "rb+") as f:
-            f.seek(-len(terminator), 2)
-            f.truncate()
+# word-list round trip: constructions.read_wordlist / write_wordlist
 
 
 # ---- VarCon: token -> [(line id, preferred regions)]
