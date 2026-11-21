@@ -247,5 +247,13 @@ how["A1"].font = Font(bold=True, size=14)
 how.column_dimensions["A"].width = 12
 how.column_dimensions["B"].width = 40
 
-wb_out.save(outputPath)
+# Saved beside the target and swapped in, so a failed save (a full disk) never truncates the sheet.
+tmp_path = outputPath + ".tmp.xlsx"
+try:
+    wb_out.save(tmp_path)
+except OSError:
+    if os.path.exists(tmp_path):
+        os.remove(tmp_path)
+    raise
+os.replace(tmp_path, outputPath)
 print(f"Saved senses to {outputPath} ({n_rows - 1} rows, each word's senses ranked by part of speech)")
