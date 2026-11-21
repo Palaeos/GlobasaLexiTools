@@ -167,7 +167,8 @@ def _read_tsv(notes=None):
     return rows, vetters
 
 
-def _write_tsv(rows, vetters, out=VETTED_TSV):
+def _write_tsv(rows, vetters, out=None):
+    out = out or VETTED_TSV
     order = [OWNER] + [v for v in vetters if v != OWNER]
     tmp = out + ".tmp"
     with open(tmp, "w", newline="", encoding="utf-8") as f:
@@ -184,7 +185,8 @@ def _write_tsv(rows, vetters, out=VETTED_TSV):
 # The page's log
 # ---------------------------------------------------------------------------
 
-def log_entries(path=VETTING_LOG):
+def log_entries(path=None):
+    path = path or VETTING_LOG
     if os.path.exists(path):
         with open(path, encoding="utf-8") as f:
             for line in f:
@@ -192,7 +194,7 @@ def log_entries(path=VETTING_LOG):
                     yield json.loads(line)
 
 
-def log_scores(path=VETTING_LOG):
+def log_scores(path=None):
     """{(vetter, glb, eng, pos, verb_type, sense): (score, when)} from the page's log.
 
     Replays the log, so the latest entry per row wins and undos count ("undo" entries carry
@@ -213,8 +215,8 @@ def log_scores(path=VETTING_LOG):
     return latest
 
 
-def append_log(entries, path=VETTING_LOG):
-    with open(path, "a", encoding="utf-8") as f:
+def append_log(entries, path=None):
+    with open(path or VETTING_LOG, "a", encoding="utf-8") as f:
         for entry in entries:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
@@ -358,10 +360,11 @@ def _sheet_records(header, rows, source, notes):
         yield src, key, app, tier, scores, vetters
 
 
-def export(eng_xlsx, multi_xlsx=None, out=VETTED_TSV):
+def export(eng_xlsx, multi_xlsx=None, out=None):
     """Read the spreadsheets' scores and machine suggestions into `out`. Returns notes on
     values that needed attention. The owner's sheet edits become log entries (see above)."""
     notes = []
+    out = out or VETTED_TSV
     stored, vetters = _read_tsv(notes) if os.path.exists(out) else ([], [OWNER])
     by_key = {(r["Source"], _key(r)): r for r in stored}
     page = log_scores()
