@@ -12,12 +12,19 @@ Reads:
 
 Writes:
   - menalariExtension.tsv
+  - menalariExtension_clarifiers.tsv  (every guessed clarifier with how it was found, and the
+    shared translations left without one; clarifiers.py)
+
+A translation shared by two or more Globasa words in one language column gets a guessed
+clarifier in that language, word-list style: martinet (_oiseau_) (clarifiers.py). The word
+list's own Spa/Epo clarifiers still come first.
 """
 
 import os
 import sys
 import csv
 
+from clarifiers import Clarifiers
 from wiktionary_db import WiktionaryDB
 from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
@@ -99,10 +106,12 @@ if not os.path.exists("./" + menalari_name):
 
 wordlist_order = []  # ordered list of all Globasa words
 wordlist_data = {}   # glb -> {eng_text, spa_text, epo_text}
+wordlist_rows = []   # the rows as read, for the clarifiers
 
 with open("./" + menalari_name, newline='', encoding='utf-8') as f:
     reader = csv.DictReader(f)
     for row in reader:
+        wordlist_rows.append(row)
         word = row['Word']
         wordlist_order.append(word)
         wordlist_data[word] = {
@@ -119,120 +128,168 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as f:
 extension_lang_headers = [lang_display_name(c) for c in EXTENSION_LANGS]
 ext_lang_idx = {code: i for i, code in enumerate(EXTENSION_LANGS)}
 
+# Pass 1: every Globasa word's translations, each item remembering the vetted sense it came
+# from, so that pass 2 can tell shared translations apart.
+words_with_data = 0
+# Decisions the dump cannot serve: a different dump than the one vetted
+# against renames or drops senses. Reported, never silently lost.
+unmatched = defaultdict(list)
+built = []  # (globasa_word, eng_sense_output, items[j][group] = {formatted: (word, sense, annotated)}) or (word,)
+
+for globasa_word in wordlist_order:
+    senses = word_senses.get(globasa_word, [])
+
+    if not senses:
+        built.append((globasa_word,))
+        continue
+
+    # Build annotation maps from word-list.csv
+    wl = wordlist_data.get(globasa_word, {})
+    annotation_maps = {}
+    if wl.get('spa'):
+        annotation_maps['es'] = build_annotation_map(wl['spa'])
+    if wl.get('epo'):
+        annotation_maps['eo'] = build_annotation_map(wl['epo'])
+
+    # Determine PoS groups from word-list.csv English glosses
+    # The wordlist defines the group structure (via WordClass → VerbType).
+    # The xlsx VerbType column tells us which group each sense belongs to.
+    # build_bidix.py reads the groups back with the same pos_groups().
+    group_key_to_idx = {
+        (wikt_pos, vt_name): i for i, (wikt_pos, vt_name, _)
+        in enumerate(pos_groups(wl.get('eng', ''), wl.get('wordclass', '')))}
+    num_groups = max(len(group_key_to_idx), 1)
+
+    # Accumulators: per-group items for each language
+    eng_sense_dict = {}
+    output_items = [[{} for _ in range(num_groups)] for _ in EXTENSION_LANGS]
+
+    for s in senses:
+        source = s['source']
+        db = dbs.get(source)
+        if db is None:
+            unmatched['no database for this Wiktionary'].append(s)
+            continue
+
+        trans_entry = db.get_translations(s['lookup_word'], s['pos'])
+        if trans_entry is None:
+            unmatched['word/part of speech not in the dump'].append(s)
+            continue
+
+        if s['sense'] not in trans_entry:
+            unmatched['sense not in the dump'].append(s)
+            continue
+
+        lang_translations = trans_entry[s['sense']]
+        eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
+
+        # Use xlsx VerbType to determine which transitivity group
+        vt = s.get('verb_type', '')
+        group_idx = group_key_to_idx.get((s['pos'], vt))
+        if group_idx is None:
+            # Fallback: first group matching this pos
+            for (gp, gvt), gidx in group_key_to_idx.items():
+                if gp == s['pos']:
+                    group_idx = gidx
+                    break
+        if group_idx is None:
+            group_idx = 0
+
+        for j, lang_code in enumerate(EXTENSION_LANGS):
+            resolved, found = _resolve_lang(lang_code, lang_translations)
+            if not found:
+                continue
+            for t in resolved:
+                formatted = format_translation_word(t, s['pos'])
+                ann_key = DIALECT_LANGS[lang_code][0] if lang_code in DIALECT_LANGS else lang_code
+                ann = annotation_maps.get(ann_key, {}).get(t.word, "")
+                if ann:
+                    formatted += f" (_{ann}_)"
+                output_items[j][group_idx].setdefault(formatted, (t.word, s, bool(ann)))
+
+        # For non-English sources, include the lookup word itself as a
+        # translation for the source language (e.g. Lebewesen → German),
+        # with gender tag if available from the entry's sense tags
+        if s['source'] != 'en' and s['source'] in ext_lang_idx:
+            j = ext_lang_idx[s['source']]
+            pivot = s['lookup_word']
+            if s['pos'] in ('noun', 'name'):
+                sense_list = db.get_senses(s['lookup_word'], s['pos']) or []
+                if sense_list:
+                    stags = sense_list[0].tags
+                    genders = []
+                    if 'masculine' in stags:
+                        genders.append('<m>')
+                    if 'feminine' in stags:
+                        genders.append('<f>')
+                    if 'neuter' in stags:
+                        genders.append('<n>')
+                    if genders:
+                        pivot += ' ' + '/'.join(genders)
+            output_items[j][group_idx].setdefault(pivot, (s['lookup_word'], s, False))
+
+    # Build eng_sense_output
+    eng_sense_output = ', '.join(
+        word + " [" + "|".join(sorted(senses_set)) + "]"
+        for word, senses_set in eng_sense_dict.items()
+    )
+    built.append((globasa_word, eng_sense_output, output_items))
+    if eng_sense_output:
+        words_with_data += 1
+
+# Pass 2: shared translations get a clarifier (clarifiers.py), then the rows are written.
+first_sense = {}  # (lang, word, glb) -> the vetted sense that gave it
+extension_words = defaultdict(list)  # (glb, lang) -> [(word, pos)], in order: how tags are written
+for entry in built:
+    if len(entry) == 1:
+        continue
+    for j, groups in enumerate(entry[2]):
+        for group in groups:
+            for word, sense, _ in group.values():
+                if (EXTENSION_LANGS[j], word, entry[0]) not in first_sense:
+                    first_sense[(EXTENSION_LANGS[j], word, entry[0])] = sense
+                    extension_words[(entry[0], EXTENSION_LANGS[j])].append((word, sense['pos']))
+clar = Clarifiers(wordlist_rows, dbs.get('en'), extension_words)
+shared = clar.shared_index(first_sense.keys())
+report = []
+
 with open('menalariExtension.tsv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f, delimiter='\t', lineterminator='\n')
     writer.writerow(['Globasa', 'Eng with Senses'] + extension_lang_headers)
-
-    words_with_data = 0
-    # Decisions the dump cannot serve: a different dump than the one vetted
-    # against renames or drops senses. Reported, never silently lost.
-    unmatched = defaultdict(list)
-
-    for globasa_word in wordlist_order:
-        senses = word_senses.get(globasa_word, [])
-
-        if not senses:
-            writer.writerow([globasa_word])
+    for entry in built:
+        if len(entry) == 1:
+            writer.writerow([entry[0]])
             continue
+        globasa_word, eng_sense_output, output_items = entry
+        cells = []
+        for j, groups in enumerate(output_items):
+            lang_code = EXTENSION_LANGS[j]
+            out_groups = []
+            for group in groups:
+                out = set()
+                for formatted, (word, sense, annotated) in group.items():
+                    sharers = shared.get((lang_code, word), set()) - {globasa_word}
+                    if sharers and not annotated:
+                        others = [(g, first_sense.get((lang_code, word, g))) for g in sorted(sharers)]
+                        own = {w for grp in groups for w, _, _ in grp.values()}
+                        text, how = clar.choose(lang_code, word, globasa_word, sense, others, own)
+                        if text:
+                            formatted += f" (_{text}_)"
+                        report.append([globasa_word, lang_code, word, text or "", how,
+                                       ", ".join(sorted(sharers))])
+                    out.add(formatted)
+                out_groups.append(out)
+            cells.append(entry_to_string(out_groups))
+        writer.writerow([globasa_word, eng_sense_output] + cells)
 
-        # Build annotation maps from word-list.csv
-        wl = wordlist_data.get(globasa_word, {})
-        annotation_maps = {}
-        if wl.get('spa'):
-            annotation_maps['es'] = build_annotation_map(wl['spa'])
-        if wl.get('epo'):
-            annotation_maps['eo'] = build_annotation_map(wl['epo'])
-
-        # Determine PoS groups from word-list.csv English glosses
-        # The wordlist defines the group structure (via WordClass → VerbType).
-        # The xlsx VerbType column tells us which group each sense belongs to.
-        # build_bidix.py reads the groups back with the same pos_groups().
-        group_key_to_idx = {
-            (wikt_pos, vt_name): i for i, (wikt_pos, vt_name, _)
-            in enumerate(pos_groups(wl.get('eng', ''), wl.get('wordclass', '')))}
-        num_groups = max(len(group_key_to_idx), 1)
-
-        # Accumulators: per-group sets for each language
-        eng_sense_dict = {}
-        output_glosses = [[set() for _ in range(num_groups)] for _ in EXTENSION_LANGS]
-
-        for s in senses:
-            source = s['source']
-            db = dbs.get(source)
-            if db is None:
-                unmatched['no database for this Wiktionary'].append(s)
-                continue
-
-            trans_entry = db.get_translations(s['lookup_word'], s['pos'])
-            if trans_entry is None:
-                unmatched['word/part of speech not in the dump'].append(s)
-                continue
-
-            if s['sense'] not in trans_entry:
-                unmatched['sense not in the dump'].append(s)
-                continue
-
-            lang_translations = trans_entry[s['sense']]
-            eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
-
-            # Use xlsx VerbType to determine which transitivity group
-            vt = s.get('verb_type', '')
-            group_idx = group_key_to_idx.get((s['pos'], vt))
-            if group_idx is None:
-                # Fallback: first group matching this pos
-                for (gp, gvt), gidx in group_key_to_idx.items():
-                    if gp == s['pos']:
-                        group_idx = gidx
-                        break
-            if group_idx is None:
-                group_idx = 0
-
-            for j, lang_code in enumerate(EXTENSION_LANGS):
-                resolved, found = _resolve_lang(lang_code, lang_translations)
-                if not found:
-                    continue
-                for t in resolved:
-                    formatted = format_translation_word(t, s['pos'])
-                    ann_key = DIALECT_LANGS[lang_code][0] if lang_code in DIALECT_LANGS else lang_code
-                    ann = annotation_maps.get(ann_key, {}).get(t.word, "")
-                    if ann:
-                        formatted += f" (_{ann}_)"
-                    output_glosses[j][group_idx].add(formatted)
-
-            # For non-English sources, include the lookup word itself as a
-            # translation for the source language (e.g. Lebewesen → German),
-            # with gender tag if available from the entry's sense tags
-            if s['source'] != 'en' and s['source'] in ext_lang_idx:
-                j = ext_lang_idx[s['source']]
-                pivot = s['lookup_word']
-                if s['pos'] in ('noun', 'name'):
-                    sense_list = db.get_senses(s['lookup_word'], s['pos']) or []
-                    if sense_list:
-                        stags = sense_list[0].tags
-                        genders = []
-                        if 'masculine' in stags:
-                            genders.append('<m>')
-                        if 'feminine' in stags:
-                            genders.append('<f>')
-                        if 'neuter' in stags:
-                            genders.append('<n>')
-                        if genders:
-                            pivot += ' ' + '/'.join(genders)
-                output_glosses[j][group_idx].add(pivot)
-
-        # Build eng_sense_output
-        eng_sense_output = ', '.join(
-            word + " [" + "|".join(sorted(senses_set)) + "]"
-            for word, senses_set in eng_sense_dict.items()
-        )
-
-        ext_row = ([globasa_word, eng_sense_output]
-                   + [entry_to_string(output_glosses[j])
-                      for j in range(len(EXTENSION_LANGS))])
-        writer.writerow(ext_row)
-
-        if eng_sense_output:
-            words_with_data += 1
+with open('menalariExtension_clarifiers.tsv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f, delimiter='\t', lineterminator='\n')
+    writer.writerow(['Globasa', 'Language', 'Translation', 'Clarifier', 'How', 'Shared with'])
+    writer.writerows(report)
+given = sum(1 for r in report if r[3])
+fallbacks = sum(1 for r in report if r[3] and "fallback" in r[4])
+print(f"  Shared translations: {len(report)}; clarifier guessed for {given} "
+      f"({fallbacks} of them by a fallback), see menalariExtension_clarifiers.tsv")
 
 # ---------------------------------------------------------------------------
 # Cleanup
