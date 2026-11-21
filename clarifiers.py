@@ -8,8 +8,8 @@ is meant (user decision 2026-11-21; not Wiktionary's own ambiguity, which only 1
 What a clarifier says, in order (the first one that tells this Globasa word apart from all the
 others sharing the translation, and that can be written in the column's language):
   1. the word list's own English clarifier on that gloss    swallow (_bird_)       -> bird
-  2. the Wiktionary sense label, when short (<= 3 words)      [bird], [plant]
-  3. the Globasa word's tags (Globasa words themselves)      piu, musika (not xey, name)
+  2. the Wiktionary sense label of a noun, when short         [bird], [plant]
+  3. the Globasa word's tags listed in clarifier_tags.tsv    basa, musika (kinds and fields)
 Labels come before tags: a tag names a category (noce, night, is tagged din, day), a label the
 sense itself.
 How it is written in the column's language:
@@ -25,6 +25,8 @@ Every clarifier is reported with how it was found (report_rows), fallbacks label
     shared = clar.shared_index(items)            # items: (lang, word, glb)
     text, how = clar.choose(lang, word, glb, sense, others)
 """
+import csv
+import os
 import re
 from collections import defaultdict
 from functools import lru_cache
@@ -36,9 +38,23 @@ WORDLIST_COLUMNS = {"es": "TranslationSpa", "eo": "TranslationEpo", "fr": "Trans
                     "de": "TranslationDeu", "ru": "TranslationRus", "cmn": "TranslationZho",
                     "hi": "TranslationHin", "ar": "TranslationAra"}
 MAX_LABEL_WORDS = 3
-# Tags too general to tell senses apart ("thing", "name"); list tags (bage 3 de lista 500) are
-# no Globasa words and never render.
-GENERIC_TAGS = {"xey", "name"}
+# The tags allowed as clarifiers: a curated list (user, 2026-11-21: stricter), each a KIND the
+# word is one of (basa language, labas clothing, tul tool) or a FIELD it belongs to (musika,
+# jismulogi anatomy, lega law). Not listed, never used: tags for where things are found (kokikamer
+# kitchen, eskrimesa desk), loose associations (din day, watu time, dom place, harka motion),
+# sensitive ones (sekso, fahexxey), the empty xey/name, and the list tags (bage 3 de lista 500).
+CLARIFIER_TAGS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "clarifier_tags.tsv")
+
+
+def load_clarifier_tags(path=CLARIFIER_TAGS):
+    """{tag: 'kind' | 'field'} from clarifier_tags.tsv (Tag, English, Use)."""
+    if not os.path.exists(path):
+        print(f"  {os.path.basename(path)} missing: no tags used as clarifiers "
+              f"(fallback: labels and gloss clarifiers only)")
+        return {}
+    with open(path, encoding="utf-8", newline="") as f:
+        return {r["Tag"].strip(): r["Use"].strip() for r in csv.DictReader(f, delimiter="\t")
+                if r.get("Tag") and r.get("Use", "").strip() in ("kind", "field")}
 ITEM_SPLIT = re.compile(r"[,;،؛、，；]\s*(?![^()]*\))")  # Latin, Arabic and CJK commas
 POS_PREFIX = re.compile(r"^\s*[^:,;()_]{1,25}:\s*")    # "n: ", "сущ: ", "prep frazparto: "
 ANNOTATED = re.compile(r"\(_[^)]*_\)")
@@ -78,10 +94,11 @@ class Clarifiers:
     def __init__(self, wordlist_rows, en_db, extension_words=None):
         """wordlist_rows: word-list.csv rows (dicts); en_db: the English WiktionaryDB;
         extension_words: {(glb, lang): [(word, pos)]} -- the extension's own translations of
-        each Globasa word (from vetted senses), the best way to write a tag or pivot word; nouns
-        are preferred (harka, movement, is also the verb 'move')."""
+        each Globasa word (from vetted senses), the best way to write a tag or pivot word; only
+        its noun translations are used (medis, medicine, is also the verb 'treat')."""
         self.db = en_db
         self.ext = extension_words or {}
+        self.allowed_tags = load_clarifier_tags()
         self.rows = {r["Word"]: r for r in wordlist_rows}
         self.tags = {w: [t.strip() for t in (r.get("Tags") or "").split(",") if t.strip()]
                      for w, r in self.rows.items()}
@@ -118,19 +135,28 @@ class Clarifiers:
         if note:
             found.append(("gloss", note))
         label = re.sub(r"\([^)]*\)", "", sense.get("sense", "")).strip(" ;,")
-        if label and len(label.split()) <= MAX_LABEL_WORDS and ";" not in label:
+        # A noun's label names what it is ([bird], [plant]); a verb's or adjective's paraphrases
+        # it ([move], [action]) and is no clarifier.
+        if (label and len(label.split()) <= MAX_LABEL_WORDS and ";" not in label
+                and sense.get("pos") in ("noun", "name")):
             found.append(("label", label))
-        found += [("tag", t) for t in self.tags.get(glb, ()) if t not in GENERIC_TAGS]
+        found += [("tag", t) for t in self.tags.get(glb, ()) if t in self.allowed_tags]
         return found
 
     # -- writing a concept in a language ---------------------------------------------------------
     @lru_cache(maxsize=None)
-    def _wiktionary(self, english, lang):
+    def _wiktionary(self, english, lang, note=""):
         """The concept's main sense = its translation table listing the most languages (a first
-        table can be a slang or rare sense: 'nut' [slang: testicle])."""
+        table can be a slang or rare sense: 'nut' [slang: testicle]). With a word-list note
+        ("medicine (_science, practice_)") only a table whose label shares a word with it counts,
+        or nothing is written (the main table of 'medicine' is the drug)."""
+        hint = {w for w in re.findall(r"[a-z]{4,}", note.lower())}
         for pos in CONCEPT_POS:
             entry = self.db.get_translations(english, pos) if self.db else None
-            for table, translations in sorted((entry or {}).items(), key=lambda kv: -len(kv[1])):
+            tables = sorted((entry or {}).items(), key=lambda kv: -len(kv[1]))
+            if hint:
+                tables = [(t, tr) for t, tr in tables if hint & set(re.findall(r"[a-z]{4,}", t.lower()))]
+            for table, translations in tables:
                 resolved, found = _resolve_lang(lang, translations)
                 words = sorted(w for w in (clean(t.word) for t in resolved) if w) if found else []
                 if words:
@@ -144,8 +170,9 @@ class Clarifiers:
             items = [w for w in map(clean, wordlist_items((self.rows.get(glb) or {}).get(column))) if w]
             if items:
                 return items[0], "word list"
-        found = sorted(self.ext.get((glb, lang), ()), key=lambda wp: wp[1] != "noun")
-        items = [w for w in (clean(word) for word, _ in found) if w]
+        # Kinds, fields and concepts are nouns: a verb reading would mislead (medis -> "to treat").
+        items = [w for w in (clean(word) for word, pos in self.ext.get((glb, lang), ())
+                             if pos in ("noun", "name")) if w]
         return (items[0], "its vetted senses") if items else None
 
     @lru_cache(maxsize=None)
@@ -162,7 +189,9 @@ class Clarifiers:
             if own:
                 return own[0], f"tag {value} ({own[1]})" + dialect
             english = wordlist_items(row.get("TranslationEng"))
-            got = self._wiktionary(english[0], base) if english else None
+            first = ITEM_SPLIT.split(POS_PREFIX.sub("", (row.get("TranslationEng") or "").split("; ")[0]))[0]
+            note = (ANNOTATED.search(first) or [""])[0]  # "(_science, practice_)"
+            got = self._wiktionary(english[0], base, note) if english else None
             return (got[0], f"tag {value} = '{english[0]}', {got[1]}" + dialect) if got else None
         # an English concept (gloss clarifier or sense label): through Globasa only when exactly
         # one Globasa word has that plain gloss (several = the English word is ambiguous)
