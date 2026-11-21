@@ -1,0 +1,15 @@
+4000 period sentences, 2856 modern sentences on cpu
+173360 word vectors
+layer 8; train words 156581, test words 16779
+
+map        test part      n    cos  P@1 tok  P@1 word
+identity   period    13553 -0.002     0.0%      1.0%
+procrustes period    13553  0.599    93.6%     98.3%
+ridge      period    13553  0.719    93.4%     98.5%
+identity   modern     3226 -0.002     0.0%      1.0%
+procrustes modern     3226  0.609    88.1%     98.3%
+ridge      modern     3226  0.727    86.5%     97.9%
+
+en<->es links on 307 UDHR + P&C units, mutual argmax (reference = mBERT en <-> mBERT es)
+  MacBERTh->procrustes links   3154 (ref 3320); agreement P  89.9% R  85.4% F  87.6
+  MacBERTh->ridge      links   3180 (ref 3320); agreement P  91.0% R  87.1% F  89.0
