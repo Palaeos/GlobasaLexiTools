@@ -91,6 +91,11 @@ if startPrefix:
     outputPath = os.path.join(senses_dir, 'GLB_ENG_WiktionarySenses_initial.xlsx')
 else:
     outputPath = senseKeyPath
+if os.path.exists(vetted_senses.lock_file(outputPath)):
+    raise SystemExit(f"{outputPath} is open (LibreOffice lock file): close it first, "
+                     "or the vetters' unsaved scores would be lost. If it is not open anywhere, "
+                     f"the lock is left over from a crash: delete {vetted_senses.lock_file(outputPath)}")
+if not startPrefix:
     if os.path.exists(senseKeyPath):
         backup_dir = "./backups"
         os.makedirs(backup_dir, exist_ok=True)
@@ -105,10 +110,6 @@ else:
 # buffered so each word's rows can be ordered like the vetter page: by gloss part of
 # speech, most promising sense first (sense_ranking.py), the rows of one sense together.
 # ---------------------------------------------------------------------------
-
-if os.path.exists(vetted_senses.lock_file(outputPath)):
-    raise SystemExit(f"{outputPath} is open (LibreOffice lock file): close it first, "
-                     "or the vetters' unsaved scores would be lost.")
 
 all_rows = list(sense_rows.rows(db, existing_markings, startPrefix, "./" + menalari_name,
                                 vetters=vetters))
