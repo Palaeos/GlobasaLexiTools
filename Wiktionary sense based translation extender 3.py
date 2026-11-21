@@ -159,12 +159,18 @@ ws_out = wb_out.active
 ws_out.title = "Senses"
 
 SPARE_VETTERS = 10  # blank, validated columns where new vetters add their pseudonym
-# The sheet speaks the vetters' scale: App?/Tier letters become Suggestion (1-5) / Suggested by.
+# The sheet speaks the vetters' scale: App?/Tier letters become Suggestion (1-5) / Suggested by,
+# and the scores sit right beside them (user, 2026-11-21): Suggestion | Suggested by | Mean |
+# Decision | <vetters> + spare columns | "|" | the translation columns. vetted_senses reads every
+# named column between Decision and that "|" as a vetter.
 APP_I, TIER_I = sense_rows.HEADER.index('App?'), sense_rows.HEADER.index('Tier')
 sheet_names = list(sense_rows.HEADER)
 sheet_names[APP_I], sheet_names[TIER_I] = vetted_senses.SUGGESTION_COLUMN, vetted_senses.SUGGESTED_BY_COLUMN
-senses_header = (sheet_names + [vetted_senses.MEAN_COLUMN, vetted_senses.DECISION_COLUMN]
-                 + vetters)
+BLOCK = TIER_I + 1                      # 0-based index of Mean
+FIRST_V = BLOCK + 2                     # first vetter column
+END = FIRST_V + len(vetters) + SPARE_VETTERS  # the "|" closing the vetter block
+senses_header = (sheet_names[:BLOCK] + [vetted_senses.MEAN_COLUMN, vetted_senses.DECISION_COLUMN]
+                 + vetters + [None] * SPARE_VETTERS + [vetted_senses.VETTERS_END] + sheet_names[BLOCK:])
 ws_out.append(senses_header)
 
 # Column widths: inherit from existing file, fall back to defaults
@@ -178,32 +184,33 @@ DEFAULT_WIDTHS = {
     vetted_senses.SUGGESTION_COLUMN: 1.8 * CM, vetted_senses.SUGGESTED_BY_COLUMN: 2.2 * CM,
     vetted_senses.MEAN_COLUMN: 1.5 * CM, vetted_senses.DECISION_COLUMN: 2.2 * CM,
 }
-for i, name in enumerate(senses_header, 1):
-    col_letter = get_column_letter(i)
-    if name in existing_col_widths:
+for i, name in enumerate(senses_header):
+    col_letter = get_column_letter(i + 1)
+    if FIRST_V <= i < END:  # vetter columns, named or spare
+        ws_out.column_dimensions[col_letter].width = max(len(name or "") + 2, 2 * CM)
+    elif name in existing_col_widths:
         ws_out.column_dimensions[col_letter].width = existing_col_widths[name]
     elif name in DEFAULT_WIDTHS:
         ws_out.column_dimensions[col_letter].width = DEFAULT_WIDTHS[name]
-    elif i > n_header + 2:
-        ws_out.column_dimensions[col_letter].width = max(len(name) + 2, 2 * CM)
     else:
-        ws_out.column_dimensions[col_letter].width = min(len(name) + 4, 10 * CM)
+        ws_out.column_dimensions[col_letter].width = min(len(name or "") + 4, 10 * CM)
 
-mean_letter = get_column_letter(n_header + 1)
-first_vetter = get_column_letter(n_header + 3)
-last_vetter = get_column_letter(n_header + 2 + len(vetters) + SPARE_VETTERS)
+mean_letter = get_column_letter(BLOCK + 1)
+first_vetter = get_column_letter(FIRST_V + 1)
+last_vetter = get_column_letter(END)
 n_rows = 1
 for r in ordered_rows():
     n_rows += 1
     if len(r) > TIER_I:
         r = list(r)
         r[APP_I], r[TIER_I] = vetted_senses.suggestion_cells(r[APP_I], r[TIER_I])
-    if len(r) > n_header:  # a sense row: formulas, then the vetters' scores
+    if len(r) > n_header:  # a sense row: suggestion, formulas, the vetters' scores, translations
         scores = [int(v) if v != '' else None for v in r[n_header:]]
-        r = r[:n_header] + [
+        r = r[:BLOCK] + [
             f'=IFERROR(ROUND(AVERAGE({first_vetter}{n_rows}:{last_vetter}{n_rows}),2),"")',
             f'=IF({mean_letter}{n_rows}="","",IF({mean_letter}{n_rows}>={vetted_senses.ACCEPT_MEAN},"accepted",'
-            f'IF({mean_letter}{n_rows}<={vetted_senses.REJECT_MEAN},"rejected","undecided")))'] + scores
+            f'IF({mean_letter}{n_rows}<={vetted_senses.REJECT_MEAN},"rejected","undecided")))'
+        ] + scores + [None] * SPARE_VETTERS + [vetted_senses.VETTERS_END] + r[BLOCK:n_header]
     ws_out.append(r)
 
 # Scores are whole numbers 1-5; the header row and the vetter block stand out.
@@ -214,15 +221,13 @@ scale.add(f"{first_vetter}2:{last_vetter}{max(n_rows, 2)}")
 ws_out.add_data_validation(scale)
 bold = Font(bold=True)
 vetter_fill = PatternFill("solid", fgColor="FFF2CC")
-for i in range(1, len(senses_header) + SPARE_VETTERS + 1):
+for i in range(1, len(senses_header) + 1):
     cell = ws_out.cell(row=1, column=i)
     cell.font = bold
-    if i > n_header + 2:
+    if FIRST_V < i <= END:
         cell.fill = vetter_fill
-        ws_out.column_dimensions[get_column_letter(i)].width = max(
-            ws_out.column_dimensions[get_column_letter(i)].width or 0, 2 * CM)
 ws_out.freeze_panes = "B2"
-ws_out.auto_filter.ref = f"A1:{last_vetter}{n_rows}"
+ws_out.auto_filter.ref = f"A1:{get_column_letter(len(senses_header))}{n_rows}"
 
 how = wb_out.create_sheet("How to vet")
 for line in [
@@ -239,7 +244,7 @@ for line in [
     [2, "probably does not apply"],
     [1, "does not apply: sure"],
     [],
-    ["Your column: the yellow columns right of 'Decision'. Use an existing one with your pseudonym, or type"],
+    ["Your column: the yellow columns between 'Decision' and the '|' column. Use the one with your pseudonym, or type"],
     ["your pseudonym (never your real name) into the first blank yellow header. Score only in your own column;"],
     ["leave a cell blank when you have no opinion."],
     [],

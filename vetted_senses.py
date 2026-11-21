@@ -66,6 +66,7 @@ ACCEPT_MEAN, REJECT_MEAN = 4, 2
 VERDICT_SCORES = {"s": 4, "n": 2, "u": 3}
 # The sheet: the vetter block starts right of this column; Mean and Decision are formulas.
 DECISION_COLUMN = "Decision"
+VETTERS_END = "|"  # closes the vetter block when translation columns follow it
 MEAN_COLUMN = "Mean"
 DEFAULT_OWNER = "Paleos"
 # The shared sheet shows the machine's suggestion as a number on the vetters' scale, with who
@@ -316,12 +317,14 @@ def load_vetted():
 # ---------------------------------------------------------------------------
 
 def vetter_columns(header):
-    """{column index: vetter} -- every named column right of "Decision" that is not a note."""
+    """{column index: vetter} -- every named column after "Decision" up to the next "|" (or the
+    end of the row, as in the first sheets with the block last), notes excepted."""
     if DECISION_COLUMN not in header:
         return {}
     start = header.index(DECISION_COLUMN) + 1
-    return {i: name.strip() for i, name in enumerate(header) if i >= start and name.strip()
-            and not any(word in name.lower() for word in NOT_A_VETTER)}
+    end = next((i for i in range(start, len(header)) if header[i].strip() == VETTERS_END), len(header))
+    return {i: header[i].strip() for i in range(start, end) if header[i].strip()
+            and not any(word in header[i].lower() for word in NOT_A_VETTER)}
 
 
 def _sheet_rows(path):
@@ -523,9 +526,13 @@ def push_owner_scores(path=None):
         wb.close()
         return f"{os.path.basename(path)} has no vetter columns (regenerate it with the sense generator)."
     col = next((i for i, name in vetters.items() if name == OWNER), None)
-    if col is None:  # first blank header right of Decision
-        col = next(i for i in range(header.index(DECISION_COLUMN) + 1, len(header) + 1)
-                   if i >= len(header) or not header[i])
+    if col is None:  # first blank (spare) header after Decision
+        col = next((i for i in range(header.index(DECISION_COLUMN) + 1, len(header))
+                    if not header[i]), None)
+        if col is None or (VETTERS_END in header[header.index(DECISION_COLUMN):]
+                           and col > header.index(VETTERS_END, header.index(DECISION_COLUMN))):
+            wb.close()
+            return f"{os.path.basename(path)}: no free vetter column for {OWNER} (regenerate the sheet)."
         ws.cell(row=1, column=col + 1, value=OWNER)
     c = {name: i for i, name in enumerate(header)}
     sense_col = c.get("Wiktionary Sense (in Translations)", c.get("Wiktionary Sense"))
