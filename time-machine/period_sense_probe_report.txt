@@ -1,0 +1,68 @@
+works: The Time Machine (1894); The War of the Worlds (1895); The Man of the Year Million (1893); The Call of Cthulhu (1926); At the Mountains of Madness (1931, private)
+499 target lemmas; inventory: {'joined': 1317, 'own': 641, 'lemmas': 498, 'senses': 3956, 'with years': 1831, 'with period epo (sense)': 181, 'synonym substitution': 117, 'gloss fallback': 1169}
+gold items: 126 of 233 (skipped {'gold gloss matches no sense': 43, 'multiword or no senses': 60, 'quote not found': 4})
+corpus occurrences: 4530 (+ 126 gold)
+
+== 1. The Time Machine gold: 89 items every inventory covers (of 126) ==
+  wiktionary  chance  25.2%  first sense  42.7%  senses 8.3
+  webster     chance  38.2%  first sense  48.3%  senses 5.0
+  pooled      chance  25.9%  first sense  44.9%  senses 9.5
+  A wiktionary            45/89 =  50.6%
+  B wiktionary            51/89 =  57.3%
+  A webster               51/89 =  57.3%
+  B webster               55/89 =  61.8%
+  A pooled                49/89 =  55.1%
+  B pooled                56/89 =  62.9%
+  C pooled                47/89 =  52.8%
+  A pooled+prior          47/89 =  52.8%
+  B pooled+prior          58/89 =  65.2%
+  B wiktionary grouped    51/89 =  57.3%
+  B wiktionary+prior grouped  51/89 =  57.3%
+  B pooled+prior grouped  58/89 =  65.2%
+  prior weight sweep, B pooled (indicative only: chosen on this test):
+    0.00: 56/89
+    0.02: 55/89
+    0.05: 58/89
+    0.10: 56/89
+    0.20: 55/89
+
+  Globasa: suggestion (top 3) contains a word of the curated rendering, 126 gold items:
+    picked sense              32 (25.4%)
+    gold sense (oracle)       35 (27.8%)
+    any sense of the lemma    45 (35.7%)
+    picked sense has a suggestion: 101; first route: {'period Esperanto (fallback)': 87, 'period Esperanto': 8, '(fallback: modern Wiktionary es table; Spanish only) (fallback)': 3, '(fallback: modern Wiktionary eo table) (fallback)': 1, 'period Spanish (fallback)': 2}
+
+== 2. Corpus scan: pooled B+prior (work's year) vs Wiktionary B ==
+  work                             occ old B-wikt old pooled   same webster-only prop.  =wikt =pooled glb sugg.
+  The Time Machine                1557       9.4%       8.8%  69.7%           99    54     35      35     83.0%
+  The War of the Worlds           1650       8.1%       7.8%  68.1%          124    30     18      17     90.7%
+  The Man of the Year Million       54      11.1%       3.7%  66.7%            3     1      0       0     96.3%
+  The Call of Cthulhu              285       7.4%      11.6%  70.9%           20    11      3       4     85.6%
+  At the Mountains of Madness     1109       6.1%       9.2%  67.4%           67    25      9      12     91.9%
+
+  most frequent changes, Wiktionary B -> pooled B+prior (public works):
+     47  little | Small in size. | Short in duration; brief. [both]
+     42  but | However, although, nevertheless, on the other | Used at the beginning of a sentence to expres [wiktionary]
+     29  down | From one end to another of (in any direction) | From the higher end to the lower of. [both]
+     21  leave | To cause or allow (something) to remain as av | To remain (behind); to stay. [both]
+     20  little | Younger. | Small in extent of views or sympathies; narro [both]
+     19  little | Insignificant, trivial. | Small in force or efficiency; not strong; wea [webster]
+     17  little | Very young, of childhood age. | Small in extent of views or sympathies; narro [both]
+     16  little | Used with the name of a place, especially of  | Small in extent of views or sympathies; narro [both]
+     14  hide | To put (something) in a place where it will b | To withhold from knowledge; to keep secret; t [webster]
+     13  down | From the higher end to the lower of. | Towards the mouth of (a river); in the direct [both]
+     13  mind | The ability to remember things. | The non-material substance or set of processe [wiktionary]
+     13  hide | To put (something) in a place where it will b | To remove from danger; to shelter. [webster]
+     11  leave | To stop, desist from; to "leave off" (+ noun  | To depart from; to end one's connection or af [both]
+     10  down | At (a given place that is seen as removed fro | Towards the mouth of (a river); in the direct [both]
+     10  down | From one end to another of (in any direction) | Towards the mouth of (a river); in the direct [both]
+      9  light | To alight; to land or come down. | To dismount; to descend, as from a horse or c [webster]
+      9  tumult | Violent commotion or agitation, often with co | Confused, agitated noise as made by a crowd. [both]
+      8  but | Used to link an interjection to the following | Used at the beginning of a sentence to expres [wiktionary]
+      8  hither | To this place, to here. | To this point, source, conclusion, design, et [webster]
+      8  mind | The ability to be aware of things. | The non-material substance or set of processe [wiktionary]
+      8  down | At (a given place that is seen as removed fro | From the higher end to the lower of. [both]
+      7  well | Used in speech to fill gaps, particularly at  | Used to acknowledge a statement or situation. [wiktionary]
+      7  leave | To give (something) to someone; to deliver (s | To depart from; to end one's connection or af [both]
+      7  object | Objective; goal, end or purpose of something. | That which is put, or which may be regarded a [webster]
+      7  well | In a desirable manner; so as one could wish;  | Accurately, competently, satisfactorily. [wiktionary]
