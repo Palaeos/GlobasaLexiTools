@@ -203,13 +203,15 @@ def crossvalidate(lang_translations, spa_words, epo_words):
 # The rows
 # ---------------------------------------------------------------------------
 
-def rows(db, markings, start_prefix="", word_list=WORD_LIST):
+def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None):
     """Yield the rows of the senses view, in word-list order.
 
     db: a WiktionaryDB (or anything with get_translations/get_senses).
-    markings: {(glb, eng, pos, verb_type, sense): (app, tier)} to inherit, as
-    vetted_senses.load_markings() returns them.
+    markings: {(glb, eng, pos, verb_type, sense): (app, tier, scores)} to inherit, as
+    vetted_senses.load_markings() returns them (scores = {vetter: 1-5}).
     start_prefix: start at the first word beginning with it.
+    vetters: when given, each sense row ends with these vetters' scores (blank if none),
+    after the HEADER columns.
     """
     with open(word_list, newline='', encoding='utf-8') as menalari_file:
         menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
@@ -309,7 +311,7 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST):
                             # Inherit vetted markings.
                             # Try multiple key variants to handle annotation differences
                             # between v2 (raw, paren-stripped, paren-removed) and v3 (italic-stripped).
-                            inherited_app, tier = '', ''
+                            inherited_app, tier, scores = '', '', {}
                             v2_reduced = re.sub(r'\(.*?\)', '', original_form).strip()
                             v2_unparened = original_form.replace("(", "").replace(")", "").strip()
                             for eng_key in dict.fromkeys([eng_word, original_form,
@@ -321,7 +323,8 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST):
                                     marking = markings.get(
                                         (globasa_word, eng_key, pos_key, '', sense))
                                 if marking:
-                                    inherited_app, tier = marking
+                                    inherited_app, tier = marking[:2]
+                                    scores = marking[2] if len(marking) > 2 else {}
                                     break
 
                             # If any tier has reviewed this, inherit the vetted App? judgment;
@@ -340,7 +343,8 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST):
                                    definition, ex1, ex2, ex3,
                                    '|',
                                    app, tier, spa_col, epo_col
-                                   ] + sense_lang_cols
+                                   ] + sense_lang_cols + (
+                                [scores.get(v, '') for v in vetters] if vetters is not None else [])
 
                     if not found_any:
                         yield [globasa_word, tags, antonyms, eng_word, clarification, wikt_pos, vt_name]
