@@ -31,6 +31,8 @@ for _lib_name in ["libcublas.so.12", "libcublasLt.so.12", "libcudart.so.12"]:
 import openpyxl
 import wn
 
+import vetted_senses
+
 csv.field_size_limit(sys.maxsize)
 
 # === Paths ===
@@ -1195,13 +1197,17 @@ def main():
         print(f"  Added '{TIER_COL}' column at position {tier_col_idx}")
 
     col = {h: i for i, h in enumerate(headers)}
+    # The vetters' 1-5 score columns (right of "Decision"): a row a person has scored is theirs,
+    # even while the scores leave it undecided, so the LLM never judges over people.
+    vetter_idx = list(vetted_senses.vetter_columns([str(h).strip() if h is not None else "" for h in headers]))
 
     # --- Collect all rows grouped by Globasa word ---
     word_rows = defaultdict(list)  # glb -> [(row_idx, row_obj, eng, sense, defn, spa, epo, ex1, ex2, ex3)]
     already_judged = 0
     no_def = 0
     for idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
-        if row[col['App?']].value or row[col[TIER_COL]].value:
+        if row[col['App?']].value or row[col[TIER_COL]].value or any(
+                i < len(row) and row[i].value not in (None, "") for i in vetter_idx):
             already_judged += 1
             continue
         glb = row[col['Glb']].value or ''
