@@ -42,6 +42,20 @@ MIN_TAG_WORDS = 5  # a tag with fewer words cannot show which words of a definit
 NOT_A_GENUS = re.compile(r"(?:an|ish|ese|ic|ch)$|^(?:Latin|Greek|Thai|Swiss|Human)$")  # American marten, Latin plumbum
 BIOLOGICAL_TAGS = {"hewan", "mamoyen", "piu", "mahi", "planta", "fruta", "sabzi", "flura", "bio"}  # a species name fits these
 ADV_LABEL = re.compile(r"(?:^|;\s*)adv\b")
+# Etymology (word-list LexiliAsel, "Putunhwa (螳螂 “tang lang”), Koreasa (당랑 …)"): the source
+# language -> the sense-row column with that language's translations of the sense. A sense whose
+# translation is the very source word is the meaning Globasa borrowed (measured on vetted rows
+# 2026-11-21: matching senses 98.9% accepted vs 85.3% for siblings lacking it). English is left
+# out: every sense is an English sense. Compounds (nil + to) cite no source words.
+ETYMOLOGY_COLUMNS = {"Espanisa": "Spa", "Fransesa": "French", "Italisa": "Italian", "Rumanisa": "Romanian",
+                     "Doycisa": "German", "Nederisa": "Dutch", "Rusisa": "Russian", "Bulgarsa": "Bulgarian",
+                     "Arabisa": "Arabic", "Turkisa": "Turkish", "Putunhwa": "Mandarin", "Niponsa": "Japanese",
+                     "Koreasa": "Korean", "Parsisa": "Persian", "Hindi": "Hindi"}
+SOURCE = re.compile(r"([A-Z][\w-]+)\s*\(([^()]*)\)")
+ROMANIZATION = re.compile(r"[“\"][^”\"]*[”\"]")
+ETYM_BONUS = 3            # the sense's translation repeats a source word
+ETYM_SIBLING_PENALTY = 2  # another sense of the word does, this one not (3/2: within-word AUC
+                          # 0.9265 -> 0.9329 on vetted rows, 2026-11-21; 2/0 gave 0.9313)
 TOKEN = re.compile(r"[^\W\d_]+")
 TERM_NOTES = re.compile(r"<[^>]*>|\([^)]*\)|_[^_]*_")
 TERM_POS = re.compile(r"(^|[;,])\s*[^\s,;:]{1,6}:")
@@ -62,6 +76,29 @@ def terms(value):
     normal = unicodedata.normalize("NFKC", value).lower()
     normal = TERM_POS.sub(r"\1", TERM_NOTES.sub("", normal))
     return [t.strip(" /") for t in TERM_SPLIT.split(normal) if t.strip(" /")]
+
+
+def bare(term):
+    """Lowercase without diacritics or vowel marks (Arabic harakat, accents), for comparing words."""
+    decomposed = unicodedata.normalize("NFKD", term.lower())
+    return "".join(ch for ch in decomposed if not unicodedata.combining(ch)).strip()
+
+
+def source_words(entry):
+    """{sense-row column: {source word}} from a word-list row's etymology (LexiliAsel)."""
+    found = collections.defaultdict(set)
+    for language, inside in SOURCE.findall(text(entry.get("LexiliAsel"))):
+        column = ETYMOLOGY_COLUMNS.get(language)
+        if column:
+            found[column].update(w for w in (bare(f) for f in ROMANIZATION.sub("", inside).split(",")) if w)
+    return found
+
+
+def etymology_hits(row, col, sources):
+    """The languages in which this sense row's translations include a source word."""
+    return {column for column, forms in sources.items()
+            if column in col and col[column] < len(row)
+            and forms & {bare(t) for t in terms(text(row[col[column]]))}}
 
 
 def load_glosses(word_list="word-list.csv"):
@@ -114,6 +151,7 @@ def senses_from_rows(rows, glosses):
     sense_col = next(i for i, name in enumerate(sense_rows.HEADER) if name.startswith("Wiktionary Sense"))
     senses = {}
     per_gloss = collections.Counter()
+    sources_of = {}
     for row in rows:
         if len(row) <= sense_col:
             continue
@@ -133,7 +171,11 @@ def senses_from_rows(rows, glosses):
                 "keys": [], "tier": "", "app": "", "glosses": 0, "engs": set(),
                 "first_listed": per_gloss[(word.lower(), eng, pos)] == 1,
                 "translations": compare_translations(row, col, glosses.get(word.lower(), {})),
+                "etymology": set(),
             }
+        if word.lower() not in sources_of:
+            sources_of[word.lower()] = source_words(glosses.get(word.lower(), {}))
+        sense["etymology"] |= etymology_hits(row, col, sources_of[word.lower()])
         gloss_key = [eng, pos, text(row[col["VerbType"]])]
         if gloss_key not in sense["keys"]:
             sense["keys"].append(gloss_key)
@@ -263,6 +305,7 @@ def score_against_siblings(word, group, plain, gloss_terms, typical, glosses):
         sense["note_found"] = [n for n in notes if n.split()[0] in f"{sense['label']} {sense['definition']}"]
         sense["fits"] = {tag: fit for tag in tags if (fit := tag_fit(sense, tag, gloss_terms, typical))}
     said_by = collections.Counter(t for s in group for t in s["also_says"])
+    any_source = any(s["etymology"] for s in group)
     any_note = any(s["note_found"] for s in group)
     any_taxon = any(s["taxa"] for s in group)
     any_fit = any(s["fits"] for s in group)
@@ -287,6 +330,12 @@ def score_against_siblings(word, group, plain, gloss_terms, typical, glosses):
         elif any_taxon:
             sense["score"] -= 1
             sense["why"].append(("bad", "another sense names a species"))
+        if sense["etymology"]:
+            sense["score"] += ETYM_BONUS
+            sense["why"].append(("good", f"source word in {', '.join(sorted(sense['etymology']))}"))
+        elif any_source:
+            sense["score"] -= ETYM_SIBLING_PENALTY
+            sense["why"].append(("bad", "another sense has the source word"))
         if sense["fits"]:
             tag = max(sense["fits"], key=sense["fits"].get)
             sense["score"] += sense["fits"][tag]
@@ -323,6 +372,21 @@ def rank(senses, glosses):
     for sense in senses.values():
         sense["gloss_pos"] = gloss_pos(sense, glosses)
     return by_word, tags
+
+
+def judged_key(scores, accept=4, reject=2):
+    """Sort key putting people's judgements first: accepted (mean >= accept, highest first), then
+    unscored or undecided senses (left to the heuristic score), then rejected (mean <= reject).
+    Kept apart from "score", so sense_vetter.py --check still measures the heuristic alone."""
+    given = [v for v in (scores or {}).values() if v]
+    if not given:
+        return (1, 0)
+    mean = sum(given) / len(given)
+    if mean >= accept:
+        return (0, -mean)
+    if mean <= reject:
+        return (2, -mean)
+    return (1, 0)
 
 
 def order_key(sense, ranks):

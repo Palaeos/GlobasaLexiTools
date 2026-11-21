@@ -122,17 +122,23 @@ SENSE_COL = next(i for i, name in enumerate(sense_rows.HEADER) if name.startswit
 
 
 def word_order(rows):
-    """One word's rows: PoS groups in first-seen order, best-scored sense first, then the
-    sense's rows in their original order. Rows without a sense close their PoS group."""
-    pos_first, sense_first, keyed = {}, {}, []
+    """One word's rows: PoS groups in first-seen order; in each, the senses people accepted first
+    (highest mean first), then the unjudged by the ranking score, then the rejected
+    (sense_ranking.judged_key); a sense's rows together, in their original order. Rows without a
+    sense close their PoS group."""
+    pos_first, sense_first, judged, keyed = {}, {}, {}, []
     for i, r in enumerate(rows):
         label = r[SENSE_COL] if len(r) > SENSE_COL else ""
         sense = senses.get(sense_ranking.row_id(r[0].strip().lower(), label.strip())) if label else None
         pos = sense["gloss_pos"] if sense else (r[COL["Prt of Sp"]] if len(r) > COL["Prt of Sp"] else "")
         pos_first.setdefault(pos, i)
         sense_first.setdefault(label, i)
+        if label not in judged:  # the sense's first row carries its scores
+            judged[label] = sense_ranking.judged_key(
+                {v: sc for v, sc in zip(vetters, r[n_header:]) if sc != ''},
+                vetted_senses.ACCEPT_MEAN, vetted_senses.REJECT_MEAN)
         score = sense["score"] if sense else -10 ** 6
-        keyed.append(((pos_first[pos], -score, sense_first[label], i), r))
+        keyed.append(((pos_first[pos], (2, 0) if not sense else judged[label], -score, sense_first[label], i), r))
     return [r for _, r in sorted(keyed, key=lambda k: k[0])]
 
 

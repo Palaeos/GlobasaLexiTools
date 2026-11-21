@@ -331,10 +331,13 @@ def current_verdict(sense):
 
 
 def peek(word):
-    """Every sense of a word, most obvious first, for comparing before deciding."""
+    """Every sense of a word for comparing before deciding: those accepted first, then the
+    unjudged most obvious first, then the rejected (sense_ranking.judged_key, current scores)."""
+    group = sorted(senses_by_word[word.strip().lower()],
+                   key=lambda s: (s["gloss_pos"], sense_ranking.judged_key(all_scores(s)), order_key(s)))
     return [{"id": s["id"], "label": s["label"], "definition": s["definition"], "pos": s["pos"], "eng": s["eng"],
              "verdict": current_verdict(s), "mine": owner_score(s), "mean": vetted_senses.mean(all_scores(s)),
-             "undecided": decision(s) == "", "why": s["why"]} for s in senses_by_word[word.strip().lower()]]
+             "undecided": decision(s) == "", "why": s["why"]} for s in group]
 
 
 def tag_list():
