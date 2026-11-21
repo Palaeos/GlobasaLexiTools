@@ -30,6 +30,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from period_dict_entries import fold, load, lookup, stem  # shared with period_senses.py
+
 HERE = Path(__file__).parent
 CACHE = HERE / "cache" / "dicts"
 SOURCES = {
@@ -47,62 +49,9 @@ for name, path in SOURCES.items():
             raise SystemExit(f"{name}: download failed (archive.org error page); re-run")
 
 
-def blank_entries(text):
-    """Rhodes: an entry is a block after a blank line; blocks starting with a
-    dash (—— of, to have a, ...) continue the previous headword. Headword =
-    text before the first comma or "(" ."""
-    out, head, buf = {}, None, []
-    for block in re.split(r"\n\s*\n", text):
-        b = " ".join(block.split())
-        if not b:
-            continue
-        if b.startswith(("—", "-")) and head:
-            buf.append(b)
-            continue
-        m = re.match(r"([a-z][a-z' -]*?)\s*[,(]\s*", b)
-        if not m:
-            if head:
-                buf.append(b)
-            continue
-        if head:
-            out.setdefault(head, " ".join(buf))
-        head, buf = m.group(1).strip(), [b[m.end():]]
-    if head:
-        out.setdefault(head, " ".join(buf))
-    return out
-
-
-def entries(text, start):
-    """Split OCR text into {headword: entry text} at lines matching start."""
-    out, head, buf = {}, None, []
-    for ln in text.splitlines():
-        m = start.match(ln)
-        if m:
-            if head:
-                out.setdefault(head, " ".join(buf))
-            head, buf = m.group(1).lower().strip(), [ln[m.end():]]
-        elif head and ln.strip():
-            buf.append(ln.strip())
-    if head:
-        out.setdefault(head, " ".join(buf))
-    return {k: re.sub(r"-\s+", "", re.sub(r"\s+", " ", v)).strip() for k, v in out.items()}
-
-
-rhodes = blank_entries((CACHE / "rhodes1908.txt").read_text(encoding="utf-8", errors="replace"))
-oconnor = entries((CACHE / "oconnor1907.txt").read_text(encoding="utf-8", errors="replace"),
-                  re.compile(r"^([A-Z][a-z' -]*?)\s*[,(]\s*"))
-velaz = entries((CACHE / "velazquez1910_v2.txt").read_text(encoding="utf-8", errors="replace"),
-                re.compile(r"^([A-Z][a-z'-]*)\s+\S*'\S*\s*"))  # pronunciation token: OCR mangles its brackets, the stress mark ' survives
+_d = load()
+rhodes, oconnor, velaz = _d["rhodes"], _d["oconnor"], _d["velazquez"]
 print(f"entries: rhodes {len(rhodes)}, oconnor {len(oconnor)}, velazquez {len(velaz)}")
-
-
-def fold(s):
-    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn")
-
-
-def stem(w):
-    w = fold(w)
-    return w[:5] if len(w) > 5 else w
 
 
 TOK = re.compile(r"[^\W\d_]+", re.U)
@@ -130,17 +79,6 @@ def gloss_stems(glb, col):
             g = re.sub(r"_[^_]*_|\([^)]*\)", " ", g)
             out |= {stem(t) for t in TOK.findall(g) if len(t) > 2 and fold(t) not in STOP}
     return out
-
-
-def lookup(d, lemma):
-    l = lemma.lower()
-    cands = [l, l.rstrip("s"), re.sub(r"(ly|ed|ing)$", "", l)]
-    if " " in l:
-        cands.append(max(l.split(), key=len))
-    for c in cands:
-        if c in d:
-            return c, d[c]
-    return None, ""
 
 
 def check(entry, stems):
