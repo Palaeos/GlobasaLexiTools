@@ -44,6 +44,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
 .actions .clear { display: none; }
 .card.s .actions .clear, .card.n .actions .clear, .card.u .actions .clear { display: block; }
 .actions .yes { background: var(--green); color: #fff; border-color: var(--green); }
+.actions .lean-yes { border-color: var(--green); color: var(--green); }
+.actions .lean-no { border-color: var(--red); color: var(--red); }
+.actions .no { background: var(--red); color: #fff; border-color: var(--red); }
+.scores { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.2rem; max-width: 9rem; }
+.scores b { color: #222; }
 .peek-toggle { margin-top: 0.3rem; font-size: 0.8rem; color: var(--green); }
 #peek { grid-column: 1 / -1; margin-top: 0.4rem; border-top: 1px solid var(--line); padding-top: 0.3rem;
         max-height: 40vh; overflow-y: auto; font-size: 0.87rem; }
@@ -73,16 +78,16 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
     <option value="corpus">Words in the corpus</option>
     <option value="noncorpus">Words not in the corpus</option>
     <option value="unmarked">Words with no sense marked yet (per part of speech)</option>
-    <option value="unsure">Senses marked unsure</option>
+    <option value="unsure">Senses marked unsure or undecided</option>
     <option value="queue">Queue: French words Le Petit Prince lacks</option>
   </select>
   <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
   <input id="q" placeholder="One word" size="12" aria-label="Show one word">
   <label><input type="checkbox" id="hide" checked> Hide vetted</label>
   <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
-  <button id="bulk" title="Accept every undecided sense currently loaded">Accept all loaded</button>
-  <button id="rebuild" title="Rerun the Wiktionary extension with your verdicts, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
-  <span class="keys"><kbd>Y</kbd> applies <kbd>N</kbd> doesn't <kbd>M</kbd> unsure <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last</span>
+  <button id="bulk" title="Score 4 (probably applies) on every sense currently loaded that you have not scored">Accept all loaded</button>
+  <button id="rebuild" title="Write your scores into the shared sheet, rerun the Wiktionary extension with the scores, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
+  <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last</span>
 </header>
 <div id="rebuild-status" hidden></div>
 <main id="list"></main>
@@ -101,7 +106,7 @@ try { hideBox.checked = localStorage.getItem("hideVetted") !== "0"; } catch (e) 
 
 // Whether the server still lists this row, so offsets count only rows it has not dropped.
 function stillListed(r) {
-  if (scope.value === "unsure") return done[r.id] === "u";
+  if (scope.value === "unsure") return done[r.id] === "u" || (!done[r.id] && r.undecided);
   if (scope.value === "unmarked") return !done[r.id] && !r.word_marked;
   return !hideBox.checked || !done[r.id];
 }
@@ -152,10 +157,9 @@ function cardHtml(r, i) {
       ${r.usage_count > r.usages.length ? `<div class="small">${r.usage_count} usages in all</div>` : ""}
     </div>
     <div class="actions">
-      <button class="yes" data-act="s" data-i="${i}">Applies</button>
-      <button data-act="n" data-i="${i}">No</button>
-      <button data-act="u" data-i="${i}" title="Set aside for later: not a judgement, and never exported">Unsure</button>
-      <button class="clear" data-act="clear" data-i="${i}" title="Remove this judgement">Clear</button>
+      <div class="scores">${scoresHtml(r)}</div>
+      ${scoreButtons(`data-act`, `data-i="${i}"`)}
+      <button class="clear" data-act="clear" data-i="${i}" title="Remove your score">Clear</button>
     </div>
   </div>`;
 }
@@ -190,19 +194,33 @@ function closePeekAndMove() {
 }
 
 const MARK_NAMES = { s: "applies", n: "doesn't apply", u: "unsure" };
+const SCORES = [[5, "5 applies", "yes"], [4, "4 probably", "lean-yes"], [3, "3 unsure", ""],
+                [2, "2 probably not", "lean-no"], [1, "1 doesn't", "no"]];
+
+// Five score buttons; attr is data-act (cards) or data-peek-act (peek rows).
+function scoreButtons(attr, extra) {
+  return SCORES.map(([n, label, cls]) => `<button class="${cls}" ${attr}="${n}" ${extra}>${label}</button>`).join("");
+}
+
+// Your score, the other vetters' (from the shared sheet) and the mean that decides.
+function scoresHtml(r) {
+  const others = Object.entries(r.others || {}).map(([v, n]) => `${esc(v)} ${n}`).join(", ");
+  const parts = [`${esc(r.owner || "You")}: <b>${r.mine == null ? "–" : r.mine}</b>`];
+  if (others) parts.push(`others: ${others}`);
+  if (r.mean != null) parts.push(`mean ${r.mean}${r.undecided ? " (undecided)" : ""}`);
+  return parts.join(" · ");
+}
 
 function peekRow(s) {
   const definition = s.definition && s.definition.toLowerCase() !== s.label.toLowerCase() ? s.definition.slice(0, 220) : "";
   return `<div class="peek-row ${s.verdict || ""}" id="p-${s.id}">
     <b>${esc(s.label)}</b><span class="pos">${esc(s.pos)} · "${esc(s.eng)}"</span>
-    ${s.verdict ? `<span class="peek-mark">${MARK_NAMES[s.verdict] || ""}</span>` : ""}
+    ${s.verdict ? `<span class="peek-mark">${MARK_NAMES[s.verdict] || ""}${s.mine != null ? ` (${s.mine})` : ""}${s.mean != null && s.mean !== s.mine ? ` · mean ${s.mean}` : ""}</span>` : ""}
     ${definition ? `<div class="def">${esc(definition)}</div>` : ""}
     <div class="chips">${(s.why || []).map(w => `<span class="chip ${w[0]}">${esc(w[1])}</span>`).join("")}</div>
     <div class="peek-actions">
-      <button class="yes" data-peek-act="s" data-id="${s.id}">Applies</button>
-      <button data-peek-act="n" data-id="${s.id}">No</button>
-      <button data-peek-act="u" data-id="${s.id}">Unsure</button>
-      ${s.verdict ? `<button data-peek-act="clear" data-id="${s.id}" title="Remove this judgement">Clear</button>` : ""}
+      ${scoreButtons("data-peek-act", `data-id="${s.id}"`)}
+      ${s.mine != null ? `<button data-peek-act="clear" data-id="${s.id}" title="Remove your score">Clear</button>` : ""}
     </div>
   </div>`;
 }
@@ -316,6 +334,10 @@ function applyCard(c, fromPeek = false) {
     list.insertAdjacentHTML("beforeend", cardHtml(c, i));
   }
   const el = document.getElementById(`c${i}`), before = done[c.id];
+  // The scores may have changed; keep the held row current, so the views mirror the server.
+  for (const field of ["mine", "others", "mean", "undecided", "verdict", "word_marked"]) rows[i][field] = c[field];
+  const scoreLine = el.querySelector(".scores");
+  if (scoreLine) scoreLine.innerHTML = scoresHtml(c);
   if (before) el.classList.remove(before);
   if (c.verdict) { done[c.id] = c.verdict; el.classList.add(c.verdict); } else { delete done[c.id]; }
   syncWord(c);
@@ -399,6 +421,7 @@ function showRebuild(st, justFinished) {
       v === "built" ? `${esc(p.replace("apertium-", ""))} ✓` : `<span title="${esc(v)}">${esc(p.replace("apertium-", ""))} ✗</span>`).join(" · ");
     const failed = Object.entries(r.pairs || {}).filter(([, v]) => v !== "built");
     html += `Rebuilt ${esc(st.finished.replace("T", " "))}: ${esc(r.extension || "extension rebuilt")}.
+      ${r.sheet ? `Shared sheet: ${esc(r.sheet)}` : ""}
       Bidix entries: ${bidix || "–"}. Pairs: ${pairs || "none configured"}.
       ${failed.length ? `<pre>${failed.map(([p, v]) => `${p}: ${v}`).map(esc).join("\n")}</pre>` : ""}`;
   }
@@ -453,7 +476,8 @@ document.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.target.matches("input, select") || e.ctrlKey || e.metaKey || e.altKey) return;
   const key = e.key.toLowerCase();
-  if (key === "y") decide(focus, "s");
+  if (["1", "2", "3", "4", "5"].includes(key)) decide(focus, key);
+  else if (key === "y") decide(focus, "s");
   else if (key === "n") decide(focus, "n");
   else if (key === "m" || key === "?") decide(focus, "u");
   else if (key === "p") togglePeek(focus);

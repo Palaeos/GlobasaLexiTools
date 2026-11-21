@@ -3,7 +3,7 @@ Browser page for quickly vetting Wiktionary senses, most obvious matches first. 
 
     python sense_vetter.py            then open http://localhost:8090
     python sense_vetter.py --check    how well the ordering matches past human verdicts
-    python sense_vetter.py --export   write sense_vetting_export.tsv (the page's decisions,
+    python sense_vetter.py --export   write sense_vetting_export.tsv (your page scores,
                                       in the columns of vetted_senses.tsv)
 
 On a fresh clone, ./setup.sh --vetter prepares everything it reads.
@@ -14,9 +14,13 @@ Wiktionary database (WiktionaryLMDB/, or the extract WiktionaryLMDB_senses/ that
 wiktionary_extract.py --senses streams from the dump). They start with the decisions in
 vetted_senses.tsv.
 
-Verdicts are appended to sense_vetting.jsonl as you go, so nothing is lost by closing the
-page. vetted_senses.py lays that log over vetted_senses.tsv, so the sense generator and the
-Menalari extension see the page's verdicts too. Corpus examples (Doxo_passages.tmx) and the
+You score senses 1-5 (5 applies, 3 unsure, 1 does not) in your own column, named by SV_VETTER or
+"vetter" in .senses_config.json (default Paleos). Scores are appended to sense_vetting.jsonl as
+you go, so nothing is lost by closing the page. vetted_senses.py lays that log over
+vetted_senses.tsv, so the sense generator and the Menalari extension see your scores too, and
+cards show the other vetters' scores from the shared sheet with the mean that decides
+(>= 4 accepted, <= 2 rejected). "Rebuild" first writes your scores into the shared sheet
+(vetted_senses.push_owner_scores), so the other vetters see them. Corpus examples (Doxo_passages.tmx) and the
 course order (Doxo_course_ranking.csv) are optional.
 
 The view "Queue" lists the senses of a queue file (SV_QUEUE, by default the one
@@ -49,7 +53,7 @@ os.chdir(BASE_DIR)  # every path here, and in the modules below, is relative to 
 import sense_ranking
 import sense_rows
 import vetted_senses
-from sense_ranking import senses_from_rows, text
+from sense_ranking import row_id, senses_from_rows, text
 from wiktionary_db import WiktionaryDB, LMDB_DIR
 from wiktionary_extract import SENSES_LMDB
 
@@ -67,6 +71,7 @@ QUEUE_FILE = os.environ.get("SV_QUEUE", os.path.join("parallel_lexsel_cache", "l
                                                      "vetting_queue.tsv"))
 QUEUE_EVIDENCE = 3  # French words shown per queued sense
 HUMAN_TIERS = sense_ranking.HUMAN_TIERS
+OWNER = vetted_senses.OWNER  # whose column this page scores in (SV_VETTER / .senses_config.json "vetter")
 
 LLM_AUTHORED = "Thirty Short Stories in Globasa"
 MAX_USAGES = 3
@@ -122,30 +127,48 @@ def word_tags(word):
 
 
 def apply_verdict(verdicts, entry):
-    if entry["verdict"] == "clear":
+    if vetted_senses.entry_score(entry) is None:  # "clear"
         verdicts.pop(entry["id"], None)
     else:
         verdicts[entry["id"]] = entry
 
 
+def logged_score(verdicts, key):
+    """The owner's score for a sense from this page's log, or None."""
+    return vetted_senses.entry_score(verdicts[key]) if key in verdicts else None
+
+
 def load_verdicts():
-    """Replay the log: the latest verdict for each sense wins, and each action stays undoable."""
+    """Replay the log: the latest score for each sense wins, and each action stays undoable.
+    Old entries carry verdicts (s 4, n 2, u 3); edits of the owner's sheet column are replayed
+    but are not page actions to undo."""
     verdicts, undo_stack = {}, []
-    if os.path.exists(VERDICTS_FILE):
-        with open(VERDICTS_FILE, encoding="utf-8") as f:
-            for line in f:
-                entry = json.loads(line)
-                batch = entry.get("batch") or entry["when"]
-                if entry.get("undo"):
-                    if undo_stack and undo_stack[-1]["batch"] == batch:
-                        undo_stack.pop()
-                else:
-                    previous = verdicts.get(entry["id"], {}).get("verdict", "clear")
-                    if not undo_stack or undo_stack[-1]["batch"] != batch:
-                        undo_stack.append({"batch": batch, "changes": []})
-                    undo_stack[-1]["changes"].append((entry["id"], previous))
-                apply_verdict(verdicts, entry)
+    for entry in vetted_senses.log_entries(VERDICTS_FILE):
+        if (entry.get("vetter") or OWNER) != OWNER:
+            continue
+        batch = entry.get("batch") or entry["when"]
+        if entry.get("undo"):
+            if undo_stack and undo_stack[-1]["batch"] == batch:
+                undo_stack.pop()
+        elif entry.get("source") != "sheet":
+            previous = logged_score(verdicts, entry["id"])
+            if not undo_stack or undo_stack[-1]["batch"] != batch:
+                undo_stack.append({"batch": batch, "changes": []})
+            undo_stack[-1]["changes"].append((entry["id"], previous))
+        apply_verdict(verdicts, entry)
     return verdicts, undo_stack
+
+
+def load_base_scores():
+    """{sense id: {vetter: score}} from vetted_senses.tsv (the sheet's scores, without this page's
+    log). A sense listed under several glosses takes each vetter's first score."""
+    base = collections.defaultdict(dict)
+    for r in vetted_senses.load_rows(include_log=False):
+        if r["Source"] == "en" and r["scores"]:
+            found = base[row_id(r["Glb"].lower(), r["Wiktionary Sense"])]
+            for vetter, value in r["scores"].items():
+                found.setdefault(vetter, value)
+    return base
 
 
 print("Loading the sense sheet, word list and corpus...")
@@ -154,6 +177,7 @@ ranks = load_ranks()
 usages = load_usages()
 senses = load_senses(glosses)
 senses_by_word, (tag_members, tag_gloss_terms, tag_typical) = sense_ranking.rank(senses, glosses)
+base_scores = load_base_scores()
 accepted_by_word = collections.defaultdict(list)
 for sense in senses.values():
     if sense["tier"] in HUMAN_TIERS and sense["app"] == "s":
@@ -228,24 +252,50 @@ if "--export" in sys.argv:
     verdicts, _ = load_verdicts()
     with open(EXPORT_FILE, "w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, delimiter="\t")
-        writer.writerow(vetted_senses.COLUMNS + ["When"])
-        # Unsure is a note to come back, not a judgement, so it never reaches the master sheet.
-        decided = {key: entry for key, entry in verdicts.items() if entry["verdict"] != "u"}
-        for key, entry in decided.items():
+        writer.writerow(vetted_senses.COLUMNS + [OWNER, "When"])
+        for key, entry in verdicts.items():
             sense = senses.get(key)
             for eng, pos, vt in entry.get("keys") or (sense["keys"] if sense else ()):
-                writer.writerow([entry["word"], "en", eng, pos, vt, entry["label"], entry["verdict"], "v",
-                                 entry["when"]])
-    print(f"Wrote {len(decided)} verdicts to {EXPORT_FILE} ({len(verdicts) - len(decided)} unsure left out)")
+                writer.writerow([entry["word"], "en", eng, pos, vt, entry["label"], "", "",
+                                 vetted_senses.entry_score(entry), entry["when"]])
+    print(f"Wrote {len(verdicts)} scores of {OWNER} to {EXPORT_FILE}")
     sys.exit()
 
 verdicts, undo_stack = load_verdicts()
 
 
+def owner_score(sense):
+    """The owner's score: this page's latest, else the sheet's (vetted_senses.tsv)."""
+    logged = logged_score(verdicts, sense["id"])
+    return logged if logged is not None or sense["id"] in verdicts else base_scores.get(sense["id"], {}).get(OWNER)
+
+
+def all_scores(sense):
+    scores = {v: s for v, s in base_scores.get(sense["id"], {}).items() if v != OWNER}
+    mine = owner_score(sense)
+    if mine is not None:
+        scores[OWNER] = mine
+    return scores
+
+
+def decision(sense):
+    """'s'/'n' decided, '' undecided, None unscored; an expert's Tier e decides outright."""
+    if sense["tier"] == "e":
+        return "s" if sense["app"] == "s" else "n"
+    return vetted_senses.decide(all_scores(sense))
+
+
+def mark_class(score):
+    return "" if score is None else "s" if score >= 4 else "n" if score <= 2 else "u"
+
+
 def sheet_verdict(sense):
-    if sense["tier"] not in HUMAN_TIERS:
-        return ""
-    return "s" if sense["app"] == "s" else "n"
+    """The mark of the sheet's scores alone (vetted_senses.tsv), as the page shows it."""
+    mine = base_scores.get(sense["id"], {}).get(OWNER)
+    if mine is not None:
+        return mark_class(mine)
+    decided = vetted_senses.decide(base_scores.get(sense["id"], {}))
+    return decided if decided in ("s", "n") else ""
 
 
 def card(sense):
@@ -260,7 +310,9 @@ def card(sense):
         "accepted": accepted_by_word[word][:6], "usage_count": len(usages.get(word, ())),
         "usages": usages.get(word, [])[:MAX_USAGES], "script": sense["app"] if sense["tier"] == "a" else "",
         "sheet_verdict": sheet_verdict(sense),
-        "verdict": current_verdict(sense),
+        "verdict": current_verdict(sense), "mine": owner_score(sense), "owner": OWNER,
+        "others": {v: s for v, s in all_scores(sense).items() if v != OWNER},
+        "mean": vetted_senses.mean(all_scores(sense)), "undecided": decision(sense) == "",
         "word_marked": word_is_marked(word, sense["gloss_pos"]), "gloss_pos": sense["gloss_pos"],
         "other_count": len(senses_by_word[word]) - 1,
         "tags": word_tags(word),
@@ -269,13 +321,20 @@ def card(sense):
 
 
 def current_verdict(sense):
-    return verdicts[sense["id"]]["verdict"] if sense["id"] in verdicts else sheet_verdict(sense)
+    """The card's mark: the owner's own score (4-5 s, 3 u, 1-2 n), else what the others' scores
+    decided (s or n). Non-empty exactly when is_vetted(), so the page can mirror the listing."""
+    mine = owner_score(sense)
+    if mine is not None:
+        return mark_class(mine)
+    decided = decision(sense)
+    return decided if decided in ("s", "n") else ""
 
 
 def peek(word):
     """Every sense of a word, most obvious first, for comparing before deciding."""
     return [{"id": s["id"], "label": s["label"], "definition": s["definition"], "pos": s["pos"], "eng": s["eng"],
-             "verdict": current_verdict(s), "why": s["why"]} for s in senses_by_word[word.strip().lower()]]
+             "verdict": current_verdict(s), "mine": owner_score(s), "mean": vetted_senses.mean(all_scores(s)),
+             "undecided": decision(s) == "", "why": s["why"]} for s in senses_by_word[word.strip().lower()]]
 
 
 def tag_list():
@@ -288,7 +347,8 @@ def tag_list():
 
 
 def is_vetted(sense):
-    return sense["tier"] in HUMAN_TIERS or sense["id"] in verdicts
+    """Scored by the owner, or decided by the scores (or an expert). Undecided senses stay to vet."""
+    return sense["tier"] == "e" or owner_score(sense) is not None or decision(sense) in ("s", "n")
 
 
 def word_is_marked(word, pos):
@@ -299,7 +359,8 @@ def word_is_marked(word, pos):
 
 
 def is_unsure(sense):
-    return verdicts.get(sense["id"], {}).get("verdict") == "u"
+    """The owner scored 3, or the vetters' scores leave it undecided."""
+    return owner_score(sense) == 3 or (owner_score(sense) is None and decision(sense) == "")
 
 
 def matching(scope, query, include_vetted=False, tag=""):
@@ -392,6 +453,14 @@ def run_step(name, cmd, cwd="."):
 def run_rebuild():
     global queue_order, queue_evidence
     result = {"extension": "", "bidix": {}, "pairs": {}, "lpp": None}
+    # The owner's scores into the shared sheet first, so the other vetters see them.
+    rebuild["step"] = "shared sheet"
+    rebuild["log"].append("== shared sheet")
+    try:
+        result["sheet"] = vetted_senses.push_owner_scores()
+    except Exception as e:  # the sheet is optional; the rebuild goes on
+        result["sheet"] = f"not updated ({e})"
+    rebuild["log"].append(result["sheet"])
     ok, out = run_step("Wiktionary extension", [sys.executable, "-u", "Wiktionary extension builder.py"])
     result["extension"] = next((l.strip() for l in out if l.startswith("Wrote menalariExtension")), "")
     if ok:
@@ -472,7 +541,7 @@ class Handler(BaseHTTPRequestHandler):
                 apply_verdict(verdicts, entry)
 
     def send_tally(self, **extra):
-        tally = collections.Counter(v["verdict"] for v in verdicts.values())
+        tally = collections.Counter(mark_class(vetted_senses.entry_score(v)) for v in verdicts.values())
         self.send_json({"accepted": tally["s"], "rejected": tally["n"], "unsure": tally["u"],
                         "undoable": len(undo_stack), **extra})
 
@@ -490,8 +559,8 @@ class Handler(BaseHTTPRequestHandler):
         action = undo_stack.pop()
         when = datetime.now().isoformat(timespec="seconds")
         self.write_entries([
-            {"id": key, "word": senses[key]["word"], "label": senses[key]["label"], "verdict": previous,
-             "when": when, "batch": action["batch"], "undo": True, "keys": senses[key]["keys"]}
+            {"id": key, "word": senses[key]["word"], "label": senses[key]["label"], "score": previous,
+             "vetter": OWNER, "when": when, "batch": action["batch"], "undo": True, "keys": senses[key]["keys"]}
             for key, previous in reversed(action["changes"]) if key in senses
         ])
         self.send_changed(request, [key for key, _ in action["changes"] if key in senses])
@@ -508,22 +577,29 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/undo":
             self.undo_last(request)
             return
-        verdict = request["verdict"]
-        if verdict not in ("s", "n", "u", "clear"):
-            self.send_json({"error": "unknown verdict"}, 400)
+        # A score 1-5, "clear", or an old verdict letter (y/n/m keys send s/n/u: 4/2/3).
+        verdict = str(request.get("score", request.get("verdict")))
+        if verdict == "clear":
+            score = None
+        elif verdict in vetted_senses.VERDICT_SCORES:
+            score = vetted_senses.VERDICT_SCORES[verdict]
+        elif verdict in ("1", "2", "3", "4", "5"):
+            score = int(verdict)
+        else:
+            self.send_json({"error": "unknown score"}, 400)
             return
         when = datetime.now().isoformat(timespec="seconds")
         batch = f"{when}-{time.time_ns()}"
         keys = [key for key in request["ids"] if key in senses]
         if keys:
             undo_stack.append({"batch": batch, "changes": [
-                (key, verdicts.get(key, {}).get("verdict", "clear")) for key in keys]})
+                (key, logged_score(verdicts, key)) for key in keys]})
         self.write_entries([
-            {"id": key, "word": senses[key]["word"], "label": senses[key]["label"],
-             "verdict": verdict, "when": when, "batch": batch, "keys": senses[key]["keys"]} for key in keys
+            {"id": key, "word": senses[key]["word"], "label": senses[key]["label"], "score": score,
+             "vetter": OWNER, "when": when, "batch": batch, "keys": senses[key]["keys"]} for key in keys
         ])
         self.send_changed(request, keys)
 
 
-print(f"Ready: open http://localhost:{PORT}  ({len(verdicts)} verdicts loaded)")
+print(f"Ready: open http://localhost:{PORT}  ({len(verdicts)} scores of {OWNER} loaded)")
 ThreadingHTTPServer(("127.0.0.1", PORT), Handler).serve_forever()
