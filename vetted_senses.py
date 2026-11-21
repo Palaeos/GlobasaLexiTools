@@ -51,7 +51,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VETTED_TSV = os.path.join(BASE_DIR, "vetted_senses.tsv")
 CONFIG_FILE = os.path.join(BASE_DIR, ".senses_config.json")
 VETTING_LOG = os.path.join(BASE_DIR, "sense_vetting.jsonl")
-BACKUP_DIR = os.path.join(BASE_DIR, "backups")
 ENG_XLSX = "GLB_ENG_WiktionarySenses.xlsx"
 MULTI_XLSX = "GLB_MULTI_WiktionarySenses.xlsx"
 
@@ -69,6 +68,13 @@ VERDICT_SCORES = {"s": 4, "n": 2, "u": 3}
 DECISION_COLUMN = "Decision"
 MEAN_COLUMN = "Mean"
 DEFAULT_OWNER = "Paleos"
+# The shared sheet shows the machine's suggestion as a number on the vetters' scale, with who
+# made it, instead of the stored App?/Tier letters (user, 2026-11-21: numbers, not letters).
+# "cross-check" is the generator's Spa/Epo translation check, never stored.
+SUGGESTION_COLUMN = "Suggestion"
+SUGGESTED_BY_COLUMN = "Suggested by"
+SUGGESTERS = {"a": "script", "l": "LLM", "e": "expert", "": "cross-check"}
+TIER_OF_SUGGESTER = {name.lower(): tier for tier, name in SUGGESTERS.items()}
 NOT_A_VETTER = ("note", "comment")  # headers containing these are free-text columns
 
 
@@ -116,6 +122,27 @@ def decide(scores):
         return None
     mean = sum(given) / len(given)
     return "s" if mean >= ACCEPT_MEAN else "n" if mean <= REJECT_MEAN else ""
+
+
+def suggestion_cells(app, tier):
+    """(number, who) for the sheet from a stored App?/Tier: s 4, n 2 (an expert's 5 and 1)."""
+    if app not in ("s", "n"):
+        return None, None
+    if tier == "e":
+        return (5 if app == "s" else 1), SUGGESTERS["e"]
+    return (4 if app == "s" else 2), SUGGESTERS.get(tier, tier)
+
+
+def suggestion_letters(number, who):
+    """(App?, Tier) from the sheet's Suggestion / Suggested by cells (the reverse)."""
+    try:
+        value = score_value(number)
+    except ValueError:
+        return "", ""
+    if value is None or value == 3:
+        return "", ""
+    tier = TIER_OF_SUGGESTER.get(str(who or "").strip().lower(), str(who or "").strip())
+    return ("s" if value >= 4 else "n"), tier
 
 
 def mean(scores):
@@ -266,9 +293,10 @@ def vetters_known():
 
 
 def load_markings(source="en", include_log=True):
-    """{(glb, eng, pos, verb_type, sense): (app, tier, scores)} -- what the sense
-    generator inherits when it rebuilds the spreadsheet."""
-    return {_key(r): (r["App?"], r["Tier"], r["scores"])
+    """{(glb, eng, pos, verb_type, sense): (app, tier, scores, stored_app, stored_tier)} --
+    what the sense generator inherits when it rebuilds the spreadsheet (effective App?/Tier,
+    the vetters' scores, and the machine suggestion as stored)."""
+    return {_key(r): (r["App?"], r["Tier"], r["scores"], r["stored_app"], r["stored_tier"])
             for r in load_rows(include_log) if r["Source"] == source}
 
 
@@ -331,15 +359,19 @@ def _sheet_records(header, rows, source, notes):
         i = col.get(name)
         return str(row[i]).strip() if i is not None and i < len(row) and row[i] != "" else ""
 
+    def exact(row, i):
+        # Key cells exactly as written: word-list entries can end in a space ("kabel "), and
+        # the TSV keys keep it; a stripped key would file the judgement as a new sense.
+        return str(row[i]) if i is not None and i < len(row) and row[i] not in ("", None) else ""
+
     seen = set()
     for row in rows:
-        glb = str(row[0]).strip() if row and row[0] != "" else ""
-        sense = str(row[sense_col]).strip() if sense_col < len(row) else ""
-        if not glb or not sense:
+        glb = exact(row, 0)
+        sense = exact(row, sense_col)
+        if not glb.strip() or not sense.strip():
             continue
         src = get(row, "Source") or source
-        key = (glb, str(row[eng_col]).strip() if eng_col < len(row) else "",
-               get(row, "Prt of Sp"), get(row, "VerbType"), sense)
+        key = (glb, exact(row, eng_col), exact(row, col.get("Prt of Sp")), exact(row, col.get("VerbType")), sense)
         if (src, key) in seen:
             continue
         seen.add((src, key))
@@ -352,8 +384,12 @@ def _sheet_records(header, rows, source, notes):
                     scores[name] = s
             except ValueError:
                 notes.append(f"{where}: {name} {cell!r} is not a score 1-5 (skipped)")
-        tier = _clean_tier(get(row, "Tier"), where, notes)
-        app = get(row, "App?")
+        if SUGGESTION_COLUMN in col:  # the score-format sheet
+            app, tier = suggestion_letters(get(row, SUGGESTION_COLUMN), get(row, SUGGESTED_BY_COLUMN))
+            tier = _clean_tier(tier, where, notes)
+        else:  # an older sheet with App?/Tier letters
+            tier = _clean_tier(get(row, "Tier"), where, notes)
+            app = get(row, "App?")
         if tier == "v" and OWNER not in vetters:
             # A sheet without vetter columns: Tier v was the owner's verdict.
             scores.setdefault(OWNER, 4 if app == "s" else 2)
@@ -457,9 +493,11 @@ def lock_file(path):
 
 
 def backup(path):
-    os.makedirs(BACKUP_DIR, exist_ok=True)
+    """A dated copy in a backups/ folder beside the sheet (the home disk fills up)."""
+    folder = os.path.join(os.path.dirname(path), "backups")
+    os.makedirs(folder, exist_ok=True)
     stem, ext = os.path.splitext(os.path.basename(path))
-    target = os.path.join(BACKUP_DIR, f"{stem}_{datetime.now():%Y%m%d_%H%M%S}{ext}")
+    target = os.path.join(folder, f"{stem}_{datetime.now():%Y%m%d_%H%M%S}{ext}")
     shutil.copy2(path, target)
     return target
 
@@ -493,9 +531,11 @@ def push_owner_scores(path=None):
     sense_col = c.get("Wiktionary Sense (in Translations)", c.get("Wiktionary Sense"))
     changed = 0
     for row in ws.iter_rows(min_row=2):
-        def get(i):
-            return str(row[i].value).strip() if i is not None and i < len(row) and row[i].value is not None else ""
+        def get(i):  # exact, as _sheet_records reads keys ("kabel " keeps its space)
+            return str(row[i].value) if i is not None and i < len(row) and row[i].value not in (None, "") else ""
         key = (get(0), get(c["Eng"]), get(c["Prt of Sp"]), get(c.get("VerbType")), get(sense_col))
+        if not key[0].strip() or not key[4].strip():
+            continue  # a row without a sense has no score
         score = mine.get(key, mine.get(key[:3] + ("",) + key[4:]))
         cell = ws.cell(row=row[0].row, column=col + 1)
         if (cell.value if cell.value != "" else None) != score:

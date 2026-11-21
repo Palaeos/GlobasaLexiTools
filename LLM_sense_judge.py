@@ -37,7 +37,8 @@ csv.field_size_limit(sys.maxsize)
 
 # === Paths ===
 
-EXCEL_PATH = "/home/paleos/Nextcloud/Documents/Language/Globasa/GLB_ENG_WiktionarySenses.xlsx"
+# The shared sheet, in senses_dir of .senses_config.json (now /media/paleos/Warehouse2/Language/Claude)
+EXCEL_PATH = os.path.join(vetted_senses.senses_dir() or ".", vetted_senses.ENG_XLSX)
 WORD_LIST_PATH = "word-list.csv"
 GRAPH_WORDS_PATH = "kuzu_import/words.csv"
 GRAPH_DERIVED_PATH = "kuzu_import/derived_from.csv"
@@ -1189,7 +1190,18 @@ def main():
     ws = wb.active
     headers = [cell.value for cell in ws[1]]
 
-    TIER_COL = 'Tier'
+    # The shared sheet (score format) holds suggestions as numbers: Suggestion 4/2 + Suggested by
+    # script/LLM (vetted_senses.suggestion_cells); older sheets have the App?/Tier letters.
+    NUMERIC = vetted_senses.SUGGESTION_COLUMN in headers
+    APP_COL = vetted_senses.SUGGESTION_COLUMN if NUMERIC else 'App?'
+    TIER_COL = vetted_senses.SUGGESTED_BY_COLUMN if NUMERIC else 'Tier'
+
+    def suggest(row, judgement, tier):
+        if NUMERIC:
+            row[col[APP_COL]].value, row[col[TIER_COL]].value = vetted_senses.suggestion_cells(judgement, tier)
+        else:
+            row[col[APP_COL]].value, row[col[TIER_COL]].value = judgement, tier
+
     if TIER_COL not in headers:
         tier_col_idx = len(headers) + 1
         ws.cell(row=1, column=tier_col_idx, value=TIER_COL)
@@ -1206,7 +1218,7 @@ def main():
     already_judged = 0
     no_def = 0
     for idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
-        if row[col['App?']].value or row[col[TIER_COL]].value or any(
+        if row[col[APP_COL]].value or row[col[TIER_COL]].value or any(
                 i < len(row) and row[i].value not in (None, "") for i in vetter_idx):
             already_judged += 1
             continue
@@ -1301,8 +1313,7 @@ def main():
                 tier = 5 if judgement else 0
 
             if judgement:
-                row[col['App?']].value = judgement
-                row[col[TIER_COL]].value = 'a'
+                suggest(row, judgement, 'a')
                 tier_counts[tier][judgement] += 1
                 if judgement == 's':
                     word_s += 1
@@ -1333,8 +1344,7 @@ def main():
                         # Find the row object from llm_candidates
                         for (cidx, crow, *_) in llm_candidates:
                             if cidx == row_idx:
-                                crow[col['App?']].value = judgement
-                                crow[col[TIER_COL]].value = 'l'
+                                suggest(crow, judgement, 'l')
                                 break
                         tier_counts[6][judgement] += 1
                         if judgement == 's':

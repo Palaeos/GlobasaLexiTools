@@ -203,7 +203,7 @@ def crossvalidate(lang_translations, spa_words, epo_words):
 # The rows
 # ---------------------------------------------------------------------------
 
-def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None):
+def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None, stored=False):
     """Yield the rows of the senses view, in word-list order.
 
     db: a WiktionaryDB (or anything with get_translations/get_senses).
@@ -212,6 +212,8 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None):
     start_prefix: start at the first word beginning with it.
     vetters: when given, each sense row ends with these vetters' scores (blank if none),
     after the HEADER columns.
+    stored: App?/Tier = the machine suggestion as stored (markings[3:5]) instead of the
+    effective decision; for the shared sheet, where people's decisions are their scores.
     """
     with open(word_list, newline='', encoding='utf-8') as menalari_file:
         menalariReader = csv.reader(menalari_file, delimiter=',', quotechar='"')
@@ -323,7 +325,7 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None):
                                     marking = markings.get(
                                         (globasa_word, eng_key, pos_key, '', sense))
                                 if marking:
-                                    inherited_app, tier = marking[:2]
+                                    inherited_app, tier = marking[3:5] if stored and len(marking) > 4 else marking[:2]
                                     scores = marking[2] if len(marking) > 2 else {}
                                     break
 

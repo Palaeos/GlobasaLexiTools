@@ -97,7 +97,7 @@ if os.path.exists(vetted_senses.lock_file(outputPath)):
                      f"the lock is left over from a crash: delete {vetted_senses.lock_file(outputPath)}")
 if not startPrefix:
     if os.path.exists(senseKeyPath):
-        backup_dir = "./backups"
+        backup_dir = os.path.join(senses_dir, "backups")  # beside the sheet (the home disk fills up)
         os.makedirs(backup_dir, exist_ok=True)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"GLB_ENG_WiktionarySenses_{timestamp}.xlsx"
@@ -111,8 +111,9 @@ if not startPrefix:
 # speech, most promising sense first (sense_ranking.py), the rows of one sense together.
 # ---------------------------------------------------------------------------
 
+# stored=True: App?/Tier are the machine's suggestion; people's decisions are their scores.
 all_rows = list(sense_rows.rows(db, existing_markings, startPrefix, "./" + menalari_name,
-                                vetters=vetters))
+                                vetters=vetters, stored=True))
 db.close()
 n_header = len(sense_rows.HEADER)
 glosses = sense_ranking.load_glosses("./" + menalari_name)
@@ -158,7 +159,11 @@ ws_out = wb_out.active
 ws_out.title = "Senses"
 
 SPARE_VETTERS = 10  # blank, validated columns where new vetters add their pseudonym
-senses_header = (list(sense_rows.HEADER) + [vetted_senses.MEAN_COLUMN, vetted_senses.DECISION_COLUMN]
+# The sheet speaks the vetters' scale: App?/Tier letters become Suggestion (1-5) / Suggested by.
+APP_I, TIER_I = sense_rows.HEADER.index('App?'), sense_rows.HEADER.index('Tier')
+sheet_names = list(sense_rows.HEADER)
+sheet_names[APP_I], sheet_names[TIER_I] = vetted_senses.SUGGESTION_COLUMN, vetted_senses.SUGGESTED_BY_COLUMN
+senses_header = (sheet_names + [vetted_senses.MEAN_COLUMN, vetted_senses.DECISION_COLUMN]
                  + vetters)
 ws_out.append(senses_header)
 
@@ -170,7 +175,7 @@ DEFAULT_WIDTHS = {
     'Example 2': 3 * CM, 'Example 3': 3 * CM,
     '|': 1 * CM,
     'VerbType': 2 * CM,
-    'App?': 1 * CM, 'Tier': 1 * CM,
+    vetted_senses.SUGGESTION_COLUMN: 1.8 * CM, vetted_senses.SUGGESTED_BY_COLUMN: 2.2 * CM,
     vetted_senses.MEAN_COLUMN: 1.5 * CM, vetted_senses.DECISION_COLUMN: 2.2 * CM,
 }
 for i, name in enumerate(senses_header, 1):
@@ -190,6 +195,9 @@ last_vetter = get_column_letter(n_header + 2 + len(vetters) + SPARE_VETTERS)
 n_rows = 1
 for r in ordered_rows():
     n_rows += 1
+    if len(r) > TIER_I:
+        r = list(r)
+        r[APP_I], r[TIER_I] = vetted_senses.suggestion_cells(r[APP_I], r[TIER_I])
     if len(r) > n_header:  # a sense row: formulas, then the vetters' scores
         scores = [int(v) if v != '' else None for v in r[n_header:]]
         r = r[:n_header] + [
@@ -237,7 +245,9 @@ for line in [
     [],
     [f"Mean = the average of all scores. Decision: mean >= {vetted_senses.ACCEPT_MEAN} accepted, "
      f"<= {vetted_senses.REJECT_MEAN} rejected, otherwise undecided (counts as not vetted)."],
-    ["App? / Tier: the computer's suggestion (Tier a = script, l = LLM), or v = already decided by the scores."],
+    ["Suggestion: the computer's guess on the same scale (4 = probably applies, 2 = probably not), with who made it"],
+    ["in 'Suggested by': cross-check (translations agree), script, LLM; 'expert' (5 or 1) decides outright."],
+    ["It is only a hint: it never counts toward the Mean."],
     ["Clues: Spa / Epo and the other language columns are the sense's translations; compare them with the"],
     ["Globasa word's own translations in the word list."],
     ["Columns whose header contains 'note' or 'comment' are free text and are not read as scores."],
