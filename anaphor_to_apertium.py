@@ -7,15 +7,16 @@ Sources (curated, the source of truth; this script only reads them):
                                 sense, so flura = te (live plant) + to (cut flower))
 
 Writes glb-anaphor.tsv (Word<TAB>te | to | te,to) into every pair with a coreference step:
-apertium-glb-eng (eng-glb-neural.py) and apertium-glb-fra (fra-glb-neural.py).
+apertium-glb-eng (eng-glb-neural.py), apertium-glb-fra (fra-glb-neural.py) and the pairs using
+the shared glb-neural.py (spa, deu, nld).
 mante/femte count as te (animate). Words with no recorded pronoun are left out; the step then
 falls back to WordNet and says so in its trace.
 """
 import csv
 from collections import defaultdict
 
-OUTS = ["GlobasaTranslation/apertium-glb-eng/glb-anaphor.tsv",
-        "GlobasaTranslation/apertium-glb-fra/glb-anaphor.tsv"]
+OUTS = [f"GlobasaTranslation/apertium-glb-{lang}/glb-anaphor.tsv"
+        for lang in ("eng", "fra", "spa", "deu", "nld")]
 CLASS = {"te": "te", "to": "to", "mante": "te", "femte": "te"}
 
 classes = defaultdict(set)
