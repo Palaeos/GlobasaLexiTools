@@ -58,7 +58,9 @@ def table(wiki, word, pos, sense):
     if db is None:
         return {}
     raw = (db.get_translations(word, pos) or {}).get(sense, {})
-    return {c: [(t.word, t.romanization, t.tags) for t in ts] for c, ts in raw.items()}
+    # WiktionaryDB returns sets: sort, or the word order (and every tie broken by
+    # order downstream: alignment centre, blend, ranking) changes with the hash seed
+    return {c: [(t.word, t.romanization, t.tags) for t in sorted(ts)] for c, ts in sorted(raw.items())}
 
 
 def gather(concept):
