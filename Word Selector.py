@@ -18,6 +18,7 @@ import datetime
 import hashlib
 import json
 import os
+import re
 import sys
 
 from flask import Flask, jsonify, request, send_from_directory
@@ -25,7 +26,7 @@ from werkzeug.exceptions import HTTPException
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ROOT)
-from word_selection import collision, concept_index, contrasts, dossier, methodology, pipeline
+from word_selection import collision, concept_index, contrasts, dossier, field, methodology, pipeline, reddit
 from word_selection.align import distance, edit_count
 from word_selection.languages import LANGS
 from word_selection.sources import seeds as seeds_src, wikidata, wiktionary
@@ -33,6 +34,7 @@ from word_selection.sources import seeds as seeds_src, wikidata, wiktionary
 DECISIONS = os.path.join(ROOT, "word_selection_decisions.jsonl")
 OVERRIDES = os.path.join(ROOT, "word_selection_overrides.jsonl")
 DOSSIERS = os.path.join(ROOT, "word_selection_dossiers")
+REDDIT = os.path.join(ROOT, "word_selection_reddit")
 PORT = int(os.environ.get("WS_PORT", 8092))
 
 app = Flask(__name__)
@@ -41,7 +43,7 @@ _cache = {}
 NO_INDEX = ("The Wiktionary concept index (WiktionaryLMDB_concepts/) is not built: "
             "run ./setup.sh --selector (about an hour), then restart.")
 # Everything that reads the concept index; the page shows the error instead of empty results.
-NEEDS_INDEX = {"/api/run", "/api/senses", "/api/entry", "/api/expand", "/api/contrasts",
+NEEDS_INDEX = {"/api/run", "/api/reddit", "/api/senses", "/api/entry", "/api/expand", "/api/contrasts",
                "/api/dossier", "/api/check"}
 
 
@@ -71,13 +73,24 @@ def _progress(stage):
     PROGRESS["stage"] = stage
 
 
+_prepared = {}
+
+
 def _run(concept, overrides):
+    """Gather-and-cluster (pipeline.prepare) is cached apart from the cluster
+    selection, so ticking other clusters and blending again reuses it."""
     import time
     k = _key(concept, overrides)
     if k not in _cache:
         PROGRESS.update(stage="Starting", started=time.time(), running=True)
         try:
-            _cache[k] = pipeline.run(concept, overrides, progress=_progress)
+            kp = _key({x: v for x, v in concept.items() if x != "blend"}, overrides)
+            if kp not in _prepared:
+                _prepared.clear()           # one prepared concept at a time (memory)
+                _prepared[kp] = pipeline.prepare(concept, overrides, progress=_progress)
+            _cache[k] = pipeline.finish(_prepared[kp], concept.get("blend"), progress=_progress)
+            while len(_cache) > 20:         # keep the latest results only
+                _cache.pop(next(iter(_cache)))
         finally:
             PROGRESS["running"] = False
     return _cache[k]
@@ -130,6 +143,18 @@ def expand():
     text = request.json.get("seeds", "")
     seeds = seeds_src.parse(text)
     return jsonify({"seeds": seeds, **seeds_src.expand(seeds), "own": seeds_src.tuple_senses(seeds)})
+
+
+@app.route("/api/field", methods=["POST"])
+def field_sweep():
+    """Semantic-field sweep in native editions' own glosses (no English pivot)."""
+    r = request.json or {}
+    return jsonify(field.sweep(r.get("terms", ""), spread_terms=r.get("spread", True)))
+
+
+@app.route("/api/field/status")
+def field_status():
+    return jsonify({"editions": field.editions(), "status": field.STATUS})
 
 
 @app.route("/api/article")
@@ -223,6 +248,21 @@ def make_dossier():
     return jsonify({"dossier": d, "markdown": dossier.to_markdown(d)})
 
 
+@app.route("/api/reddit", methods=["POST"])
+def reddit_post():
+    """The current result as a Reddit post (Markdown), saved to word_selection_reddit/."""
+    r = request.json
+    concept = r["concept"]
+    res = _run(concept, {**_saved_overrides(), **r.get("overrides", {})})
+    md = reddit.to_reddit(concept, res, chosen_form=r.get("form"), max_props=int(r.get("max", 6)))
+    os.makedirs(REDDIT, exist_ok=True)
+    label = re.sub(r"[^\w-]+", "_", concept.get("label") or "concept").strip("_") or "concept"
+    path = os.path.join(REDDIT, f"{label}_{datetime.date.today().isoformat()}.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(md)
+    return jsonify({"markdown": md, "path": os.path.relpath(path, ROOT), "chars": len(md)})
+
+
 @app.route("/api/check", methods=["POST"])
 def check():
     """Evaluate a form the user typed: collisions + closeness to a cluster's sources."""
@@ -271,5 +311,13 @@ def save():
 
 if not os.path.isdir(concept_index.DIR):
     print("Warning: " + NO_INDEX)
+import threading
+def _warm():
+    from word_selection import precedent
+    field.warm()          # gloss caches, built once
+    precedent.warm()      # LexiliAsel precedent models, kept on disk until the inputs change
+
+
+threading.Thread(target=_warm, daemon=True).start()
 print(f"Word Selector on http://localhost:{PORT}")
 app.run(port=PORT, debug=False)
