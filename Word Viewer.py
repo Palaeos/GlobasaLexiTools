@@ -1267,7 +1267,7 @@ def _build_db_into(path):
                 seg_text = (seg_el.text or "").strip() if seg_el is not None else ""
                 if lang == "glb":
                     glb_seg = seg_text
-                elif lang and seg_text:
+                elif lang and seg_text and not lang.startswith("glb-"):   # glb-x-fokus: annotated glb
                     translations[lang] = seg_text
 
             if not glb_seg:
@@ -1539,6 +1539,7 @@ _POS_NAMES = {
     GlossPoS.DETERMINER: "determiner",
     GlossPoS.PARTICLE: "particle",
     GlossPoS.PREFIX: "prefix",
+    GlossPoS.SUFFIX: "suffix",
     GlossPoS.PHRASE: "phrase",
     GlossPoS.POSSESSIVE_PRONOUN: "possessive pronoun",
     GlossPoS.POSSESSIVE_ADJECTIVE: "possessive adjective",
@@ -2419,7 +2420,7 @@ def _tmx_available_langs():
                 if tv_lang:
                     langs.add(tv_lang)
             if "glb" in langs:
-                found.update(langs - {"glb"})
+                found.update(l for l in langs if not l.startswith("glb"))   # glb-x-fokus: annotated glb
             if i > 5000 and len(found) >= 5:
                 break
     except Exception as e:
