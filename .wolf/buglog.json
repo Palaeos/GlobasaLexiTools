@@ -4938,5 +4938,420 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-20T20:29:51"
+  },
+  {
+    "id": "bug-303",
+    "timestamp": "2026-11-21T12:31:00",
+    "error_message": "Round-trip test of vetted_senses could not be isolated: patched VETTED_TSV/VETTING_LOG globals were ignored by log_scores/append_log/export",
+    "file": "vetted_senses.py",
+    "root_cause": "default arguments path=VETTING_LOG / out=VETTED_TSV bound at import time",
+    "fix": "path=None defaults resolved at call time",
+    "tags": [
+      "vetted_senses",
+      "defaults",
+      "testing",
+      "sense-vetting"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T12:31:00"
+  },
+  {
+    "id": "bug-304",
+    "timestamp": "2026-11-21T14:00:00",
+    "error_message": "pivot_oracle.py: word-list Spa/Epo glosses kept PoS labels ('v.intr: estar sentado'), inflating 'separable' counts",
+    "file": "GlobasaTranslation/apertium-glb-eng/test/pivot_oracle.py",
+    "root_cause": "Translation<Lang> columns prefix each PoS group with 's:', 'v.tr:', 'adj:' etc.; naive split on ;/, keeps the label inside the first word",
+    "fix": "POS_LABEL regex replaces each label with ';' before splitting (or use Lexilista_parser.parseWordEntry)",
+    "tags": [
+      "word-list",
+      "glosses",
+      "pos-label",
+      "parsing"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T14:00:00"
+  },
+  {
+    "id": "bug-305",
+    "timestamp": "2026-11-21T16:00:00",
+    "error_message": "apertium -d apertium-fra fra-tagger: Cannot open file '/home/paleos/ApplicationSource/GlobasaTranslation/apertium-fra/fra.automorf.bin'; spa-tagger output has no surface forms",
+    "file": "GlobasaTranslation/apertium-glb-eng/test/sibling_pivot.py",
+    "root_cause": "fra/deu modes/*.mode were generated in an old checkout path; the tagger modes run apertium-tagger -g without -p, so only lemma<tags> is printed. Earlier sibling_pivot numbers for es/fr/de matched raw-text surfaces only",
+    "fix": "tag(): build lt-proc -w automorf | cg-proc -w rlx | apertium-tagger -g -p prob from the local .bin/.prob files, null-flushed (-z) in one call",
+    "tags": [
+      "apertium",
+      "modes",
+      "tagger",
+      "stale-path",
+      "surface-form"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T16:00:00"
+  },
+  {
+    "id": "bug-304",
+    "timestamp": "2026-11-21T13:45:00",
+    "error_message": "OSError: [Errno 28] No space left on device in wb_out.save(outputPath)",
+    "file": "Wiktionary sense based translation extender 3.py",
+    "root_cause": "openpyxl saved in place onto the shared sheet in Nextcloud; the home disk was full, leaving a truncated file",
+    "fix": "save to outputPath + '.tmp.xlsx' and os.replace; senses_dir moved to /media/paleos/Warehouse2/Language/Claude (user)",
+    "tags": [
+      "disk-full",
+      "xlsx",
+      "atomic-save",
+      "sense-vetting"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T13:45:00"
+  },
+  {
+    "id": "bug-306",
+    "timestamp": "2026-11-21T17:30:00",
+    "error_message": "OSError: [Errno 28] No space left on device (np.savez of macberth_vecs_L8_sources.npz); /dev/sdb2 down to 1.8 MB",
+    "file": "time-machine/macberth_map.py",
+    "root_cause": "float32 word-vector cache (0.4-0.8 GB) written to time-machine/cache on /dev/sdb2, which also holds the HF cache and was ~1 GB free",
+    "fix": "deleted the two regenerable vector caches; cache now float16 under GLOBASA_BIG_CACHE (default /media/paleos/Warehouse2/Language/Claude), off when that drive is missing",
+    "tags": [
+      "disk-full",
+      "cache",
+      "numpy",
+      "storage"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T17:30:00"
+  },
+  {
+    "id": "bug-305",
+    "timestamp": "2026-11-21T14:35:00",
+    "error_message": "Reading the shared sheet added 25 TSV rows and 18 'sheet' log entries the user never made",
+    "file": "vetted_senses.py",
+    "root_cause": "_sheet_records/push_owner_scores stripped key cells; word-list entries like 'kabel ' and 'likwido ' end in a space and TSV keys keep it, so the stripped keys looked like new senses (push would have blanked those owner cells)",
+    "fix": "read key cells exactly; reverted the bogus TSV/log lines via git checkout",
+    "tags": [
+      "vetted_senses",
+      "whitespace",
+      "keys",
+      "sheet-import"
+    ],
+    "related_bugs": [
+      "bug-303"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T14:35:00"
+  },
+  {
+    "error_message": "lt-proc: Error: Malformed input stream (UD Dutch test text; output stopped mid-file)",
+    "file": "scratchpad/dutch_pos/eval_baselines.py",
+    "root_cause": "raw text with [ ] ^ \\ fed straight into lt-proc",
+    "fix": "pipe through apertium-destxt first, as the modes do",
+    "tags": [
+      "apertium",
+      "lt-proc",
+      "destxt",
+      "evaluation"
+    ],
+    "id": "bug-309",
+    "timestamp": "2026-11-21",
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21"
+  },
+  {
+    "error_message": "SyntaxError: f-string: expecting '}' (anaphor_to_apertium.py)",
+    "file": "anaphor_to_apertium.py",
+    "root_cause": "nested double quotes inside an f-string; Python 3.10 forbids them (3.12 allows)",
+    "fix": "single quotes inside the f-string",
+    "tags": [
+      "python3.10",
+      "f-string"
+    ],
+    "id": "bug-310",
+    "timestamp": "2026-11-21",
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21"
+  },
+  {
+    "error_message": "fra-glb: 'Il le cherche' -> 'Te xerca to' although coref resolved le -> chien (te)",
+    "file": "GlobasaTranslation/apertium-glb-fra/fra-glb-neural.py",
+    "root_cause": "le also has a neuter reading le<prn><pro><p3><nt> (clause 'it/so'); the tagger picked it",
+    "fix": "add_tag drops the neuter clitic reading when the chain has a noun referent",
+    "tags": [
+      "fra-glb",
+      "coref",
+      "clitic",
+      "tagger"
+    ],
+    "id": "bug-311",
+    "timestamp": "2026-11-21",
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21"
+  },
+  {
+    "error_message": "fra-glb: 'Le tour de France' -> towa (tower) after adding the neural gender step",
+    "file": "GlobasaTranslation/apertium-glb-fra/modes.xml",
+    "root_cause": "gender step ran before the CG and trusted spaCy (Fem) over the determiner le",
+    "fix": "gender step after cg-proc (only CG-unresolved nouns) and only where spaCy and stanza agree",
+    "tags": [
+      "fra-glb",
+      "gender",
+      "spacy",
+      "cg"
+    ],
+    "id": "bug-312",
+    "timestamp": "2026-11-21",
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21"
+  },
+  {
+    "id": "bug-307",
+    "timestamp": "2026-11-21T19:30:00",
+    "error_message": "ValueError: attempt to get argmax of an empty sequence (period_sense_probe.py pick)",
+    "file": "time-machine/period_sense_probe.py",
+    "root_cause": "a lemma can have no sense in one inventory (Webster-only or Wiktionary-only word); candidates() returned an empty list",
+    "fix": "pick() returns None for an empty inventory; scan, diff and rows skip None picks",
+    "tags": [
+      "empty-inventory",
+      "argmax",
+      "period-senses"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T19:30:00"
+  },
+  {
+    "id": "bug-308",
+    "timestamp": "2026-11-21T21:00:00",
+    "error_message": "user: mangled Anki cards for the suffix meanings of words like bisu, gimu (PoS2 'Verbal-Adverb: quasi-sfx: which must be done', gimu's suffix sense glued onto its adverb row)",
+    "file": "Lexilista_parser.py, AnkiMaker3.py, update_vocab_deck.py",
+    "root_cause": "ANNOTATION_MAP had no quasi-sfx/quasi-pfx (nor n pfx/v pfx), and the qualifier regexes did not allow '-' (quasi-sfx (affixed to nouns)); unknown segments fell back to a WordClass PoS slot with the raw label. Prepositions' pfx sense (lefe, xafe) was silently dropped by the prep deck.",
+    "fix": "quasi-sfx/quasi-pfx map entries (AffixType.QUASI_SUFFIX/QUASI_PREFIX, GlossPoS.SUFFIX), '-' in qualifier regexes, n pfx/v pfx. AnkiMaker3 routes affix-sense glosses of non-affix headwords into FiksoLexi/FiksoKlase/FiksoMena/FiksoMisal (examples from LexiliAsel compositions); preps get a separate 'lefe-' note. update_vocab_deck adds the 4 fields + Fiksoli Rukone/Produti templates if missing. 12 words affected.",
+    "tags": [
+      "anki",
+      "affix",
+      "quasi-sfx",
+      "parser",
+      "AnkiMaker3"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T21:00:00"
+  },
+  {
+    "id": "bug-309",
+    "timestamp": "2026-11-21T21:00:00",
+    "error_message": "Accidental full run of update_vocab_deck.py: a check script did 'import update_vocab_deck', which rewrote Globasa__Vocabulary.apkg and overwrote Globasa__Vocabulary.apkg.bak",
+    "file": "Globasa__Vocabulary.apkg",
+    "root_cause": "project scripts have no main guard; importing one runs it with its real hardcoded paths",
+    "fix": "restored the deck from the fresh .bak (byte copy of the pre-run deck); the older .bak content is lost. Deck tests now run with cwd in a scratch dir holding copies of the apkg and AnkiList.csv.",
+    "tags": [
+      "no-main-guard",
+      "import-side-effects",
+      "anki",
+      "backup"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T21:00:00"
+  },
+  {
+    "id": "bug-308",
+    "timestamp": "2026-11-21T21:00:00",
+    "error_message": "gay: 10 'Homosexual:' sub-senses had no quotation years, so the 1895 prior did not penalise them (homosexual beat 'happy, joyful' in a merry sentence)",
+    "file": "time-machine/period_senses.py",
+    "root_cause": "Wiktionary sub-senses share the parent heading as glosses[0]; senses were keyed on glosses[0] while wiktionary_quote_years.tsv keys on the specific (last) gloss; period_glb vetted lookup used glosses[0] too",
+    "fix": "gloss = glosses[-1]; defs = all glosses; years joined on any gloss (last first); period_glb vetted key uses glosses[-1]",
+    "tags": [
+      "wiktionary",
+      "sub-sense",
+      "gloss-key",
+      "quote-years",
+      "prior"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T21:00:00"
+  },
+  {
+    "id": "bug-309",
+    "timestamp": "2026-11-21T19:25:29",
+    "error_message": "Kinbank system clustering matched Murdock cousin systems poorly (ARI 0.12, k stuck at range minimum 3)",
+    "file": "concept_discovery/kinbank_categories.py",
+    "root_cause": "relative-age variants (FBS_e/FBS_y, eB/yB) duplicated every cousin pair, so age agreement swamped the cousin/sibling contrasts; average linkage favoured one big split",
+    "fix": "cluster on the grid with relative age folded (16 cells, 120 pairs) and Ward linkage; k still chosen by silhouette only (ARI 0.43, k=5). Edit tool could not match a line with literal kana/Hangul range characters in a regex; rewrote it with \\u escapes",
+    "tags": [
+      "kinbank",
+      "clustering",
+      "concept-discovery",
+      "edit-tool",
+      "unicode"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T19:25:29"
+  },
+  {
+    "id": "bug-310",
+    "timestamp": "2026-11-21T19:38:21",
+    "error_message": "English borrowings tsunami, karate, judo, sushi, kimono, origami absent from the East Asian borrowing scan; ketchup dropped",
+    "file": "concept_discovery/english_east_asian_borrowings.py",
+    "root_cause": "WiktionaryLMDB_concepts etym_links (Wiktionary concept index.py) drops links whose term is '-': Wiktionary writes {{bor+|en|ja|-}} {{ja-r|津%波}}, the term sits in the following script template, so those English entries have etym []; ketchup's source code nan-hbl was not in the exact-code SOURCES list",
+    "fix": "scan streams English entries from the dump itself and takes a '-' term from the next ja-r/zh-l/ko-l/vi-l/l/m template, labelled '(fallback: term from {{ja-r}})'; source codes matched by prefix family. Concept index builder left unchanged (shared with Word Selector; rebuild ~1 h) — same gap affects its etym_reverse",
+    "tags": [
+      "wiktionary",
+      "etymology",
+      "concept-index",
+      "ja-r",
+      "concept-discovery"
+    ],
+    "related_bugs": [
+      "bug-309"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T19:38:21"
+  },
+  {
+    "id": "bug-311",
+    "timestamp": "2026-11-21T19:49:35",
+    "error_message": "False 'covered' verdicts in concept-discovery coverage: wa/waka (和) -> ji 'and', Hoa (華) -> Hana, śrī -> serye, ṛṣi -> recitu, cakra -> cakare, brahman -> Sanskritam, upādhyāya -> manrahibu",
+    "file": "concept_discovery/lexicon.py, concept_discovery/indic_east_asian_concepts.py",
+    "root_cause": "single Han characters matched across languages (Japanese 和 vs Mandarin 和); one descendant form coinciding with an unrelated LexiliAsel form (Indonesian seri < śrī = seri 'series'); drifted descendants (Hindi चक्कर); a shared Han spelling counted as separate zh and ja evidence",
+    "fix": "single Han characters match only within their own language; Indic coverage needs one Globasa word matched through >=2 evidence languages with all East Asian matches counted once (else 'possible', gap left open). Also added LexiliAsel name Gwandonsa (Cantonese) and read all forms of multi-form LexiliAsel items",
+    "tags": [
+      "coverage",
+      "false-positive",
+      "lexiliasel",
+      "han",
+      "concept-discovery",
+      "conservative-tier"
+    ],
+    "related_bugs": [
+      "bug-310"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-21T19:49:35"
+  },
+  {
+    "id": "bug-313",
+    "timestamp": "2026-11-23T12:00:00Z",
+    "error_message": "glb-neural.py eng focus: stage ran but added nothing (no trace lines)",
+    "file": "GlobasaTranslation/apertium-glb/glb-neural.py",
+    "root_cause": "main dispatch: any STAGE other than parse fell through to stage_coref",
+    "fix": "explicit elif STAGE == 'focus': stage_focus(...)",
+    "tags": [
+      "glb-neural",
+      "focus",
+      "dispatch"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T12:00:00Z"
+  },
+  {
+    "id": "bug-314",
+    "timestamp": "2026-11-23T12:00:00Z",
+    "error_message": "focus stage never detected dialogue: every pronoun in quotes tracked as narration",
+    "file": "GlobasaTranslation/apertium-glb/glb-neural.py",
+    "root_cause": "the eng analyser leaves an opening ‘ in the blank, and to_text replaces blank content with a space, so the service text lacks the quote",
+    "fix": "registers(blanks, lus): quote state read from the Apertium stream (blank chars + whole-LU quote surfaces); reset only at a blank line",
+    "tags": [
+      "glb-neural",
+      "focus",
+      "quotes",
+      "dialogue",
+      "stream"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T12:00:00Z"
+  },
+  {
+    "id": "bug-315",
+    "timestamp": "2026-11-23T12:00:00Z",
+    "error_message": "aftertag test harness: 'Malformed input stream' / 'Cannot open file' when replaying stages after the tagger",
+    "file": "(scratch harness)",
+    "root_cause": "mode files use $1 for lt-proc -g in the generator and $2 for tagger flags; stripping or shadowing them breaks stages",
+    "fix": "substitute $1 -> -g and $2 -> '' when replaying a .mode pipeline; feed tagger-format LUs (no surface form)",
+    "tags": [
+      "apertium",
+      "modes",
+      "testing"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T12:00:00Z"
+  },
+  {
+    "id": "bug-323",
+    "timestamp": "2026-11-23T14:50:31",
+    "error_message": "Field sweep never lists the seed word itself (ja/zh 妖怪), so it cannot be ticked into the concept",
+    "file": "word_selection/field.py",
+    "root_cause": "search() skips the term's own entry to avoid self-matches; nothing re-added it; ja:よーかい has no ja.wiktionary entry at all",
+    "fix": "own_entries(): typed terms' own entries (senses table keys) added as 'term' rows at the top with their best table; missing typed terms reported",
+    "tags": [
+      "word-selector",
+      "field-sweep",
+      "ui"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T14:50:31"
+  },
+  {
+    "id": "bug-324",
+    "timestamp": "2026-11-23T14:59:31",
+    "error_message": "Word Selector: ja 妖怪/精霊/妖精 from the zh.wiktionary table show 'needs romanization' with an empty Globasa form",
+    "file": "word_selection/pipeline.py",
+    "root_cause": "zh.wiktionary translation tables fill the romanization field with kana + romaji ('ようかい, yōkai') or kana only; translit.to_globasa returns nothing for it, and the entry's own clean romanization was never consulted because a roman was already set",
+    "fix": "latin_roman() keeps the first Latin-script part (or '' so the entry's roman is used); if the given roman still yields no form, retry with the entry's roman, then the script reader, labelled '(fallback: ...)'",
+    "tags": [
+      "word-selector",
+      "romanization",
+      "japanese",
+      "zh-wiktionary"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T14:59:31"
+  },
+  {
+    "id": "bug-325",
+    "timestamp": "2026-11-23T16:29:15",
+    "error_message": "Word Selector proposals and cluster order differ between runs of the same concept",
+    "file": "word_selection/sources/wiktionary.py",
+    "root_cause": "WiktionaryDB.get_translations returns sets; non-English edition tables were iterated in hash order, so word order (and every order-based tie-break: MSA centre, blend, ranking) changed with PYTHONHASHSEED",
+    "fix": "sort translations (and language codes) where they are read in sources/wiktionary.table() and field.tables(); verified identical results under seeds 0, 1, 7",
+    "tags": [
+      "word-selector",
+      "determinism",
+      "hash-seed",
+      "lmdb"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T16:29:15"
+  },
+  {
+    "id": "bug-326",
+    "timestamp": "2026-11-23T16:29:15",
+    "error_message": "Blending step slow (~15 s), clustering slow with more words",
+    "file": "word_selection/precedent.py",
+    "root_cause": "LexiliAsel precedent models re-learned (~5000 MSAs over all roots, 13.5 s) in every new server process; distance() recomputed for repeated pairs",
+    "fix": "precedent models pickled to word_selection_cache/precedent_<group>.pickle keyed on word list + concept index + code fingerprints, warmed at server start; align.distance memoized; two-phase run (prepare/finish) so only ticked clusters are blended",
+    "tags": [
+      "word-selector",
+      "performance",
+      "cache"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-23T16:29:15"
   }
 ]
