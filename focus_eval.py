@@ -9,7 +9,8 @@ forms of each output line are aligned with those of the Globasa TU.
 
 Needs eng-nlp-service.py running (port 8597); without it the stage passes through and the
 script says so. Reported: aligned positions where gold and output agree, the confusion pairs,
-and the den/hin forms the gold has.
+and the den/hin forms the gold has; then the same for the man-/fem- nouns and titles (Mansenyor
+/ Senyor, femixu / ixu, femgami / gami ...) against AP_SETVAR=nomanfem.
 """
 import difflib
 import os
@@ -27,6 +28,9 @@ PAIR = "GlobasaTranslation/apertium-glb-eng"
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
 FORMS = {"te", "ete", "dente", "denete", "hinte", "hinete", "tesu", "etesu", "densu", "hinsu", "sesu"}
 FOCUS = {"dente", "denete", "hinte", "hinete", "densu", "hinsu"}
+# man-/fem- nouns and titles with their neutral forms (the excerpt's vocabulary)
+MANFEM = {"senyor", "mansenyor", "femsenyor", "ixu", "manixu", "femixu", "gami", "mangami",
+          "femgami", "nini", "mannini", "femnini"}
 
 
 def units():
@@ -40,8 +44,8 @@ def units():
     return out[1:]                                   # the title is not a sentence
 
 
-def forms(text):
-    return [w for w in re.findall(r"[\wø]+", text.lower()) if w in FORMS]
+def forms(text, vocab=FORMS):
+    return [w for w in re.findall(r"[\wø]+", text.lower()) if w in vocab]
 
 
 def translate(lines, setvar=""):
@@ -62,10 +66,10 @@ def translate(lines, setvar=""):
     return out
 
 
-def score(gold, mt):
+def score(gold, mt, vocab=FORMS):
     agree, total, conf = 0, 0, Counter()
     for g, m in zip(gold, mt):
-        gf, mf = forms(g), forms(m)
+        gf, mf = forms(g, vocab), forms(m, vocab)
         sm = difflib.SequenceMatcher(a=gf, b=mf, autojunk=False)
         for op, a1, a2, b1, b2 in sm.get_opcodes():
             if op == "equal":
@@ -100,6 +104,14 @@ for name, mt in runs.items():
           f" output den/hin forms: {dict(mt_focus)}")
     for (g, m), n in conf.most_common():
         print(f"   gold {g:7s} -> output {m:7s} {n}")
+    print()
+runs["nomanfem"] = translate(en, "nomanfem")
+for name in ("focus", "nomanfem"):
+    agree, total, conf = score(gold, runs[name], MANFEM)
+    print(f"== man-/fem- ({'default' if name == 'focus' else name}): {agree}/{total} gold forms matched"
+          f" ({100 * agree / max(total, 1):.1f}%)")
+    for (g, m), n in conf.most_common():
+        print(f"   gold {g:9s} -> output {m:9s} {n}")
     print()
 if "--lines" in sys.argv:
     for e, g, m in zip(en, gold, runs["focus"]):
