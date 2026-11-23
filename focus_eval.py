@@ -6,6 +6,7 @@ forms of each output line are aligned with those of the Globasa TU.
 
     python3 focus_eval.py            # focus on (default) vs AP_SETVAR=nofocus
     python3 focus_eval.py --lines    # also list every line whose forms differ
+    python3 focus_eval.py --setvar=cast=PATH   # extra AP_SETVAR for every run (a cast list)
 
 Needs eng-nlp-service.py running (port 8597); without it the stage passes through and the
 script says so. Reported: aligned positions where gold and output agree, the confusion pairs,
@@ -96,7 +97,9 @@ tus = units()
 en, gold = [e for e, _ in tus], [g for _, g in tus]
 gold_focus = Counter(f for g in gold for f in forms(g) if f in FOCUS)
 print(f"{len(tus)} sentences; gold den/hin forms: {dict(gold_focus)}\n")
-runs = {"focus": translate(en), "nofocus": translate(en, "nofocus")}
+EXTRA = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--setvar=")), "")
+join = lambda v: ",".join(x for x in (v, EXTRA) if x)
+runs = {"focus": translate(en, join("")), "nofocus": translate(en, join("nofocus"))}
 for name, mt in runs.items():
     agree, total, conf = score(gold, mt)
     mt_focus = Counter(f for m in mt for f in forms(m) if f in FOCUS)
@@ -105,7 +108,7 @@ for name, mt in runs.items():
     for (g, m), n in conf.most_common():
         print(f"   gold {g:7s} -> output {m:7s} {n}")
     print()
-runs["nomanfem"] = translate(en, "nomanfem")
+runs["nomanfem"] = translate(en, join("nomanfem"))
 for name in ("focus", "nomanfem"):
     agree, total, conf = score(gold, runs[name], MANFEM)
     print(f"== man-/fem- ({'default' if name == 'focus' else name}): {agree}/{total} gold forms matched"
