@@ -420,6 +420,8 @@
 
 ## Do-Not-Repeat
 
+- [2026-11-23] The official Globasa word for "duty" is **musiya**, not *darma* (user correction). *darma* is the Indic concept (order, right conduct); religious duty = *musiya* (e.g. kultuli musiya for duties of rite).
+
 - [2026-11-23] Do not "fix" Korean ㅓ → a or Mandarin syllable wu → u in word_selection/translit.py: LexiliAsel itself writes 버스 basu, 전통 jantong, 측면 cungmyan (nasal assimilation kept) and 芭蕾舞 ba ley u, 债务 jay u (wu only in names). A hand-written post using o / wu (twejok, cengjiwu) departs from LexiliAsel; check parse_etymons gold before changing a rule.
 
 - [2026-11-23] Adding blend candidates that need only be close to ONE source (precedent applied per source) as regular candidates cost 1.2 pt top-1: single-source forms outrank consensus. Use such generators only as a fallback (pipeline.FALLBACK_MIN_LEGAL).
