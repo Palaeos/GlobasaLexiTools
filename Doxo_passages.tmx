@@ -389536,6 +389536,678 @@
         <seg>Amen</seg>
       </tuv>
     </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Preata de Mansenyor _Quin_ fal _Agatha Christie_</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The Coming of Mr Quin by Agatha Christie</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Preata de Mansenyor _Quin_ fal _Agatha Christie_</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>To sen leaxam de Neonyandin.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>It was New Year’s Eve.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>To sen leaxam de Neonyandin.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Maxmo lao mehman de baytuparti in _Royston_ sen tonatado in day salun.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The elder members of the house party at Royston were assembled in the big hall.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Maxmo lao mehman de baytuparti in _Royston_ sen tonatado in day salun.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Mansenyor _Satterthwaite_ sen hox koski juniyen le uje inbistarcu.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Mr Satterthwaite was glad that the young people had gone to bed.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Mansenyor _Satterthwaite_ [fokus: te] sen hox koski juniyen le uje inbistarcu.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te no dusuki juniyen tonatado in day grupo.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He was not fond of young people in herds.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te no dusuki juniyen [semifokus: ete] tonatado in day grupo.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te ijen ete neninteresne ji nenparixkrita.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He thought them uninteresting and crude.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te ijen ete neninteresne ji nenparixkrita.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Ete wala wimyoya, ji durki nyan pasa, te max ji max suki wimyoxey.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>They lacked subtlety and as life went on he had become increasingly fond of subtleties.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Ete wala wimyoya, ji durki nyan pasa, te max ji max suki wimyoxey.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Senyor Satterthwaite laoje sisades dua nyan — lilmo fleksido ji zubuldo ixu, har juimonine oko ji ajabumo elfusim muka, ji har daybala ji godo interes tem jiwa de alo insan.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Mr Satterthwaite was sixty-two–a little bent, dried-up man with a peering face oddly elflike, and an intense and inordinate interest in other people’s lives.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Senyor Satterthwaite [rigi fe fokus yon suli name; pia “Te” ger funsyon] laoje sisades dua nyan — lilmo fleksido ji zubuldo ixu, har juimonine oko ji ajabumo elfusim muka, ji har daybala ji godo interes tem jiwa de alo insan.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Dur sesu total jiwa, fe istyare, te le side in unyum satari de geocenguli sidetul fe na juioko maner feki doyan drama de insanli natura evolu fe fronta de te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>All his life, so to speak, he had sat in the front row of the stalls watching various dramas of human nature unfold before him.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Dur sesu total jiwa, fe istyare, te le side in unyum satari de geocenguli sidetul fe na juioko maner feki doyan drama de insanli natura evolu fe fronta de te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Tesu rol le moywatu sen dento fe okoyen.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>His role had always been that of the onlooker.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Tesu rol le moywatu sen dento fe okoyen.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Mas nun, durki laoya tange woju te, te xorjui ki te sencu maxmo ji maxmo poscosanne tem drama onexado tas te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Only now, with old age holding him in its clutch, he found himself increasingly critical of the drama submitted to him.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Mas nun, durki laoya tange woju te, te xorjui ki te sencu maxmo ji maxmo poscosanne tem drama onexado tas te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Nun, te xucyo lilmo xugwankal banto.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He demanded now something a little out of the common.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Nun, te xucyo lilmo xugwankal banto.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hay nil xanka ki te hare espesyal talento fe hinpul masele.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>There was no doubt that he had a flair for these things.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hay nil xanka ki te hare espesyal talento fe hinpul masele.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te jigam ku kewatu monlari de drama sen ner.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He knew instinctively when the elements of drama were at hand.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te jigam ku kewatu monlari de drama sen ner.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Denmaner kom jangeuma, te nasa drama in hawa.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Like a war horse, he sniffed the scent.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Denmaner kom jangeuma, te nasa drama in hawa.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Xorfe sesu preata cel Royston fe hin dyernuru, tesu ajabu inli gancikowa le jagecu ji amiru te na sen jumbi.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Since his arrival at Royston this afternoon, that strange inner sense of his had stirred and bid him be ready.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Xorfe sesu preata cel Royston fe hin dyernuru, tesu ajabu inli gancikowa le jagecu ji amiru te na sen jumbi.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Ban interesne xey okur or jaxa okur.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Something interesting was happening or going to happen.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Ban interesne xey okur or jaxa okur.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Mehmanlari no sen day.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The house party was not a large one.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Mehmanlari no sen day.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hay _Tom_ _Evesham_, etesu yukwe ji kweho mehmangiyen, ji tesu jidi, politilimo ativo femgami, hu da le sen _Lady Laura Keene_ lefe sesu gamicu.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>There was Tom Evesham, their genial good-humoured host, and his serious political wife who had been before her marriage Lady Laura Keene.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hay _Tom_ _Evesham_ [neo fokus: te], etesu yukwe ji kweho mehmangiyen, ji tesu jidi, politilimo ativo femgami, hu da le sen _Lady Laura Keene_ lefe sesu gamicu.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hay _Sir Richard_ _Conway_, askeriyen, turiyen ji esportuyen; pia hay sisa or sabe juniyen hu Senyor Satterthwaite le no sukses na memori dasu name, ji gamiduayen _Portal_.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>There was Sir Richard Conway, soldier, traveller and sportsman, there were six or seven young people whose names Mr Satterthwaite had not grasped and there were the Portals.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hay _Sir Richard_ _Conway_ [neo fokus: te], askeriyen, turiyen ji esportuyen; pia hay sisa or sabe juniyen [neo fokus: ete] hu Senyor Satterthwaite [neo fokus: te] le no sukses na memori dasu name, ji gamiduayen _Portal_.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>He gamiduayen Portal interes Senyor Satterthwaite.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>It was the Portals who interested Mr Satterthwaite.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>He gamiduayen Portal [neo fokus: ete] interes Senyor Satterthwaite.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te le nilwatu xorkone _Alex Portal_, mas te jixi moyto tem te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He had never met Alex Portal before, but he knew all about him.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te le nilwatu xorkone _Alex Portal_, mas te jixi moyto tem te [dente → te].</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te le kone tesu patre ji daypatre.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Had known his father and his grandfather.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te le kone tesu [densu → tesu] patre ji daypatre.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Alex Portal sen relativomo tipoli membro de famil Portal.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Alex Portal ran pretty true to type.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Alex Portal [neo fokus: te] sen relativomo tipoli membro de famil Portal.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te laoje kriban caredes nyan, har jalo tofa ji blue oko, sama kom moy alo membro de famil Portal. Te suki esportu, sen maharapul fe yuxi, ji wala imajeya.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He was a man of close on forty, fair-haired, and blue-eyed like all the Portals, fond of sport, good at games, devoid of imagination.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te laoje kriban caredes nyan, har jalo tofa ji blue oko, sama kom moy alo membro de famil Portal. Te suki esportu, sen maharapul fe yuxi, ji wala imajeya.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Xugwankal nilto tem Alex Portal, tipoli xafebete de bon ji gutipul Englili famil.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Nothing unusual about Alex Portal. The usual good sound English stock.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Xugwankal nilto tem Alex Portal, tipoli xafebete de bon ji gutipul Englili famil.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Mas tesu femgami sen alopul.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>But his wife was different.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Mas tesu femgami sen alopul.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinte sen Awstraliyen, kom Senyor Satterthwaite jixi.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>She was, Mr Satterthwaite knew, an Australian.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinte [neo fokus: te] sen Awstraliyen, kom Senyor Satterthwaite jixi.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Portal le sen in Awstrali lefe dua nyan; te le xorkone te denloka, le gamicu ton te ji le tonporta te cel sesu ogar.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Portal had been out in Australia two years ago, had met her out there and had married her and brought her home.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Portal [neo fokus: te] le sen in Awstrali lefe dua nyan; te le xorkone te [dente → te] denloka, le gamicu ton te [dente → te] ji le tonporta te [dente → te] cel sesu ogar.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinte le nilwatu sen in Engli lefe sesu gamicu.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>She had never been to England previous to her marriage.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinte [neo fokus: te] le nilwatu sen in Engli lefe sesu gamicu.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Fe hataya, te total no sen sim kom he ban alo Awstralili femixu hu Senyor Satterthwaite le xorkone da.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>All the same, she wasn’t at all like any other Australian woman Mr Satterthwaite had met.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Fe hataya, te total no sen sim kom he ban alo Awstralili femixu hu Senyor Satterthwaite le xorkone da.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinte juioko te fe nunya, sirili.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He observed her now, covertly.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinte [neo fokus: te] juioko te [dente → te] fe nunya, sirili.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Interesne femixu — daymo interesne.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Interesting woman–very.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Interesne femixu [neo fokus: te] — daymo interesne.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Daydenmo harkakal, mas daydenmo — jiwane.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>So still, and yet so–alive.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Daydenmo harkakal, mas daydenmo — jiwane.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Jiwane!</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Alive!</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Jiwane!</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Dento, preciso!</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>That was just it!</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Dento, preciso!</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>No realmo meli — no, ren ger no loga ki te sen meli, mas te hare banpul afatupul carme hu ren no abil na no xorjui da — hu nil manixu abil na no xorjui da.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Not exactly beautiful–no, you wouldn’t call her beautiful, but there was a kind of calamitous magic about her that you couldn’t miss–that no man could miss.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>No realmo meli — no, ren ger no loga ki te sen meli, mas te hare banpul afatupul carme hu ren no abil na no xorjui da — hu nil manixu abil na no xorjui da.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Dento sen pala fol man comen de Senyor Satterthwaite, mas tesu fem comen (koski Senyor Satterthwaite hare day kwanti fe femya) sen egalmo interesdo tem alo swal.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>The masculine side of Mr Satterthwaite spoke there, but the feminine side (for Mr Satterthwaite had a large share of femininity) was equally interested in another question.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Dento sen pala fol man comen de Senyor Satterthwaite [neo fokus: te], mas tesu fem comen (koski Senyor Satterthwaite hare day kwanti fe femya) sen egalmo interesdo tem alo swal.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Femsenyor Portal kolor sesu tofa keseba?</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Why did Mrs Portal dye her hair?</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Femsenyor Portal [neo fokus: te] kolor sesu tofa keseba?</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Dayible, nil alo manixu ger jixi ki te kolor sesu tofa, mas Senyor Satterthwaite jixi.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>No other man would probably have known that she dyed her hair, but Mr Satterthwaite knew.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Dayible, nil alo manixu ger jixi ki te kolor sesu tofa, mas Senyor Satterthwaite jixi.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinte jixi moy denpul xey, ji hinto konhwoku te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He knew all those things. And it puzzled him.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinte jixi moy denpul xey, ji hinto konhwoku te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Multi femixu har luminkal tofa kolor sesu tofa fe jalo kolor; mas te le nilwatu xorkone femixu har jalo tofa hu da kolor sesu tofa syahe.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Many dark women dye their hair blonde; he had never before come across a fair woman who dyed her hair black.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Multi femixu har luminkal tofa kolor sesu tofa fe jalo kolor; mas te le nilwatu xorkone femixu har jalo tofa hu da kolor sesu tofa syahe.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Moyto tem dente jixipel te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Everything about her intrigued him.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Moyto tem dente jixipel te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Fe ban ajabu jigam, te sen yakin ki dente sen oro daymo hox or daymo hazuni — mas te no jixi ku keto of dua to, ji dento lawfen te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>In a queer intuitive way, he felt certain that she was either very happy or very unhappy–but he didn’t know which, and it annoyed him not to know.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Fe ban ajabu jigam, te sen yakin ki dente sen oro daymo hox or daymo hazuni — mas te no jixi ku keto of dua to, ji dento lawfen te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Maxpul, dente hare ajabu efeto in sesu gami.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Furthermore there was the curious effect she had upon her husband.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Maxpul, dente hare ajabu efeto in sesu gami.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>“Portal daylubi te,” Senyor Satterthwaite loga tas se, “mas fe dumara, te — si, te befobi sesu gami!</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>‘He adores her,’ said Mr Satterthwaite to himself, ‘but sometimes he’s–yes, afraid of her!</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>“Portal [fokus in logalari] daylubi te,” Senyor Satterthwaite loga tas se, “mas fe dumara, te — si, te befobi sesu gami!</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinto sen daymo interesne.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>That’s very interesting.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinto sen daymo interesne.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Hinto sen exordinarimo interesne.”</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>That’s uncommonly interesting.’</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Hinto sen exordinarimo interesne.”</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Portal jiu godomo multi.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Portal drank too much.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Portal [neo fokus] jiu godomo multi.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Dento sen yakin.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>That was certain.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Dento sen yakin.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Ji te hare ajabu maner na juioko sesu gami denwatu hu dente no juioko te.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>And he had a curious way of watching his wife when she wasn’t looking.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Ji te hare ajabu maner na juioko sesu gami denwatu hu dente no juioko te.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>“Ansya,” Senyor Satterthwaite loga.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>‘Nerves,’ said Mr Satterthwaite.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>“Ansya,” Senyor Satterthwaite loga.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>“Hin yen sen totalmo ansyado.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>‘The fellow’s all nerves.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>“Hin yen [fokus in logalari] sen totalmo ansyado.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Pia tesu gami jixi to, mas dente no vole na fale banto tem to.”</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>She knows it too, but she won’t do anything about it.’</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Pia tesu gami jixi to, mas dente no vole na fale banto tem to.”</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Te sen daymo jixifil tem hin gamiduayen.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>He felt very curious about the pair of them.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Te sen daymo jixifil tem hin gamiduayen.</seg>
+      </tuv>
+    </tu>
+    <tu>
+      <prop type="x-context">Preata de Mansenyor Quin fal Agatha Christie</prop>
+      <tuv xml:lang="glb">
+        <seg>Banto okur hu te no abil na aham da.</seg>
+      </tuv>
+      <tuv xml:lang="en">
+        <seg>Something was going on that he couldn’t fathom.</seg>
+      </tuv>
+      <tuv xml:lang="glb-x-fokus">
+        <seg>Banto okur hu te no abil na aham da.</seg>
+      </tuv>
+    </tu>
   </body>
   
   
