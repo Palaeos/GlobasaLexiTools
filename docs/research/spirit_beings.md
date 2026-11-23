@@ -11,7 +11,7 @@ checked before anything is published.*
 Globasa currently names supernatural beings with English-shaped words: *ruho* "spirit, soul",
 *xabahu* "ghost", *demoni*, *kayvutu* "monster" (whose Chinese column lists 妖怪), *peari*
 "fairy", *ninfa*, *elfu*, *dwarfu*, *kentawro*, *anjilyen*. It has the Greco-Germanic fantasy
-bestiary as roots but no word for the nāga, apsaras, jinn, tengu, a spirit medium or an
+bestiary as roots, and *jini* for jinn, but no word for the nāga, apsaras, tengu, a spirit medium or an
 owner spirit.
 
 The proposal:
@@ -122,7 +122,7 @@ yen (te)                   any person, human or not (Hallowell)
    ├─ [attendants of a god: shinshi, kenzoku, gandharvas, satyrs; anjilyen]
    ├─ [妖怪 root]          anomalous, unworshipped (analogist cosmologies)
    ├─ the dead             xabahu; hungry ghost; bad-death dead
-   └─ named classes        peari > ninfa; yaksa; nāga; jinn; elfu; kentawro; dwarfu …
+   └─ named classes        peari > ninfa; yaksa; nāga; jini (jinn); elfu; kentawro; dwarfu …
 ```
 
 Status can change along the cult axis (Komatsu, Yanagita): **[妖怪 root] → *yesenteo* → *teo***
