@@ -34,6 +34,7 @@ from . import sinosphere
 from .align import GAP, NASAL_POS, _sino_coda, align, sino_sub_cost
 
 ENABLED = True
+OFFGLIDE_CODA = True   # a reading's final -y/-w may be dropped cheaply (see _syl)
 MAX_READINGS = 4
 SEG_MAX = 0.3        # a member not spelt like the cluster is cut if it fits this well (per letter)
 VOWELS = set("aeiou")
@@ -85,7 +86,11 @@ def _syl(reading, piece, lang):
     def coda(s, k):
         if s is piece:
             return lang == "ja" and _epenthetic(s, k)
-        # the reading's codas (lost in Mandarin) and medial glides (光 kwang ~ kō)
+        # the reading's codas (lost in Mandarin), medial glides (光 kwang ~ kō) and
+        # final offglides, monophthongised in the reflexes (妖 yew ~ yō, 요 yo; 高 kaw ~ kō, 고 go):
+        # without this, 요괴 yogwe was cut yog|we, its g taken for 妖's coda
+        if OFFGLIDE_CODA and k == len(s) - 1 and k > 0 and s[k] in "yw" and s[k - 1] in VOWELS:
+            return True
         return _sino_coda(s, k) or (0 < k < len(s) - 1 and s[k] in "yw")
     # within one syllable the edges are no word edges: the initial is no
     # epenthetic vowel and must not be dropped cheaply
@@ -188,9 +193,10 @@ def _compact(rows):
     return [list(r) for r in zip(*cols)] if cols else [[] for _ in rows]
 
 
-def rows(members, extra=(), sino_idx=None):
-    """Rows for members' forms (spaces removed), then for each `extra` Globasa form
-    (a root, cut into syllables like a member). None without a usable spelling."""
+def _aligned(members, extra=(), sino_idx=None):
+    """(spelling, chosen readings, per row: [pairs per character] for a member or
+    extra form cut into syllables, else ('whole', pairs against the whole reading));
+    None without a usable spelling. Shared by rows() and blocks()."""
     if not ENABLED:
         return None
     if sino_idx is None:
@@ -219,17 +225,66 @@ def rows(members, extra=(), sino_idx=None):
         chosen.append(min(rs, key=lambda r: sum(_syl(r, p, l)[0] for l, p in pieces)))
     center = "".join(chosen)
     sino = set(sino_idx)
-    aligned = []
+    out = []
     for i, f in enumerate(forms):
         if i in cuts:
-            aligned.append([pr for c, p in enumerate(cuts[i]) for pr in _syl(chosen[c], p, members[i]["lang"])[1]])
+            out.append([_syl(chosen[c], p, members[i]["lang"])[1] for c, p in enumerate(cuts[i])])
         elif i in sino:
-            aligned.append(align(center, f, sub=sino_sub_cost, coda=_sino_coda, nasal_pos=NASAL_POS)[1])
+            out.append(("whole", align(center, f, sub=sino_sub_cost, coda=_sino_coda, nasal_pos=NASAL_POS)[1]))
         else:
-            aligned.append(align(center, f)[1])
+            out.append(("whole", align(center, f)[1]))
     for e, cut in zip(extra, extra_cuts):
         if cut:
-            aligned.append([pr for c, p in enumerate(cut[1]) for pr in _syl(chosen[c], p, "glb")[1]])
+            out.append([_syl(chosen[c], p, "glb")[1] for c, p in enumerate(cut[1])])
         else:
-            aligned.append(align(center, e, sub=sino_sub_cost)[1])
+            out.append(("whole", align(center, e, sub=sino_sub_cost)[1]))
+    return sp, chosen, out
+
+
+def rows(members, extra=(), sino_idx=None):
+    """Rows for members' forms (spaces removed), then for each `extra` Globasa form
+    (a root, cut into syllables like a member). None without a usable spelling."""
+    got = _aligned(members, extra, sino_idx)
+    if got is None:
+        return None
+    _, chosen, out = got
+    center = "".join(chosen)
+    aligned = [r[1] if isinstance(r, tuple) else [pr for per in r for pr in per] for r in out]
     return _merge(center, aligned)
+
+
+def _split_whole(pairs, chosen):
+    """Pairs against the whole reading -> pairs per character (an insertion goes
+    with the next reading letter; trailing ones with the last character)."""
+    bounds, k = [], 0
+    for r in chosen:
+        k += len(r)
+        bounds.append(k)
+    per, c, k = [[] for _ in chosen], 0, 0
+    for x, y in pairs:
+        while c < len(chosen) - 1 and k >= bounds[c]:
+            c += 1
+        per[c].append((x, y))
+        if x != "-":
+            k += 1
+    return per
+
+
+def blocks(members, extra=(), sino_idx=None):
+    """For display: the same alignment merged one character at a time, so each
+    character is a block of columns under its own reading (妖 jew | 怪 kweaj).
+    -> {spelling, readings, rows (as rows() orders them, reading not included),
+    reading_row, chars (character index per column)}; None without a spelling."""
+    got = _aligned(members, extra, sino_idx)
+    if got is None:
+        return None
+    sp, chosen, out = got
+    per_row = [_split_whole(r[1], chosen) if isinstance(r, tuple) else r for r in out]
+    rows_, reading_row, chars = [[] for _ in per_row], [], []
+    for c, reading in enumerate(chosen):
+        block = _merge(reading, [pr[c] for pr in per_row] + [[(x, x) for x in reading]])
+        for i, r in enumerate(block[:-1]):
+            rows_[i] += r
+        reading_row += block[-1]
+        chars += [c] * len(block[-1])
+    return {"spelling": sp, "readings": chosen, "rows": rows_, "reading_row": reading_row, "chars": chars}

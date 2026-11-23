@@ -22,6 +22,10 @@ CONTESTED = 0.6      # runner-up >= 60% of the winner -> also try it
 # LexiliAsel precedent for Sino-xenic columns (precedent.py) takes priority over
 # the vote; each column where a candidate departs from it costs this much
 PRECEDENT_PENALTY = 0.15
+# fallback (pipeline.propose): when the ordinary blends leave too few legal proposals,
+# also try each source form with the precedent applied as far as closeness allows.
+# As regular candidates they cost 1.2 pt top-1 (single-source forms outranked consensus).
+PRECEDENT_PER_SOURCE = True
 
 
 WEIGHTING = "language"   # "language": each language 1 (form blending); "family": each family 1
@@ -72,7 +76,7 @@ def _column_choices(col, ws, final=False):
     return choices[:2], note, votes
 
 
-def candidates(members, max_variants=16, exclude_root=None):
+def candidates(members, max_variants=16, exclude_root=None, per_source=False):
     """members: [{lang, form, word, ...}] (form in Globasa letters).
     Where related forms disagree at a position, LexiliAsel precedent (precedent.py:
     Sino-xenic, Japanese/Korean loans, Arabic loans, Indic, European) decides before
@@ -99,6 +103,7 @@ def candidates(members, max_variants=16, exclude_root=None):
     columns = list(zip(*rows))
     picks, contested = [], []
     prec = {}                      # column -> precedent letter
+    prec_share = {}                # column -> share of roots behind that precedent
     end = precedent.final_slot(rows)    # the word-final vowel slot is form_rules' business
     for k, col in enumerate(columns):
         ch, note, votes = _column_choices(col, ws, final=(k == len(columns) - 1))
@@ -106,6 +111,7 @@ def candidates(members, max_variants=16, exclude_root=None):
         if p:
             letter, n, share, pattern, group = p
             prec[k] = letter
+            prec_share[k] = share
             if ch[0] != letter:
                 ch = [letter] + [c for c in ch if c != letter][:1]
                 via = " ".join(f"{a}:{b}" for a, b in pattern if a not in ("follows", "same letter"))
@@ -152,4 +158,28 @@ def candidates(members, max_variants=16, exclude_root=None):
         add(f, "precedent" if prec and not departures(combo) else "consensus", notes, departures(combo))
     for m, f, row in zip(members, forms, rows):
         add(f, f"source form ({m['lang']})", departs=departures(row))
+    # Precedent applied to each source: the methodology's middle ground must stay
+    # within one phoneme (or two close ones) of some source, and the combinations
+    # above explore only a few contested columns, so a precedent-faithful form near a
+    # source can be missed (黃泉: Korean hwangcan + the precedent's g-drop -> hwancan,
+    # while every combination either kept the g or drifted 3+ edits from all sources).
+    if per_source:
+        out.clear()          # the fallback returns only the per-source candidates
+        target = [prec.get(k, picks[k][0]) for k in range(len(picks))]
+        order = sorted((k for k in range(len(picks)) if k < end),
+                       key=lambda k: (k not in prec, -prec_share.get(k, 0)))
+        for m, f, row in zip(members, forms, rows):
+            cur = list(row)
+            for k in order:
+                if cur[k] == target[k]:
+                    continue
+                trial = cur[:k] + [target[k]] + cur[k + 1:]
+                form = "".join(c for c in trial if c != "-")
+                n, close = edit_count(form, f)
+                if form and (n <= 1 or (n == 2 and close)):
+                    cur = trial
+            form = "".join(c for c in cur if c != "-")
+            if form != f:
+                add(form, f"precedent applied to the {m['lang']} form", [n for n in notes],
+                    departures(cur))
     return sorted(out.values(), key=lambda c: c["score"])

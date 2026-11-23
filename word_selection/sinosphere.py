@@ -169,6 +169,14 @@ def on_shaped(word, form):
 SINO_SRC = {"ltc", "och", "zh", "cmn", "yue", "lzh", "zhx-sic"}
 
 
+LATIN_ROMANS = True   # romanizations with macrons (kōsen) count; False: plain ASCII only (the old filter)
+_KANA_HAN = re.compile(r"[\u3040-\u30ff\u3400-\u9fff]")
+
+
+def _latin(r):
+    return not _KANA_HAN.search(r) if LATIN_ROMANS else r.isascii()
+
+
 @lru_cache(maxsize=20000)
 def ja_reading_kind(word, form):
     """'native' (kun'yomi, inherited from Old Japanese), 'sino' (on'yomi) or 'unknown'
@@ -185,7 +193,7 @@ def ja_reading_kind(word, form):
     kinds, others, matched = set(), set(), False
     for e in index().entries("ja", word):
         fs = set()
-        for r in [r for r in e["roman"] if r and r.isascii()][:3]:
+        for r in [r for r in e["roman"] if r and _latin(r)][:3]:
             try:
                 fs |= {f.replace(" ", "") for f, _ in translit.to_globasa("ja", word, r)}
             except Exception:
@@ -194,6 +202,10 @@ def ja_reading_kind(word, form):
         target = kinds if form in fs else others
         for kind, src, _ in e["etym"]:
             if kind == "inh" and (src == "ojp" or src.startswith("jpx")):
+                target.add("native")
+            elif kind == "obor":
+                # orthographic borrowing: only the spelling came from Chinese (jukujikun:
+                # 黄泉 read yomi, not the Sino-xenic kōsen), so the reading is native
                 target.add("native")
             elif kind in ("bor", "der", "lbor") and src in SINO_SRC:
                 target.add("sino")

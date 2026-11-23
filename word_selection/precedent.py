@@ -30,6 +30,7 @@ precedent): all 26.8 -> 30.6%; sino 15.0 -> 20.0; jako 31.7 -> 36.9; arabic
 """
 
 import collections
+import os
 import re
 from functools import lru_cache
 from itertools import combinations
@@ -149,8 +150,54 @@ def _root_members():
     return out
 
 
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_CACHE = os.path.join(os.path.dirname(_HERE), "word_selection_cache")
+# what the learned models depend on: the word list, the concept index, and the code
+# that renders and aligns the roots' members (a change to any rebuilds the cache)
+_INPUTS = [os.path.join(os.path.dirname(_HERE), "word-list.csv"),
+           os.path.join(os.path.dirname(_HERE), "WiktionaryLMDB_concepts", "data.mdb")] + [
+    os.path.join(_HERE, f) for f in ("precedent.py", "align.py", "sino_align.py", "translit.py",
+                                     "pipeline.py", "lexicon.py", "sinosphere.py", "languages.py")]
+
+
+def _fingerprint():
+    return [(os.path.basename(p), os.path.getmtime(p), os.path.getsize(p)) for p in _INPUTS if os.path.exists(p)]
+
+
 @lru_cache(maxsize=None)
 def _learn(group):
+    """_learn_now(group), kept on disk (word_selection_cache/precedent_<group>.pickle)
+    until the word list, the concept index or the code it depends on changes:
+    learning aligns every root's members (~3 s per group), which every server start
+    used to repeat."""
+    import pickle
+    path = os.path.join(_CACHE, f"precedent_{group}.pickle")
+    fp = _fingerprint()
+    try:
+        with open(path, "rb") as f:
+            saved = pickle.load(f)
+        if saved.get("fingerprint") == fp:
+            return saved["data"]
+    except (OSError, EOFError, pickle.UnpicklingError, AttributeError, KeyError):
+        pass                    # no cache yet, or an unreadable one: learn again
+    data = _learn_now(group)
+    try:
+        os.makedirs(_CACHE, exist_ok=True)
+        with open(path + ".tmp", "wb") as f:
+            pickle.dump({"fingerprint": fp, "data": data}, f, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(path + ".tmp", path)
+    except OSError:
+        pass                    # read-only checkout: work from memory only
+    return data
+
+
+def warm():
+    """Learn (or load) every group's model; for a background thread at server start."""
+    for g in GROUPS:
+        _learn(g)
+
+
+def _learn_now(group):
     """(pattern counts, class-level follow counts, per-root contributions) for one
     group. pattern = ((lang, letter), ...) at a column where the group's languages
     disagree ('-' is a gap); the word-final vowel slot is skipped."""

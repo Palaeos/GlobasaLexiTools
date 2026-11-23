@@ -225,12 +225,37 @@ def build(concept, result, cluster_index=0, form=None):
         "concept_info": [],
     }
     if chosen:
-        from .align import align
+        from .align import align, msa
         for x in chosen["distances"]:
             x["pairs"] = align(chosen["form"], x["form"])[1]
             x["han"] = han.get((x["lang"], x["word"]), "")
+        # one multiple alignment for display: centred on a source, so the sources'
+        # shared segments (妖怪: Japanese k, Mandarin/Korean g, Vietnamese k) share a column
+        srcs = [x for x in chosen["distances"] if x.get("form")]
+        if srcs:
+            # Sino-xenic clusters: one block of columns per Han character, under its
+            # Middle Chinese reading (sino_align.blocks), as the blender aligns them
+            from . import sino_align
+            blk = None
+            try:
+                blk = sino_align.blocks([{"lang": x["lang"], "word": x["word"], "form": x["form"]} for x in srcs],
+                                        extra=[chosen["form"]])
+            except Exception:       # display only: fall back to the letter alignment below
+                blk = None
+            if blk:
+                rows = [blk["rows"][-1]] + blk["rows"][:-1]
+                chosen["msa_blocks"] = {"spelling": blk["spelling"], "readings": blk["readings"],
+                                        "chars": blk["chars"], "reading_row": blk["reading_row"]}
+            else:
+                _, rows = msa([chosen["form"]] + [x["form"] for x in srcs],
+                              candidates=range(1, len(srcs) + 1))
+            chosen["msa"] = [{"label": chosen["form"], "proposal": True, "row": rows[0]}] + [
+                {"label": f"{x['lang']}\t{x['word']}", "lang": x["lang"], "word": x["word"], "row": r}
+                for x, r in zip(srcs, rows[1:])]
         d["proposal"] = {"form": chosen["form"], "trace": chosen["trace"], "severity": chosen["severity"],
-                         "distances": chosen["distances"], "collision": chosen["collision"],
+                         "distances": chosen["distances"], "msa": chosen.get("msa", []),
+                         "msa_blocks": chosen.get("msa_blocks"),
+                         "collision": chosen["collision"],
                          "derivatives": derivatives(chosen["form"]),
                          "unattested_clusters": unattested_clusters(chosen["form"])}
     from .sources import wikidata

@@ -2,6 +2,7 @@
 Also the leave-one-out evaluation over existing roots."""
 
 import random
+import re
 
 from . import abjad, blend, cluster as clustering, sinosphere, collision, form_rules, lexicon, select, sources, translit, vocalization
 from .align import distance, edit_count
@@ -45,12 +46,27 @@ def _persian_dictionary(w):
         w.setdefault("flags", []).append(flag)
 
 
+_SPLIT_ROMAN = re.compile(r"\s*[,;/]\s*")
+_NON_LATIN = re.compile(r"[\u0370-\u03ff\u0400-\u04ff\u0590-\u08ff\u0900-\u0dff\u1100-\u11ff"
+                        r"\u3040-\u30ff\u3130-\u318f\u3400-\u9fff\uac00-\ud7af]")
+
+
+def latin_roman(r):
+    """A romanization field as some editions fill it, 'ようかい, yōkai' (zh.wiktionary
+    tables): keep the first Latin-script part; '' when there is none."""
+    if not r or not _NON_LATIN.search(r):
+        return r or ""
+    return next((p for p in _SPLIT_ROMAN.split(r) if p and not _NON_LATIN.search(p)), "")
+
+
 def enrich(words, context=()):
     """Fill roman/ipa/etym/pos from the word's own Wiktionary entry; add Globasa forms.
     context: English words of the concept (to choose among dictionary readings)."""
     from .sources import wiktionary
     for w in words:
         info = wiktionary.lookup(w["lang"], w["word"])
+        if w.get("roman") and latin_roman(w["roman"]) != w["roman"]:
+            w["roman"] = latin_roman(w["roman"])   # 'ようかい, yōkai' -> 'yōkai'; '' -> the entry's own
         if not w.get("roman") and info["roman"]:
             w["roman"] = info["roman"][0]
             w["roman_from"] = info["roman_from"]
@@ -71,6 +87,18 @@ def enrich(words, context=()):
             if w.get("roman_from") == "table":
                 w["forms_how"] = [(f, "translation-table roman (fallback)" if how == "roman" else how)
                                   for f, how in w["forms_how"]]
+            if not w["forms_how"] and w.get("roman"):
+                # the given romanization yields nothing: the entry's own, then the script reader
+                for r, why in [(x, "the entry's romanization") for x in info["roman"][:1] if x != w["roman"]] \
+                        + [("", "read from the script")]:
+                    try:
+                        got = translit.to_globasa(w["lang"], w["word"], r, w.get("ipa", ""))
+                    except Exception:
+                        got = []
+                    if got:
+                        w["forms_how"] = [(f, f"{how} (fallback: {why}; the given romanization "
+                                              f"'{w['roman']}' gave no form)") for f, how in got]
+                        break
             w["forms"] = [f for f, _ in w["forms_how"]]
             if w["lang"] == "ar" and not translit.arabic_script(w["word"]):
                 _arabic_dictionary(w, context)
@@ -268,26 +296,42 @@ def statuses(words, no_word=()):
     return {c: ("found" if c in have else "no word" if c in no_word else "no data") for c in CODES}
 
 
+FALLBACK_MIN_LEGAL = 2   # fewer legal (non-BLOCK) proposals than this -> per-source fallback
+
+
 def propose(members, word_class="", exclude=(), exclude_root=None):
     """Blend + shape + collision-check one cluster. members: [{lang, form, word, pos}].
-    exclude_root: leave that root out of the LexiliAsel precedent (evaluation)."""
+    exclude_root: leave that root out of the LexiliAsel precedent (evaluation).
+    When the blends leave fewer than FALLBACK_MIN_LEGAL legal proposals (黃泉: every
+    blend kept an illegal ng+consonant), each source form with the precedent applied as
+    far as closeness allows is tried too, labelled as a fallback."""
     out = {}
-    for i, b in enumerate(blend.candidates(members, exclude_root=exclude_root)[:BLENDS_PER_CLUSTER]):
-        for v in form_rules.shape(b["form"], members, word_class, coda=(i == 0)):
-            f = v["form"]
-            if f in out:
-                continue
-            rep = collision.check(f, exclude=exclude)
-            n_pairs = len(rep["minimal_pairs"])
-            total = b["score"] + v["penalty"] + 0.03 * min(n_pairs, 10)
-            dists = []
-            for m in members:
-                n, close = edit_count(f, m["form"])
-                dists.append({"lang": m["lang"], "word": m.get("word", ""), "form": m["form"],
-                              "d": round(distance(f, m["form"], normalized=True), 3), "edits": n})
-            out[f] = {"form": f, "blend": b, "trace": v["trace"], "shape_penalty": round(v["penalty"], 3),
-                      "collision": rep, "severity": rep["severity"], "total": round(total, 4),
-                      "distances": sorted(dists, key=lambda x: x["d"])}
+
+    def take(cands, fallback=""):
+        for i, b in enumerate(cands[:BLENDS_PER_CLUSTER]):
+            for v in form_rules.shape(b["form"], members, word_class, coda=(i == 0 and not fallback)):
+                f = v["form"]
+                if f in out:
+                    continue
+                rep = collision.check(f, exclude=exclude)
+                n_pairs = len(rep["minimal_pairs"])
+                total = b["score"] + v["penalty"] + 0.03 * min(n_pairs, 10)
+                dists = []
+                for m in members:
+                    n, close = edit_count(f, m["form"])
+                    dists.append({"lang": m["lang"], "word": m.get("word", ""), "form": m["form"],
+                                  "d": round(distance(f, m["form"], normalized=True), 3), "edits": n})
+                trace = list(v["trace"]) + ([fallback] if fallback else [])
+                out[f] = {"form": f, "blend": b, "trace": trace, "shape_penalty": round(v["penalty"], 3),
+                          "collision": rep, "severity": rep["severity"], "total": round(total, 4),
+                          "distances": sorted(dists, key=lambda x: x["d"])}
+
+    take(blend.candidates(members, exclude_root=exclude_root))
+    legal = [p for p in out.values() if p["severity"] != "BLOCK"]
+    if blend.PRECEDENT_PER_SOURCE and len(legal) < FALLBACK_MIN_LEGAL:
+        take(blend.candidates(members, exclude_root=exclude_root, per_source=True),
+             fallback=f"precedent applied to one source (fallback: the blends left {len(legal)} legal "
+                      f"proposal{'' if len(legal) == 1 else 's'})")
     return sorted(out.values(), key=lambda p: (SEV_RANK[p["severity"]], p["total"]))
 
 
@@ -397,8 +441,26 @@ def add_han_cognates(words):
                                   "tags": [], "provenance": ["han-cognate"],
                                   "flags": [f"same Han spelling as {BY_CODE[src_lang]['basa']} {src_word} "
                                             f"({sp}); check the meaning"]})
+    # a result noun in 物 'thing' (堆積物 "sediment") brings its base (堆積 "deposition")
+    # in every Sinosphere language: the base is the root, 物 is Globasa -xey
+    for sp, by_lang in have.items():
+        if len(sp) < 3 or sp[-1] != THING:
+            continue
+        base = sp[:-1]
+        src = ", ".join(f"{BY_CODE[l]['basa']} {w}" for l, w in by_lang.items())
+        for lang in sino:
+            for word in sinosphere.words_spelled(base, lang):
+                if (lang, word) not in present:
+                    present.add((lang, word))
+                    added.append({"lang": lang, "word": word, "roman": "", "ipa": "", "sense": "", "url": "",
+                                  "tags": [], "provenance": ["han-base"], "han_base": {"of": sp, "base": base},
+                                  "flags": [f"base {base} of {src} ({sp} = {base} + {THING} 'thing', "
+                                            f"Globasa -{THING_SUFFIX}); check the meaning"]})
     words.extend(added)
     return words
+
+
+THING, THING_SUFFIX = "物", "xey"
 
 
 MAX_DESCENDANTS = 40     # an etymon with more source-language descendants is too generic
@@ -414,7 +476,8 @@ def add_etym_cognates(words, rounds=ETYM_ROUNDS, concept=None):
     source-language words from the same etymon (concept index `etym_reverse`):
     English dukkha / Hindi दुःख -> Telugu దుఃఖము, Indonesian duka (Sanskrit दुःख,
     Pali dukkha); English wu wei -> Mandarin 無為. An etymon in a source language is
-    added itself. Flagged for a meaning check: an etymon's descendants can drift.
+    added itself, and so are words borrowed from a gathered word (Japanese 妖怪 ->
+    English yokai). Flagged for a meaning check: an etymon's descendants can drift.
     Only the etymology of the entries that carry the concept's meaning is followed
     (sense_fit.etymology_for_meaning: English mass the liturgy < missa, not
     physical mass < massa < Greek μᾶζα, the confusion behind Globasa's miza)."""
@@ -435,6 +498,10 @@ def add_etym_cognates(words, rounds=ETYM_ROUNDS, concept=None):
                     continue
                 if kind in ETYM_KINDS or (kind == "inh" and src in INH_FROM):
                     etymons.setdefault((src, term), f"{BY_CODE[w['lang']]['basa']} {w['word']}")
+            # the word as an etymon itself: borrowings FROM it (Japanese 妖怪 -> English yokai)
+            own = (BY_CODE[w["lang"]]["dump"], w["word"])
+            if own not in seen:
+                etymons.setdefault(own, f"{BY_CODE[w['lang']]['basa']} {w['word']}")
         seen |= set(etymons)
         added = _etym_round(ix, etymons, present, per_lang, DUMP_TO_CODE)
         if not added:
@@ -476,8 +543,84 @@ def pivot_support(w):
     return sorted(out)
 
 
+def han_seeds(concept):
+    """Normalised Han spellings the concept is seeded with: Sinosphere seed words and
+    zh/ja-edition headwords (cmn:妖怪, ja:黄泉, a ko seed via its hanja)."""
+    out = set()
+    items = [(l, w) for l, w in concept.get("seeds", [])]
+    items += [({"zh": "cmn", "ja": "ja"}[s[0]], s[1]) for s in concept.get("wikt_senses", []) if s and s[0] in ("zh", "ja")]
+    for lang, word in items:
+        if lang in ("cmn", "ja", "ko", "vi"):
+            out.update(sinosphere.han_spellings(lang, word))
+    return out
+
+
+def sino_readings_for_seeds(words, seeds):
+    """In a Han-seeded concept, a Japanese word spelt with a seed's characters but read
+    natively (黄泉 yomi) takes its Sino-xenic reading when its entries give one
+    (kōsen): the cognate of Mandarin 黃泉, Korean 황천, Vietnamese hoàng tuyền."""
+    if not seeds:
+        return words
+    from .sources import wiktionary
+    for w in words:
+        if w["lang"] != "ja" or not sinosphere.is_han_word(w["word"]) or w.get("han") or not w.get("forms"):
+            continue
+        if not set(sinosphere.normalise(w["word"], "ja")) & seeds:
+            continue
+        native = w["forms"][0].replace(" ", "")
+        # any Latin-script romanization (kōsen has a macron; kana spellings are skipped)
+        for r in [r for r in wiktionary.lookup("ja", w["word"])["roman"] if r and not _NON_LATIN.search(r)]:
+            try:
+                got = translit.to_globasa("ja", w["word"], r)
+            except Exception:
+                continue
+            f = got[0][0].replace(" ", "") if got else ""
+            if f and f != native and sinosphere.ja_reading_kind(w["word"], f) == "sino":
+                why = (f"Sino-xenic reading {r} used instead of the native reading {w.get('roman') or native} "
+                       f"(fallback: Han-seeded concept; the native reading is no cognate of the seed)")
+                w.update(roman=r, forms=[x for x, _ in got], forms_how=[(x, f"{h} ({why})") for x, h in got])
+                w["han"] = sinosphere.han_spellings("ja", w["word"], f)
+                w["native_reading"] = False
+                w["pivots"] = list(sinosphere.pivots(w["han"][0])) if w["han"] else []
+                w.setdefault("flags", []).append(why)
+                break
+    return words
+
+
+def han_priority(clusters, seeds):
+    """User rule (2026-11-23): a concept seeded by Han characters puts first the
+    clusters whose Sino-xenic members share a seed's characters (the 妖怪 cluster
+    before a seven-family 'demon' cluster); the rest keep the methodology's order.
+    A Japanese reading of the characters that is native (kun'yomi) does not count."""
+    if not seeds:
+        return clusters
+    for c in clusters:
+        hit = sorted({h for m in c["members"] for h in (m.get("han") or []) if h in seeds})
+        c["han_seed"] = hit
+        head = (f"Ranked first by the Han-seed rule: shares the seed's Han spelling {', '.join(hit)} "
+                f"(Han-seeded concepts put Sino-xenic cognates first). By the methodology alone: ")
+        if hit and not c.get("why", "").startswith("Ranked first by the Han-seed rule"):
+            c["why"] = head + c.get("why", "")
+    clusters.sort(key=lambda c: not c.get("han_seed"))   # stable: methodology order within each group
+    return clusters
+
+
+def cluster_id(c):
+    """A cluster's stable id: its members, so a selection survives re-ranking."""
+    import hashlib
+    key = "\n".join(sorted(f"{m['lang']}\t{m['word']}" for m in c["members"]))
+    return hashlib.sha1(key.encode("utf-8")).hexdigest()[:12]
+
+
 def run(concept, overrides=None, only_sources=None, progress=None):
-    """progress(stage): called at each stage, for a waiting user (the page shows it)."""
+    """progress(stage): called at each stage, for a waiting user (the page shows it).
+    concept["blend"]: cluster ids to blend (None or absent: all; []: none, the
+    gather-and-cluster pass the page shows before the user ticks clusters)."""
+    return finish(prepare(concept, overrides, only_sources, progress), concept.get("blend"), progress)
+
+
+def prepare(concept, overrides=None, only_sources=None, progress=None):
+    """Everything before blending: gather, enrich, check, cluster, rank. -> state for finish()."""
     say = progress or (lambda stage: None)
     say("Gathering source words (Wiktionary, Wikidata, Wikispecies, seeds)")
     words, errors = sources.gather(concept, only=only_sources)
@@ -516,14 +659,36 @@ def run(concept, overrides=None, only_sources=None, progress=None):
     check_foreign_spellings(words, latin_languages=bool(culture))
     predict_vocalizations(words)
     apply_overrides(words, overrides or {})
+    seeds_han = han_seeds(concept)
+    sino_readings_for_seeds(words, seeds_han)
     items = [dict(w, id=i) for i, w in enumerate(words)
              if not w["excluded"] and (w["forms"] or abjad.skeletons(w["lang"], w["word"]))]
     say(f"Clustering {len(items)} words by sound and spelling")
-    clusters = select.rank(clustering.cluster(items))
-    word_class = concept.get("word_class", "")
+    clusters = han_priority(select.rank(clustering.cluster(items)), seeds_han)
+    for c in clusters:
+        c["id"] = cluster_id(c)
+        c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
     origin = cultural.origin_member(culture, words) if culture else None
-    for k, c in enumerate(clusters):
-        say(f"Blending and checking proposals: cluster {k + 1} of {len(clusters)}")
+    return {"words": words, "clusters": clusters, "errors": errors, "notes": notes, "culture": culture,
+            "origin": origin, "word_class": concept.get("word_class", ""), "en_concept": en_concept,
+            "no_word": concept.get("no_word", []), "han_seeds": seeds_han}
+
+
+def finish(state, blend=None, progress=None):
+    """Blend and check the chosen clusters (blend: ids; None = all), then rank by
+    real agreement. Works on a copy, so one prepared state serves many selections."""
+    import copy
+    say = progress or (lambda stage: None)
+    clusters = copy.deepcopy(state["clusters"])
+    words, culture, origin = state["words"], state["culture"], state["origin"]
+    word_class, en_concept = state["word_class"], state["en_concept"]
+    errors, notes = state["errors"], list(state["notes"])
+    wanted = None if blend is None else set(blend)
+    chosen = [c for c in clusters if wanted is None or c["id"] in wanted]
+    for c in clusters:
+        c["not_blended"] = wanted is not None and c["id"] not in wanted
+    for k, c in enumerate(chosen):
+        say(f"Blending and checking proposals: cluster {k + 1} of {len(chosen)}")
         members = [{"lang": m["lang"], "form": m["forms"][0], "word": m["word"], "pos": m.get("pos", "")}
                    for m in c["members"] if m["forms"]]   # spelling-only members have no form to blend
         c["proposals"] = propose(members, word_class)[:12] if members else []
@@ -535,12 +700,11 @@ def run(concept, overrides=None, only_sources=None, progress=None):
             cult = [p for p in propose_cultural(culture, origin, members, word_class) if p["severity"] != "BLOCK"]
             c["cultural"] = dict(culture, form=origin["forms"][0])
             c["proposals"] = (cult + [p for p in c["proposals"] if p["form"] not in {q["form"] for q in cult}])[:12]
-        c["existing_roots"] = sorted({r for m in c["members"] for r in lexicon.roots_using(m["lang"], m["word"])})
     say("Ranking clusters by real agreement")
     if any([agreement(c, word_class) for c in clusters]):   # every cluster assessed; re-rank if support changed
-        clusters = select.rank(clusters)
+        clusters = han_priority(select.rank(clusters), state.get("han_seeds", set()))
     questions = team_questions(clusters)
-    return {"words": words, "status": statuses(words, concept.get("no_word", [])),
+    return {"words": words, "status": statuses(words, state["no_word"]),
             "clusters": clusters, "errors": errors, "notes": notes, "cultural": culture,
             "team_questions": questions, "bridged": en_concept.get("bridged", [])}
 

@@ -217,7 +217,11 @@ def align(a, b, sub=None, coda=None, nasal_pos=0.0, edge_gap=EDGE_GAP):
 
 
 def distance(a, b, normalized=False):
-    a, b = a.replace(" ", ""), b.replace(" ", "")
+    return _distance(a.replace(" ", ""), b.replace(" ", ""), normalized)
+
+
+@lru_cache(maxsize=200_000)     # ~30 MB at most; the same pairs recur in clustering,
+def _distance(a, b, normalized):  # blending, support checks and precedent learning
     c = align(a, b)[0]
     return c / max(len(a), len(b), 1) if normalized else c
 
@@ -231,14 +235,17 @@ def edit_count(a, b):
     return len(edits), close
 
 
-def msa(forms):
+def msa(forms, candidates=None):
     """Center-star multiple alignment. Returns (center_index, rows) where rows
-    are equal-length lists of letters/'-' in input order."""
+    are equal-length lists of letters/'-' in input order. candidates: indices
+    allowed as the centre (the dossier passes the sources only, so a proposal
+    that drops a consonant cannot hide the sources' shared column: 妖怪 k/g)."""
     forms = [f.replace(" ", "") for f in forms]
     if len(forms) == 1:
         return 0, [list(forms[0])]
-    sums = [sum(distance(f, g) for g in forms) for f in forms]
-    c = min(range(len(forms)), key=sums.__getitem__)
+    pool = list(candidates) if candidates else list(range(len(forms)))
+    sums = {i: sum(distance(forms[i], g) for k, g in enumerate(forms) if k in pool) for i in pool}
+    c = min(pool, key=sums.__getitem__)
     center = forms[c]
     # master gap profile: gaps[k] = number of insert columns before center[k] (k == len -> end)
     gaps = [0] * (len(center) + 1)
