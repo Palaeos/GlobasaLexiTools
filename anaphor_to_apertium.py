@@ -16,7 +16,7 @@ import csv
 from collections import defaultdict
 
 OUTS = [f"GlobasaTranslation/apertium-glb-{lang}/glb-anaphor.tsv"
-        for lang in ("eng", "fra", "spa", "deu", "nld")]
+        for lang in ("eng", "fra", "spa", "deu", "nld", "jpn")]
 CLASS = {"te": "te", "to": "to", "mante": "te", "femte": "te"}
 
 classes = defaultdict(set)
