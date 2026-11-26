@@ -1,0 +1,3 @@
+# Build tool for the optional Rust extension rust/globasa_fast (./setup.sh --fast).
+# Rust itself comes from https://rustup.rs (the crate pins its version in rust-toolchain.toml).
+maturin>=1.7,<2

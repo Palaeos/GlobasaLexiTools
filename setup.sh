@@ -8,6 +8,9 @@
 #                              venv/bin/python sense_vetter.py  (http://localhost:8090)
 #     ./setup.sh --selector    also prepares the Word Selector (about an hour):
 #                              venv/bin/python "Word Selector.py"  (http://localhost:8092)
+#     ./setup.sh --fast        also builds the optional Rust extension rust/globasa_fast
+#                              (needs Rust: https://rustup.rs); without it everything runs,
+#                              only slower
 #
 # The options read the English Wiktionary dump (~2.4 GB) from
 # WIKTIONARY_DUMP=/path/to/raw-wiktextract-data.jsonl(.gz), else from kaikki.org:
@@ -23,16 +26,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-EXTENSION=0; VETTER=0; SELECTOR=0; WORD_LIST_FILE=""
+EXTENSION=0; VETTER=0; SELECTOR=0; FAST=0; WORD_LIST_FILE=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --extension) EXTENSION=1 ;;
         --vetter) VETTER=1 ;;
         --selector) SELECTOR=1 ;;
+        --fast) FAST=1 ;;
         --word-list)
             [ $# -ge 2 ] || { echo "--word-list needs a file" >&2; exit 1; }
             WORD_LIST_FILE=$2; shift ;;
-        *) echo "Unknown option $1 (use --extension, --vetter, --selector, --word-list FILE)" >&2; exit 1 ;;
+        *) echo "Unknown option $1 (use --extension, --vetter, --selector, --fast, --word-list FILE)" >&2; exit 1 ;;
     esac
     shift
 done
@@ -56,6 +60,20 @@ if [ "$SELECTOR" = 1 ]; then
 fi
 # memory guard for every script (memlimit.py; limit GLOBASA_MEM_GB, default 40% of RAM)
 venv/bin/python -c "import memlimit; memlimit.install()"
+
+if [ "$FAST" = 1 ]; then
+    # Rust versions of the hot loops (word alignment, edition diffs, dependency-tree decoding),
+    # identical results; tests/test_globasa_fast.py compares them with the Python originals
+    echo "== Rust extension (rust/globasa_fast)"
+    if command -v cargo >/dev/null 2>&1; then
+        venv/bin/python -m pip install --quiet -r requirements-fast.txt
+        VIRTUAL_ENV="$PWD/venv" venv/bin/maturin develop --release -m rust/globasa_fast/Cargo.toml
+        venv/bin/python -c "import globasa_fast" && echo "globasa_fast installed"
+    else
+        echo "cargo not found, so the Rust extension was not built (everything runs without it,"
+        echo "only slower). Install Rust from https://rustup.rs, then run ./setup.sh --fast again."
+    fi
+fi
 
 echo "== Word list"
 venv/bin/python - <<'EOF'
@@ -170,6 +188,7 @@ Wiktionary sense vetter (port 8090): ./setup.sh --vetter, then
     venv/bin/python sense_vetter.py
 Word Selector (port 8092): ./setup.sh --selector, then
     venv/bin/python "Word Selector.py"
+Faster alignment, edition diffs and parsing (needs Rust): ./setup.sh --fast
 
 Optional, machine-specific extras (the viewer runs without them):
     WV_AUDIO_DIR=/path/to/clips       pronunciation recordings (<word>.ogg)
