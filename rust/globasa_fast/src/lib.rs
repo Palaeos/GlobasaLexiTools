@@ -6,9 +6,15 @@
 use pyo3::prelude::*;
 
 mod align;
+mod gestalt;
 
 #[pymodule]
 fn globasa_fast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<align::Aligner>()?;
+    m.add_function(wrap_pyfunction!(gestalt::ratio, m)?)?;
+    m.add_function(wrap_pyfunction!(gestalt::quick_ratio, m)?)?;
+    m.add_function(wrap_pyfunction!(gestalt::real_quick_ratio, m)?)?;
+    m.add_function(wrap_pyfunction!(gestalt::matching_blocks, m)?)?;
+    m.add_function(wrap_pyfunction!(gestalt::best_matches, m)?)?;
     Ok(())
 }

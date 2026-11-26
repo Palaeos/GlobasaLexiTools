@@ -81,3 +81,41 @@ def test_uncovered_letters_fall_back():
     from word_selection import align as al
     assert al._rust("café", "cafe", None, None, 0.0, al.EDGE_GAP) is None
     assert al.align("café", "cafe") == al.align_py("café", "cafe")
+
+
+# ---- gestalt (difflib) ------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def edition_sentences():
+    from pathlib import Path
+    from edition_variants import sentences
+    texts = {}
+    for book in ("war-of-the-worlds", "time-machine"):
+        d = Path(ROOT) / book / "text"
+        texts[book] = (sentences(d / "heinemann.txt"), sentences(d / "atlantic.txt"))
+    return texts
+
+
+def test_gestalt_matches_difflib(edition_sentences):
+    import difflib
+    rng = random.Random(3)
+    pairs = []
+    for H, A in edition_sentences.values():
+        for i in rng.sample(range(len(H)), 300):         # aligned neighbours: real near-matches
+            c = int(i * len(A) / len(H))
+            pairs += [(H[i], A[min(len(A) - 1, c + d)]) for d in (-1, 0, 1)]
+        pairs += [(rng.choice(H), rng.choice(A)) for _ in range(300)]
+    pairs += [("", ""), ("", "abc"), ("abc", ""), ("aaaa", "aa"), ("ab" * 150, "ba" * 150)]
+    for a, b in pairs:
+        sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
+        assert globasa_fast.real_quick_ratio(a, b) == sm.real_quick_ratio()
+        assert globasa_fast.quick_ratio(a, b) == sm.quick_ratio()
+        assert globasa_fast.matching_blocks(a, b) == [tuple(m) for m in sm.get_matching_blocks()]
+        assert globasa_fast.ratio(a, b) == sm.ratio()
+
+
+def test_best_matches_matches_python(edition_sentences):
+    import edition_variants as ev
+    H, A = edition_sentences["time-machine"]
+    H, A = H[:250], A[:260]
+    got = globasa_fast.best_matches(H, A, ev.WINDOW, ev.MIN_RATIO)
+    assert got == ev.best_matches_py(H, A, ev.MIN_RATIO, ev.WINDOW)

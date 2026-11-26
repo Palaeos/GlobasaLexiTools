@@ -18,6 +18,8 @@
 import difflib
 import re
 
+from fast_ext import fast as _fast
+
 MIN_RATIO = 0.6
 WINDOW = 150
 
@@ -48,19 +50,37 @@ def kind(a, b):
     return "substitution"
 
 
-def variants(A, B, min_ratio=MIN_RATIO, window=WINDOW):
-    """[(i, ratio, kind, a_words, b_words)] for the sentences A[i] that have a close B match."""
+def best_matches_py(A, B, min_ratio=MIN_RATIO, window=WINDOW):
+    """[(ratio, j)] per A sentence: the first most similar B[j] within the window around A[i]'s
+    position, (0.0, -1) if none passes the quick ratios. The reference for the Rust version
+    (globasa_fast.best_matches, the same search in parallel)."""
     out = []
     for i, a in enumerate(A):
         c = int(i * len(B) / len(A))
-        best = (0.0, None)
-        for b in B[max(0, c - window): c + window]:
+        lo = max(0, c - window)
+        best = (0.0, -1)
+        for j, b in enumerate(B[lo: c + window], lo):
             sm = difflib.SequenceMatcher(None, a, b, autojunk=False)
             if sm.real_quick_ratio() < min_ratio or sm.quick_ratio() < min_ratio:
                 continue
             r = sm.ratio()
             if r > best[0]:
-                best = (r, b)
+                best = (r, j)
+        out.append(best)
+    return out
+
+
+def best_matches(A, B, min_ratio=MIN_RATIO, window=WINDOW):
+    if _fast is not None:
+        return _fast.best_matches(list(A), list(B), window, min_ratio)
+    return best_matches_py(A, B, min_ratio, window)
+
+
+def variants(A, B, min_ratio=MIN_RATIO, window=WINDOW):
+    """[(i, ratio, kind, a_words, b_words)] for the sentences A[i] that have a close B match."""
+    out = []
+    for i, (a, (r, j)) in enumerate(zip(A, best_matches(A, B, min_ratio, window))):
+        best = (r, B[j] if j >= 0 else None)
         if best[0] < min_ratio or best[0] == 1.0:
             continue
         aw, bw = a.split(), best[1].split()
