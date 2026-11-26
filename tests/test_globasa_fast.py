@@ -119,3 +119,36 @@ def test_best_matches_matches_python(edition_sentences):
     H, A = H[:250], A[:260]
     got = globasa_fast.best_matches(H, A, ev.WINDOW, ev.MIN_RATIO)
     assert got == ev.best_matches_py(H, A, ev.MIN_RATIO, ev.WINDOW)
+
+
+# ---- mst (stanza's Chu-Liu-Edmonds) -----------------------------------------------------------
+def _score_matrices(count, seed):
+    import numpy as np
+    rng = np.random.default_rng(seed)
+    for t in range(count):
+        n = int(rng.integers(2, 70))
+        if t % 2:       # small integers: many ties and cycles
+            m = rng.integers(-4, 4, (n, n)).astype(np.float64)
+        else:           # log-probability-like, as the parser's
+            m = rng.standard_normal((n, n)) * 3 - 5
+        if t % 7 == 0:
+            m[rng.random((n, n)) < 0.1] = -np.inf
+        if t % 5 == 0:
+            m = m.astype(np.float32)        # the parser's dtype
+        yield m
+
+
+def test_mst_matches_stanza():
+    import numpy as np
+    stanza_ce = pytest.importorskip("stanza.models.common.chuliu_edmonds")
+    for m in _score_matrices(10000, 5):
+        want = stanza_ce.chuliu_edmonds_one_root(m)
+        got = globasa_fast.chuliu_edmonds_one_root(np.ascontiguousarray(m, dtype=np.float64))
+        assert got is not None
+        assert got.dtype == want.dtype and np.array_equal(got, want), m
+
+
+def test_mst_nan_defers_to_stanza():
+    import numpy as np
+    m = np.zeros((4, 4)); m[1, 2] = np.nan
+    assert globasa_fast.chuliu_edmonds_one_root(m) is None

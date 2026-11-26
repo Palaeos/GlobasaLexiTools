@@ -7,6 +7,7 @@ use pyo3::prelude::*;
 
 mod align;
 mod gestalt;
+mod mst;
 
 #[pymodule]
 fn globasa_fast(m: &Bound<'_, PyModule>) -> PyResult<()> {
@@ -16,5 +17,6 @@ fn globasa_fast(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(gestalt::real_quick_ratio, m)?)?;
     m.add_function(wrap_pyfunction!(gestalt::matching_blocks, m)?)?;
     m.add_function(wrap_pyfunction!(gestalt::best_matches, m)?)?;
+    m.add_function(wrap_pyfunction!(mst::chuliu_edmonds_one_root, m)?)?;
     Ok(())
 }
