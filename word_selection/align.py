@@ -138,6 +138,7 @@ NG_VS_JA = [(re.compile(rf"ng(?={CONS_RE}|$)"), ""), (re.compile(rf"ng(?={CONS_R
 JA_LONG = [(re.compile(r"(?<=[ou])u|(?<=e)i|(?<=o)o"), "ng")]
 
 
+@lru_cache(maxsize=200_000)     # up to 16x16 variant alignments per call; pairs recur in clustering
 def sino_distance(lang_a, a, lang_b, b):
     """Normalised distance under Sino-xenic correspondences (best coda variant)."""
     va, vb = sino_norm(lang_a, a), sino_norm(lang_b, b)
