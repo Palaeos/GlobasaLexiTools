@@ -23,6 +23,11 @@ WiktionaryLMDB_vetted.building/
 WiktionaryLMDB_senses/
 WiktionaryLMDB_senses.building/
 
+# Local Wiktionary LMDBs (built from the dump; may be symlinks to a faster disk, hence no
+# trailing slash: a symlink is a file to git)
+/WiktionaryLMDB
+/WiktionaryLMDB_*
+
 # Expanded vetting views: regenerated from vetted_senses.tsv + the dump
 GLB_ENG_WiktionarySenses*.tsv
 GLB_ENG_WiktionarySenses*.xlsx
