@@ -1,0 +1,13 @@
+{
+  "name": "globasa-web-translator",
+  "private": true,
+  "type": "module",
+  "description": "Globasa Apertium pairs in the browser (WebAssembly + Pyodide). Node is only needed for the tests.",
+  "scripts": {
+    "test": "python3 test/capped.py node test/smoke_tools.mjs && python3 test/capped.py node test/parity.mjs"
+  },
+  "devDependencies": {
+    "pyodide": "314.0.7",
+    "onnxruntime-web": "1.31.1"
+  }
+}

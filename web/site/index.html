@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Globasa Translator</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --surface: #ffffff; --ink: #1d1b18; --muted: #6b665d; --line: #e2ddd3;
+    --accent: #1f6f5c; --accent-ink: #ffffff; --warn-bg: #fff6e0; --warn-ink: #6a4b00; --err: #a3261b;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #161513; --surface: #1f1d1a; --ink: #ece8e1; --muted: #a39d92; --line: #36332e;
+            --accent: #5cc3a6; --accent-ink: #0d1f1a; --warn-bg: #33290f; --warn-ink: #f0d58a; --err: #ff8a7d;
+            color-scheme: dark; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 64rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
+  .lede { color: var(--muted); margin: 0 0 1.5rem; max-width: 46rem; }
+  .bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1rem; }
+  select, button, textarea { font: inherit; color: inherit; }
+  select { background: var(--surface); border: 1px solid var(--line); border-radius: .4rem; padding: .45rem .6rem; }
+  button { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: .4rem;
+           padding: .5rem 1.1rem; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  .prefs { display: flex; flex-wrap: wrap; gap: .4rem 1rem; font-size: .92rem; color: var(--muted); }
+  .prefs label { display: inline-flex; gap: .35rem; align-items: center; cursor: pointer; }
+  .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .panes { grid-template-columns: 1fr; } }
+  textarea, .out { width: 100%; min-height: 14rem; background: var(--surface); border: 1px solid var(--line);
+                   border-radius: .5rem; padding: .8rem; line-height: 1.55; }
+  textarea { resize: vertical; }
+  .out { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .out .unk { color: var(--muted); }
+  .status { font-size: .9rem; color: var(--muted); min-height: 1.4rem; margin: .6rem 0; }
+  .status.err { color: var(--err); }
+  progress { width: 12rem; height: .5rem; vertical-align: middle; accent-color: var(--accent); }
+  .notes { background: var(--warn-bg); color: var(--warn-ink); border-radius: .5rem; padding: .7rem .9rem;
+           font-size: .9rem; margin-top: 1rem; }
+  .notes ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+  details { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; color: var(--muted); font-size: .92rem; }
+  summary { cursor: pointer; color: var(--ink); font-weight: 600; }
+  details a { color: var(--accent); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  kbd { font: .85em ui-monospace, monospace; border: 1px solid var(--line); border-radius: .25rem; padding: 0 .3rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Globasa Translator</h1>
+  <p class="lede">Rule-based machine translation between Globasa and six languages, running entirely in your
+    browser: the Apertium pairs are compiled to WebAssembly and loaded into memory, so nothing you type
+    leaves this page.</p>
+
+  <div class="bar">
+    <label for="mode" class="visually-hidden">Direction</label>
+    <select id="mode" disabled><option>Loading…</option></select>
+    <button id="go" disabled>Translate</button>
+    <span class="prefs" id="prefs"></span>
+  </div>
+
+  <div class="panes">
+    <textarea id="src" placeholder="Text to translate" spellcheck="false"></textarea>
+    <div class="out" id="out" aria-live="polite"></div>
+  </div>
+  <div class="status" id="status">Starting…</div>
+  <div class="notes" id="notes" hidden></div>
+
+  <details>
+    <summary>About this translator</summary>
+    <p>Each direction is an <a href="https://apertium.org">Apertium</a> pair. Its processors (lt-proc, cg-proc,
+      apertium-tagger, lrx-proc, lsx-proc, apertium-anaphora, rtx-proc) run as one WebAssembly binary, and the
+      pairs' own Python steps run unchanged in <a href="https://pyodide.org">Pyodide</a>. The output is the same,
+      byte for byte, as the native pipeline with its neural steps switched off.</p>
+    <p><strong>Neural steps.</strong> On a desktop setup some directions (into Globasa from English, French, Spanish,
+      German and Dutch) also use local NLP models for tagging, coreference and gender. Those are too large for a
+      browser, so here those stages are skipped and the rule-based behaviour is used; each skipped stage is listed
+      under the translation.</p>
+    <p id="excluded"></p>
+    <p>Sources and licences: Apertium tools and pair data are free software under the GNU GPL —
+      <a href="https://github.com/apertium">apertium</a>, <a href="https://github.com/GrammarSoft/cg3">CG-3</a>,
+      ICU (Unicode licence), libxml2 (MIT), Pyodide (MPL 2.0). The build scripts and the Globasa pairs are in the
+      GlobasaLexiTools repository (<kbd>web/</kbd>).</p>
+    <p id="version"></p>
+  </details>
+</main>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+const worker = new Worker("worker.js", { type: "module" });
+let modes = [], busy = false, reqId = 0;
+
+function status(text, err = false) { $("status").textContent = text; $("status").className = "status" + (err ? " err" : ""); }
+
+function remember(k, v) { try { localStorage.setItem("glb-tr-" + k, v); } catch {} }
+function recall(k) { try { return localStorage.getItem("glb-tr-" + k); } catch { return null; } }
+
+function renderPrefs() {
+  const m = modes.find((x) => x.mode === $("mode").value);
+  $("prefs").replaceChildren();
+  for (const p of (m && m.prefs) || []) {
+    if (p.kind === "choice") {
+      const sel = document.createElement("select");
+      sel.dataset.pref = p.id; sel.title = p.description;
+      sel.append(new Option(`${p.id}: default`, ""));
+      for (const o of p.options) sel.append(new Option(`${p.id}=${o}`, o));
+      $("prefs").append(sel);
+    } else {
+      const lab = document.createElement("label");
+      const box = document.createElement("input");
+      box.type = "checkbox"; box.dataset.pref = p.id;
+      lab.title = p.description; lab.append(box, p.id);
+      $("prefs").append(lab);
+    }
+  }
+}
+
+function setvar() {
+  return [...$("prefs").querySelectorAll("[data-pref]")].map((el) =>
+    el.type === "checkbox" ? (el.checked ? el.dataset.pref : "") : (el.value ? `${el.dataset.pref}=${el.value}` : "")
+  ).filter(Boolean).join(",");
+}
+
+function translate() {
+  const text = $("src").value.trim();
+  if (!text || busy) return;
+  busy = true; $("go").disabled = true;
+  status("Translating…");
+  worker.postMessage({ type: "translate", id: ++reqId, mode: $("mode").value, text, setvar: setvar() });
+}
+
+worker.onmessage = (e) => {
+  const d = e.data;
+  if (d.type === "status") status(d.text);
+  else if (d.type === "ready") {
+    modes = d.modes;
+    $("mode").replaceChildren(...modes.map((m) => new Option(`${m.label}  (${(m.bytes / 1e6).toFixed(1)} MB)`, m.mode)));
+    const last = recall("mode");
+    if (last && modes.some((m) => m.mode === last)) $("mode").value = last;
+    $("mode").disabled = false; $("go").disabled = false;
+    renderPrefs();
+    $("excluded").textContent = "Not in the browser yet: " +
+      Object.entries(d.excluded).map(([k, why]) => `${k} (${why})`).join("; ") + ".";
+    $("version").textContent = `Bundle ${d.version}.`;
+    status("Ready. Pair files load the first time you use a direction.");
+  } else if (d.type === "progress") {
+    status(`Loading ${d.mode}: ${(d.done / 1e6).toFixed(1)} of ${(d.total / 1e6).toFixed(1)} MB`);
+  } else if (d.type === "result") {
+    busy = false; $("go").disabled = false;
+    $("out").textContent = d.output;
+    status(`Translated in ${(d.ms / 1000).toFixed(2)} s. Marks: * unknown word, @ no entry in the bilingual dictionary, # form the generator cannot produce.`);
+    const notes = [...new Set(d.notes)];
+    $("notes").hidden = !notes.length;
+    if (notes.length) {
+      const ul = document.createElement("ul");
+      for (const n of notes) { const li = document.createElement("li"); li.textContent = n; ul.append(li); }
+      $("notes").replaceChildren("Stages run without their neural model (rule-based fallback):", ul);
+    }
+  } else if (d.type === "error") {
+    busy = false; $("go").disabled = false;
+    status(`Error${d.step ? ` in ${d.step}` : ""}: ${d.message}`, true);
+  }
+};
+worker.onerror = (e) => status(`Worker failed: ${e.message || e}`, true);
+
+$("mode").addEventListener("change", () => { remember("mode", $("mode").value); renderPrefs(); });
+$("go").addEventListener("click", translate);
+$("src").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) translate(); });
+worker.postMessage({ type: "init" });
+</script>
+</body>
+</html>

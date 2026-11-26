@@ -1,0 +1,21 @@
+# ICU 68.2 data items the wasm tools open, traced over all modes with
+#   ICU_FULL=<icupkg -x '*' folder> node web/test/parity.mjs
+# build_wasm.sh packs only these into web/dist/wasm/icudt68l.dat:
+# number formatting (u_sscanf/u_fprintf), word breaks (u_strToTitle in rtx-proc),
+# the converter alias table.
+brkitr/en.res
+brkitr/en_US.res
+brkitr/en_US_POSIX.res
+brkitr/root.res
+brkitr/word_POSIX.brk
+cnvalias.icu
+curr/en.res
+curr/pool.res
+curr/root.res
+curr/supplementalData.res
+en.res
+en_US.res
+en_US_POSIX.res
+numberingSystems.res
+pool.res
+root.res

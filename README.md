@@ -70,6 +70,22 @@ Everything runs on a plain clone; these make it faster without changing any resu
 - **An SSD for the Wiktionary LMDBs.** The Word Selector and the extension builder read `WiktionaryLMDB*` at random; on a spinning disk a cold Word Selector evaluation spent 185 of its 214 seconds waiting for reads. Moving the folders to an SSD and leaving symlinks in their place works (`.gitignore` covers both).
 - **A GPU for the X→glb NLP services.** The services in `GlobasaTranslation/` use CUDA when torch finds it (Spanish, 3,000 characters: 4.9 s on CPU, 0.7 s on an RTX 4060 Ti). Set `GLB_NLP_CPU=1`, `FRA_NLP_CPU=1` or `ENG_NLP_CPU=1` to stay on the CPU.
 
+## Browser translator
+
+The Globasa Apertium pairs (to and from English, French, Spanish, Esperanto, German and Dutch) as a static web page: the visitor's browser loads a pair into memory and translates locally, with no server. Built in [`web/`](web/):
+
+```bash
+web/build.sh                       # wasm tools + pair bundle + page → web/dist/ (about 46 MB)
+python3 -m http.server -d web/dist # open http://localhost:8000
+web/deploy.sh                      # build, test, commit web/dist to the gh-pages branch (--push to publish)
+```
+
+- **Tools.** [`web/build_wasm.sh`](web/build_wasm.sh) compiles the runtime processors (lt-proc, cg-proc, apertium-tagger, apertium-pretransfer, lrx-proc, lsx-proc, apertium-anaphora, rtx-proc) and the plain-text path of the `apertium` command around them (apertium-destxt/-retxt, apertium-normalize, apertium-wblank-attach/-detach) with Emscripten into one multicall binary (3.7 MB), from the commits of the installed Debian packages, so the compiled `.bin` files load unchanged. It needs emsdk, CMake and `icupkg` (icu-devtools); the work folder (several GB) is `WASM_WORK`, by default on Warehouse2.
+- **Pairs.** [`web/build_modes.py`](web/build_modes.py) turns each installed mode into a manifest of steps and copies the files it uses. The pairs' Python steps run unchanged in [Pyodide](https://pyodide.org), self-hosted; their `subprocess` calls go to the wasm tools.
+- **Neural steps** need the local NLP services, so the browser runs those stages as their rule-based fallback and lists each one under the translation: `(fallback: no neural service in browser)`. The exception is English→Globasa PoS: stanza's two small English taggers (combined + GUM, non-transformer, UD EWT/GUM) run in the browser through onnxruntime-web and answer `eng-glb-neural.py pos` (about 70 MB, loaded the first time English→Globasa is used). [`web/tagger/export_stanza_pos.py`](web/tagger/export_stanza_pos.py) exports them and checks they predict what stanza predicts; `node web/test/tagger_quality.mjs` scores eng→glb with and without them.
+- **Tests.** `node web/test/parity.mjs` runs every mode in wasm and through the `apertium` command on the gold sentences in `parallel_gold_cache/` and requires identical output; `node web/test/browser.mjs` drives the page in headless Chromium. Run both through `python3 web/test/capped.py …` (as `npm test` and `deploy.sh` do), which kills the whole process tree above `GLOBASA_MEM_GB`.
+- **Not yet in the browser:** Japanese (needs MeCab) and Ancient Greek (corpus pipelines).
+
 ## Lute
 
 A [Lute](https://github.com/LuteOrg/lute-v3) library of the Doxo texts, read with the Word Viewer as Lute's dictionary, and Lute's word statuses copied to the Anki vocabulary deck.
