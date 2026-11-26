@@ -99,12 +99,14 @@ export class EnglishTagger {
 }
 
 // ── EWT-style tokenization ────────────────────────────────────────────────
-// Words keep internal hyphens/apostrophes/periods; English clitics are split off as in
+// Words keep internal apostrophes/periods (hyphens are split, see TOKEN); English clitics are split off as in
 // UD EWT (do|n't, it|'s, ca|n't, wo|n't); runs of !, ? and . stay one token. A token that
 // does not line up with an Apertium unit is simply not used by the client (no pruning).
 const ABBREV = new Set(["mr.", "mrs.", "ms.", "dr.", "st.", "jr.", "sr.", "prof.", "vs.", "etc.", "e.g.", "i.e.",
   "u.s.", "u.k.", "inc.", "ltd.", "co.", "no.", "vol.", "fig.", "cf.", "a.m.", "p.m."]);
-const TOKEN = /\d+(?:[.,:]\d+)*|[\p{L}\p{M}\p{N}]+(?:[-'’.][\p{L}\p{M}\p{N}]+)*\.?|\.{2,}|…|[!?]+|--+|[^\s]/gu;
+// Hyphens are tokens of their own (search - engine, Rule - based), as in UD EWT (HYPH) and as
+// the Apertium analyser splits an unknown hyphenated word, so the parts line up with its units.
+const TOKEN = /\d+(?:[.,:]\d+)*|[\p{L}\p{M}\p{N}]+(?:['’.][\p{L}\p{M}\p{N}]+)*\.?|\.{2,}|…|[!?]+|--+|[^\s]/gu;
 const CLITIC = /^(.+?)(n['’]t|['’](?:s|re|ve|ll|d|m))$/i;
 
 export function tokenize(text) {
