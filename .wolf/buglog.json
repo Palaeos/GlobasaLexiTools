@@ -5476,5 +5476,70 @@
     ],
     "occurrences": 1,
     "last_seen": "2026-11-26T19:10:00"
+  },
+  {
+    "id": "bug-334",
+    "timestamp": "2026-11-26T21:30:00",
+    "error_message": "eng->glb: 'I totally agree' -> 'Mi totalmodongwi' (adverb glued to verb)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+    "root_cause": "VP -> AVP vv { 1 %2 } had no blank between the children",
+    "fix": "{ 1 _ %2 }; prefix adverbs (preflist) keep their own joining rules",
+    "tags": [
+      "rtx",
+      "eng-glb",
+      "blank"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T21:30:00"
+  },
+  {
+    "id": "bug-335",
+    "timestamp": "2026-11-26T21:30:00",
+    "error_message": "names with inner capitals came out as 'WebAssembly/Webassembly'",
+    "file": "apertium-glb/glb-neural.py, apertium-glb/glb-pregen.py",
+    "root_cause": "lt-proc matches the name regex (bidix and generator) twice: as written and case-normalised",
+    "fix": "bidix side: manfem drops case variants of np translations; generator side: glb-pregen writes ^Name<np>$ as plain text (lt-proc -c would break capitalised ordinary words)",
+    "tags": [
+      "lttoolbox",
+      "case",
+      "np",
+      "regex"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T21:30:00"
+  },
+  {
+    "id": "bug-336",
+    "timestamp": "2026-11-26T21:30:00",
+    "error_message": "glb-pregen first version stripped -mo before unknown adjectives (godomo *dangereux -> godo)",
+    "file": "GlobasaTranslation/apertium-glb/glb-pregen.py",
+    "root_cause": "unknown words have no tags, so 'next is not adj/adv' was true",
+    "fix": "strip only when the next word is known and of another class or the sentence ends; unknown, participle, comma and ji keep -mo",
+    "tags": [
+      "glb-pregen",
+      "-mo",
+      "conservative"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T21:30:00"
+  },
+  {
+    "id": "bug-337",
+    "timestamp": "2026-11-26T21:30:00",
+    "error_message": "coordinated passive rtx rule lost 'le' and the passive (were opened and closed -> Dwer bebuka ji klosido)",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rtx",
+    "root_cause": "the new vv rules interfered with tense propagation; second participles were not tagged pp by the rule-only tagger",
+    "fix": "reverted; coordinated passive left open",
+    "tags": [
+      "rtx",
+      "passive",
+      "reverted"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T21:30:00"
   }
 ]

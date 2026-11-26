@@ -89,6 +89,11 @@
 
 ## Key Learnings
 
+- [2026-11-26] lt-proc matches regex entries (bidix np `[A-Z][A-Za-z...]*`, generator np) case-insensitively and returns BOTH the as-written and a case-normalised variant for words with inner capitals (WebAssembly/Webassembly). `-c` fixes it but breaks every capitalised ordinary word. Filter instead (glb-neural manfem; glb-pregen writes ^Name<np>$ as text).
+- [2026-11-26] Globasa -mo (Xwexi Adverb Suffix -mo): only on t-word adverbs modifying an adjective/adverb. glb-pregen.py (apertium-glb, before generation in all X->glb pairs) strips it conservatively: only before a known word of another class or at sentence end. Correlative -mo words (denmo, kemo, hinmo, nilmo, daydenmo) are lexemes, not derivations.
+- [2026-11-26] rtx-comp: every category used in an output pattern must be declared (`cnjcoo: _;`), else "Could not find output pattern". In rtx output `%N` marks the child that passes its attributes up; adding coordinated vv rules broke tense propagation (reverted).
+- [2026-11-26] eng-glb-neural.py prune() is shared desktop/browser; it now takes UPOS + next word's Penn tag. Bare relative clauses (nothing you type) need a dependency parse (acl:relcl) to stay zero-FP; the browser has no parser yet.
+
 - [2026-11-23] Globasa already has **jini** for jinn (user); the jinn class is not a gap.
 
 - [2026-11-23] Globasa "after-" prefix is **xafe-** (not post-); *pos-* is a negating prefix (posjui, posyukyo). Postmodern → xafemoderni-.
