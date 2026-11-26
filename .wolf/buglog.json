@@ -5353,5 +5353,24 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-23T16:29:15"
+  },
+  {
+    "id": "bug-327",
+    "timestamp": "2026-11-26T15:10:00Z",
+    "error_message": "menalariExtension.tsv and _clarifiers.tsv differ between two runs of the same code (~2,400 diff lines, e.g. abacus (_ferrāmentum_) vs (_instrūmentum_))",
+    "file": "wiktionary_constants.py",
+    "root_cause": "_resolve_lang built its list by iterating a set of Translation (deserialize_translations returns sets), so the order changed with PYTHONHASHSEED; the builder's extension_words order followed it and Clarifiers._own takes items[0]. bug-231 had sorted only the joins in entry_to_string.",
+    "fix": "_resolve_lang iterates sorted(...) (the LMDB's stored order); two runs with PYTHONHASHSEED=1 and 2 are byte-identical",
+    "tags": [
+      "extension",
+      "determinism",
+      "clarifiers",
+      "regression"
+    ],
+    "related_bugs": [
+      "bug-231"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T15:10:00Z"
   }
 ]
