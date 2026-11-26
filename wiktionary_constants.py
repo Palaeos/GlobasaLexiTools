@@ -315,18 +315,19 @@ def _resolve_lang(lang_code, lang_translations):
     For dialect codes (e.g. 'de-ale'): looks up parent in lang_translations,
     returns only translations carrying the required dialect tag.
     For standard codes: returns translations excluding all dialect tags.
-    Returns (translations_list, found_bool)."""
+    Returns (translations_list, found_bool). The list is sorted (the LMDB's stored order): the
+    translations arrive as a set, whose order changes with PYTHONHASHSEED."""
     if lang_code in DIALECT_LANGS:
         parent, required_tag = DIALECT_LANGS[lang_code]
         if parent not in lang_translations:
             return [], False
-        filtered = [t for t in lang_translations[parent]
+        filtered = [t for t in sorted(lang_translations[parent])
                     if required_tag in (t.tags or '').split('\t')]
         return filtered, bool(filtered)
     else:
         if lang_code not in lang_translations:
             return [], False
-        filtered = [t for t in lang_translations[lang_code] if not is_dialect(t)]
+        filtered = [t for t in sorted(lang_translations[lang_code]) if not is_dialect(t)]
         return filtered, bool(filtered)
 
 
