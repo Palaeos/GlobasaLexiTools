@@ -469,3 +469,13 @@
 - `concept_discovery/clics_soul_colexifications.py` — CLICS4 (Warehouse2/Language/Claude/clics4, CC BY) family-weighted colexification of soul/ghost/spirit/breath/shadow/heart/mind/life/... concept pairs (languages pooled by Glottocode, denominators = families recording both) -> output/clics_soul_colexifications.tsv + _by_area.tsv (per macro-area); 7 s, 30 MB (~1800 tok)
 - `GlobasaTranslation/apertium-glb/glb-neural.py` — shared X→glb neural step, stages parse|coref|focus; focus = den-/hin- reference tracking (registers from the stream, per te/ete/to/oto focus+secondary, hin/den tags, third character → name/noun); AP_SETVAR=nofocus
 - `GlobasaTranslation/apertium-glb/test/focus/` — run.py (mock /analyze) + input.txt + analysis.json: regression test for the focus stage
+
+## rust/globasa_fast/ (optional Rust extension, built by ./setup.sh --fast)
+- `Cargo.toml`, `Cargo.lock`, `pyproject.toml`, `rust-toolchain.toml` — PyO3 0.25.1 + numpy 0.25 + rayon, abi3-py310 (one build for Python >= 3.10), pinned Rust 1.100.0; maturin develop --release installs it into venv/
+- `src/lib.rs` — module globasa_fast; each routine mirrors a Python original that stays the reference and fallback (~150 tok)
+- `src/align.rs` — Aligner: port of word_selection/align.py align() (sub-cost table over an ASCII alphabet from Python, coda '' or 'sino' = _sino_coda, nasal_pos, edge_gap); align / cost / min_norm_cost (sino_distance); bit-identical costs and tracebacks (~2200 tok)
+- `src/gestalt.rs` — difflib.SequenceMatcher port (isjunk None, autojunk False; chars): ratio, quick_ratio, real_quick_ratio, matching_blocks identical to CPython; best_matches = edition_variants' windowed candidate search, rayon-parallel (WotW 8 min -> 1.7 s) (~1800 tok)
+- `src/mst.rs` — literal port of stanza 1.15 chuliu_edmonds_one_root (same argmax ties, Tarjan cycle order, numpy pairwise sum): identical trees on 10k random matrices; patched into the NLP services by apertium-glb/glb_stanza.py (~2000 tok)
+- `GlobasaTranslation/apertium-glb/glb_stanza.py` — shared by the spa/deu/nld, eng, fra NLP services: use_gpu(cpu_env) (CUDA unless <X>_NLP_CPU=1; fallback labelled), fast_depparse() (Rust tree decoder, stanza's otherwise, labelled), vram() (~500 tok)
+- `fast_ext.py` — `from fast_ext import fast`: the globasa_fast module or None; prints "(fallback: ...)" once; GLOBASA_FAST=0 forces the Python path (~150 tok)
+- `tests/test_globasa_fast.py` — Rust vs Python originals (align on 5.2k word-list pairs x 5 configs, sino min_norm_cost, uncovered letters fall back); skipped when the extension is not built (~700 tok)
