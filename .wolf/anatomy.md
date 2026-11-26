@@ -161,6 +161,9 @@
 - `src/tagger.mjs` — EnglishTagger: stanza combined+gum nocharlm via onnxruntime-web; EWT-style tokenize(); analyze() in eng-nlp-service JSON shape (~1600 tok)
 - `tagger/export_stanza_pos.py` — exports stanza combined/gum nocharlm to ONNX (char + sentence nets), trims conll17 to top 100k int8; checks wrapper vs stanza (≤0.05% near-ties) and ORT vs wrapper (exact) (~2600 tok)
 - `test/tagger_check.mjs` — JS tagger accuracy on UD EWT test (must match exporter: 95.99 / 92.98) + probe (~700 tok)
+- `test/gap_dump.mjs` — eng->glb on all dev sentences (browser pipeline + tagger) -> JSONL for gap_report.py (~600 tok)
+- `test/gap_report.py` — English constructions (Penn tags) vs chrF, top @/# marks, leftover function words (~1800 tok)
+- `test/gaps_native.py` — same for spa/epo->glb from the pair's own tagger stage (native, capped) (~2200 tok)
 - `test/tagger_quality.mjs` — eng-glb chrF with/without browser tagger on curated + dev sets (~1100 tok)
 - `py/runner.py` — Pyodide step runner + subprocess shim to the wasm tools + urllib bridge for http://browser-nlp (NeedAnalysis) (~1500 tok)
 - `site/index.html` — page UI (mode picker, prefs, notes, about) (~2300 tok)
@@ -169,6 +172,10 @@
 - `test/parity.mjs` — all modes wasm vs native on gold lines; PARITY_STEPS first-divergence; ulimit -v on native runs (~2200 tok)
 - `test/browser.mjs` — headless Chromium end-to-end via CDP (cannot run in the Claude sandbox: AF_UNIX blocked) (~1400 tok)
 - `test/capped.py` — runs a command with its process group's RSS capped at GLOBASA_MEM_GB (~600 tok)
+
+## ./docs/translation/
+
+- `rule_gaps_handover.md` — HANDOVER: rule/dictionary gaps left in eng/epo/spa->glb, measuring commands, Esperanto affix map from the word list, decisions, order (~3500 tok)
 
 ## ./ — Key Data Files
 
