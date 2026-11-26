@@ -10,6 +10,7 @@ Minimal-pair tiers ("Methodology for Lexical Development", Caveats):
 Letter names (ibe, ice, ...) collide by design and are excluded from all counts.
 """
 
+import bisect
 import collections
 import re
 from functools import lru_cache
@@ -121,6 +122,22 @@ def _lex():
     return words, keys, roots, set(pre) | EXTRA_PREFIXES, set(suf)
 
 
+@lru_cache(maxsize=1)
+def _prefix_index():
+    """Words sorted for bisect prefix ranges, plus each word's position in the lexicon, so the
+    hits come back in lexicon order (as the former linear scan returned them)."""
+    words = _lex()[0]
+    return sorted(words), {w: i for i, w in enumerate(words)}
+
+
+def _with_prefix(cand):
+    """Words starting with cand and longer than it, in lexicon order."""
+    ordered, pos = _prefix_index()
+    lo = bisect.bisect_left(ordered, cand)
+    hi = bisect.bisect_left(ordered, cand + "{", lo)     # "{" sorts after "z"; words are [a-z]+
+    return sorted((w for w in ordered[lo:hi] if len(w) > len(cand)), key=pos.__getitem__)
+
+
 def gloss(w):
     v = _lex()[0].get(w)
     return (v["eng"] if v else "")[:70]
@@ -182,8 +199,8 @@ def check(cand, exclude=(), kind="ordinary"):
                 seen.add(w)
                 rep["minimal_pairs"].append({"word": w, "gloss": gloss(w), "tier": "ANY",
                                              "why": "near pair via y~i / w~u"})
-    for w in words:
-        if w != cand and w not in ex and w.startswith(cand) and len(w) > len(cand):
+    for w in _with_prefix(cand):
+        if w not in ex:
             rest = w[len(cand):]
             if rest in roots or rest in suffixes:
                 rep["misparse_existing"].append((w, gloss(w), f"{cand}+{rest}"))
