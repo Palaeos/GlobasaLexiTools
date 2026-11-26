@@ -144,6 +144,32 @@
 - `word_viewer_scripts.js` — Alternative script transliterators for Globasa (~1636 tok)
 - `word_viewer.html` — Globasa Word Viewer (~25394 tok)
 
+## ./web/
+
+- `build.sh` — builds web/dist (wasm, pairs, self-hosted Pyodide, page); --no-wasm reuses wasm (~400 tok)
+- `build_wasm.sh` — fetches pinned Apertium/cg3/libxml2/utfcpp/rapidjson sources + emsdk 7.0.0 into WASM_WORK (Warehouse2), builds the multicall wasm, patches instantiateSync for sync calls, packs trimmed ICU data (~1200 tok)
+- `build_modes.py` — mode manifests = apertium command's txt path: destxt + native apertium-wblank-mode pipeline + retxt (steps with native cmd, /p/ paths, files, prefs, neural switches) + copies pair files into dist/pairs; index.json with content version (~2200 tok)
+- `deploy.sh` — build + capped tests + commit dist to gh-pages branch (--push publishes) (~600 tok)
+- `package.json` — pins pyodide 314.0.7 (Node tests + self-hosted copy) (~100 tok)
+- `wasm/CMakeLists.txt` — multicall build: library globs, renamed mains, ICU/boost ports, link flags (WASM_ASYNC_COMPILATION=0, ENVIRONMENT=web,worker) (~1300 tok)
+- `wasm/multicall.cc` — dispatcher; /io/in,/io/out onto fds 0/1 (~350 tok)
+- `wasm/rename_main.py` — copies a tool main() as <tool>_main with explicit return 0; --isolate wraps flex scanners (destxt/retxt) in a namespace (~700 tok)
+- `wasm/gnu_sort.hpp` — libstdc++ std::sort port so tie order matches native (state.cc, lrx_processor.cc) (~1500 tok)
+- `wasm/icu_items.txt` — the 16 ICU items the tools open (traced) (~150 tok)
+- `src/tools.mjs` — runToolSync: fresh wasm instance per call, ICU mount in preRun (~1000 tok)
+- `src/pipeline.mjs` — Translator: loadMode, async translate (STREAMCMD SETVAR, neural fallback notes, browser NLP re-run on NeedAnalysis), setNlp (~1300 tok)
+- `src/tagger.mjs` — EnglishTagger: stanza combined+gum nocharlm via onnxruntime-web; EWT-style tokenize(); analyze() in eng-nlp-service JSON shape (~1600 tok)
+- `tagger/export_stanza_pos.py` — exports stanza combined/gum nocharlm to ONNX (char + sentence nets), trims conll17 to top 100k int8; checks wrapper vs stanza (≤0.05% near-ties) and ORT vs wrapper (exact) (~2600 tok)
+- `test/tagger_check.mjs` — JS tagger accuracy on UD EWT test (must match exporter: 95.99 / 92.98) + probe (~700 tok)
+- `test/tagger_quality.mjs` — eng-glb chrF with/without browser tagger on curated + dev sets (~1100 tok)
+- `py/runner.py` — Pyodide step runner + subprocess shim to the wasm tools + urllib bridge for http://browser-nlp (NeedAnalysis) (~1500 tok)
+- `site/index.html` — page UI (mode picker, prefs, notes, about) (~2300 tok)
+- `site/worker.js` — module worker: Pyodide + tools + Cache API (~700 tok)
+- `test/smoke_tools.mjs` — each wasm tool vs native on one sentence (~700 tok)
+- `test/parity.mjs` — all modes wasm vs native on gold lines; PARITY_STEPS first-divergence; ulimit -v on native runs (~2200 tok)
+- `test/browser.mjs` — headless Chromium end-to-end via CDP (cannot run in the Claude sandbox: AF_UNIX blocked) (~1400 tok)
+- `test/capped.py` — runs a command with its process group's RSS capped at GLOBASA_MEM_GB (~600 tok)
+
 ## ./ — Key Data Files
 
 - `CanonicalSentences.tsv` — Canonical example sentences (~3251 tok)

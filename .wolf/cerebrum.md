@@ -422,6 +422,8 @@
 
 ## Do-Not-Repeat
 
+- **2026-11-26: never run native Apertium tools or Node harnesses uncapped.** memlimit.py guards only Python; native rtx-proc (epo pair, 40 sentences) went into swap and forced a reboot. Cap native runs with `ulimit -v` from GLOBASA_MEM_GB (default 40% RAM) — web/test/parity.mjs does this.
+
 - [2026-11-23] The official Globasa word for "duty" is **musiya**, not *darma* (user correction). *darma* is the Indic concept (order, right conduct); religious duty = *musiya* (e.g. kultuli musiya for duties of rite).
 
 - [2026-11-23] Do not "fix" Korean ㅓ → a or Mandarin syllable wu → u in word_selection/translit.py: LexiliAsel itself writes 버스 basu, 전통 jantong, 측면 cungmyan (nasal assimilation kept) and 芭蕾舞 ba ley u, 债务 jay u (wu only in names). A hand-written post using o / wu (twejok, cengjiwu) departs from LexiliAsel; check parse_etymons gold before changing a rule.

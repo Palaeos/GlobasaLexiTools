@@ -5372,5 +5372,109 @@
     ],
     "occurrences": 1,
     "last_seen": "2026-11-26T15:10:00Z"
+  },
+  {
+    "id": "bug-328",
+    "timestamp": "2026-11-26T18:30:00",
+    "error_message": "rtx-proc (epo-glb, glb-epo, glb-spa) memory explodes on multi-sentence input: >4 GB for 8 epo sentences, machine went into swap and was rebooted",
+    "file": "GlobasaTranslation/apertium-glb-epo/apertium-glb-epo.epo-glb.rtx (+ .glb-epo.rtx, apertium-glb-spa.glb-spa.rtx)",
+    "root_cause": "SEQ -> SEQ sent made the sentence end part of a SEQ that every SEQ X rule extends again, so the whole text was one rtx-proc -a parse and the comma/relative ambiguities of each sentence multiplied with the next",
+    "fix": "SENT -> SEQ sent as a separate top-level rule (SENT: _;) that nothing extends; per-sentence output identical in words (220 sentences changed only quote/blank placement, all corrections), chrF epo-glb 65.87->66.60, glb-epo 56.36->57.05, glb-spa unchanged; 566 sentences at once now 74 MB",
+    "tags": [
+      "apertium",
+      "rtx",
+      "memory",
+      "exponential",
+      "epo",
+      "spa"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T18:30:00"
+  },
+  {
+    "id": "bug-329",
+    "timestamp": "2026-11-26T18:30:00",
+    "error_message": "wasm lt-proc orders equally weighted analyses differently from native (deu-glb UDHR: 'kulturali haki' vs native 'kulturali Kanan')",
+    "file": "web/wasm/gnu_sort.hpp",
+    "root_cause": "std::sort is unstable; above 16 elements libstdc++ (native) and libc++ (Emscripten) introsorts permute ties differently; State::NFinals sorts all analyses by weight",
+    "fix": "libstdc++'s sort algorithm ported to gnu_sort.hpp and force-included into lttoolbox state.cc and lrx_processor.cc",
+    "tags": [
+      "wasm",
+      "emscripten",
+      "sort",
+      "libc++",
+      "lttoolbox"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T18:30:00"
+  },
+  {
+    "id": "bug-330",
+    "timestamp": "2026-11-26T18:30:00",
+    "error_message": "RuntimeError: unreachable after apertium-pretransfer / apertium-tagger / cg-proc wrote correct output (wasm multicall)",
+    "file": "web/wasm/rename_main.py",
+    "root_cause": "main renamed with -Dmain=x loses C++'s implicit return 0; falling off the end is UB and clang emits unreachable",
+    "fix": "rename_main.py copies each main source with main renamed and an explicit return 0 before its closing brace",
+    "tags": [
+      "wasm",
+      "emscripten",
+      "main",
+      "ub"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T18:30:00"
+  },
+  {
+    "id": "bug-331",
+    "timestamp": "2026-11-26T18:30:00",
+    "error_message": "wasm tools: u_sscanf 'unable to parse int' (apertium-anaphora), lrx weights wrong, rtx 'unable to titlecase'",
+    "file": "web/src/tools.mjs, web/wasm/icu_items.txt",
+    "root_cause": "Emscripten's icu port links stub data; ICU formatted I/O and word breaks need locale data; ICU_DATA set after the module started was never seen (libc copies environ in a constructor)",
+    "fix": "trimmed icudt68l.dat (16 traced items, 0.5 MB) packed by icupkg --ignore-deps, mounted and ICU_DATA set in preRun",
+    "tags": [
+      "wasm",
+      "icu",
+      "emscripten"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T18:30:00"
+  },
+  {
+    "id": "bug-332",
+    "timestamp": "2026-11-26T18:30:00",
+    "error_message": "fra-glb in browser: FileNotFoundError for fra-glb.imparfait.json",
+    "file": "web/build_modes.py",
+    "root_cause": "absolute paths in Python-step arguments were not rewritten to /p/... nor copied",
+    "fix": "rewrite and copy them like tool arguments",
+    "tags": [
+      "wasm",
+      "manifest"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T18:30:00"
+  },
+  {
+    "id": "bug-333",
+    "timestamp": "2026-11-26T19:10:00",
+    "error_message": "browser translator output shows escapes: \\@running, be\\@compile (user screenshot)",
+    "file": "web/build_modes.py, web/src/pipeline.mjs, web/wasm/CMakeLists.txt",
+    "root_cause": "the browser ran the bare mode (as the translation aide does), not the apertium command's plain-text path: no apertium-destxt (input escaping, superblanks), apertium-normalize, wblank-attach/-detach, apertium-retxt (unescaping)",
+    "fix": "destxt/retxt (xsltproc+flex, -P prefix, rename_main --isolate namespace), normalize, wblank-attach/-detach added to the multicall wasm; manifests from the native apertium-wblank-mode output wrapped in destxt/retxt; SETVAR stream command after destxt, stripped before retxt; nfcn.nrm mounted at /icu; parity reference is now `apertium -d pair mode FILE` (stdin from Node made the wrapper's destxt print its usage)",
+    "tags": [
+      "wasm",
+      "apertium",
+      "deformatter",
+      "escape"
+    ],
+    "related_bugs": [
+      "bug-331"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-26T19:10:00"
   }
 ]
