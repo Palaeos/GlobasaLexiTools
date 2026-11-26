@@ -171,7 +171,7 @@ for globasa_word in wordlist_order:
             unmatched['no database for this Wiktionary'].append(s)
             continue
 
-        trans_entry = db.get_translations(s['lookup_word'], s['pos'])
+        trans_entry = db.get_translations(s['lookup_word'], s['pos'], senses=(s['sense'],))
         if trans_entry is None:
             unmatched['word/part of speech not in the dump'].append(s)
             continue

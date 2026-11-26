@@ -60,11 +60,15 @@ def serialize_translations(trans_dict):
     return msgpack.packb(converted, use_bin_type=True)
 
 
-def deserialize_translations(data_bytes):
-    """bytes -> dict[sense_str, dict[lang_code, set[Translation]]]"""
+def deserialize_translations(data_bytes, senses=None):
+    """bytes -> dict[sense_str, dict[lang_code, set[Translation]]]
+    senses: build only these senses' tables (the others are left out of the dict); building the
+    Translation sets is the costly part, msgpack itself is fast."""
     raw = msgpack.unpackb(data_bytes, raw=False)
     result = {}
     for sense, lang_dict in raw.items():
+        if senses is not None and sense not in senses:
+            continue
         result[sense] = {
             lang: {Translation(*t) for t in trans_list}
             for lang, trans_list in lang_dict.items()
@@ -143,14 +147,15 @@ class WiktionaryDB:
 
     # -- Read methods --
 
-    def get_translations(self, word, pos):
-        """Lookup translations for (word, pos). Returns dict or None."""
+    def get_translations(self, word, pos, senses=None):
+        """Lookup translations for (word, pos). Returns dict or None.
+        senses: only these sense tables are returned (None = all)."""
         key = encode_key(word, pos)
         with self.env.begin(db=self.db_translations, buffers=True) as txn:
             val = txn.get(key)
             if val is None:
                 return None
-            return deserialize_translations(val)
+            return deserialize_translations(val, senses)
 
     def get_senses(self, word, pos):
         """Lookup senses for (word, pos). Returns list or None."""
