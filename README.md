@@ -62,6 +62,14 @@ Then open <http://localhost:8092> (set `WS_PORT` to use another port). `--select
 
 Optional: senses from other Wiktionary editions (`WiktionaryLMDB_de`, `_fr`, `_ja`, `_zh`), built by [`JSONL parser non-English.py`](JSONL%20parser%20non-English.py), which offers to download each edition's dump into `WIKTIONARY_DUMP_DIR` (default `word_selection_cache/`).
 
+## Performance
+
+Everything runs on a plain clone; these make it faster without changing any result.
+
+- **Rust extension.** `./setup.sh --fast` builds [`rust/globasa_fast`](rust/globasa_fast) into `venv/` if Rust is installed (<https://rustup.rs>; the crate pins its version). It holds Rust versions of the hot loops: the Word Selector's word alignment, the difflib matching in [`edition_variants.py`](edition_variants.py) (War of the Worlds: about 8 minutes down to 2 seconds), and the dependency-tree decoder of the Apertium pairs' stanza services. Each one returns exactly what its Python original returns, and the originals stay in the code. Without the extension, the scripts say `(fallback: globasa_fast not built …)` and use the Python versions. `GLOBASA_FAST=0` forces the Python versions, and `venv/bin/python -m pytest tests/test_globasa_fast.py` compares the two.
+- **An SSD for the Wiktionary LMDBs.** The Word Selector and the extension builder read `WiktionaryLMDB*` at random; on a spinning disk a cold Word Selector evaluation spent 185 of its 214 seconds waiting for reads. Moving the folders to an SSD and leaving symlinks in their place works (`.gitignore` covers both).
+- **A GPU for the X→glb NLP services.** The services in `GlobasaTranslation/` use CUDA when torch finds it (Spanish, 3,000 characters: 4.9 s on CPU, 0.7 s on an RTX 4060 Ti). Set `GLB_NLP_CPU=1`, `FRA_NLP_CPU=1` or `ENG_NLP_CPU=1` to stay on the CPU.
+
 ## Lute
 
 A [Lute](https://github.com/LuteOrg/lute-v3) library of the Doxo texts, read with the Word Viewer as Lute's dictionary, and Lute's word statuses copied to the Anki vocabulary deck.
