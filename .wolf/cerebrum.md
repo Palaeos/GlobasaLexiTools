@@ -89,6 +89,8 @@
 
 ## Key Learnings
 
+- [2026-11-26] English hyphenated compounds: lt-proc splits unknown ones at the hyphen (^X$^-<guio>$^Y$, no blanks); UD EWT tokenises them X HYPH Y too. Before a hyphen + participle the first part is a NOUN (object: Secret-Telling -> Siri-Logane, Rule-based, man-made) - user correction. rtx HAJ writes the compound joined with its hyphen; n-n compounds stay solid (xercamotor).
+
 - [2026-11-26] lt-proc matches regex entries (bidix np `[A-Z][A-Za-z...]*`, generator np) case-insensitively and returns BOTH the as-written and a case-normalised variant for words with inner capitals (WebAssembly/Webassembly). `-c` fixes it but breaks every capitalised ordinary word. Filter instead (glb-neural manfem; glb-pregen writes ^Name<np>$ as text).
 - [2026-11-26] Globasa -mo (Xwexi Adverb Suffix -mo): only on t-word adverbs modifying an adjective/adverb. glb-pregen.py (apertium-glb, before generation in all X->glb pairs) strips it conservatively: only before a known word of another class or at sentence end. Correlative -mo words (denmo, kemo, hinmo, nilmo, daydenmo) are lexemes, not derivations.
 - [2026-11-26] rtx-comp: every category used in an output pattern must be declared (`cnjcoo: _;`), else "Could not find output pattern". In rtx output `%N` marks the child that passes its attributes up; adding coordinated vv rules broke tense propagation (reverted).
