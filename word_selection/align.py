@@ -9,6 +9,8 @@ Gaps are cheaper at word edges (a-posteriori/a-priori vowels, initial e-).
 import re
 from functools import lru_cache
 
+from fast_ext import fast as _fast
+
 VOWELS = set("aeiou")
 # consonant: (place, manner, voiced)
 CONS = {
@@ -149,6 +151,10 @@ def sino_distance(lang_a, a, lang_b, b):
         else:
             va = {w for v in va for w in _variants(v, NG_VS_JA)}
             vb = {w for v in vb for w in _variants(v, JA_LONG)}
+    if _fast is not None:
+        al = _aligner(sino_sub_cost, "sino", NASAL_POS, EDGE_GAP)
+        if all(map(al.covers, va)) and all(map(al.covers, vb)):
+            return al.min_norm_cost(list(va), list(vb))
     return min(align(x, y, sub=sino_sub_cost, coda=_sino_coda, nasal_pos=NASAL_POS)[0] / max(len(x), len(y), 1)
                for x in va for y in vb)
 
@@ -170,7 +176,44 @@ def _positions(s):
     return out
 
 
+# Letters the Rust aligner's cost tables cover; a form with any other symbol uses align_py.
+ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+
+
+@lru_cache(maxsize=None)
+def _aligner(sub, coda_kind, nasal_pos, edge_gap):
+    """The Rust aligner (globasa_fast) for one configuration: sub's costs as a table over ALPHABET
+    (sub must depend on its two letters only, as sub_cost, sino_sub_cost and ancestor_cost do)."""
+    table = [float(sub(x, y)) for x in ALPHABET for y in ALPHABET]
+    return _fast.Aligner(ALPHABET, table, GAP, edge_gap, CODA_GAP, nasal_pos, coda_kind)
+
+
+def _rust(a, b, sub, coda, nasal_pos, edge_gap):
+    """The Rust aligner if it applies (extension built, coda None or _sino_coda, letters covered)."""
+    if _fast is None or (coda is not None and coda is not _sino_coda):
+        return None
+    al = _aligner(sub or sub_cost, "sino" if coda else "", nasal_pos, edge_gap)
+    return al if al.covers(a) and al.covers(b) else None
+
+
 def align(a, b, sub=None, coda=None, nasal_pos=0.0, edge_gap=EDGE_GAP):
+    """Global alignment (Rust when built, see align_py for the reference).
+    Returns (cost, [(x, y), ...]) with '-' for gaps."""
+    al = _rust(a, b, sub, coda, nasal_pos, edge_gap)
+    if al is not None:
+        return al.align(a, b)
+    return align_py(a, b, sub, coda, nasal_pos, edge_gap)
+
+
+def align_cost(a, b, sub=None, coda=None, nasal_pos=0.0, edge_gap=EDGE_GAP):
+    """align(a, b, ...)[0] without building the traceback."""
+    al = _rust(a, b, sub, coda, nasal_pos, edge_gap)
+    if al is not None:
+        return al.cost(a, b)
+    return align_py(a, b, sub, coda, nasal_pos, edge_gap)[0]
+
+
+def align_py(a, b, sub=None, coda=None, nasal_pos=0.0, edge_gap=EDGE_GAP):
     """Global alignment. Returns (cost, [(x, y), ...]) with '-' for gaps.
     sub: substitution cost (default sub_cost); coda(s, k): if true, deleting s[k]
     costs at most CODA_GAP; edge_gap: gap cost at either end (a syllable's
@@ -223,7 +266,7 @@ def distance(a, b, normalized=False):
 
 @lru_cache(maxsize=200_000)     # ~30 MB at most; the same pairs recur in clustering,
 def _distance(a, b, normalized):  # blending, support checks and precedent learning
-    c = align(a, b)[0]
+    c = align_cost(a, b)
     return c / max(len(a), len(b), 1) if normalized else c
 
 

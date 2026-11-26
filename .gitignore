@@ -28,6 +28,9 @@ WiktionaryLMDB_senses.building/
 /WiktionaryLMDB
 /WiktionaryLMDB_*
 
+# Rust extension build output (cargo's default; CARGO_TARGET_DIR may put it elsewhere)
+rust/**/target/
+
 # Expanded vetting views: regenerated from vetted_senses.tsv + the dump
 GLB_ENG_WiktionarySenses*.tsv
 GLB_ENG_WiktionarySenses*.xlsx

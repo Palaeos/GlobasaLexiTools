@@ -1,0 +1,21 @@
+[package]
+name = "globasa_fast"
+version = "0.1.0"
+edition = "2021"
+description = "Optional Rust versions of GlobasaLexiTools' hot loops (alignment, difflib ratio, shorthand annealing, dependency-tree decoding). Every routine has a pure-Python original that stays the reference."
+license = "MIT"
+publish = false
+
+[lib]
+name = "globasa_fast"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.25.1", features = ["extension-module", "abi3-py310"] }
+numpy = "0.25.0"
+rayon = "1.11"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
