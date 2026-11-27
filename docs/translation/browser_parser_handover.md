@@ -33,6 +33,26 @@ wait for a neural WSD model and are not part of this.
   the possessive, no rival owner), labelled as the fallback it already is. Do not add a
   noun-subject heuristic: it was offered and not chosen (false positives).
 
+## 1c. Coreference candidates found (search 2026-11-27, before any download)
+
+| model | data | licence | size | quality | verdict |
+|---|---|---|---|---|---|
+| BookNLP **small** coref (`coref_google_bert_uncased_L-2_H-256_A-4`, plus entity tagger `entities_…L-4_H-256` for mentions) | README: "trained on LitBank and PreCo"; the small models are distilled on the big model's predictions over "a collection of contemporary texts" | code MIT; **model files: no licence stated** (hosted at people.ischool.berkeley.edu/~dbamman/booknlp_models/) | BERT 2 layers × 256: a few MB | avg F1 76.4 (big 79.0), literary domain | best fit if the licence and PreCo terms check out |
+| compnet-renard/bert-base-cased-literary-coref(-v2) | LitBank (CC BY 4.0) | weights MIT; its inference library Tibert is **GPL-3.0** (must not be copied into this MIT repo: reimplement the e2e-coref span decoding) | bert-base, 110M params (~110 MB int8) | MUC 78.2, B3 62.4, CEAF 54.2 on a LitBank split | possible, but large for a page |
+| talmago/allennlp-coref-onnx (MiniLM, ONNX) | distilled from AllenNLP's coref model, i.e. OntoNotes | MIT | small | not reported | excluded (OntoNotes-derived) |
+| cp500/infon-coref-pointer (onnxruntime-web ready) | synthetic news-style data of unstated origin | Apache 2.0 | 235 MB fp16 | own val set only | excluded (size, unclear data) |
+| stanza GUM / udcoref coref | GUM CC BY / CorefUD | open | roberta-large / xlm-roberta: hundreds of MB | best | too big for a page (desktop only) |
+| fastcoref, spaCy coref, neuralcoref, Maverick-OntoNotes | OntoNotes | — | — | — | excluded |
+
+Open questions on the BookNLP route: (1) PreCo's terms. The YITU announcement says "available
+for research purpose"; one third-party paper says MIT; the PreCo page itself could not be read
+here (egress blocked). (2) The licence of the BookNLP model files. (3) Its mentions cover only
+the LitBank entity types (PER, LOC, FAC, GPE, ORG, VEH). That is enough for his/her with a
+person or animal-character subject, not for its/their with things.
+
+Before any of this: measure on the desktop how many gold sesu need a chain at all (handover
+§4 step 1). If most come from pronoun subjects, the parse-only rule may be enough.
+
 ## 2. Correction to the last handover
 
 §6b of rule_gaps_handover.md (and my report to the user) says no sesu stage exists. **That is
