@@ -120,6 +120,42 @@ So the text is resolved in pieces:
    longer than a window is cut, at a sentence end. Never cut inside a quotation; keep a dialogue
    exchange together where it fits. Size: about 256–512 wordpieces. At 512 (about 400 words,
    ~160 kept mentions) the pair tensor is about 240 MB; at 256 it is about 60 MB (phone-safe).
+   **Literature (search 2026-11-27) and what it changes; see the list of sources below.**
+   - *Exact, no retraining (do these first).* Tibert's pair scorer is
+     `Linear([start_i; end_i; start_j; end_j; dist_ij(20)] → 3000) → ReLU → Linear(1)`
+     (bertcoref.py `mention_pairs_repr`, `mention_compatibility_score`; checked in the source).
+     A linear layer over a concatenation splits into per-part products,
+     `W·[x_i; y_j; d_ij] = W₁x_i + W₂y_j + W₃d_ij`, so we project each kept mention once
+     (m × 3000) and add the parts per pair. The m × a × (3072+20) pair tensor is never built.
+     Then score antecedents in blocks of mentions and keep only the m × a scores (or each
+     mention's best antecedent). This is the same arithmetic and gives the same chains as Tibert.
+     It takes the ~1 GB estimate down to tens of MB. The mention scorer (every span ≤ 10 words →
+     3000 hidden) also runs in blocks. Encoding stays at 128-wordpiece segments: the model was
+     trained so, and Joshi et al. 2019 found 128 best for bert-base (512 was worse).
+   - *No retraining, but results change (measure on LitBank/our gold):* fewer antecedents than
+     350; chunk + hierarchical entity merging (Gupta, Hatzel & Biemann 2024). Their setting (b),
+     merging with the same untrained model, is what Tibert's HM option implements and what the
+     model card scores. This is the literature basis for windows + merge.
+   - *Bound the clusters carried across windows* (for very long chapters): keep a fixed number
+     of entity clusters. Local ones are evicted LRU; frequent "main characters" are kept LFU (the
+     dual cache of Guo et al. 2023, which halves cache misses against LRU alone; LRU bounds from
+     Xia et al. 2020 and Toshniwal et al. 2020). In those papers the cache is part of a trained
+     model; here only the eviction policy would be borrowed for the merge step. No training.
+   - *Needs another (trained) model, so out under the no-training rule:* coarse-to-fine
+     antecedent pruning (Lee, He & Zettlemoyer 2018: a cheap bilinear pre-score; Tibert has none);
+     word-level coreference (Dobrovolskii 2021, O(n²) words instead of spans; stanza's CAW-coref
+     on the desktop is of this kind, but roberta-large); incremental bounded-memory models (Xia
+     2020; Toshniwal 2020, which has LitBank results, but SpanBERT-large).
+
+   With the exact factorisation, windows are needed for bounded work and caching, no longer
+   because the pair tensor is too big. Chapters stay the checkpoints.
+
+   Sources: Joshi et al. 2019 (arXiv 1908.09091); Lee, He & Zettlemoyer 2018 (N18-2108);
+   Xia, Sedoc & Van Durme 2020 (2020.emnlp-main.695); Toshniwal et al. 2020
+   (2020.emnlp-main.685); Dobrovolskii 2021 (2021.emnlp-main.605); Guo et al. 2023
+   (2023.acl-long.851); Gupta, Hatzel & Biemann 2024 (2024.latechclfl-1.2); Martinelli et al.
+   2025, BookCoref (2025.acl-long.1197); MEIC-DT 2025 (arXiv 2512.24711; also bounds the
+   mentions per cluster).
 3. **Nothing from the model crosses a checkpoint.** sesu only needs the possessive's own
    clause. The it/they class (te/to) needs an antecedent, which is nearly always within the
    chapter. A chain that would span chapters is cut, and the notes say so.
