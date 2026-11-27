@@ -144,11 +144,51 @@ more than the chrF ranking.
 - Possessor = subject → *sesu* (*le dio su pan* → *sesu roti*): parser, as English.
 - *por/para*, *N de N* rank lowest but are glossary lines: sense and gold-direction noise.
 
+## 6b. Session 2026-11-27: what was closed (all committed locally, not pushed)
+
+Measured as in §3. eng dev (1,052, browser pipeline): chrF 61.7 → 63.5 (244 sentences better,
+16 worse; sentences with # 103 → 37). Per set (60 lines, browser tagger): curated 83.2, UDHR
+48.8 → 49.4, P&C 52.7 → 53.0, Tell-tale 71.1 → 73.7, Thirty 65.0 → 66.7. epo Vanege dev: 66.3 →
+70.9 (106 better, 0 worse; # 19 → 4, unknown-word types 168 → 51). spa: 66.3 → 68.6
+(48 better, 1 worse; # 50 → 10).
+
+- **Shared, `apertium-glb/glb-pregen.py`:** doubled clitic recipients (`tas<pr><dbl>`, spa);
+  `<j/>` targets split and spaced multiword lemmas written as text; particle prefixes the
+  generator cannot write alone joined to the verb (exsokutu); composed words with `·`
+  (rubahe·lari, a glued `·do` participle suffix) joined, unlisted ones written as text; a bare
+  t-word adverb before an adjective takes -mo (pahnamo bukado).
+- **eng:** could/might/want/can-not, when → denwatu hu (CG), more/less/how many, possessive
+  pronouns (tesu tø, a friend of mine → misu), become/get/grow/turn + ADJ → sencu ADJ, participial
+  adjectives and -ly adverbs (`dev/eng_word_formation.py` → derived bidix), phrasal verbs
+  (`phrasal_verbs.tsv`, 112 from the word list; mwe keeps a `verb# particle` unit the bidix
+  translates), Title Case headings, NP with several adjectives, function words from the word
+  list, untranslated articles dropped in postformat. **CG bug:** `NOT 1* X BARRIER Y` is true
+  whenever some non-X cohort precedes Y; every such test is `NEGATE` now.
+- **epo:** determiners without a noun (unu el → un te/to of, CG det/prn), word formation:
+  `dev/epo_word_formation.py` + `epo_glb_affixes.tsv` (77 affix pairs from the word list's affix
+  entries; status column to curate): tag variants vbtr/vbntr (+ iĝi), derived lemmas, class
+  conversions, compounds; analyser supplement in apertium-epo for lttoolbox compounding
+  (`lt-proc -w -e`, `epo-glb-compounds.py` joins the parts after the bidix); closed-class words
+  (krom, ekster, apud, kvankam, je, ajna, ju/des pli, iutage); negated passives.
+- **spa:** clitics are never subjects (Te quiero → Mi vole yu), a-phrases (NOMA), todo, lo/el +
+  de/que, algunos → banøtø, resumptive relatives, gustar variants, -mente adverbs
+  (`dev/spa_word_formation.py`), cuyo, cuántos, closed-class words from the word list.
+- Tracing tool: `web/test/trace.mjs "sentence" [step ...]` prints the browser stream after steps.
+
+Left for the next session (rule/list work still possible):
+1. **Dependency parser in the browser** (§4: sesu for possessor = subject, 99 gold; bare relatives;
+   participle clauses). Note: `stage_se` in glb-neural.py is the Spanish *se* stage, not sesu —
+   no sesu stage exists on the desktop either. Needs parse + coreference (his = the subject).
+2. epo: verb on a noun root (matenas), sen + noun + a (senŝela), remaining compounds with a
+   verb modifier (viandomanĝa); review the `check` rows of `epo_glb_affixes.tsv`.
+3. spa: arriba/abajo/debajo/encima (no word-list entry), diminutives (-ito), impersonal se → ren.
+4. eng: coordinated passives, let's, wh in situ, remaining content-word gaps (food, home, …).
+
 ## 7. Decisions for the user
 
-1. **'s genitive**: keep *X su Y* (current rtx) or switch to *Y de X* (gold 40/41)?
-2. **Esperanto affix design** (§5): generated TSV + segmentation step, or lttoolbox compounding?
-3. Order of work (suggestion below).
+Decided 2026-11-27: keep *X su Y* for 's; Esperanto word formation by lttoolbox compounding
+(data generated from one TSV); a pretrained parser is allowed (no training). Open: the
+`check` rows of `epo_glb_affixes.tsv` and the `alt` rows of `phrasal_verbs.tsv` (user curation).
 
 ## 8. What stays for larger-scale ML (don't try with rules)
 
