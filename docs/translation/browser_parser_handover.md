@@ -75,7 +75,7 @@ larger, opt-in download.
   is GPL, the rest of GlobasaLexiTools stays MIT. Check first that apertium-spa (COPYING is GPL-2;
   no "or later" grant found in its files) can be combined with GPL-3 code. The user asked about
   GPL for the browser version and then requested this mode; confirm the licence change with
-  them once before committing it.
+  them — done: user confirmed 2026-11-27, web/LICENSE committed.
 - **Depends on the browser parser** (§1b, §4 steps 2–3): the sesu rule needs the clause subject
   (nsubj) from the parse as well as the chains. Build the parser first, then this.
 - **Plan:**
