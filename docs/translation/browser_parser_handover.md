@@ -16,6 +16,23 @@ User decisions in force (2026-11-27): a **pretrained** model is fine, **no train
 fine-tuning**; rules on the parser's output must have zero false positives; word-sense problems
 wait for a neural WSD model and are not part of this.
 
+## 1b. Decided with the user (2026-11-27)
+
+- **Parser: stanza `combined_nocharlm` depparse.** It is from the same family and treebanks as
+  the browser tagger (UD EWT/GUM, CC BY-SA / CC BY), it reuses the conll17 vectors the page
+  already ships, and it adds about 20 MB of ONNX. Not charlm: that would also need the
+  forward/backward character LMs exported (bigger, slower). Excluded: spaCy (OntoNotes), UDPipe 1
+  (CC BY-NC-SA), transformer parsers (size). The model file is not in the local cache yet
+  (only `depparse/combined_electra-large.pt` is): download `combined_nocharlm` depparse into
+  `/media/paleos/Warehouse2/Language/Claude/browser_tagger/models/depparse/`, as was done for
+  the PoS nocharlm models.
+- **Coreference: look for a small open model, and report before using one.** Constraints: openly
+  licensed (no OntoNotes-trained models, no NC licences, no licence requests); small enough to
+  run in a page (the desktop's stanza GUM coref is roberta-large, far too big); pretrained only.
+  If nothing fits, the browser keeps the parse-only rule 3 below (pronoun subject agreeing with
+  the possessive, no rival owner), labelled as the fallback it already is. Do not add a
+  noun-subject heuristic: it was offered and not chosen (false positives).
+
 ## 2. Correction to the last handover
 
 §6b of rule_gaps_handover.md (and my report to the user) says no sesu stage exists. **That is
@@ -68,7 +85,7 @@ and `glb-neural.py eng parse/focus`, get the "(fallback: no neural service in br
    (`ENG_GLB_NEURAL=0` vs on). Count sesu in output vs gold, and the chrF difference. Also count
    how many sesu come from rule 3 (the fallback label in `ENG_GLB_NEURAL_TRACE`) against rule 1
    (chains). That says how much a parser alone would bring.
-2. **Export stanza's non-transformer English depparse** (combined_nocharlm depparse, the same
+2. **Export stanza's non-transformer English depparse** (combined_nocharlm depparse, decided §1b; the same
    pretrain vectors the tagger already ships) to ONNX, modelled on `web/tagger/export_stanza_pos.py`:
    - The wrapper must reproduce stanza's scores. The exporter's own checks pin it: wrapper ==
      stanza, onnxruntime == wrapper on UD EWT test, and LAS/UAS reported with the trimmed int8
@@ -84,9 +101,9 @@ and `glb-neural.py eng parse/focus`, get the "(fallback: no neural service in br
    "coref")` in `BROWSER_NLP`; the stage gets `coref: []`. Check that the code tolerates empty
    chains: rule 3 should then fire. Do the same for `glb-neural.py eng parse` if its checks
    (names, that/which) only need the parse.
-4. **Coreference in the browser** is a separate decision. The desktop model is roberta-large
-   (too big for a page). Ask the user before choosing a smaller pretrained coref model, or leave
-   it at rule 3 plus a labelled fallback.
+4. **Coreference in the browser:** search for a small open coref model (§1b constraints) and
+   report the candidates to the user (licence, training data, size, accuracy on GUM if known)
+   before wiring one in. Until then rule 3 only.
 5. Then the parser-based rules from rule_gaps_handover.md §4: bare relatives (`acl:relcl` with no
    relative word → *hu … da*; `eng-glb-relative.py` rewrites relatives today) and participle
    clauses (`advcl`/`acl` VBG/VBN). Zero false positives: act only on unambiguous trees.
