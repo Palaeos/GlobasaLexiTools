@@ -53,6 +53,47 @@ person or animal-character subject, not for its/their with things.
 Before any of this: measure on the desktop how many gold sesu need a chain at all (handover
 §4 step 1). If most come from pronoun subjects, the parse-only rule may be enough.
 
+## 1d. LitBank mode (user, 2026-11-27): an opt-in coreference mode for the browser translator
+
+The user asked for a **LitBank mode**: the browser translator gets an optional setting that
+loads a LitBank-trained coreference model, so the coref stage of eng→glb (sesu, it/they
+classes) runs in the page as on the desktop. The default page stays as it is; the mode is a
+larger, opt-in download.
+
+- **Model:** `compnet-renard/bert-base-cased-literary-coref-v2` (MIT weights; trained on LitBank,
+  CC BY 4.0; bert-base-cased + an e2e-coref head à la Lee et al. 2017). Downloaded on
+  2026-11-27 to `/media/paleos/Warehouse2/Language/Claude/browser_coref/hf/` (tokenizer from
+  `bert-base-cased` in the same cache). `model.safetensors` is 486 MB fp32. Config:
+  `max_span_size` 10, `segment_size` 128, `mentions_per_tokens` 0.4, `antecedents_nb` 350,
+  `mention_scorer_hidden_size` 3000. int8 should bring it to about 120 MB; measure it.
+- **Inference code:** Tibert (GPL-3.0), cloned to `…/browser_coref/src/Tibert` (reference only;
+  `bertcoref.py` `BertForCoreferenceResolution`: `mention_score`, `pruned_mentions_indexs`,
+  `closest_antecedents_indexs`, `mention_compatibility_score`; `predict.py`
+  `predict_coref_simple`). Porting it makes our JS a derivative: **the browser version becomes
+  GPL-3.0-or-later**. The bundle is already GPL in practice (apertium.wasm = Apertium tools +
+  CG-3, and the pair data are GPL). Add `web/LICENSE` (GPL-3.0-or-later) and one README line: `web/`
+  is GPL, the rest of GlobasaLexiTools stays MIT. Check first that apertium-spa (COPYING is GPL-2;
+  no "or later" grant found in its files) can be combined with GPL-3 code. The user asked about
+  GPL for the browser version and then requested this mode; confirm the licence change with
+  them once before committing it.
+- **Depends on the browser parser** (§1b, §4 steps 2–3): the sesu rule needs the clause subject
+  (nsubj) from the parse as well as the chains. Build the parser first, then this.
+- **Plan:**
+  1. Reference outputs: run Tibert's `predict_coref_simple` on the eng dev texts in a separate
+     venv (GPL lib, local only) and keep the chains.
+  2. Export bert-base + the scoring heads to ONNX (int8). Port span enumeration (≤10 words,
+     within a 128-wordpiece segment), mention pruning (top 0.4 × words), antecedent scoring
+     (350 closest) and cluster building to JS (`web/src/coref.mjs`, GPL header). Check that the JS
+     chains equal Tibert's on the dev texts, as the tagger exporter checks its outputs.
+  3. Convert the chains to the service's `coref` shape (`[[{start, end, head}]]`, word indices
+     of the browser tokenisation; head = the mention word whose parse head lies outside it).
+  4. UI: a "LitBank mode" switch (download size shown, cached like the tagger). In `BROWSER_NLP`,
+     map `("eng-glb-neural.py", "coref")` when the mode is on. Off: rule 3 (parse only).
+     Notes list the mode as on or off.
+  5. Measure: sesu in output against gold, chrF on eng dev, browser vs desktop (electra + roberta
+     GUM coref). LitBank covers PER/LOC/FAC/GPE/ORG/VEH entities only, so it/its for things gets
+     no chain: the desktop's GUM model stays the reference.
+
 ## 2. Correction to the last handover
 
 §6b of rule_gaps_handover.md (and my report to the user) says no sesu stage exists. **That is
