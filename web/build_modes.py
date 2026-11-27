@@ -53,12 +53,25 @@ NEURAL = {"glb-neural.py": ("GLB_NEURAL", {"parse", "coref", "focus"}),
           "eng-glb-neural.py": ("ENG_GLB_NEURAL", None),
           "fra-glb-neural.py": ("FRA_GLB_NEURAL", None)}
 
-# Steps whose service the page can stand in for with a model of its own (src/tagger.mjs):
-# the step's client is pointed at http://browser-nlp (py/runner.py answers it); the "neural"
-# switch above stays the fallback when the browser model is not loaded.
-BROWSER_NLP = {("eng-glb-neural.py", "pos"): {"lang": "eng", "env": {"ENG_NLP_URL": "http://browser-nlp"},
-                                              "note": "in-browser tagger (stanza combined + gum, non-transformer); "
-                                                      "no parser, so the name and that/which checks are skipped"}}
+# Steps whose service the page can stand in for with a model of its own (src/tagger.mjs), keyed
+# by the step's script and arguments: the step's client is pointed at http://browser-nlp
+# (py/runner.py answers it); the "neural" switch above stays the fallback when the browser model
+# is not loaded. needs_parse: without the parser files the step is not run on the browser model
+# (the switch turns it off). no_parser: added to the note when the parser is missing. fallback:
+# what the browser model never gives (always labelled).
+ENG_PAGE = {"lang": "eng", "env": {"ENG_NLP_URL": "http://browser-nlp", "GLB_NLP_URL": "http://browser-nlp"}}
+BROWSER_NLP = {
+    ("eng-glb-neural.py", "pos"): {
+        **ENG_PAGE, "note": "in-browser tagger and parser (stanza combined + gum tagger, combined parser; "
+                            "non-transformer)",
+        "no_parser": "no parser in browser, so the name and that/which checks are skipped"},
+    ("eng-glb-neural.py", "coref"): {
+        **ENG_PAGE, "needs_parse": True, "note": "in-browser parser",
+        "fallback": "no coreference model in browser; sesu only for an agreeing pronoun subject with "
+                    "no other owner in the clause"},
+    ("glb-neural.py", "eng", "parse"): {
+        **ENG_PAGE, "needs_parse": True, "note": "in-browser parser (questions)"},
+}
 
 JOIN_RE = re.compile(r'os\.path\.join\(\s*(?:HERE|_HERE)\s*,\s*"\.\."\s*,\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?\s*\)')
 
@@ -144,8 +157,8 @@ def build_mode(pair, d, name):
                 stage = argv[-1] if len(argv) > 1 else ""
                 if stages is None or stage in stages:
                     step["neural"] = env
-                if (base, stage) in BROWSER_NLP:
-                    step["browser_nlp"] = BROWSER_NLP[(base, stage)]
+                if (base, *argv[1:]) in BROWSER_NLP:
+                    step["browser_nlp"] = BROWSER_NLP[(base, *argv[1:])]
             steps.append(step)
         elif argv[0] in TOOLS:
             args = []

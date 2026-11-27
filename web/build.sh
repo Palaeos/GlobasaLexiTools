@@ -4,8 +4,9 @@
 #   pairs/    mode manifests and the compiled pair files       (build_modes.py)
 #   pyodide/  Pyodide core, self-hosted (pinned in package.json)
 #   ort/      onnxruntime-web, plain wasm build (pinned in package.json)
-#   tagger/en/ the English PoS taggers for the eng->glb neural pos step
-#             (tagger/export_stanza_pos.py; TAGGER_EXPORT, default on Warehouse2)
+#   tagger/en/ the English PoS taggers and parser for the eng->glb neural steps
+#             (tagger/export_stanza_pos.py, tagger/export_stanza_depparse.py;
+#             TAGGER_EXPORT / PARSER_EXPORT, default on Warehouse2)
 #   src/ py/  the pipeline runner;  index.html, worker.js      (site/)
 #
 #   web/build.sh            everything
@@ -35,6 +36,11 @@ if [ ! -f "$TAGGER_EXPORT/combined_nocharlm.sent.onnx" ]; then
   PRETRAIN_TOP=100000 python3 "$HERE/test/capped.py" "$PY" "$HERE/tagger/export_stanza_pos.py" "$TAGGER_EXPORT"
 fi
 cp "$TAGGER_EXPORT/"*.onnx "$TAGGER_EXPORT/"*.vocab.json "$TAGGER_EXPORT/"pretrain.* "$HERE/dist/tagger/en/"
+PARSER_EXPORT="${PARSER_EXPORT:-/media/paleos/Warehouse2/Language/Claude/browser_tagger/export_parser}"
+if [ ! -f "$PARSER_EXPORT/parser.sent.onnx" ]; then
+  PRETRAIN_TOP=100000 python3 "$HERE/test/capped.py" "$PY" "$HERE/tagger/export_stanza_depparse.py" "$PARSER_EXPORT"
+fi
+cp "$PARSER_EXPORT/"parser.* "$PARSER_EXPORT/"lemma.dict.json "$HERE/dist/tagger/en/"
 cp "$HERE/src/"*.mjs "$HERE/dist/src/"
 cp "$HERE/py/runner.py" "$HERE/dist/py/"
 cp "$HERE/site/index.html" "$HERE/site/worker.js" "$HERE/dist/"

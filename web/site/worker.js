@@ -50,7 +50,7 @@ async function init() {
 // loaded once, the first time a mode needs them. Without them the steps fall back.
 const NLP = {
   eng: async () => {
-    post("status", { text: "Loading the English tagger…" });
+    post("status", { text: "Loading the English tagger and parser…" });
     const ort = await import("./ort/ort.wasm.min.mjs");
     ort.env.wasm.wasmPaths = new URL("ort/", self.location.href).href;
     ort.env.wasm.numThreads = 1;          // threads need cross-origin isolation

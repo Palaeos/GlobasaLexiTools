@@ -2,13 +2,21 @@
 // taggers (non-transformer), exported to ONNX by web/tagger/export_stanza_pos.py, run with
 // onnxruntime-web. analyze(text) answers like eng-nlp-service.py's /analyze, as far as a
 // tagger can: upos/xpos/feats from the combined model, xpos2 from the gum model (the
-// client prunes only where both agree, as on the desktop). No parser: head -1, deprel "".
+// client prunes only where both agree, as on the desktop). With the parser files present
+// (tagger/export_stanza_depparse.py: stanza combined_nocharlm depparse on the combined tagger's
+// tags, trees decoded by src/mst.mjs) also head (index of the head word in the whole text, -1
+// for the root) and deprel, as the service gives them; without them head -1, deprel "".
+// lemma: stanza's lemma dictionary (UPOS entry, then any-PoS entry), pruned to the entries the
+// parser needs (lemma.dict.json), else the word itself. No coreference: coref [] (the client's
+// own fallback rules then decide).
 //
 // Mapping as stanza's data loader (checked against stanza by the exporter):
 //   word id    lowercased form in the model's word vocabulary, else UNK (1)
 //   pretrained lowercased form (spaces as no-break spaces) in the shared conll17 vectors
 //              (top 100k words, int8 per row), else the UNK row
 //   chars      each character in the model's character vocabulary (case-sensitive)
+
+import { chuliuEdmondsOneRoot } from "./mst.mjs";
 
 const UNK = 1;
 
@@ -35,7 +43,57 @@ export class EnglishTagger {
       };
     }
     this.ort = ort;
+    this.parser = null;
+    try {
+      const vocab = JSON.parse(await text("parser.vocab.json"));
+      const lemmas = JSON.parse(await text("lemma.dict.json"));
+      const index = (xs) => new Map(xs.map((x, i) => [x, i]));
+      this.parser = {
+        vocab, lemmas,
+        word: index(vocab.word), lemma: index(vocab.lemma), char: index(vocab.char),
+        upos: index(vocab.upos), xpos: index(vocab.xpos),
+        charNet: await ort.InferenceSession.create(await get("parser.char.onnx")),
+        sent: await ort.InferenceSession.create(await get("parser.sent.onnx")),
+      };
+    } catch (e) {
+      this.parser = null;               // tagger only: head -1, deprel "" (the steps' fallback)
+    }
+    this.cache = new Map();
     return this;
+  }
+
+  lemmaOf(word, upos) {
+    const d = this.parser.lemmas.dict;
+    return d[upos]?.[word] ?? d[this.parser.lemmas.any]?.[word] ?? word;
+  }
+
+  // ROOT + words -> heads (0 = ROOT, k = k-th word) and relations, as stanza's depparse
+  async parseSentence(words, upos, xpos, lemmas) {
+    const p = this.parser, ort = this.ort, n = words.length + 1, ROOT = p.vocab.root;
+    const ids = (map, xs, lower) => BigInt64Array.from(
+      [ROOT, ...xs.map((x) => map.get(lower ? x.toLowerCase() : x) ?? UNK)].map(BigInt));
+    const pre = new Float32Array(n * this.dim);
+    const r = this.preScale[ROOT];
+    for (let k = 0; k < this.dim; k++) pre[k] = this.preI8[ROOT * this.dim + k] * r;
+    words.forEach((w, i) => this.preVector(w, pre, (i + 1) * this.dim));
+    const reps = [];
+    for (const chars of [[ROOT], ...words.map((w) => [...w].map((c) => p.char.get(c) ?? UNK))]) {
+      const out = await p.charNet.run({ chars: new ort.Tensor("int64", BigInt64Array.from(chars.map(BigInt)),
+        [1, chars.length]) });
+      reps.push(out.rep.data);
+    }
+    const D = reps[0].length, charsBuf = new Float32Array(n * D);
+    reps.forEach((x, i) => charsBuf.set(x, i * D));
+    const t = (a) => new ort.Tensor("int64", a, [1, n]);
+    const out = await p.sent.run({
+      word: t(ids(p.word, words, true)), lemma: t(ids(p.lemma, lemmas, true)),
+      upos: t(ids(p.upos, upos, false)), xpos: t(ids(p.xpos, xpos, false)),
+      pre: new ort.Tensor("float32", pre, [1, n, this.dim]),
+      chars: new ort.Tensor("float32", charsBuf, [1, n, D]),
+    });
+    const heads = chuliuEdmondsOneRoot(out.arcs.data, n);
+    const rels = out.rels.data;
+    return words.map((_, j) => ({ head: heads[j + 1], deprel: p.vocab.deprel[Number(rels[(j + 1) * n + heads[j + 1]])] }));
   }
 
   preVector(word, out, offset) {
@@ -79,7 +137,16 @@ export class EnglishTagger {
     return { upos, xpos, feats };
   }
 
+  // The pos and coref steps send the same text: the last few answers are kept.
   async analyze(text) {
+    if (this.cache.has(text)) return structuredClone(this.cache.get(text));
+    const res = await this.analyzeUncached(text);
+    this.cache.set(text, res);
+    if (this.cache.size > 8) this.cache.delete(this.cache.keys().next().value);
+    return structuredClone(res);
+  }
+
+  async analyzeUncached(text) {
     const sents = tokenize(text);
     const words = [];
     let i = 0;
@@ -88,10 +155,14 @@ export class EnglishTagger {
       const forms = toks.map((t) => t.text);
       const a = await this.tagSentence("combined_nocharlm", forms);
       const b = await this.tagSentence("gum_nocharlm", forms);
+      const lemmas = this.parser ? forms.map((w, k) => this.lemmaOf(w, a.upos[k])) : forms;
+      const tree = this.parser ? await this.parseSentence(forms, a.upos, a.xpos, lemmas) : null;
+      const offset = i;
       toks.forEach((t, k) => words.push({
-        i: i++, sent: s, start: t.start, end: t.end, text: t.text, lemma: t.text,
+        i: i++, sent: s, start: t.start, end: t.end, text: t.text, lemma: lemmas[k],
         upos: a.upos[k], xpos: a.xpos[k], xpos2: b.xpos[k], feats: a.feats[k],
-        head: -1, deprel: "", mwt: false,
+        head: tree ? (tree[k].head ? offset + tree[k].head - 1 : -1) : -1,
+        deprel: tree ? tree[k].deprel : "", mwt: false,
       }));
     }
     return { words, coref: [], entities: [] };

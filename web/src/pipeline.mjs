@@ -69,10 +69,13 @@ export class Translator {
       } else {
         name = `${s.py.split("/").pop()} ${s.args.join(" ")}`.trim();
         const env = { AP_SETVAR: setvar };
-        const browser = s.browser_nlp && this.nlp[s.browser_nlp.lang] ? s.browser_nlp : null;
+        const model = s.browser_nlp && this.nlp[s.browser_nlp.lang];
+        const parsed = Boolean(model && model.parser);
+        const browser = model && (parsed || !s.browser_nlp.needs_parse) ? s.browser_nlp : null;
         if (browser) {
           Object.assign(env, browser.env);
-          notes.push(`${name}: ${browser.note} (fallback: no parser in browser)`);
+          const missing = [parsed ? null : browser.no_parser, browser.fallback].filter(Boolean);
+          notes.push(`${name}: ${browser.note}` + (missing.length ? ` (fallback: ${missing.join("; ")})` : ""));
         } else if (s.neural) {
           env[s.neural] = "0";
           notes.push(`${name}: (fallback: ${BROWSER_FALLBACK}; rule-based only)`);
