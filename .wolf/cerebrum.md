@@ -427,7 +427,11 @@
 
 - **Attribution (user, 2026-11-23)**: the den-/hin- focus guidelines, the man-/fem- usage notes and the annotated Christie translation (glb-x-fokus) are by Hector Ortega (Ektor), the creator of Globasa — name him in docs; the deixis remark and the Bible focusgender idea came from the user (Paleos).
 
+- [2026-11-27] Apertium gotchas from the rule-gap session: (1) lttoolbox takes the lemma from the <r>/<i> side, never from lm= (write <p><l>ar</l><r>-ar</r></p> for a hyphenated affix lemma); (2) lt-proc -e needs compound-R on right parts and compound-only-L on left parts, and a compound-R word is also a whole word (affix words must not collide with real words: -on- as a verb was "oni"); without -e lt-proc prints the compound readings as ordinary ones; (3) apertium-pretransfer splits + LUs with a space, so compound parts must be re-joined after the bidix (epo-glb-compounds.py); (4) rtx `_` outputs lemma + the target's first tag; change it with 1(pattern)[pos_tag=prn]; (5) rtx patterns are tag sequences: vbtr.inf does not match vbtr.iĝi.inf; (6) a chunk attribute must be declared in its output pattern and supplied by every alternative ([$gen_GLB=1.gen_GLB]).
+- [2026-11-27] web/build.sh --no-wasm returns before the bundle is complete enough for an immediate node run: a gap_dump/parity started in the same command line failed or read the old bundle; run it as a separate command (or after a pause).
+
 ## Do-Not-Repeat
+- [2026-11-27] CG-3: never write (NOT 1* X BARRIER Y) for "no X before Y" — NOT with a scan and a barrier is true when any non-X cohort comes first. Use NEGATE.
 
 - **2026-11-26: never run native Apertium tools or Node harnesses uncapped.** memlimit.py guards only Python; native rtx-proc (epo pair, 40 sentences) went into swap and forced a reboot. Cap native runs with `ulimit -v` from GLOBASA_MEM_GB (default 40% RAM) — web/test/parity.mjs does this.
 

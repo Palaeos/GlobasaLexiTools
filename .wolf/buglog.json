@@ -5541,5 +5541,72 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-26T21:30:00"
+  },
+  {
+    "id": "bug-338",
+    "timestamp": "2026-11-27T15:10:00",
+    "error_message": "eng-glb: 'could' came out as '#u abil'",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.glb-eng.dix",
+    "root_cause": "bidix entry for can<vbmod><past> had a malformed left side 'u<vbpr><cni> abil<vbmod>' (tags inside the lemma)",
+    "fix": "RL entry abil<vbmod> <- can<vbmod><past>; tense left unmarked as in the gold",
+    "tags": [
+      "apertium",
+      "bidix",
+      "eng-glb",
+      "modal"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-27T15:10:00"
+  },
+  {
+    "id": "bug-339",
+    "timestamp": "2026-11-27T15:10:00",
+    "error_message": "eng-glb CG: rules with (NOT 1* X BARRIER Y) fired almost always",
+    "file": "GlobasaTranslation/apertium-glb-eng/apertium-glb-eng.eng-glb.rlx",
+    "root_cause": "In CG-3, NOT with a scanning context and BARRIER asks for some cohort that is not X before the barrier; it does not mean 'no X before Y'",
+    "fix": "All such tests use NEGATE; the three-nouns rule checks finite verbs (Fin) only",
+    "tags": [
+      "cg3",
+      "vislcg3",
+      "negate",
+      "barrier",
+      "eng-glb"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-27T15:10:00"
+  },
+  {
+    "id": "bug-340",
+    "timestamp": "2026-11-27T15:10:00",
+    "error_message": "spa-glb: Te quiero -> Yu vole; le dio su pan al hombre -> #prpers",
+    "file": "GlobasaTranslation/apertium-glb-spa/apertium-glb-spa.spa-glb.rtx",
+    "root_cause": "NOM -> prn matched clitic pronouns (clitic read as subject); the ditrans VX rule output 1(CL), which applies CL as an output pattern and strips the clitic's tags",
+    "fix": "NOM -> prn only without pro/enc (clitic attribute); dative clitics output tas + pronoun marked <dbl>, glb-pregen drops it when a full a-phrase recipient is in the clause",
+    "tags": [
+      "rtx",
+      "clitic",
+      "spa-glb"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-27T15:10:00"
+  },
+  {
+    "id": "bug-341",
+    "timestamp": "2026-11-27T15:10:00",
+    "error_message": "epo word formation: derived bidix entries missing for short conversions (puri <- pura) and an epo analyser that would not load ('Unsupported transducer type')",
+    "file": "GlobasaTranslation/apertium-glb-epo/dev/epo_word_formation.py",
+    "root_cause": "memo key ignored the recursion depth (a depth-1 None was reused at depth 0); a hand block was inserted before the first marker, which is the one in <pardefs>",
+    "fix": "memo key (lemma, class, depth); hand entries placed before the section block marker",
+    "tags": [
+      "lttoolbox",
+      "apertium-epo",
+      "word-formation"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-27T15:10:00"
   }
 ]
