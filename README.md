@@ -85,6 +85,7 @@ web/deploy.sh                      # build, test, commit web/dist to the gh-page
 - **Neural steps** need the local NLP services, so the browser runs those stages as their rule-based fallback and lists each one under the translation: `(fallback: no neural service in browser)`. The exception is English→Globasa PoS: stanza's two small English taggers (combined + GUM, non-transformer, UD EWT/GUM) run in the browser through onnxruntime-web and answer `eng-glb-neural.py pos` (about 70 MB, loaded the first time English→Globasa is used). [`web/tagger/export_stanza_pos.py`](web/tagger/export_stanza_pos.py) exports them and checks they predict what stanza predicts; `node web/test/tagger_quality.mjs` scores eng→glb with and without them.
 - **Tests.** `node web/test/parity.mjs` runs every mode in wasm and through the `apertium` command on the gold sentences in `parallel_gold_cache/` and requires identical output; `node web/test/browser.mjs` drives the page in headless Chromium. Run both through `python3 web/test/capped.py …` (as `npm test` and `deploy.sh` do), which kills the whole process tree above `GLOBASA_MEM_GB`.
 - **Not yet in the browser:** Japanese (needs MeCab) and Ancient Greek (corpus pipelines).
+- **Licence.** [`web/`](web/) is GPL-3.0-or-later ([`web/LICENSE`](web/LICENSE)): the page bundles the Apertium tools, CG-3 and the pair data, which are GPL, and its optional coreference mode ports GPL-3 code. The rest of GlobasaLexiTools stays MIT ([`LICENSE`](LICENSE)).
 
 ## Lute
 
