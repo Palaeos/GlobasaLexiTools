@@ -113,6 +113,13 @@ So the text is resolved in pieces:
    windows. The model card's split + hierarchical-merging (HM) rows are the reference for the
    merge, and the card gives their scores. Only the current window's tensors are alive at any
    time; between windows only the clusters (word spans) are kept.
+   Window boundaries follow the text, strongest first: (a) scene breaks (`* * *`, `#`, `***`, a
+   centred ornament, two or more blank lines): a hard reset like a chapter; (b) paragraphs: a
+   window is as many whole paragraphs as fit the budget, and the last paragraph of the previous
+   window is repeated as context (its clusters seed the merge); (c) sentences: only a paragraph
+   longer than a window is cut, at a sentence end. Never cut inside a quotation; keep a dialogue
+   exchange together where it fits. Size: about 256–512 wordpieces. At 512 (about 400 words,
+   ~160 kept mentions) the pair tensor is about 240 MB; at 256 it is about 60 MB (phone-safe).
 3. **Nothing from the model crosses a checkpoint.** sesu only needs the possessive's own
    clause. The it/they class (te/to) needs an antecedent, which is nearly always within the
    chapter. A chain that would span chapters is cut, and the notes say so.
