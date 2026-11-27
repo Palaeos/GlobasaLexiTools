@@ -177,8 +177,9 @@ Measured as in §3. eng dev (1,052, browser pipeline): chrF 61.7 → 63.5 (244 s
 
 Left for the next session (rule/list work still possible):
 1. **Dependency parser in the browser** (§4: sesu for possessor = subject, 99 gold; bare relatives;
-   participle clauses). Note: `stage_se` in glb-neural.py is the Spanish *se* stage, not sesu —
-   no sesu stage exists on the desktop either. Needs parse + coreference (his = the subject).
+   participle clauses). sesu already exists on the desktop (eng-glb-neural.py stage coref,
+   `coreferent()`); the browser has no parse, so it never fires there. Handover:
+   `docs/translation/browser_parser_handover.md`.
 2. epo: verb on a noun root (matenas), sen + noun + a (senŝela), remaining compounds with a
    verb modifier (viandomanĝa); review the `check` rows of `epo_glb_affixes.tsv`.
 3. spa: arriba/abajo/debajo/encima (no word-list entry), diminutives (-ito), impersonal se → ren.
