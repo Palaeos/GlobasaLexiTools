@@ -239,6 +239,45 @@ and `glb-neural.py eng parse/focus`, get the "(fallback: no neural service in br
    relative word → *hu … da*; `eng-glb-relative.py` rewrites relatives today) and participle
    clauses (`advcl`/`acl` VBG/VBN). Zero false positives: act only on unambiguous trees.
 
+## 4a. Done 2026-11-27 (parser session): §4 steps 1–3
+
+**Desktop ceiling (step 1)**, eng dev, 1,052 sentences, gold *sesu* 107:
+
+| condition | sesu out | = gold | extra | how |
+|---|---|---|---|---|
+| neural off | 0 | 0 | 0 | — |
+| desktop full (electra parser + GUM coref) | 102 | 90 | 12 | 101 chain (rule 1), 1 rule 3 |
+| desktop, chains blanked (parse only) | 34 | 32 | 2 | 34 rule 3 |
+| **browser, nocharlm parser** | **33** | **31** | **2** | rule 3 |
+
+So the parse alone gives about a third. The rest needs chains: noun subjects, and possessives
+whose owner rule 3 rejects because another noun is present. That is the LitBank mode's job (§1d). The
+browser's 2 extras are gold rewordings (*tem tiketo*, *kapi-noya*), not wrong *sesu*. The
+desktop's 12 extras include real errors (UDHR "No one … his" must stay *tesu*, see
+cerebrum 2026-11-21; "the star … its light").
+
+**Built:**
+- `web/tagger/export_stanza_depparse.py`: combined_nocharlm depparse → `parser.char.onnx`,
+  `parser.sent.onnx` (weight-only int8 + DequantizeLinear: 109 → 28 MB), `parser.vocab.json`,
+  `lemma.dict.json` (0.3 MB). On EWT test the wrapper matches stanza (2 of 25,094 words differ)
+  and int8 changes 3 of 5,224 words. UAS/LAS: stanza 90.79/88.34, browser setting
+  (dictionary lemmas, int8 top-100k vectors) 90.77/88.31, lemma = word 90.55/88.04, gold tags
+  92.80/91.48.
+  **Lemmas, a gap in this handover:** the parser embeds lemmas. Stanza's dictionary is enough
+  (−0.03 LAS), so no seq2seq is needed. Feats are not a parser input at all (a stanza quirk,
+  see cerebrum).
+- `web/src/mst.mjs` (port of mst.rs): 200/200 trees identical to stanza (`web/test/mst_check.mjs`).
+- `tagger.mjs` fills lemma/head/deprel; the analysis is cached (pos and coref send the same text).
+  `BROWSER_NLP` maps `eng-glb-neural.py coref` and `glb-neural.py eng parse` (key = script +
+  args), both `needs_parse`. Without the parser files they fall back to the neural switch. The
+  notes now say "(fallback: no coreference model in browser; …)" instead of "no parser".
+- Results: eng dev mean chrF 63.46 → 63.8; per set (60 lines) curated 83.2, UDHR 49.4,
+  P&C 53.3, Tell-tale 74.0, Thirty 67.2 (none worse); parity: all modes identical.
+- Commits (main, not pushed): bf9d30d exporter, 700ceee mst.mjs, 1a6a16d wiring, 0e2a33c OpenWolf.
+
+**Next:** the LitBank mode (§1d) for the other ~60 *sesu* and for focus/it–they, then
+bare relatives / participle clauses on the parse (§4 step 5). The parse is in the browser now.
+
 ## 5. How to measure (as before)
 
 - Browser pipeline on all eng dev:
