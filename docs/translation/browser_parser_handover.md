@@ -94,6 +94,33 @@ larger, opt-in download.
      GUM coref). LitBank covers PER/LOC/FAC/GPE/ORG/VEH entities only, so it/its for things gets
      no chain: the desktop's GUM model stays the reference.
 
+### Memory plan for the LitBank mode (user, 2026-11-27: use checkpoints such as chapters)
+
+The heavy part of the mode is the mention-pair scoring, not the weights. By estimate, one pass
+over 1,000 words already needs more than 1 GB (about 400 kept mentions × 350 antecedents ×
+2,324 floats). onnxruntime-web's ceiling is 4 GB (wasm32); phones close the tab around 1–2 GB.
+So the text is resolved in pieces:
+
+1. **Chapters are checkpoints.** A chapter heading starts a new coreference document: the
+   chains, the tensors and the ONNX session's working memory are released before the next
+   chapter (dispose every tensor; reuse one session). The analysis of a finished chapter is
+   cached by its text, so translating it again costs nothing. Headings are recognised by
+   `Chapter N` / `CHAPTER N` / a Roman numeral on its own line, Markdown `#` lines, and Title
+   Case lines on their own (the same test as `title_case()` in eng-glb-neural.py). A text with
+   no heading is one chapter.
+2. **Windows inside a chapter.** A chapter can be 5–10k words, so within it the model runs on
+   windows of about 512 wordpieces (Tibert's split setting) and merges the clusters across
+   windows. The model card's split + hierarchical-merging (HM) rows are the reference for the
+   merge, and the card gives their scores. Only the current window's tensors are alive at any
+   time; between windows only the clusters (word spans) are kept.
+3. **Nothing from the model crosses a checkpoint.** sesu only needs the possessive's own
+   clause. The it/they class (te/to) needs an antecedent, which is nearly always within the
+   chapter. A chain that would span chapters is cut, and the notes say so.
+4. **Budget test:** extend `web/test/browser.mjs` to report peak memory (CDP
+   `Performance.getMetrics` / `performance.measureUserAgentSpecificMemory`) on a long text, such
+   as a whole Time Machine chapter. The test fails above a budget. Set the number with the user;
+   the starting proposal is a phone-safe ~1 GB for the whole tab.
+
 ## 2. Correction to the last handover
 
 §6b of rule_gaps_handover.md (and my report to the user) says no sesu stage exists. **That is
