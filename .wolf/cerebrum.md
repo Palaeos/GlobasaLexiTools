@@ -432,6 +432,7 @@
 - [2026-11-27] **stanza depparse inputs (browser parser):** the parser embeds word + **lemma** + UPOS/XPOS + pretrained + char reps; feats are NOT used (stanza 1.15 depparse/model.py embed() appends pos_emb twice and drops feats_emb; input 500 = 125+75+75+50+50+125). The browser tagger had lemma = text; web/tagger/export_stanza_depparse.py ships stanza's lemma dictionary pruned to entries whose lemma id (parser vocab, lowercased) differs from what the fallback would give (UPOS entry compared against the '*' entry, not the word: else the '*' entry leaks through). combined_nocharlm depparse = 27M params (109 MB fp32; 28 MB with weight-only int8 + DequantizeLinear, 0 tree changes).
 
 ## Do-Not-Repeat
+- [2026-11-27] A local HTTP proxy in a test script (e.g. one that blanks coref chains) must forward with `urllib.request.build_opener(urllib.request.ProxyHandler({}))`, as the NLP clients do; plain urlopen goes through the environment proxy and gets 502.
 - [2026-11-27] CG-3: never write (NOT 1* X BARRIER Y) for "no X before Y" — NOT with a scan and a barrier is true when any non-X cohort comes first. Use NEGATE.
 
 - **2026-11-26: never run native Apertium tools or Node harnesses uncapped.** memlimit.py guards only Python; native rtx-proc (epo pair, 40 sentences) went into swap and forced a reboot. Cap native runs with `ulimit -v` from GLOBASA_MEM_GB (default 40% RAM) — web/test/parity.mjs does this.
