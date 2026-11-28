@@ -2698,21 +2698,25 @@ function pickGloss(glossEntry) {
   return raw.replace(/_([^_]+)_/g, "$1");
 }
 
+// Anything that is not a Globasa letter (the server's [a-zğüşıöçA-ZĞÜŞİÖÇ]+).
+// No g flag: .test() must not keep lastIndex between calls.
+const GLB_SEPARATOR_RE = /([^a-zğüşıöçA-ZĞÜŞİÖÇ]+)/;
+
 function buildGlobExample(seg, targetWord, glossary) {
   // Split into word tokens and whitespace/punctuation, preserving originals
   const target = targetWord.toLowerCase();
   const MAX_NGRAM = 5;
 
-  // Split into alternating [word, separator, word, separator, ...] tokens
-  // where "word" tokens are alphabetic and separators are whitespace/punctuation
-  const parts = seg.split(/(\s+)/);
+  // Split into alternating [word, separator, word, ...] tokens: words are
+  // letter runs, separators everything else. Same tokens as the server's
+  // word_glossary n-grams (re.findall of letter runs in /lookup): splitting on
+  // whitespace alone glued "day/lil" into "daylil", a different headword
+  // (2026-11-28).
+  const parts = seg.split(GLB_SEPARATOR_RE);
   // Extract just the word tokens with their indices into parts[]
   const words = []; // [{idx, raw, clean}]
   parts.forEach((p, i) => {
-    if (!/\s+/.test(p) && p.length > 0) {
-      const clean = p.toLowerCase().replace(/[^a-zğüşıöç]/g, "");
-      if (clean) words.push({idx: i, raw: p, clean});
-    }
+    if (p.length > 0 && !GLB_SEPARATOR_RE.test(p)) words.push({idx: i, raw: p, clean: p.toLowerCase()});
   });
 
   // Greedy longest-match: mark which word indices are consumed by a phrase
@@ -2740,15 +2744,12 @@ function buildGlobExample(seg, targetWord, glossary) {
   let result = "";
   let wordIdx = 0;
   parts.forEach((p, i) => {
-    if (/\s+/.test(p)) {
-      result += p;
-      return;
-    }
-    const clean = p.toLowerCase().replace(/[^a-zğüşıöç]/g, "");
-    if (!clean) {
+    if (!p) return;
+    if (GLB_SEPARATOR_RE.test(p)) {
       result += escHtml(p);
       return;
     }
+    const clean = p.toLowerCase();
 
     const info = consumed[wordIdx];
     const isTarget = clean === target;
