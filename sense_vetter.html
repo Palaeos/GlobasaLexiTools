@@ -86,10 +86,11 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
   <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
   <input id="q" placeholder="One word" size="12" aria-label="Show one word">
   <label><input type="checkbox" id="hide" checked> Hide vetted</label>
+  <button id="nextWord" title="Jump past this word's other senses to the next word (W; Q goes back a word)">Next word</button>
   <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
   <button id="bulk" title="Score 4 (probably applies) on every sense currently loaded that you have not scored">Accept all loaded</button>
   <button id="rebuild" title="Write your scores into the shared sheet, rerun the Wiktionary extension with the scores, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
-  <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last <kbd>A</kbd> accept the proposal (countries view)</span>
+  <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>W</kbd> next word <kbd>Q</kbd> previous word <kbd>U</kbd> undo last <kbd>A</kbd> accept the proposal (countries view)</span>
 </header>
 <div id="rebuild-status" hidden></div>
 <main id="list"></main>
@@ -175,6 +176,30 @@ function showTally(data) {
 }
 
 function nearestVisible(i, direction) {
+// Next / previous word (user 2026-11-28: move on without stepping through every sense):
+// the first listed card of the next word, loading more cards when it is not held yet.
+async function jumpWord(direction) {
+  const word = (rows[focus]?.word || "").toLowerCase();
+  for (let tries = 0; tries < 10; tries++) {
+    for (let k = focus + direction; k >= 0 && k < rows.length; k += direction) {
+      if (isHidden(k) || rows[k].word.toLowerCase() === word) continue;
+      const target = rows[k].word.toLowerCase();
+      let first = k;
+      for (let j = k - 1; j >= 0; j--) {
+        if (isHidden(j)) continue;
+        if (rows[j].word.toLowerCase() !== target) break;
+        first = j;
+      }
+      setFocus(first, direction);
+      return;
+    }
+    if (direction < 0 || (matched && listedHeld() >= matched)) return;
+    const before = rows.length;
+    await loadMore();
+    if (rows.length === before) return;
+  }
+}
+
   for (let k = Math.max(0, i); k >= 0 && k < rows.length; k += direction) if (!isHidden(k)) return k;
   return -1;
 }
@@ -497,6 +522,8 @@ fetch("/api/tags").then(response => response.json()).then(data => {
   tagBox.insertAdjacentHTML("beforeend", data.tags.map(t =>
     `<option value="${esc(t.tag)}">${esc(t.tag)}${t.gloss ? ` (${esc(t.gloss)})` : ""}: ${t.words}</option>`).join(""));
 });
+  else if (key === "w") { e.preventDefault(); jumpWord(1); }
+  else if (key === "q") { e.preventDefault(); jumpWord(-1); }
 q.addEventListener("change", reload);
 hideBox.addEventListener("change", () => {
   try { localStorage.setItem("hideVetted", hideBox.checked ? "1" : "0"); } catch (e) {}
@@ -504,3 +531,4 @@ hideBox.addEventListener("change", () => {
 });
 reload();
 </script>
+document.getElementById("nextWord").addEventListener("click", e => { e.currentTarget.blur(); jumpWord(1); });
