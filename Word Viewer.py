@@ -1425,6 +1425,9 @@ _all_entries = {}
 _trans_index = {}
 # _tag_index: {tag_string: [list of globasa words]}
 _tag_index = {}
+# _coverage_words: {lang_display: set of globasa words with a translation};
+# reduced to percentages in _lang_coverage once indexing is done.
+_coverage_words = {}
 
 _TRANS_COLS = {
     "TranslationEng": "English",
@@ -1443,6 +1446,7 @@ def _index_translation(text, lang, glb_word):
     """Extract individual glosses from a translation string and index them."""
     if not text:
         return
+    _coverage_words.setdefault(lang, set()).add(glb_word)
     if lang not in _trans_index:
         _trans_index[lang] = {}
     idx = _trans_index[lang]
@@ -1624,6 +1628,12 @@ except FileNotFoundError:
           "search covers the word-list languages only)")
 
 print(f"  Loaded {len(_all_entries)} entries, {sum(len(v) for v in _trans_index.values())} translation index terms.")
+
+# Share of headwords with a translation, per display language (language menu).
+_lang_coverage = {lang: round(100 * len(words) / max(len(_all_entries), 1), 1)
+                  for lang, words in _coverage_words.items()}
+_lang_coverage["Globasa"] = 100.0
+del _coverage_words
 
 
 def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
@@ -1851,6 +1861,12 @@ def scripts_js():
     return send_file(os.path.join(BASE_DIR, "word_viewer_scripts.js"), mimetype="text/javascript")
 
 
+@app.route("/corpus_data.js")
+def corpus_data_js():
+    # Shared by /tmx and /pos; in the static site it answers /api/... itself.
+    return send_file(os.path.join(BASE_DIR, "corpus_data.js"), mimetype="text/javascript")
+
+
 @app.route("/fonts/<path:filename>")
 def serve_font(filename):
     # A font missing on this machine is a 404, so the page falls back to the
@@ -1881,6 +1897,12 @@ def i18n():
             key = row.pop("key")
             result[key] = {lang: val for lang, val in row.items() if val and lang}
     return jsonify(result)
+
+
+@app.route("/lang_coverage")
+def lang_coverage():
+    """{display language: % of headwords with a translation}."""
+    return jsonify(_lang_coverage)
 
 
 @app.route("/suggest")
@@ -1979,6 +2001,12 @@ def lookup(word):
     nsfw = _db.is_nsfw(word)
     constructions = _db.get_constructions(word) or []
     tmx_entries = _db.get_tmx(word) or []
+    # Contexts the public site must not carry (copyright; set by
+    # export_word_viewer_site.py). Filtered before the 20-example cut.
+    excluded = app.config.get("WV_EXCLUDE_CONTEXTS")
+    if excluded:
+        tmx_entries = [e for e in tmx_entries
+                       if not e.get("context", "").startswith(excluded)]
 
     # Pronunciation: AUDIO_DIR names a clip by its words, underscored (cel_na).
     # Every clip there is Hector's except a synthesized lesson's (17), which
@@ -4066,5 +4094,7 @@ def api_split_export(n):
                     "unchecked": unchecked, "bad_names": bad})
 
 
-if __name__ == "__main__" or True:
+# WV_NO_RUN=1: import the module without serving (export_word_viewer_site.py
+# drives the routes through app.test_client()).
+if os.environ.get("WV_NO_RUN") != "1":
     app.run(debug=True, port=5000, use_reloader=os.environ.get("WV_NO_RELOADER") != "1")

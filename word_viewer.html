@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- "server": Flask (Word Viewer.py). export_word_viewer_site.py rewrites it to
+     "static" for the GitHub Pages build, where data comes from data/*.json. -->
+<meta name="wv-mode" content="server">
 <title>Globasa Word Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,39 +15,39 @@
    Google Fonts strips smcp during subsetting, so we serve the full font locally. */
 @font-face {
   font-family: 'Source Sans 3';
-  src: url('/fonts/SourceSans3/SourceSans3VF-Upright.otf.woff2') format('woff2');
+  src: url('fonts/SourceSans3/SourceSans3VF-Upright.otf.woff2') format('woff2');
   font-weight: 200 900;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: 'Source Sans 3';
-  src: url('/fonts/SourceSans3/SourceSans3VF-Italic.otf.woff2') format('woff2');
+  src: url('fonts/SourceSans3/SourceSans3VF-Italic.otf.woff2') format('woff2');
   font-weight: 200 900;
   font-style: italic;
   font-display: swap;
 }
 @font-face {
   font-family: 'Dushan Musa Alphabet';
-  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Regular.otf') format('opentype');
+  src: url('fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
   font-family: 'Dushan Musa Alphabet';
-  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold.otf') format('opentype');
+  src: url('fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
 }
 @font-face {
   font-family: 'Dushan Musa Alphabet';
-  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Italic.otf') format('opentype');
+  src: url('fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Italic.otf') format('opentype');
   font-weight: 400;
   font-style: italic;
 }
 @font-face {
   font-family: 'Dushan Musa Alphabet';
-  src: url('/fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold_Italic.otf') format('opentype');
+  src: url('fonts/Unknown Vendor/OpenType/Dushan Musa Alphabet/Dushan_Musa_Alphabet_Bold_Italic.otf') format('opentype');
   font-weight: 700;
   font-style: italic;
 }
@@ -203,7 +206,12 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
 }
 .site-nav a:hover { text-decoration: underline; }
-.nav-sep { margin: 0 0.25em; }
+.site-nav a + a::before {
+  content: "\2022";
+  display: inline-block;
+  margin: 0 0.35em;
+  text-decoration: none;
+}
 
 /* Search area inside header */
 .header-search {
@@ -353,38 +361,155 @@ a:hover { text-decoration: underline; }
 /* ============================================================
    Language Selector (footer style)
    ============================================================ */
-.lang-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
-  justify-content: center;
+/* ============================================================
+   Language menu (Wikipedia-style, 2026-11-28). Full-support languages
+   (the word-list columns) sit apart from the sparse Menalari-extension ones.
+   ============================================================ */
+.lang-menu-wrap {
+  position: relative;
+  max-width: 42rem;
+  margin: 0.5rem auto 0;
+  padding-bottom: 0.7rem;
 }
-.lang-selector .label {
+.lang-menu-btn {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--color-header-text) 35%, transparent);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--color-header-text);
+  cursor: pointer;
+}
+.lang-menu-btn:hover,
+.lang-menu-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--color-header-text) 10%, transparent); }
+.lang-menu-btn .lang-menu-icon { font-weight: 700; letter-spacing: -0.05em; }
+.lang-menu-btn .sel-2 { opacity: 0.75; }
+.lang-menu-panel {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% - 0.4rem);
+  z-index: 50;
+  text-align: start;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+  padding: 0.9rem 1rem 1rem;
+  max-height: min(75vh, 40rem);
+  overflow-y: auto;
+}
+.lang-menu-search {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  margin-bottom: 0.8rem;
+}
+.lang-menu-heading {
   font-family: var(--font-sans-sc);
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-footer-text);
+  color: var(--color-muted);
   font-variant-caps: small-caps;
   font-feature-settings: "smcp";
   letter-spacing: 0.06em;
-  margin-inline-end: 0.3rem;
-  opacity: 0.7;
+  margin: 0 0 0.35rem;
 }
-.lang-btn {
+.lang-menu-section + .lang-menu-section { margin-top: 0.9rem; }
+.lang-menu-section.full {
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.lang-menu-note {
   font-family: var(--font-sans);
-  font-size: 0.78rem;
-  padding: 0.22rem 0.55rem;
-  border: 1.5px solid rgba(255,255,255,0.25);
-  border-radius: 20px;
-  background: transparent;
-  color: var(--color-footer-text);
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin: -0.1rem 0 0.5rem;
 }
-.lang-btn.selected-1 { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.5); }
-.lang-btn.selected-2 { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.4); }
-.lang-btn:hover:not(.selected-1):not(.selected-2) { border-color: rgba(255,255,255,0.5); }
+.lang-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.1rem 0.6rem;
+}
+.lang-menu-section.full .lang-menu-grid { grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); }
+.lang-menu-group-label {
+  grid-column: 1 / -1;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-top: 0.45rem;
+}
+.lang-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  width: 100%;
+  text-align: start;
+  font-family: var(--font-sans);
+  font-size: 0.86rem;
+  padding: 0.22rem 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.lang-menu-section.full .lang-item {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--color-text);
+  padding: 0.35rem 0.5rem;
+}
+.lang-item .lang-cov {
+  margin-inline-start: auto;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+.lang-item:hover, .lang-item.active { background: var(--color-bg); border-color: var(--color-border); color: var(--color-text); }
+.lang-item.selected-1 { background: #1a5fb4; border-color: #1a5fb4; color: #fff; }
+.lang-item.selected-2 { background: color-mix(in srgb, #1a5fb4 18%, var(--color-surface)); border-color: #1a5fb4; color: var(--color-text); }
+.lang-item .lang-rank {
+  font-size: 0.68rem;
+  font-weight: 700;
+  min-width: 1.1em;
+  text-align: center;
+}
+.lang-menu-empty { font-family: var(--font-sans); color: var(--color-muted); font-size: 0.9rem; }
+@media (max-width: 600px) {
+  .lang-menu-panel {
+    position: fixed;
+    inset: auto 0 0 0;
+    top: auto;
+    max-height: 80vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+  .lang-menu-grid { grid-template-columns: 1fr; }
+  .lang-menu-section.full .lang-menu-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Footer: About note (credits, licences) */
+.site-about {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  color: var(--color-footer-text);
+  opacity: 0.85;
+  line-height: 1.5;
+}
+.site-about a { color: inherit; }
 
 /* Script selector (inside content area) */
 .script-selector-wrap {
@@ -621,6 +746,34 @@ a:hover { text-decoration: underline; }
   gap: 0.6rem;
 }
 .gallery-panel-strip figure { margin: 0; }
+/* Credit line under each image; width 0 + min-width 100% keeps the figure as
+   wide as its picture however long the artist name is. */
+.gallery-panel-credit {
+  width: 0;
+  min-width: 100%;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--color-muted);
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+.gallery-panel-credit a { color: inherit; }
+.img-tile { position: relative; }
+.img-tile-credit {
+  position: absolute;
+  inset-inline-end: 3px;
+  bottom: 3px;
+  z-index: 1;
+  font-family: var(--font-sans);
+  font-size: 0.62rem;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  pointer-events: none;
+}
 .gallery-panel-caption {
   font-size: 0.82rem;
   text-align: center;
@@ -735,7 +888,7 @@ td[dir="rtl"], td[dir="ltr"] { unicode-bidi: embed; }
 :root[dir="rtl"] .cell-pos,
 :root[dir="rtl"] .cell-verbtype,
 :root[dir="rtl"] .trans-table th,
-:root[dir="rtl"] .lang-selector .label,
+:root[dir="rtl"] .lang-menu-heading,
 :root[dir="rtl"] .script-selector-wrap .label,
 :root[dir="rtl"] .search-btn-row button,
 :root[dir="rtl"] .site-nav {
@@ -769,7 +922,7 @@ body.lang-cjk .meta-label,
 body.lang-cjk .cell-pos,
 body.lang-cjk .cell-verbtype,
 body.lang-cjk .trans-table th,
-body.lang-cjk .lang-selector .label,
+body.lang-cjk .lang-menu-heading,
 body.lang-cjk .script-selector-wrap .label,
 body.lang-cjk .search-btn-row button,
 body.lang-cjk .site-nav {
@@ -842,7 +995,7 @@ body.lang-grc .meta-label,
 body.lang-grc .cell-pos,
 body.lang-grc .cell-verbtype,
 body.lang-grc .trans-table th,
-body.lang-grc .lang-selector .label,
+body.lang-grc .lang-menu-heading,
 body.lang-grc .script-selector-wrap .label,
 body.lang-grc .search-btn-row button,
 body.lang-grc .site-nav {
@@ -884,7 +1037,7 @@ body.lang-indic .meta-label,
 body.lang-indic .cell-pos,
 body.lang-indic .cell-verbtype,
 body.lang-indic .trans-table th,
-body.lang-indic .lang-selector .label,
+body.lang-indic .lang-menu-heading,
 body.lang-indic .script-selector-wrap .label,
 body.lang-indic .search-btn-row button,
 body.lang-indic .site-nav {
@@ -1258,8 +1411,16 @@ body.script-musa .sug-word {
     </svg>
     <span class="site-title">Globasa</span>
   </div>
-  <nav class="site-nav">
-    <a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/pos">PoS</a><span class="nav-sep"> &bull; </span><a href="/images">Images</a><span class="nav-sep"> &bull; </span><a href="/review">Review</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+  <nav class="site-nav" id="siteNav">
+    <a href="/alignments" class="server-only">Alignments</a>
+    <a href="/tmx" data-static-href="tmx.html">TMX</a>
+    <a href="/pos" data-static-href="pos.html">PoS</a>
+    <a href="/images" class="server-only">Images</a>
+    <a href="/review" class="server-only">Review</a>
+    <a href="/translate" class="server-only">Translation Aide</a>
+    <a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a>
+    <a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a>
+    <a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
   </nav>
   <div class="header-search">
     <div class="search-wrap">
@@ -1272,6 +1433,10 @@ body.script-musa .sug-word {
     <div class="search-btn-row">
       <button type="button" id="searchBtn">Search</button>
     </div>
+  </div>
+  <div class="lang-menu-wrap">
+    <button type="button" class="lang-menu-btn" id="langMenuBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="langMenuPanel"></button>
+    <div class="lang-menu-panel" id="langMenuPanel" role="dialog" aria-label="Languages" hidden></div>
   </div>
 </header>
 
@@ -1350,45 +1515,246 @@ body.script-musa .sug-word {
      ============================================================ -->
 <footer class="site-footer">
   <div class="footer-inner">
-    <div class="lang-selector" id="langSelector">
-      <span class="label">Languages:</span>
-      <!-- buttons injected by JS -->
+    <div class="site-about" id="siteAbout">
+      Images from Wikimedia Commons: each credit links to the file page with full details.
+      <span class="static-only" hidden>
+        Dictionary data from the <a href="https://menalari.globasa.net/" target="_blank" rel="noopener">Globasa Menalari</a>;
+        example sentences from <a href="https://doxo.globasa.net/" target="_blank" rel="noopener">Doxo</a> and
+        <a href="https://xwexi.globasa.net/" target="_blank" rel="noopener">Xwexi</a>.
+        Code: <a href="https://github.com/Palaeos/GlobasaLexiTools" target="_blank" rel="noopener">GlobasaLexiTools</a> (MIT).
+      </span>
     </div>
   </div>
 </footer>
 
 <audio id="pronAudio" preload="none"></audio>
 
-<script src="/word_viewer_scripts.js"></script>
+<script src="word_viewer_scripts.js"></script>
 <script>
 // ============================================================
 // Config
 // ============================================================
 
-const LANGS = [
-  "Globasa",
-  // From word-list.csv
-  "English", "Esperanto", "Spanish",
-  // Romance
-  "French", "Italian", "Portuguese", "Romanian",
-  // Germanic
-  "German", "Dutch", "Swedish", "Old English",
-  // Classical
-  "Ancient Greek", "Latin", "Sanskrit", "Greek",
-  // Slavic + E-European
-  "Russian", "Polish", "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian",
-  // Semitic + Turkic
-  "Yiddish", "Hebrew", "Arabic", "Turkish", "Tatar",
-  // East Asian
-  "Mandarin Chinese", "Japanese", "Korean", "Vietnamese",
-  // SE Asian / Austronesian
-  "Indonesian", "Malay", "Tagalog",
-  // Iranian + Indic
-  "Persian", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
-  "Malayalam", "Gujarati", "Panjabi",
-  // African
-  "Swahili",
+// Full support: the translation columns every word-list entry carries. All
+// other languages come from the Menalari extension and are much sparser
+// (see /lang_coverage), so the language menu shows them apart.
+const FULL_LANGS = ["Globasa", "English", "Spanish", "Esperanto"];
+
+// The partial languages by region, in menu order.
+const LANG_GROUPS = [
+  ["romance", "Romance", ["French", "Italian", "Portuguese", "Romanian"]],
+  ["germanic", "Germanic", ["German", "Dutch", "Swedish", "Old English"]],
+  ["classical", "Classical", ["Ancient Greek", "Latin", "Sanskrit", "Greek"]],
+  ["slavic", "Slavic and Eastern European",
+    ["Russian", "Polish", "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian"]],
+  ["semitic", "Semitic and Turkic", ["Yiddish", "Hebrew", "Arabic", "Turkish", "Tatar"]],
+  ["eastasian", "East Asian", ["Mandarin Chinese", "Japanese", "Korean", "Vietnamese"]],
+  ["austronesian", "Southeast Asian", ["Indonesian", "Malay", "Tagalog"]],
+  ["indic", "Iranian and Indic",
+    ["Persian", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
+     "Malayalam", "Gujarati", "Panjabi"]],
+  ["african", "African", ["Swahili"]],
 ];
+
+const LANGS = FULL_LANGS.concat(...LANG_GROUPS.map(g => g[2]));
+
+// Autonym + ISO 639-1/639-3 codes: what the menu shows and what its search matches.
+const LANG_META = {
+  "Globasa": ["Globasa", "glb"],
+  "English": ["English", "en eng"],
+  "Spanish": ["Español", "es spa"],
+  "Esperanto": ["Esperanto", "eo epo"],
+  "French": ["Français", "fr fra fre"],
+  "Italian": ["Italiano", "it ita"],
+  "Portuguese": ["Português", "pt por"],
+  "Romanian": ["Română", "ro ron rum"],
+  "German": ["Deutsch", "de deu ger"],
+  "Dutch": ["Nederlands", "nl nld dut"],
+  "Swedish": ["Svenska", "sv swe"],
+  "Old English": ["Ænglisc", "ang"],
+  "Ancient Greek": ["Ἀρχαία ἑλληνική", "grc"],
+  "Latin": ["Latina", "la lat"],
+  "Sanskrit": ["संस्कृतम्", "sa san"],
+  "Greek": ["Ελληνικά", "el ell gre"],
+  "Russian": ["Русский", "ru rus"],
+  "Polish": ["Polski", "pl pol"],
+  "Bulgarian": ["Български", "bg bul"],
+  "Ukrainian": ["Українська", "uk ukr"],
+  "Serbian": ["Српски", "sr srp"],
+  "Czech": ["Čeština", "cs ces cze"],
+  "Hungarian": ["Magyar", "hu hun"],
+  "Yiddish": ["ייִדיש", "yi yid"],
+  "Hebrew": ["עברית", "he heb"],
+  "Arabic": ["العربية", "ar ara"],
+  "Turkish": ["Türkçe", "tr tur"],
+  "Tatar": ["Татарча", "tt tat"],
+  "Mandarin Chinese": ["中文", "zh zho chi cmn"],
+  "Japanese": ["日本語", "ja jpn"],
+  "Korean": ["한국어", "ko kor"],
+  "Vietnamese": ["Tiếng Việt", "vi vie"],
+  "Indonesian": ["Bahasa Indonesia", "id ind"],
+  "Malay": ["Bahasa Melayu", "ms msa may zsm"],
+  "Tagalog": ["Tagalog", "tl tgl fil"],
+  "Persian": ["فارسی", "fa fas per"],
+  "Hindi": ["हिन्दी", "hi hin"],
+  "Urdu": ["اردو", "ur urd"],
+  "Bengali": ["বাংলা", "bn ben"],
+  "Tamil": ["தமிழ்", "ta tam"],
+  "Telugu": ["తెలుగు", "te tel"],
+  "Kannada": ["ಕನ್ನಡ", "kn kan"],
+  "Malayalam": ["മലയാളം", "ml mal"],
+  "Gujarati": ["ગુજરાતી", "gu guj"],
+  "Panjabi": ["ਪੰਜਾਬੀ", "pa pan"],
+  "Swahili": ["Kiswahili", "sw swa"],
+};
+function langAutonym(lang) { return (LANG_META[lang] || [lang])[0]; }
+
+// ============================================================
+// Data access: Flask server or static export (GitHub Pages)
+// ============================================================
+// Every call site asks for the server URL; in static mode wvFetch maps it to
+// the exported JSON (export_word_viewer_site.py), or answers it here (/suggest,
+// /tags/<tag>), and returns a Response either way.
+
+const STATIC_MODE = (document.querySelector('meta[name="wv-mode"]') || {}).content === "static";
+
+// Must match site_key() in export_word_viewer_site.py: a filename that is
+// URL-safe and stays distinct on case-insensitive filesystems (atlas / Atlas).
+function siteKey(word) {
+  let out = "";
+  for (const ch of word) {
+    if (/[a-z0-9-]/.test(ch)) out += ch;
+    else if (ch !== ch.toLowerCase() && /[a-z]/.test(ch.toLowerCase())) out += "_" + ch.toLowerCase();
+    else out += "~" + ch.codePointAt(0).toString(16).padStart(4, "0");
+  }
+  return out;
+}
+
+const _staticCache = {};
+function staticJson(path) {
+  if (!_staticCache[path]) {
+    _staticCache[path] = fetch(path).then(r => r.ok ? r.json() : null).catch(() => null);
+  }
+  return _staticCache[path];
+}
+
+function jsonResponse(body, status = 200) {
+  return new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
+}
+
+// Port of suggest() in Word Viewer.py: exact Globasa match, Globasa prefix
+// matches, then per language exact and prefix translation matches; 15 at most.
+async function staticSuggest(qRaw, langs) {
+  const MAX = 15;
+  qRaw = qRaw.trim();
+  const q = qRaw.toLowerCase();
+  if (q.length < 2) return [];
+  const words = await staticJson("data/suggest/words.json") || [];
+  const wordSet = new Set(words);
+  const results = [];
+  const seen = new Set();
+  for (const cand of [qRaw, q]) {
+    if (wordSet.has(cand) && !seen.has(cand.toLowerCase())) {
+      seen.add(cand.toLowerCase());
+      results.push({word: cand, type: "exact"});
+    }
+  }
+  for (const w of words) {
+    if (results.length >= MAX) break;
+    const wl = w.toLowerCase();
+    if (wl.startsWith(q) && !seen.has(wl)) { seen.add(wl); results.push({word: w, type: "prefix"}); }
+  }
+  for (const lang of langs) {
+    // [[term, [sorted words]], ...] in the server's index order.
+    const idx = await staticJson(`data/suggest/${siteKey(lang)}.json`) || [];
+    const exact = idx.find(([term]) => term === q);
+    if (exact) {
+      for (const w of exact[1]) {
+        if (results.length >= MAX) break;
+        if (!seen.has(w.toLowerCase())) {
+          seen.add(w.toLowerCase());
+          results.push({word: w, type: "translation", via: q, lang});
+        }
+      }
+    }
+    if (results.length < MAX) {
+      for (const [term, ws] of idx) {
+        if (results.length >= MAX) break;
+        if (term.startsWith(q) && term !== q) {
+          for (const w of ws) {
+            if (results.length >= MAX) break;
+            if (!seen.has(w.toLowerCase())) {
+              seen.add(w.toLowerCase());
+              results.push({word: w, type: "translation", via: term, lang});
+            }
+          }
+        }
+      }
+    }
+  }
+  return results.slice(0, MAX);
+}
+
+// Compact translation tables (compact_languages() in the exporter) back to the
+// server shape: langs {lang: [text | [text, gender]]}, empty languages left
+// out -> languages {lang: [{gender, text}]} over the site-wide language list.
+async function expandLanguages(data) {
+  const groups = (data.translations && data.translations.pos_groups) || [];
+  if (!groups.some(g => g.langs)) return;
+  const keys = await staticJson("data/translation_langs.json") || [];
+  for (const g of groups) {
+    if (!g.langs) continue;
+    const languages = {};
+    for (const lang of keys) {
+      languages[lang] = (g.langs[lang] || []).map(x =>
+        typeof x === "string" ? {gender: null, text: x} : {gender: x[1], text: x[0]});
+    }
+    g.languages = languages;
+    delete g.langs;
+  }
+}
+
+async function wvFetch(url) {
+  if (!STATIC_MODE) return fetch(url);
+  const u = new URL(url, "http://wv.invalid");
+  const path = decodeURIComponent(u.pathname);
+  const simple = {"/i18n": "data/i18n.json", "/etym_langs": "data/etym_langs.json",
+                  "/lang_coverage": "data/lang_coverage.json"};
+  if (simple[path]) return fetch(simple[path]);
+  if (path.startsWith("/lookup/")) {
+    // The server retries in lowercase; so do we.
+    const word = path.slice("/lookup/".length).trim();
+    let r = await fetch(`data/lookup/${siteKey(word)}.json`);
+    if (!r.ok && word.toLowerCase() !== word) r = await fetch(`data/lookup/${siteKey(word.toLowerCase())}.json`);
+    if (!r.ok) return jsonResponse({error: `Word '${word}' not found`}, 404);
+    // Example tooltips: one shared glossary (fetched once) instead of a copy
+    // per word file; the tooltip code only reads the phrases it shows.
+    const data = await r.json();
+    if ((data.examples || []).length) data.word_glossary = await staticJson("data/glossary.json") || {};
+    await expandLanguages(data);
+    return jsonResponse(data);
+  }
+  if (path.startsWith("/tags/")) {
+    const tag = path.slice("/tags/".length);
+    const tags = await staticJson("data/tags.json") || {};
+    return tags[tag] ? jsonResponse({tag, words: tags[tag]})
+                     : jsonResponse({error: `Tag '${tag}' not found`}, 404);
+  }
+  if (path === "/suggest") {
+    const langs = (u.searchParams.get("langs") || "English").split(",");
+    return jsonResponse(await staticSuggest(u.searchParams.get("q") || "", langs));
+  }
+  return jsonResponse({error: "not in the static site"}, 404);
+}
+
+// Static mode: local-only nav links go; TMX/PoS point at their static pages.
+function applySiteMode() {
+  if (!STATIC_MODE) return;
+  document.querySelectorAll(".server-only").forEach(el => el.remove());
+  document.querySelectorAll("[data-static-href]").forEach(a => { a.href = a.dataset.staticHref; });
+  document.querySelectorAll(".static-only").forEach(el => { el.hidden = false; });
+}
+applySiteMode();
 
 // Map display names to API column names (identity for most)
 const LANG_COL = Object.fromEntries(LANGS.filter(l => l !== "Globasa").map(l => [l, l]));
@@ -1578,14 +1944,23 @@ const VERB_TYPE_KEY_MAP = {
 // UI heading labels loaded from CSV at startup
 let UI_LABELS = {};
 let ETYM_LANG_MAP = {}; // Globasa name -> internal name (e.g. "Arabisa" -> "Arabic")
+let LANG_COVERAGE = {}; // display language -> % of headwords with a translation
 
 async function loadI18n() {
-  const [i18nResp, etymResp] = await Promise.all([
-    fetch("/i18n"),
-    fetch("/etym_langs"),
+  const [i18nResp, etymResp, covResp] = await Promise.all([
+    wvFetch("/i18n"),
+    wvFetch("/etym_langs"),
+    wvFetch("/lang_coverage").catch(() => null),
   ]);
   if (i18nResp.ok) UI_LABELS = await i18nResp.json();
   if (etymResp.ok) ETYM_LANG_MAP = await etymResp.json();
+  if (covResp && covResp.ok) LANG_COVERAGE = await covResp.json();
+}
+
+// A UI string with an English fallback for keys the i18n CSV lacks.
+function uiText(key, fallback) {
+  const v = uiLabel(key);
+  return v === key ? fallback : v;
 }
 
 function uiLabel(key) {
@@ -1636,12 +2011,28 @@ const LS_KEY = "glb_viewer_langs";
 function loadLangPref() {
   try {
     const v = localStorage.getItem(LS_KEY);
-    if (v) return JSON.parse(v);
+    if (v) {
+      const saved = JSON.parse(v).filter(l => LANGS.includes(l));
+      if (saved.length) return saved.slice(0, 2);
+    }
   } catch (e) {}
-  return ["German", "French"];
+  // Nothing saved: English plus the reader's own browser language, if offered.
+  const own = suggestedLangs().find(l => l !== "English");
+  return own ? ["English", own] : ["English"];
+}
+
+// Languages from navigator.languages that the viewer offers.
+function suggestedLangs() {
+  const out = [];
+  for (const tag of (navigator.languages || [navigator.language || ""])) {
+    const code = String(tag).toLowerCase().split("-")[0];
+    const lang = LANGS.find(l => (LANG_META[l] || ["", ""])[1].split(" ").includes(code));
+    if (lang && !out.includes(lang)) out.push(lang);
+  }
+  return out;
 }
 function saveLangPref() {
-  localStorage.setItem(LS_KEY, JSON.stringify(selectedLangs));
+  try { localStorage.setItem(LS_KEY, JSON.stringify(selectedLangs)); } catch (e) {}
 }
 
 function updateDocDirection() {
@@ -1675,41 +2066,211 @@ function updateDocDirection() {
 // Language selector
 // ============================================================
 
-function buildLangSelector() {
-  const wrap = document.getElementById("langSelector");
-  wrap.innerHTML = "";
-  const label = document.createElement("span");
-  label.className = "label";
-  label.textContent = uiLabel("ui.languages") + ":";
-  wrap.appendChild(label);
+// Wikipedia-style menu: a trigger showing the current choice opens a panel
+// with search, the full-support languages on top, browser-suggested ones,
+// then the sparse extension languages by region with their coverage.
+const langMenuBtn = document.getElementById("langMenuBtn");
+const langMenuPanel = document.getElementById("langMenuPanel");
+let langMenuQuery = "";
+let langMenuActive = -1;
 
-  LANGS.forEach(lang => {
-    const btn = document.createElement("button");
-    btn.className = "lang-btn";
-    btn.textContent = langName(lang);
-    btn.dataset.lang = lang;
-
-    const idx = selectedLangs.indexOf(lang);
-    if (idx === 0) btn.classList.add("selected-1");
-    else if (idx === 1) btn.classList.add("selected-2");
-
-    btn.addEventListener("click", () => {
-      const i = selectedLangs.indexOf(lang);
-      if (i >= 0) {
-        selectedLangs.splice(i, 1);
-      } else {
-        if (selectedLangs.length >= 2) selectedLangs.shift();
-        selectedLangs.push(lang);
-      }
-      saveLangPref();
-      updateDocDirection();
-      buildLangSelector();
-      buildScriptSelector();
-      if (currentData) renderResult(currentData);
-    });
-    wrap.appendChild(btn);
-  });
+function toggleLang(lang) {
+  const i = selectedLangs.indexOf(lang);
+  if (i >= 0) {
+    selectedLangs.splice(i, 1);
+  } else {
+    if (selectedLangs.length >= 2) selectedLangs.shift();
+    selectedLangs.push(lang);
+  }
+  saveLangPref();
+  updateDocDirection();
+  buildLangSelector();
+  buildScriptSelector();
+  if (currentData) renderResult(currentData);
 }
+
+function langMatches(lang, q) {
+  if (!q) return true;
+  const [auto, codes] = LANG_META[lang] || [lang, ""];
+  const hay = [lang, auto, langName(lang), codes].join(" ").toLowerCase();
+  return hay.split(/\s+/).some(w => w.startsWith(q)) || hay.includes(q);
+}
+
+function langItem(lang, showCoverage) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "lang-item";
+  btn.dataset.lang = lang;
+  const idx = selectedLangs.indexOf(lang);
+  const rank = document.createElement("span");
+  rank.className = "lang-rank";
+  rank.textContent = idx >= 0 ? String(idx + 1) : "";
+  btn.appendChild(rank);
+  const name = document.createElement("span");
+  name.className = "lang-name";
+  name.textContent = langAutonym(lang);
+  btn.appendChild(name);
+  const local = langName(lang);
+  btn.title = local.startsWith("lang.") ? lang : local;
+  if (idx === 0) btn.classList.add("selected-1");
+  else if (idx === 1) btn.classList.add("selected-2");
+  btn.setAttribute("aria-pressed", idx >= 0 ? "true" : "false");
+  if (showCoverage && LANG_COVERAGE[lang] !== undefined) {
+    const cov = document.createElement("span");
+    cov.className = "lang-cov";
+    cov.textContent = `${Math.round(LANG_COVERAGE[lang])}%`;
+    cov.title = uiText("ui.lang_coverage", "share of words with a translation");
+    btn.appendChild(cov);
+  }
+  btn.addEventListener("click", () => toggleLang(lang));
+  return btn;
+}
+
+function langSection(cls, heading, note, groups, showCoverage) {
+  const sec = document.createElement("div");
+  sec.className = `lang-menu-section ${cls}`;
+  const h = document.createElement("div");
+  h.className = "lang-menu-heading";
+  h.textContent = heading;
+  sec.appendChild(h);
+  if (note) {
+    const n = document.createElement("div");
+    n.className = "lang-menu-note";
+    n.textContent = note;
+    sec.appendChild(n);
+  }
+  const grid = document.createElement("div");
+  grid.className = "lang-menu-grid";
+  let count = 0;
+  groups.forEach(([label, langs]) => {
+    const shown = langs.filter(l => langMatches(l, langMenuQuery));
+    if (!shown.length) return;
+    if (label) {
+      const gl = document.createElement("div");
+      gl.className = "lang-menu-group-label";
+      gl.textContent = label;
+      grid.appendChild(gl);
+    }
+    shown.forEach(l => { grid.appendChild(langItem(l, showCoverage)); count++; });
+  });
+  sec.appendChild(grid);
+  return count ? sec : null;
+}
+
+function buildLangSelector() {
+  // Trigger: "文A English · Deutsch"
+  langMenuBtn.innerHTML = "";
+  const icon = document.createElement("span");
+  icon.className = "lang-menu-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "文A";
+  langMenuBtn.appendChild(icon);
+  const cur = document.createElement("span");
+  if (selectedLangs.length) {
+    selectedLangs.forEach((l, i) => {
+      if (i) cur.appendChild(document.createTextNode(" · "));
+      const sp = document.createElement("span");
+      sp.className = `sel-${i + 1}`;
+      sp.textContent = langAutonym(l);
+      cur.appendChild(sp);
+    });
+  } else {
+    cur.textContent = uiText("ui.languages", "Languages");
+  }
+  langMenuBtn.appendChild(cur);
+  const caret = document.createElement("span");
+  caret.setAttribute("aria-hidden", "true");
+  caret.textContent = "▾";
+  langMenuBtn.appendChild(caret);
+  langMenuBtn.title = uiText("ui.languages", "Languages") + " (" + uiText("ui.lang_pick_two", "up to two") + ")";
+  if (!langMenuPanel.hidden) renderLangPanel();
+}
+
+function renderLangPanel(keepFocus) {
+  const hadFocus = keepFocus && document.activeElement && document.activeElement.classList.contains("lang-menu-search");
+  langMenuPanel.innerHTML = "";
+  const search = document.createElement("input");
+  search.type = "search";
+  search.className = "lang-menu-search";
+  search.placeholder = uiText("ui.lang_search", "Search languages (name or code)");
+  search.value = langMenuQuery;
+  search.setAttribute("aria-label", search.placeholder);
+  search.addEventListener("input", () => {
+    langMenuQuery = search.value.trim().toLowerCase();
+    langMenuActive = -1;
+    renderLangPanel(true);
+  });
+  langMenuPanel.appendChild(search);
+
+  // Suggested ones also sit in their region group, so a search shows them once.
+  const suggested = langMenuQuery ? [] : suggestedLangs().filter(l => !FULL_LANGS.includes(l));
+  const partial = LANG_GROUPS.map(([key, label, langs]) => [uiText("langgroup." + key, label), langs]);
+  const sections = [
+    langSection("full", uiText("ui.lang_full", "Full translations"),
+                uiText("ui.lang_full_note", "Every word has a translation in these."),
+                [["", FULL_LANGS]], false),
+    suggested.length ? langSection("suggested", uiText("ui.lang_suggested", "Suggested"), "",
+                                   [["", suggested]], true) : null,
+    langSection("partial", uiText("ui.lang_partial", "Partial translations"),
+                uiText("ui.lang_partial_note",
+                       "From the Menalari extension: sparser and partly machine-assisted. The figure is the share of words with a translation."),
+                partial, true),
+  ].filter(Boolean);
+  if (!sections.length) {
+    const none = document.createElement("div");
+    none.className = "lang-menu-empty";
+    none.textContent = uiText("ui.lang_none", "No language matches.");
+    langMenuPanel.appendChild(none);
+  }
+  sections.forEach(sec => langMenuPanel.appendChild(sec));
+  updateLangMenuActive();
+  if (hadFocus || keepFocus === "open") {
+    const box = langMenuPanel.querySelector(".lang-menu-search");
+    box.focus();
+    box.setSelectionRange(box.value.length, box.value.length);
+  }
+}
+
+function langMenuItems() { return Array.from(langMenuPanel.querySelectorAll(".lang-item")); }
+function updateLangMenuActive() {
+  langMenuItems().forEach((el, i) => el.classList.toggle("active", i === langMenuActive));
+  const act = langMenuItems()[langMenuActive];
+  if (act) act.scrollIntoView({block: "nearest"});
+}
+
+function openLangMenu() {
+  langMenuPanel.hidden = false;
+  langMenuBtn.setAttribute("aria-expanded", "true");
+  langMenuActive = -1;
+  renderLangPanel("open");
+}
+function closeLangMenu(returnFocus) {
+  if (langMenuPanel.hidden) return;
+  langMenuPanel.hidden = true;
+  langMenuBtn.setAttribute("aria-expanded", "false");
+  langMenuQuery = "";
+  if (returnFocus) langMenuBtn.focus();
+}
+
+langMenuBtn.addEventListener("click", () => langMenuPanel.hidden ? openLangMenu() : closeLangMenu());
+document.addEventListener("click", e => {
+  if (!langMenuPanel.hidden && !langMenuPanel.contains(e.target) && !langMenuBtn.contains(e.target)
+      && document.contains(e.target)) closeLangMenu();
+});
+langMenuPanel.addEventListener("keydown", e => {
+  const items = langMenuItems();
+  if (e.key === "Escape") { e.preventDefault(); closeLangMenu(true); }
+  else if (e.key === "ArrowDown" && items.length) {
+    e.preventDefault(); langMenuActive = (langMenuActive + 1) % items.length; updateLangMenuActive();
+  } else if (e.key === "ArrowUp" && items.length) {
+    e.preventDefault(); langMenuActive = (langMenuActive - 1 + items.length) % items.length; updateLangMenuActive();
+  } else if (e.key === "Enter" && e.target.classList.contains("lang-menu-search")) {
+    e.preventDefault();
+    const pick = items[langMenuActive >= 0 ? langMenuActive : 0];
+    if (pick) toggleLang(pick.dataset.lang);
+    renderLangPanel("open");  // the old search box is gone; keep typing in the new one
+  }
+});
 
 // ============================================================
 // Script selector
@@ -1858,6 +2419,7 @@ function showGalleryOverlay(senses, heading) {
       img.loading = "lazy";
       a.appendChild(img);
       fig.appendChild(a);
+      fig.appendChild(buildImageCredit(im));
       if (im.word) {
         const cap = document.createElement("figcaption");
         cap.className = "gallery-panel-caption";
@@ -1875,6 +2437,39 @@ function showGalleryOverlay(senses, heading) {
     if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
   });
   document.body.appendChild(ov);
+}
+
+// "Artist · CC BY-SA 4.0 · source" (PD/CC0: "Public domain · source"); a
+// missing field is left out, so the source link is always there. Artist text
+// is plain text from build_image_rows, set via textContent.
+function buildImageCredit(im) {
+  // A div: the figure's one <figcaption> is the word caption.
+  const cap = document.createElement("div");
+  cap.className = "gallery-panel-credit";
+  const parts = [];
+  if (im.artist && !im.public_domain) parts.push(document.createTextNode(im.artist));
+  if (im.license) {
+    const label = im.public_domain && im.license !== "CC0" ? uiText("ui.public_domain", "Public domain") : im.license;
+    if (im.license_url) {
+      const a = document.createElement("a");
+      a.href = im.license_url; a.target = "_blank"; a.rel = "noopener license";
+      a.textContent = label;
+      parts.push(a);
+    } else {
+      parts.push(document.createTextNode(label));
+    }
+  }
+  if (im.source_page) {
+    const a = document.createElement("a");
+    a.href = im.source_page; a.target = "_blank"; a.rel = "noopener";
+    a.textContent = uiText("ui.image_source", "source");
+    parts.push(a);
+  }
+  parts.forEach((node, i) => {
+    if (i) cap.appendChild(document.createTextNode(" · "));
+    cap.appendChild(node);
+  });
+  return cap;
 }
 
 // The compact tile. One image fills the box; two split it; three or more grid
@@ -1909,6 +2504,13 @@ function buildImageTile(senses, heading) {
     }
     tile.appendChild(cell);
   });
+
+  // Credits live in the gallery; the tile says where to find them.
+  const credit = document.createElement("span");
+  credit.className = "img-tile-credit";
+  credit.textContent = uiText("ui.image_credits", "credits");
+  tile.appendChild(credit);
+  tile.title += " · " + uiText("ui.image_credits_hint", "image credits in the gallery");
 
   tile.addEventListener("click", () => showGalleryOverlay(senses, heading));
   return tile;
@@ -2788,7 +3390,7 @@ function loadDerivedDetails(words, container) {
   const firstLang = selectedLangs.length > 0 ? selectedLangs[0] : langs[0];
 
   Promise.all(words.map(w =>
-    fetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+    wvFetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
   )).then(results => {
     loading.remove();
     results.forEach((dData, i) => {
@@ -2892,7 +3494,7 @@ function fetchSuggestions(q, mode) {
   if (q.length < 2) { hideSuggestions(); return; }
   const langs = selectedLangs.length > 0 ? selectedLangs.join(",") : "English";
   const modeParam = mode === "trans" ? "&mode=trans" : "";
-  fetch(`/suggest?q=${encodeURIComponent(q)}&langs=${encodeURIComponent(langs)}${modeParam}`)
+  wvFetch(`/suggest?q=${encodeURIComponent(q)}&langs=${encodeURIComponent(langs)}${modeParam}`)
     .then(r => r.json())
     .then(items => {
       if (items.length === 1 && items[0].type === "exact") {
@@ -2917,7 +3519,7 @@ function doLookup(word) {
   document.getElementById("landing").classList.add("hidden");
   document.getElementById("status").textContent = `Looking up \u201c${word}\u201d\u2026`;
 
-  fetch(`/lookup/${encodeURIComponent(word)}`)
+  wvFetch(`/lookup/${encodeURIComponent(word)}`)
     .then(r => {
       if (!r.ok) throw new Error(r.status === 404 ? `\u201c${word}\u201d not found.` : `Error ${r.status}`);
       return r.json();
@@ -2947,13 +3549,13 @@ function browseTag(tag) {
   heading.textContent = tag;
   wordsDiv.innerHTML = "<em style='color:var(--color-muted)'>Loading\u2026</em>";
 
-  fetch(`/tags/${encodeURIComponent(tag)}`)
+  wvFetch(`/tags/${encodeURIComponent(tag)}`)
     .then(r => r.ok ? r.json() : Promise.reject("Tag not found"))
     .then(data => {
       wordsDiv.innerHTML = "";
       // Fetch all words in parallel and render mini tables
       Promise.all(data.words.map(w =>
-        fetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
+        wvFetch(`/lookup/${encodeURIComponent(w)}`).then(r => r.ok ? r.json() : null).catch(() => null)
       )).then(results => {
         results.forEach((wData, i) => {
           const entry = document.createElement("div");
@@ -3058,6 +3660,7 @@ document.getElementById("searchTrans").dir = "auto";
 
 // Load i18n then auto-lookup if ?word= in URL
 loadI18n().then(() => {
+  buildLangSelector();  // localized names + coverage arrive with i18n
   const params = new URLSearchParams(location.search);
   const initWord = params.get("word");
   if (initWord) {

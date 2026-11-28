@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- "server" under Flask; export_word_viewer_site.py writes "static" (corpus_data.js). -->
+<meta name="wv-mode" content="server">
 <title>Globasa PoS Viewer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,7 +134,7 @@ a:hover { text-decoration: underline; }
   font-size: 0.82rem;
 }
 .site-nav a { color: var(--color-header-text); }
-.nav-sep { color: var(--color-header-text); opacity: 0.5; user-select: none; }
+.site-nav a + a::before { content: "\2022"; display: inline-block; margin: 0 0.4em; opacity: 0.5; user-select: none; text-decoration: none; }
 
 .site-footer {
   background: var(--color-footer-bg);
@@ -392,7 +394,16 @@ body.no-labels .pos-tag { display: none; }
     <span class="site-title">Globasa</span>
   </div>
   <nav class="site-nav">
-    <a href="/">Dictionary</a><span class="nav-sep"> &bull; </span><a href="/alignments">Alignments</a><span class="nav-sep"> &bull; </span><a href="/tmx">TMX</a><span class="nav-sep"> &bull; </span><a href="/pos">PoS</a><span class="nav-sep"> &bull; </span><a href="/images">Images</a><span class="nav-sep"> &bull; </span><a href="/review">Review</a><span class="nav-sep"> &bull; </span><a href="/translate">Translation Aide</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a><span class="nav-sep"> &bull; </span><a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a><span class="nav-sep"> &bull; </span><a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
+    <a href="/" data-static-href="./">Dictionary</a>
+    <a href="/alignments" class="server-only">Alignments</a>
+    <a href="/tmx" data-static-href="tmx.html">TMX</a>
+    <a href="/pos" data-static-href="pos.html">PoS</a>
+    <a href="/images" class="server-only">Images</a>
+    <a href="/review" class="server-only">Review</a>
+    <a href="/translate" class="server-only">Translation Aide</a>
+    <a href="https://menalari.globasa.net/eng/browse" target="_blank" rel="noopener">Alphabetical Dictionary</a>
+    <a href="https://xwexi.globasa.net/eng/gramati" target="_blank" rel="noopener">Grammar</a>
+    <a href="https://menalari.globasa.net/eng/random" target="_blank" rel="noopener">Random Word</a>
   </nav>
 </header>
 
@@ -432,7 +443,9 @@ body.no-labels .pos-tag { display: none; }
   </div>
 </footer>
 
+<script src="corpus_data.js"></script>
 <script>
+applyCorpusSiteMode();
 (function() {
   "use strict";
 
@@ -465,7 +478,7 @@ body.no-labels .pos-tag { display: none; }
   const legendDiv     = document.getElementById("legend");
 
   /* ── Init: fetch tag inventory and build the legend ─────── */
-  fetch("/api/pos/tags")
+  corpusFetch("/api/pos/tags")
     .then(r => r.json())
     .then(tags => {
       legendDiv.innerHTML = "";
@@ -488,20 +501,14 @@ body.no-labels .pos-tag { display: none; }
     .catch(() => {});
 
   /* ── Init: fetch available languages ────────────────────── */
-  fetch("/api/pos/languages")
+  corpusFetch("/api/pos/languages")
     .then(r => r.json())
     .then(langs => {
       if (!langs.length) {
         statusMsg.textContent = "No corpus data available.";
         return;
       }
-      langs.forEach(item => {
-        const opt = document.createElement("option");
-        opt.value = item.lang;
-        const label = LANG_NAMES[item.lang] || item.lang;
-        opt.textContent = item.count == null ? label : `${label} (${item.count})`;
-        langSelect.appendChild(opt);
-      });
+      fillCorpusLangSelect(langSelect, langs, LANG_NAMES);
       const preferred = langs.find(l => l.lang === "en") || langs[0];
       currentLang = preferred.lang;
       langSelect.value = currentLang;
@@ -515,7 +522,7 @@ body.no-labels .pos-tag { display: none; }
 
   function loadContexts() {
     contextSelect.innerHTML = '<option value="">All</option>';
-    fetch("/api/pos/contexts?lang=" + encodeURIComponent(currentLang))
+    corpusFetch("/api/pos/contexts?lang=" + encodeURIComponent(currentLang))
       .then(r => r.json())
       .then(contexts => {
         contexts.forEach(c => {
@@ -565,7 +572,7 @@ body.no-labels .pos-tag { display: none; }
     if (!t) return;
     const lemma = t.dataset.lemma;
     if (!lemma) return;
-    window.open("/?word=" + encodeURIComponent(lemma), "_blank");
+    window.open("./?word=" + encodeURIComponent(lemma), "_blank");
   });
 
   /* ── Fetch & render ─────────────────────────────────────── */
@@ -584,7 +591,7 @@ body.no-labels .pos-tag { display: none; }
     statusMsg.style.display = "";
     entriesDiv.querySelectorAll(".entry-card").forEach(c => c.remove());
 
-    fetch("/api/pos?" + params)
+    corpusFetch("/api/pos?" + params)
       .then(r => r.json())
       .then(renderData)
       .catch(() => {

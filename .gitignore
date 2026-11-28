@@ -60,3 +60,6 @@ eng_variety_report.tsv
 # Texts under copyright in the US (public domain in the EU), kept local only: At the Mountains of
 # Madness (US copyright until 2032). Never commit: the repo is public on a US host.
 lovecraft/private/
+
+# Static GitHub Pages build (export_word_viewer_site.py)
+site_build/
