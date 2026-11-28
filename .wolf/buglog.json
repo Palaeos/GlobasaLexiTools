@@ -5780,5 +5780,41 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-354",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Extension misses denpul/hinpul 'such' (adj) and kola gives 'tree' senses instead of 'cola'",
+    "file": "sense_rows.py, wiktionary_config.xlsx, Wiktionary extension builder.py",
+    "root_cause": "Glosses split on every comma, breaking italic notes 'cola (_drink, tree, nut_)' into glosses; Wiktionary files 'such' as det only and adj had no det fallback",
+    "fix": "_split_top_commas (commas outside parentheses); PoSFallbacks adj->det; builder files a fallback-PoS vetting under the group that falls back to it",
+    "tags": [
+      "sense_rows",
+      "pos-fallback",
+      "determiner",
+      "gloss-parsing"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-355",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Vetter pivot: 'The Spanish Wiktionary has no translation table for ellas, las, les' (every es table labelled '')",
+    "file": "JSONL parser non-English.py",
+    "root_cause": "The Spanish wiktextract dump numbers translations with sense_index ('1', '1-3', '1–3', '1, 4', '2b'), not senseids as assumed (kaikki was not reachable to check)",
+    "fix": "_sense_numbers() parses sense_index (commas, ranges); senses mapped by their sense_index; WiktionaryLMDB_es rebuilt",
+    "tags": [
+      "wiktextract",
+      "spanish",
+      "pivot",
+      "sense_index"
+    ],
+    "related_bugs": [
+      "bug-354"
+    ],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
   }
 ]
