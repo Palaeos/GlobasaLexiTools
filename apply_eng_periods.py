@@ -3,8 +3,12 @@
 Pipeline: CDN download -> extract_constructions.py -> apply_eng_variety.py
 -> sense_periods.py -> apply_eng_periods.py. Re-run after any of them.
 
-Writes two derived columns in the format of TranslationEngGB / TranslationEngUS
-(PoS prefixes, "; " segments, ", " items), so readers need no new parsing:
+Writes a separate list, eng_periods.tsv (user 2026-11-28: the periods are a
+list appended to the word list, not columns inside word-list.csv): Word plus two
+columns in the format of TranslationEngGB / TranslationEngUS (PoS prefixes,
+"; " segments, ", " items), so readers need no new parsing. A reader appends
+them by Word; only words whose period view adds years or † are listed, every
+other word's period view is its plain GB / US gloss.
 
     TranslationEngGBPeriods   the GB view, each item with its years
     TranslationEngUSPeriods   the US view, each item with its years
@@ -37,8 +41,8 @@ Curated period glosses a word lacks (kweho: gay "merry, cheerful") are added to
 the segment of their PoS, marked by their years. Curated renderings that are not
 a word-list entry (paraphrases, derived proposals such as palakal) are reported.
 
-TranslationEng and the GB/US columns are never changed. Idempotent: a run that
-would change nothing writes nothing.
+word-list.csv is only read. Idempotent: a run that would change nothing writes
+nothing.
 """
 import csv
 import re
@@ -46,9 +50,10 @@ from collections import defaultdict
 from pathlib import Path
 
 import constructions
-from constructions import read_wordlist, write_wordlist
+from constructions import read_wordlist
 
 WORDLIST = "word-list.csv"
+OUT = Path("eng_periods.tsv")
 PERIODS = Path("sense_periods_draft.tsv")
 HISTWORDS = Path("histwords_ranges.tsv")     # histwords_ranges.py: switch-over decades
 REPORT = Path("eng_periods_report.tsv")
@@ -171,32 +176,29 @@ def annotate(word, text, view, report, placed):
     return "; ".join(prefix + ", ".join(items) for prefix, _, items in segs)
 
 
-rows, terminator, final_newline = read_wordlist(WORDLIST)
+rows, _, _ = read_wordlist(WORDLIST)
 header = rows[0]
 word_col = header.index("Word")
 missing = [src for src, _ in VIEWS.values() if src not in header]
 if missing:
     raise SystemExit(f"{WORDLIST} has no {', '.join(missing)}: run apply_eng_variety.py first")
-cols = {}
-for view, (src, dst) in VIEWS.items():
-    if dst not in header:
-        header.append(dst)
-    cols[view] = (header.index(src), header.index(dst))
+cols = {view: header.index(src) for view, (src, _) in VIEWS.items()}
 
-report, placed, changed, dated = [], set(), 0, 0
+report, placed, dated = [], set(), 0
 words = set()
+out_rows = []
 for row in rows[1:]:
-    while len(row) < len(header):
-        row.append("")
-    word = row[word_col].strip()
+    word = row[word_col].strip() if len(row) > word_col else ""
+    if not word or word in words:   # blank CDN rows; first occurrence wins (AnkiMaker3's dedupe)
+        continue
     words.add(word)
-    for view, (src, dst) in cols.items():
-        new = annotate(word, row[src], view, report, placed)
-        if row[dst] != new:
-            row[dst] = new
-            changed += 1
-        if view == "GB":
-            dated += bool(re.search(r"\(\d{3,4}-", new))
+    views = {}
+    for view, src in cols.items():
+        plain = row[src] if len(row) > src else ""
+        views[view] = (plain, annotate(word, plain, view, report, placed))
+    if any(new != plain for plain, new in views.values()):
+        out_rows.append([word] + [views[view][1] for view in VIEWS])
+        dated += bool(re.search(r"\(\d{3,4}-", views["GB"][1]))
 
 # report: curated renderings that are not word-list entries, and senses of other varieties
 for glb, rs in by_word.items():
@@ -212,10 +214,12 @@ with open(REPORT, "w", encoding="utf-8") as f:
     for x in sorted(set(report)):
         f.write("\t".join(x) + "\n")
 
-print(f"{len(rows) - 1} entries; {dated} with dated English glosses; {len(placed)} curated period glosses added; "
-      f"{len(set(report))} report rows ({REPORT})")
-if changed:
-    write_wordlist(WORDLIST, rows, terminator, final_newline)
-    print(f"rewrote {WORDLIST}: {changed} cells changed (TranslationEng, GB and US columns untouched)")
+text = "\t".join(["Word"] + [dst for _, dst in VIEWS.values()]) + "\n"
+text += "".join("\t".join(r) + "\n" for r in out_rows)
+print(f"{len(words)} entries; {len(out_rows)} with a period view ({dated} dated in GB); "
+      f"{len(placed)} curated period glosses added; {len(set(report))} report rows ({REPORT})")
+if OUT.exists() and OUT.read_text(encoding="utf-8") == text:
+    print(f"{OUT} unchanged")
 else:
-    print(f"{WORDLIST} unchanged: the period columns are up to date")
+    OUT.write_text(text, encoding="utf-8")
+    print(f"wrote {OUT} ({WORDLIST} not modified)")
