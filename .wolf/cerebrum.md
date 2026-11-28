@@ -5,6 +5,7 @@
 > Last updated: 2026-09-03
 
 ## User Preferences
+- [2026-11-28] Public site (Palaeos/globasa-tools): dictionary + TMX + PoS viewers; never Hector's audio; exclude copyrighted source texts (Christie "Mr Quin", Paul Graham essay) from examples AND corpus. Language choice like Wikipedia: English/Spanish/Esperanto set apart from the sparse extension languages.
 
 - [2026-11-23] Han-seeded Word Selector concepts must put same-character Sino-xenic cognate clusters first (pipeline.han_priority), and use the Sino-xenic Japanese reading, not jukujikun.
 - [2026-11-21] Globasa pronoun classes (user): ogar → to, nini → te (set in menalariPronouns_edited.tsv; glb-anaphor.tsv regenerated in all five pairs).
@@ -88,6 +89,10 @@
 - [2026-11-21] Soul vocabulary should be compositional and cross-cultural (generic soul head + modifiers from existing roots), not tradition-specific loans like paku for 魄.
 
 ## Key Learnings
+- [2026-11-28] /lookup's word_glossary depends only on the phrase (2391 distinct across all words, identical in every lookup), so the static site ships it once (data/glossary.json) and wvFetch re-attaches it. buildGlobExample now tokenizes letter runs like the server's n-grams; whitespace-only splitting glued "day/lil" into the headword "daylil".
+- [2026-11-28] **Word Viewer static mode.** word_viewer.html / tmx_viewer.html / pos_viewer.html carry `<meta name="wv-mode" content="server">`; export_word_viewer_site.py rewrites it to "static". All data access goes through wvFetch (dictionary) / corpusFetch (corpus_data.js) with the server URL; new fetches must use them, or the GitHub Pages build breaks. Asset paths are relative (fonts/, word_viewer_scripts.js). `WV_NO_RUN=1` imports Word Viewer.py without app.run.
+- [2026-11-28] **site_key()/siteKey() must stay identical** (Python exporter / word_viewer.html): word-list has case-only pairs (atlas/Atlas, Devtest/devtest), so filenames encode uppercase as `_x`, others as `~XXXX`.
+- [2026-11-28] menalariImages.jsonl already stores Commons `artist` (1701/1815) and `license` (1778/1815): credits need no scraping. Not publishable on the public site: Curium.jpg (en-wiki, Fair use) and ~20 Giphy hotlinks with no licence.
 
 - [2026-11-26] English hyphenated compounds: lt-proc splits unknown ones at the hyphen (^X$^-<guio>$^Y$, no blanks); UD EWT tokenises them X HYPH Y too. Before a hyphen + participle the first part is a NOUN (object: Secret-Telling -> Siri-Logane, Rule-based, man-made) - user correction. rtx HAJ writes the compound joined with its hyphen; n-n compounds stay solid (xercamotor).
 
@@ -432,6 +437,7 @@
 - [2026-11-27] **stanza depparse inputs (browser parser):** the parser embeds word + **lemma** + UPOS/XPOS + pretrained + char reps; feats are NOT used (stanza 1.15 depparse/model.py embed() appends pos_emb twice and drops feats_emb; input 500 = 125+75+75+50+50+125). The browser tagger had lemma = text; web/tagger/export_stanza_depparse.py ships stanza's lemma dictionary pruned to entries whose lemma id (parser vocab, lowercased) differs from what the fallback would give (UPOS entry compared against the '*' entry, not the word: else the '*' entry leaks through). combined_nocharlm depparse = 27M params (109 MB fp32; 28 MB with weight-only int8 + DequantizeLinear, 0 tree changes).
 
 ## Do-Not-Repeat
+- [2026-11-28] Do not wrap module-level setup in `except Exception: pass`: in Word Viewer.py it hid a NameError (block above its constants) and /suggest silently lost 39 languages. Catch the specific error and label the fallback.
 - [2026-11-27] A local HTTP proxy in a test script (e.g. one that blanks coref chains) must forward with `urllib.request.build_opener(urllib.request.ProxyHandler({}))`, as the NLP clients do; plain urlopen goes through the environment proxy and gets 502.
 - [2026-11-27] CG-3: never write (NOT 1* X BARRIER Y) for "no X before Y" — NOT with a scan and a barrier is true when any non-X cohort comes first. Use NEGATE.
 

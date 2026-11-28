@@ -5608,5 +5608,43 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-27T15:10:00"
+  },
+  {
+    "id": "bug-344",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Word Viewer search (/suggest) never matched extension languages (Italian, Japanese, ...): only the 7 word-list languages were indexed",
+    "file": "Word Viewer.py",
+    "root_cause": "The extension-language indexing block ran before EXT_LANG_COLS/LANG_DISPLAY were defined; the NameError was swallowed by `except Exception: pass`. Gender markers (<f>) were also left in the indexed terms.",
+    "fix": "Moved the block below LANG_DISPLAY, narrowed the except to FileNotFoundError with a labelled fallback warning, itertuples over the needed columns, and _strip_gender on each cell. Index grew 73k -> 270k terms.",
+    "tags": [
+      "word-viewer",
+      "suggest",
+      "search",
+      "extension",
+      "NameError",
+      "swallowed-exception"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-345",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "export_word_viewer_site.py stopped by memlimit at 12.5 GB while tokenizing the TMX (KeyboardInterrupt in _scan_tokens)",
+    "file": "globasa_tokenizer/tokenizer.py",
+    "root_cause": "_scan_tokens skipped only ASCII whitespace; a no-break space (U+00A0, present in Doxo_passages.tmx) fell into the 'other character' branch, whose loop stops on isspace() immediately, so it appended an empty token without advancing i: endless loop with growing token list. The local /tmx viewer would hang on the page holding that sentence.",
+    "fix": "Whitespace check also accepts ch.isspace(). 95 tokenizer tests pass.",
+    "tags": [
+      "tokenizer",
+      "infinite-loop",
+      "memory",
+      "nbsp",
+      "unicode-whitespace",
+      "tmx"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
   }
 ]
