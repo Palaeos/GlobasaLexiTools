@@ -70,12 +70,18 @@ export class Translator {
         name = `${s.py.split("/").pop()} ${s.args.join(" ")}`.trim();
         const env = { AP_SETVAR: setvar };
         const model = s.browser_nlp && this.nlp[s.browser_nlp.lang];
-        const parsed = Boolean(model && model.parser);
-        const browser = model && (parsed || !s.browser_nlp.needs_parse) ? s.browser_nlp : null;
+        const parsed = Boolean(model && model.parser), chains = Boolean(parsed && model.coref);
+        const browser = model && (parsed || !s.browser_nlp.needs_parse) && (chains || !s.browser_nlp.needs_coref)
+          ? s.browser_nlp : null;
+        const wantChains = Boolean(browser && chains && browser.note_coref);
         if (browser) {
-          Object.assign(env, browser.env);
-          const missing = [parsed ? null : browser.no_parser, browser.fallback].filter(Boolean);
-          notes.push(`${name}: ${browser.note}` + (missing.length ? ` (fallback: ${missing.join("; ")})` : ""));
+          Object.assign(env, browser.env, { BROWSER_NLP_COREF: wantChains ? "1" : "0" });
+          // with the LitBank mode on, a step that reads chains says so and names its limits
+          const withCoref = chains && browser.note_coref;
+          const missing = [parsed ? null : browser.no_parser,
+            withCoref ? browser.fallback_coref : browser.fallback].filter(Boolean);
+          notes.push(`${name}: ${withCoref ? browser.note_coref : browser.note}`
+            + (missing.length ? ` (fallback: ${missing.join("; ")})` : ""));
         } else if (s.neural) {
           env[s.neural] = "0";
           notes.push(`${name}: (fallback: ${BROWSER_FALLBACK}; rule-based only)`);
@@ -87,8 +93,8 @@ export class Translator {
           res.destroy();
           if (browser && out[0] === this.needAnalysis) {
             const [, url, req] = out;
-            const analysis = await this.nlp[browser.lang].analyze(req);
-            this.addAnalysis(url, req, JSON.stringify(analysis));
+            const analysis = await this.nlp[browser.lang].analyze(req, { coref: wantChains });
+            this.addAnalysis(url, req, JSON.stringify(analysis), wantChains);
             continue;
           }
           const [status, stdout, stderr] = out;

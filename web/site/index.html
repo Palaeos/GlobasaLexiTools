@@ -61,6 +61,12 @@
     <select id="mode" disabled><option>Loading…</option></select>
     <button id="go" disabled>Translate</button>
     <span class="prefs" id="prefs"></span>
+    <span class="prefs" id="litbank-box" hidden>
+      <label title="Coreference with a LitBank-trained BERT model, for his/her → sesu, it/they and focus tracking. A larger, one-time download."><input type="checkbox" id="litbank"> <span id="litbank-label">LitBank mode</span></label>
+      <select id="litbank-profile" title="Window size: mobile keeps the tab under about 1 GB, desktop under about 2 GB" hidden>
+        <option value="mobile">mobile (≤ 1 GB)</option><option value="desktop">desktop (≤ 2 GB)</option>
+      </select>
+    </span>
   </div>
 
   <div class="panes">
@@ -77,13 +83,18 @@
       pairs' own Python steps run unchanged in <a href="https://pyodide.org">Pyodide</a>. The output is the same,
       byte for byte, as the native pipeline with its neural steps switched off.</p>
     <p><strong>Neural steps.</strong> On a desktop setup some directions (into Globasa from English, French, Spanish,
-      German and Dutch) also use local NLP models for tagging, coreference and gender. Those are too large for a
-      browser, so here those stages are skipped and the rule-based behaviour is used; each skipped stage is listed
+      German and Dutch) also use local NLP models for tagging, parsing, coreference and gender. For English the page
+      has its own small tagger and dependency parser (stanza, non-transformer). The optional <em>LitBank mode</em>
+      adds coreference: a BERT model trained on LitBank (literary texts; people, places, organisations and vehicles,
+      not things), downloaded once when you switch it on. It runs one chapter at a time (a chapter heading or scene
+      break starts afresh). Other neural stages are skipped and the rule-based behaviour is used; each stage is listed
       under the translation.</p>
     <p id="excluded"></p>
     <p>Sources and licences: Apertium tools and pair data are free software under the GNU GPL —
       <a href="https://github.com/apertium">apertium</a>, <a href="https://github.com/GrammarSoft/cg3">CG-3</a>,
-      ICU (Unicode licence), libxml2 (MIT), Pyodide (MPL 2.0). The build scripts and the Globasa pairs are in the
+      ICU (Unicode licence), libxml2 (MIT), Pyodide (MPL 2.0); the English tagger and parser are stanza models (UD
+      English treebanks, CC BY-SA / CC BY); the LitBank mode uses compnet-renard/bert-base-cased-literary-coref-v2
+      (MIT; LitBank, CC BY 4.0) with inference ported from Tibert (GPL-3.0), so this page is GPL-3.0-or-later. The build scripts and the Globasa pairs are in the
       GlobasaLexiTools repository (<kbd>web/</kbd>).</p>
     <p id="version"></p>
   </details>
@@ -98,8 +109,15 @@ function status(text, err = false) { $("status").textContent = text; $("status")
 function remember(k, v) { try { localStorage.setItem("glb-tr-" + k, v); } catch {} }
 function recall(k) { try { return localStorage.getItem("glb-tr-" + k); } catch { return null; } }
 
+let litbankBytes = 0;
+function defaultProfile() {
+  try { if (navigator.deviceMemory >= 8) return "desktop"; } catch {}
+  return "mobile";
+}
 function renderPrefs() {
   const m = modes.find((x) => x.mode === $("mode").value);
+  $("litbank-box").hidden = !(litbankBytes && m && m.litbank);
+  $("litbank-profile").hidden = !$("litbank").checked;
   $("prefs").replaceChildren();
   for (const p of (m && m.prefs) || []) {
     if (p.kind === "choice") {
@@ -129,7 +147,10 @@ function translate() {
   if (!text || busy) return;
   busy = true; $("go").disabled = true;
   status("Translating…");
-  worker.postMessage({ type: "translate", id: ++reqId, mode: $("mode").value, text, setvar: setvar() });
+  const lb = !$("litbank-box").hidden && $("litbank").checked;
+  if (lb) status("Translating (LitBank mode: the coreference model runs over the whole text)…");
+  worker.postMessage({ type: "translate", id: ++reqId, mode: $("mode").value, text, setvar: setvar(),
+                       litbank: lb, profile: $("litbank-profile").value });
 }
 
 worker.onmessage = (e) => {
@@ -141,6 +162,10 @@ worker.onmessage = (e) => {
     const last = recall("mode");
     if (last && modes.some((m) => m.mode === last)) $("mode").value = last;
     $("mode").disabled = false; $("go").disabled = false;
+    litbankBytes = d.litbankBytes || 0;
+    $("litbank-label").textContent = `LitBank mode (coreference, ${Math.round(litbankBytes / 1e6)} MB)`;
+    $("litbank").checked = recall("litbank") === "1";
+    $("litbank-profile").value = recall("litbank-profile") || defaultProfile();
     renderPrefs();
     $("excluded").textContent = "Not in the browser yet: " +
       Object.entries(d.excluded).map(([k, why]) => `${k} (${why})`).join("; ") + ".";
@@ -157,7 +182,7 @@ worker.onmessage = (e) => {
     if (notes.length) {
       const ul = document.createElement("ul");
       for (const n of notes) { const li = document.createElement("li"); li.textContent = n; ul.append(li); }
-      $("notes").replaceChildren("Stages run without their neural model (rule-based fallback):", ul);
+      $("notes").replaceChildren("How the neural stages ran (fallback = rule-based behaviour instead of a model):", ul);
     }
   } else if (d.type === "error") {
     busy = false; $("go").disabled = false;
@@ -167,6 +192,8 @@ worker.onmessage = (e) => {
 worker.onerror = (e) => status(`Worker failed: ${e.message || e}`, true);
 
 $("mode").addEventListener("change", () => { remember("mode", $("mode").value); renderPrefs(); });
+$("litbank").addEventListener("change", () => { remember("litbank", $("litbank").checked ? "1" : "0"); renderPrefs(); });
+$("litbank-profile").addEventListener("change", () => remember("litbank-profile", $("litbank-profile").value));
 $("go").addEventListener("click", translate);
 $("src").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) translate(); });
 worker.postMessage({ type: "init" });

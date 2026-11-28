@@ -305,3 +305,68 @@ Everything from 2026-11-27 is committed locally, nothing pushed:
 
 Lists waiting for the user's curation: the `check` rows of
 `apertium-glb-epo/epo_glb_affixes.tsv`, the `alt` rows of `apertium-glb-eng/phrasal_verbs.tsv`.
+
+## 4b. LitBank mode built (2026-11-27, evening session)
+
+Plan: /home/paleos/.claude/plans/idempotent-questing-charm.md (approved). State at the end of
+the session; the measurements still running are in §4c when they finished.
+
+**Built:**
+- `web/tagger/export_litbank_coref.py` (GPL): compnet-renard/bert-base-cased-literary-coref-v2
+  → `coref.bert.onnx.000-002` (weight-only int8, 3 parts ≤ 45 MB; 109 MB), `coref.heads.onnx`
+  (word vectors → 6 per-word projections, 14 MB), `coref.consts.f32`, `coref.vocab.txt`,
+  `coref.json` (sha256 per part), `coref.fixture.jsonl`. Runs in the local venv
+  `/media/paleos/Warehouse2/Language/Claude/browser_coref/venv` (Tibert, never in the repo);
+  export in `…/browser_coref/export/`, inputs from `web/test/coref_inputs.mjs`.
+- `web/src/coref.mjs` (GPL): Tibert's inference without its pair tensor. Both scorers are
+  Linear over a concatenation, so each word is projected once and a pair is add + ReLU + dot.
+  Wordpiece tokenizer, chapter checkpoints (headings, scene breaks; destxt's trailing "."
+  tolerated), paragraph windows (mobile 512 / desktop 1024 pieces), Tibert's hierarchical merge,
+  a chapter cache.
+- Wiring: `tagger.analyze(text, {coref})` (only the coref and focus steps ask for chains),
+  `BROWSER_NLP` coref + new `glb-neural.py eng focus` (`needs_coref`, `note_coref`,
+  `fallback_coref`), runner.py analyses keyed by `BROWSER_NLP_COREF`, index.json `litbank`,
+  page checkbox + mobile/desktop profile, worker loads `coref/en/` on demand, build.sh copies the
+  export if present.
+- `eng-glb-neural.py to_text` (apertium-glb-eng): newline inside a superblank = paragraph break,
+  destxt's final "." skipped, as glb-neural.py does. Before, the English text had no line breaks at
+  all, and it differed from the focus step's text (bug-342). **This changes the eng text for
+  every input, desktop included:** the eng dev baseline was re-measured (§4c).
+
+**Checked:**
+- wordpieces = HF tokenizer on all 19,663 words;
+- factorised pipeline (torch) = Tibert except 7 of 1,025 documents. All 7 have windows of more
+  than 350 spans, where Tibert pads its antecedent list with arbitrary spans (torch.topk tie
+  order); with ≤ 350 spans the padding is every span and is reproduced exactly, including
+  Tibert's cataphoric links (652 mentions took a padding antecedent);
+- ONNX fp32 = torch; dynamic int8 (MatMulInteger) changes 871 documents → rejected;
+  weight-only int8 changes 11 → used;
+- JS (onnxruntime-web) = Python onnxruntime on all 1,025 documents (`web/test/coref_check.mjs`);
+- Tibert's own path needs > 12 GB on a 450-word window, and its merge builds a spans × spans
+  matrix over the whole text (bug-343): the Tibert reference is limited to windows ≤ 250 words.
+
+**Speed / memory** (node, 1 thread; Time Machine ch. VIII, 4,184 words, full eng→glb pipeline,
+`web/test/coref_memory.mjs`): LitBank off 75 s, peak 0.73 GB; mobile profile 225 s, peak
+0.96 GB (budget 1 GB: passes, little headroom). Encoder = 93% of the model's time (~1 s per
+128-piece segment in wasm; 0.3 s native). Ways out without changing results: threads via
+coi-serviceworker (Pages cannot send COOP/COEP), the WebGPU backend.
+
+**Open:**
+- the shared man-/fem- rule (glb-neural.py stage_manfem) gives "the dog" → *manbwaw*: an eng
+  noun whose bidix lists a man- translation counts as male on its first mention. It is the
+  desktop's behaviour too; the browser now runs the stage. Not changed — needs a decision.
+- GitHub site + Hugging Face hosting: decisions in memory `project_github_site` (separate site
+  repo, Word Viewer dictionary only without audio, image credit line, HF account later).
+
+## 4c. To resume (session stopped 2026-11-27 ~21:00 for the night)
+
+Nothing from §4b is committed yet; all files are on disk. Done: the LitBank-off eng dev run with
+the new to_text (`/media/paleos/Warehouse2/Language/Claude/browser_coref/work/gap_off.jsonl`, the
+new baseline). Stopped unfinished: the LitBank-on run. To resume (node = emsdk's, see §5):
+1. `cd web && LITBANK=1 python3 test/capped.py node test/gap_dump.mjs …/work/gap_on.jsonl`, then
+   `python3 test/gap_report.py` on both files and a sesu count (`\bsesu\b` in output vs gold;
+   list every new extra not in the gold). Also `LITBANK=1 … tagger_quality.mjs 60` per set.
+2. Timings for the Rust question: `node test/step_timing.mjs off VIII`, `… mobile VIII`, then
+   `… off VIII profile …/work/steps` and `python3 test/step_native.py …/work/steps`.
+3. parity.mjs (must stay "all modes identical"), then atomic local commits (apertium-glb-eng
+   to_text; exporter; coref.mjs + tests; wiring + page; docs). Not pushed.

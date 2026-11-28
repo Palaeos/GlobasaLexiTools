@@ -4,6 +4,7 @@
 // loads them from disk; a rebuilt bundle has a new version and replaces the old cache.
 import { Translator } from "./src/pipeline.mjs";
 import { EnglishTagger } from "./src/tagger.mjs";
+import { LitBankCoref, PROFILES } from "./src/coref.mjs";
 import { loadPyodide } from "./pyodide/pyodide.mjs";
 
 let index = null;
@@ -43,7 +44,13 @@ async function init() {
     mjs: new URL("wasm/apertium.mjs", self.location.href).href,
     icu, nfcn, pyodide, runnerPy,
   });
-  post("ready", { modes: index.modes, excluded: index.excluded, version: index.version });
+  // the LitBank mode is offered only when the bundle has the model (web/build.sh copies it if exported)
+  let litbankBytes = 0;
+  try {
+    const r = await fetch("coref/en/coref.json", { cache: "no-cache" });
+    if (r.ok) litbankBytes = Object.values((await r.json()).models).flat().reduce((n, p) => n + p.size, 0);
+  } catch { litbankBytes = 0; }
+  post("ready", { modes: index.modes, excluded: index.excluded, version: index.version, litbankBytes });
 }
 
 // Browser models that stand in for a pair's NLP service (build_modes.py BROWSER_NLP),
@@ -59,6 +66,34 @@ const NLP = {
   },
 };
 const nlpLoading = {};
+
+// LitBank mode (src/coref.mjs): an opt-in coreference model for eng->glb, ~120 MB, loaded the
+// first time the page switches it on and then cached like the pair files.
+let litbank = null, litbankLoading = null;
+async function setLitbank(on, profile) {
+  const tagger = translator.nlp.eng;
+  if (!tagger) return;
+  if (!on) { tagger.setCoref(null); return; }
+  if (!litbankLoading) {
+    litbankLoading = (async () => {
+      post("status", { text: "Loading the LitBank coreference model…" });
+      const ort = await import("./ort/ort.wasm.min.mjs");
+      return new LitBankCoref().load(new URL("coref/en/", self.location.href).href, ort, (url) => bytes(url),
+        (done, total) => post("progress", { mode: "LitBank model", done, total }),
+        async (url) => {
+          const r = await fetch(url, { cache: "no-cache" });
+          if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+          return new Uint8Array(await r.arrayBuffer());
+        });
+    })().then((m) => { litbank = m; return m; })
+      .catch((err) => { litbankLoading = null;
+        post("status", { text: `(fallback: LitBank model failed to load: ${err.message || err})` }); });
+  }
+  const m = await litbankLoading;
+  if (!m) return;
+  if (profile && PROFILES[profile]) m.profile = profile;
+  tagger.setCoref(m);
+}
 
 async function load(mode) {
   if (translator.modes.has(mode)) return post("loaded", { mode });
@@ -82,6 +117,7 @@ self.onmessage = async (e) => {
     else if (type === "load") await load(e.data.mode);
     else if (type === "translate") {
       await load(e.data.mode);
+      await setLitbank(Boolean(e.data.litbank), e.data.profile);
       const t0 = performance.now();
       const r = await translator.translate(e.data.mode, e.data.text, e.data.setvar || "");
       post("result", { id, ...r, ms: Math.round(performance.now() - t0) });

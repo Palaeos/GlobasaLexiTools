@@ -9,6 +9,7 @@ import * as ort from "onnxruntime-web";
 import { loadPyodide } from "pyodide";
 import { Translator } from "../src/pipeline.mjs";
 import { EnglishTagger } from "../src/tagger.mjs";
+import { LitBankCoref } from "../src/coref.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const web = path.join(here, ".."), repo = path.join(web, ".."), dist = path.join(web, "dist");
@@ -56,6 +57,13 @@ const manifest = JSON.parse(readFileSync(path.join(dist, "pairs", "eng-glb.json"
 await t.loadMode(manifest, async (f) => readFileSync(path.join(dist, "pairs", f.url)));
 const tagger = await new EnglishTagger().load(pathToFileURL(path.join(dist, "tagger", "en") + "/").href, ort,
   async (url) => new Uint8Array(readFileSync(new URL(url))));
+// LITBANK=1: the page's LitBank mode (dist/coref/en); LITBANK_PROFILE=mobile|desktop
+if (process.env.LITBANK === "1") {
+  const coref = await new LitBankCoref().load(pathToFileURL(path.join(dist, "coref", "en") + "/").href, ort,
+    async (url) => new Uint8Array(readFileSync(new URL(url))));
+  if (process.env.LITBANK_PROFILE) coref.profile = process.env.LITBANK_PROFILE;
+  tagger.setCoref(coref);
+}
 
 const sets = [["curated", path.join(repo, "GlobasaTranslation/apertium-glb-eng/test/eng-glb-curated.tsv"), 1000]];
 for (const f of ["udhr", "pnc", "telltale", "thirty"]) {

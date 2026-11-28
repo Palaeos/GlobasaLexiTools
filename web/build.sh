@@ -7,6 +7,8 @@
 #   tagger/en/ the English PoS taggers and parser for the eng->glb neural steps
 #             (tagger/export_stanza_pos.py, tagger/export_stanza_depparse.py;
 #             TAGGER_EXPORT / PARSER_EXPORT, default on Warehouse2)
+#   coref/en/ the LitBank mode's coreference model, only if exported
+#             (tagger/export_litbank_coref.py; COREF_EXPORT, default on Warehouse2)
 #   src/ py/  the pipeline runner;  index.html, worker.js      (site/)
 #
 #   web/build.sh            everything
@@ -41,6 +43,15 @@ if [ ! -f "$PARSER_EXPORT/parser.sent.onnx" ]; then
   PRETRAIN_TOP=100000 python3 "$HERE/test/capped.py" "$PY" "$HERE/tagger/export_stanza_depparse.py" "$PARSER_EXPORT"
 fi
 cp "$PARSER_EXPORT/"parser.* "$PARSER_EXPORT/"lemma.dict.json "$HERE/dist/tagger/en/"
+COREF_EXPORT="${COREF_EXPORT:-/media/paleos/Warehouse2/Language/Claude/browser_coref/export}"
+rm -rf "$HERE/dist/coref"
+if [ -f "$COREF_EXPORT/coref.json" ]; then
+  mkdir -p "$HERE/dist/coref/en"
+  cp "$COREF_EXPORT/"coref.json "$COREF_EXPORT/"coref.bert.onnx.* "$COREF_EXPORT/"coref.heads.onnx \
+     "$COREF_EXPORT/"coref.consts.f32 "$COREF_EXPORT/"coref.vocab.txt "$HERE/dist/coref/en/"
+else
+  echo "no LitBank export in $COREF_EXPORT: the page is built without the LitBank mode" >&2
+fi
 cp "$HERE/src/"*.mjs "$HERE/dist/src/"
 cp "$HERE/py/runner.py" "$HERE/dist/py/"
 cp "$HERE/site/index.html" "$HERE/site/worker.js" "$HERE/dist/"

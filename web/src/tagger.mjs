@@ -7,8 +7,9 @@
 // tags, trees decoded by src/mst.mjs) also head (index of the head word in the whole text, -1
 // for the root) and deprel, as the service gives them; without them head -1, deprel "".
 // lemma: stanza's lemma dictionary (UPOS entry, then any-PoS entry), pruned to the entries the
-// parser needs (lemma.dict.json), else the word itself. No coreference: coref [] (the client's
-// own fallback rules then decide).
+// parser needs (lemma.dict.json), else the word itself. coref: chains from the LitBank model
+// (src/coref.mjs) when the page's LitBank mode has set one (setCoref), else [] (the client's own
+// fallback rules then decide).
 //
 // Mapping as stanza's data loader (checked against stanza by the exporter):
 //   word id    lowercased form in the model's word vocabulary, else UNK (1)
@@ -59,8 +60,13 @@ export class EnglishTagger {
       this.parser = null;               // tagger only: head -1, deprel "" (the steps' fallback)
     }
     this.cache = new Map();
+    this.coref = null;
     return this;
   }
+
+  // LitBank mode on (a loaded src/coref.mjs LitBankCoref) or off (null). Needs the parser: the
+  // mention heads come from the parse.
+  setCoref(model) { this.coref = this.parser ? model : null; }
 
   lemmaOf(word, upos) {
     const d = this.parser.lemmas.dict;
@@ -137,13 +143,25 @@ export class EnglishTagger {
     return { upos, xpos, feats };
   }
 
-  // The pos and coref steps send the same text: the last few answers are kept.
-  async analyze(text) {
-    if (this.cache.has(text)) return structuredClone(this.cache.get(text));
-    const res = await this.analyzeUncached(text);
-    this.cache.set(text, res);
-    if (this.cache.size > 8) this.cache.delete(this.cache.keys().next().value);
-    return structuredClone(res);
+  // The neural steps send the same text: the last few answers are kept. opts.coref: chains from
+  // the LitBank model (only the steps that read them ask, so pos and parse never wait for it);
+  // they are added to the cached analysis of the same text.
+  async analyze(text, opts = {}) {
+    let res = this.cache.get(text);
+    if (!res) {
+      res = await this.analyzeUncached(text);
+      this.cache.set(text, res);
+      if (this.cache.size > 8) this.cache.delete(this.cache.keys().next().value);
+    }
+    const out = structuredClone(res);
+    if (opts.coref && this.coref) {
+      if (!res.chains) res.chains = new Map();
+      const key = this.coref.profile;
+      if (!res.chains.has(key)) res.chains.set(key, await this.coref.resolve(text, res.words));
+      out.coref = structuredClone(res.chains.get(key));
+    }
+    delete out.chains;
+    return out;
   }
 
   async analyzeUncached(text) {

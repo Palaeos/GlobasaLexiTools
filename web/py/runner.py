@@ -28,7 +28,10 @@ import js  # Pyodide: the worker's global scope
 
 _code = {}
 BROWSER_NLP = "http://browser-nlp/"
-_analyses = {}                      # (url, text) -> JSON text
+_analyses = {}                      # (url, text, chains wanted) -> JSON text, the last few
+# BROWSER_NLP_COREF=1 in a step's environment (src/pipeline.mjs): the step reads coreference
+# chains, so it must not get the chain-less analysis an earlier step (pos, parse) was given.
+_KEEP = 8
 
 
 class NeedAnalysis(BaseException):
@@ -37,8 +40,14 @@ class NeedAnalysis(BaseException):
         self.url, self.text = url, text
 
 
-def add_analysis(url, text, result_json):
-    _analyses[(url, text)] = result_json
+def _key(url, text):
+    return url, text, os.environ.get("BROWSER_NLP_COREF", "0")
+
+
+def add_analysis(url, text, result_json, coref=False):
+    _analyses[(url, text, "1" if coref else "0")] = result_json
+    while len(_analyses) > _KEEP:
+        del _analyses[next(iter(_analyses))]
 
 
 class _Response:
@@ -61,7 +70,7 @@ def _browser_open(req):
         return None
     data = req.data if hasattr(req, "data") else None
     text = json.loads(data)["text"] if data else ""
-    found = _analyses.get((url, text))
+    found = _analyses.get(_key(url, text))
     if found is None:
         raise NeedAnalysis(url, text)
     return _Response(found)

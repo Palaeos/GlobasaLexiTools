@@ -59,6 +59,12 @@ NEURAL = {"glb-neural.py": ("GLB_NEURAL", {"parse", "coref", "focus"}),
 # is not loaded. needs_parse: without the parser files the step is not run on the browser model
 # (the switch turns it off). no_parser: added to the note when the parser is missing. fallback:
 # what the browser model never gives (always labelled).
+# LitBank mode (src/coref.mjs): LitBank annotates people, places, organisations, facilities,
+# vehicles and GPEs only; chapters/scene breaks start a new document
+LITBANK_LIMIT = ("LitBank model: people, places, organisations and vehicles only, so it/its for "
+                 "things gets no chain; no chain crosses a chapter heading or scene break")
+# needs_coref: run on the browser model only with the LitBank mode on (else the neural switch);
+# note_coref / fallback_coref: note and limit when the mode is on.
 ENG_PAGE = {"lang": "eng", "env": {"ENG_NLP_URL": "http://browser-nlp", "GLB_NLP_URL": "http://browser-nlp"}}
 BROWSER_NLP = {
     ("eng-glb-neural.py", "pos"): {
@@ -67,10 +73,17 @@ BROWSER_NLP = {
         "no_parser": "no parser in browser, so the name and that/which checks are skipped"},
     ("eng-glb-neural.py", "coref"): {
         **ENG_PAGE, "needs_parse": True, "note": "in-browser parser",
-        "fallback": "no coreference model in browser; sesu only for an agreeing pronoun subject with "
-                    "no other owner in the clause"},
+        "fallback": "no coreference model in browser (LitBank mode off); sesu only for an agreeing "
+                    "pronoun subject with no other owner in the clause",
+        "note_coref": "in-browser parser + LitBank coreference (bert-base, LitBank-trained)",
+        "fallback_coref": LITBANK_LIMIT},
     ("glb-neural.py", "eng", "parse"): {
         **ENG_PAGE, "needs_parse": True, "note": "in-browser parser (questions)"},
+    ("glb-neural.py", "eng", "focus"): {
+        **ENG_PAGE, "needs_parse": True, "needs_coref": True,
+        "note": "in-browser parser + LitBank coreference (focus tracking)",
+        "note_coref": "in-browser parser + LitBank coreference (focus tracking)",
+        "fallback_coref": LITBANK_LIMIT},
 }
 
 JOIN_RE = re.compile(r'os\.path\.join\(\s*(?:HERE|_HERE)\s*,\s*"\.\."\s*,\s*"([^"]+)"(?:\s*,\s*"([^"]+)")?\s*\)')
@@ -219,6 +232,8 @@ def main():
                 json.dump(manifest, f, ensure_ascii=False, indent=1)
             index.append({"mode": name, "label": label, "src": src, "tgt": tgt, "prefs": prefs,
                           "neural": sorted({s["neural"] for s in steps if "neural" in s}),
+                          # the page offers its LitBank mode (src/coref.mjs) for this direction
+                          "litbank": any("note_coref" in s.get("browser_nlp", {}) for s in steps),
                           "bytes": sum(e["size"] for e in entries)})
     index.sort(key=lambda p: (p["mode"] not in ("eng-glb", "glb-eng"), p["label"]))
     # content hash of everything copied: the page's cache name, so a rebuild invalidates it
