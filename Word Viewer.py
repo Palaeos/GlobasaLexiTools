@@ -1577,33 +1577,44 @@ _VERB_TYPE_NAMES = {
 }
 
 # Extension language column names (as in the unedited menalariExtension.tsv)
-EXT_LANG_COLS = [
-    # Romance
-    "French", "Italian", "Portuguese", "Romanian",
-    # Germanic
-    "German", "Dutch", "Swedish", "Old English (ca. 450-1100)",
-    # Classical
-    "Ancient Greek (to 1453)", "Latin", "Sanskrit", "Greek",
-    # Slavic + E-European
-    "Russian", "Polish", "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian",
-    # Semitic + Turkic
-    "Yiddish", "Hebrew", "Arabic", "Turkish", "Tatar",
-    # East Asian
-    "Mandarin Chinese", "Japanese", "Korean", "Vietnamese",
-    # SE Asian / Austronesian
-    "Indonesian", "Malay", "Tagalog",
-    # Iranian + Indic
-    "Persian", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
-    "Malayalam", "Gujarati", "Panjabi",
-    # African
-    "Swahili",
-]
+# Extension columns come from menalariExtension.tsv's own header (written by
+# "Wiktionary extension builder.py" from wiktionary_config.xlsx), so new languages
+# and variety views (Bavarian, German (Austria), ...) appear without a second list.
+# A hand-kept list here had drifted: "Mandarin Chinese", "Tagalog", "Panjabi" and the
+# long Old English / Ancient Greek names matched no header, so those five extension
+# languages never reached the viewer (found 2026-11-28).
+# Spanish and Esperanto come from word-list.csv, not from the extension.
+_EXT_STATIC_COLS = ["French", "Italian", "Portuguese", "Romanian", "German", "Dutch", "Swedish",
+                    "Old English", "Ancient Greek", "Latin", "Sanskrit", "Greek", "Russian", "Polish",
+                    "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian", "Yiddish", "Hebrew",
+                    "Arabic", "Turkish", "Tatar", "Mandarin", "Japanese", "Korean", "Vietnamese",
+                    "Indonesian", "Malay", "Filipino", "Persian", "Hindi", "Urdu", "Bengali", "Tamil",
+                    "Telugu", "Kannada", "Malayalam", "Gujarati", "Punjabi", "Swahili"]
 
-# Display names for languages (TSV column name -> shorter display name)
+
+def _extension_columns():
+    try:
+        with open(EXTENSION_TSV, encoding="utf-8") as f:
+            header = f.readline().rstrip("\n").split("\t")
+    except FileNotFoundError:
+        print(f"  Warning: {os.path.basename(EXTENSION_TSV)} missing (fallback: the static column list)")
+        return list(_EXT_STATIC_COLS)
+    return [c for c in header[2:] if c and c not in ("Spanish", "Esperanto")]
+
+
+EXT_LANG_COLS = _extension_columns()
+
+# Extension header name -> the viewer's language name (word_viewer.html LANGS, i18n "lang.<name>")
 LANG_DISPLAY = {col: col for col in EXT_LANG_COLS}
 LANG_DISPLAY.update({
-    "Old English (ca. 450-1100)": "Old English",
-    "Ancient Greek (to 1453)": "Ancient Greek",
+    "Mandarin": "Mandarin Chinese",        # same name as the word list's TranslationZho
+    "Rhine Franc.": "Rhine Franconian",
+    "Egyptian Ar.": "Egyptian Arabic",
+    "Hijazi Ar.": "Hijazi Arabic",
+    "Moroccan Ar.": "Moroccan Arabic",
+    "Gulf Ar.": "Gulf Arabic",
+    "Tunisian Ar.": "Tunisian Arabic",
+    "Algerian Ar.": "Algerian Arabic",
     "Spanish": "Spanish",
     "Esperanto": "Esperanto",
 })

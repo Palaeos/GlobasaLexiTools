@@ -501,6 +501,37 @@ a:hover { text-decoration: underline; }
   .lang-menu-section.full .lang-menu-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* Variety views in a language's table header (DE | AT) and the mark on a
+   variety's own forms */
+.view-switch {
+  display: inline-flex;
+  margin-inline-start: 0.5em;
+  vertical-align: middle;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.view-switch button {
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-caps: normal;
+  padding: 0.05rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.view-switch button.active { background: #1a5fb4; color: #fff; }
+.variety-tag {
+  font-family: var(--font-sans);
+  font-size: 0.6em;
+  font-weight: 600;
+  margin-inline-start: 0.2em;
+  color: #1a5fb4;
+}
+
 /* Footer: About note (credits, licences) */
 .site-about {
   font-family: var(--font-sans);
@@ -1542,17 +1573,21 @@ const FULL_LANGS = ["Globasa", "English", "Spanish", "Esperanto"];
 
 // The partial languages by region, in menu order.
 const LANG_GROUPS = [
-  ["romance", "Romance", ["French", "Italian", "Portuguese", "Romanian"]],
-  ["germanic", "Germanic", ["German", "Dutch", "Swedish", "Old English"]],
+  ["romance", "Romance", ["French", "Italian", "Portuguese", "Romanian", "Sicilian"]],
+  ["germanic", "Germanic", ["German", "Dutch", "Swedish", "Old English",
+                            "Alemannic", "Bavarian", "Low German", "Rhine Franconian"]],
   ["classical", "Classical", ["Ancient Greek", "Latin", "Sanskrit", "Greek"]],
   ["slavic", "Slavic and Eastern European",
     ["Russian", "Polish", "Bulgarian", "Ukrainian", "Serbian", "Czech", "Hungarian"]],
-  ["semitic", "Semitic and Turkic", ["Yiddish", "Hebrew", "Arabic", "Turkish", "Tatar"]],
-  ["eastasian", "East Asian", ["Mandarin Chinese", "Japanese", "Korean", "Vietnamese"]],
-  ["austronesian", "Southeast Asian", ["Indonesian", "Malay", "Tagalog"]],
+  ["semitic", "Semitic and Turkic", ["Yiddish", "Hebrew", "Arabic", "Egyptian Arabic", "Hijazi Arabic",
+                                      "Gulf Arabic", "Moroccan Arabic", "Tunisian Arabic", "Algerian Arabic",
+                                      "Turkish", "Tatar"]],
+  ["eastasian", "East Asian", ["Mandarin Chinese", "Cantonese", "Hokkien", "Dungan", "Japanese", "Korean",
+                               "Vietnamese"]],
+  ["austronesian", "Southeast Asian", ["Indonesian", "Malay", "Filipino"]],
   ["indic", "Iranian and Indic",
-    ["Persian", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
-     "Malayalam", "Gujarati", "Panjabi"]],
+    ["Persian", "Dari", "Hindi", "Urdu", "Bengali", "Tamil", "Telugu", "Kannada",
+     "Malayalam", "Gujarati", "Punjabi"]],
   ["african", "African", ["Swahili"]],
 ];
 
@@ -1594,7 +1629,22 @@ const LANG_META = {
   "Vietnamese": ["Tiếng Việt", "vi vie"],
   "Indonesian": ["Bahasa Indonesia", "id ind"],
   "Malay": ["Bahasa Melayu", "ms msa may zsm"],
-  "Tagalog": ["Tagalog", "tl tgl fil"],
+  "Filipino": ["Filipino", "tl tgl fil tagalog"],
+  "Sicilian": ["Sicilianu", "scn"],
+  "Alemannic": ["Alemannisch", "gsw swiss alsatian"],
+  "Bavarian": ["Boarisch", "bar"],
+  "Low German": ["Plattdüütsch", "nds low saxon"],
+  "Rhine Franconian": ["Rheinfränkisch", "gmw-rfr pfl"],
+  "Egyptian Arabic": ["مصرى", "arz"],
+  "Hijazi Arabic": ["حجازي", "acw"],
+  "Gulf Arabic": ["خليجي", "afb"],
+  "Moroccan Arabic": ["الدارجة", "ary darija"],
+  "Tunisian Arabic": ["تونسي", "aeb"],
+  "Algerian Arabic": ["دزيري", "arq"],
+  "Cantonese": ["粵語", "yue"],
+  "Hokkien": ["閩南語", "nan"],
+  "Dungan": ["Хуэйзў йүян", "dng"],
+  "Dari": ["دری", "prs"],
   "Persian": ["فارسی", "fa fas per"],
   "Hindi": ["हिन्दी", "hi hin"],
   "Urdu": ["اردو", "ur urd"],
@@ -1604,7 +1654,7 @@ const LANG_META = {
   "Kannada": ["ಕನ್ನಡ", "kn kan"],
   "Malayalam": ["മലയാളം", "ml mal"],
   "Gujarati": ["ગુજરાતી", "gu guj"],
-  "Panjabi": ["ਪੰਜਾਬੀ", "pa pan"],
+  "Punjabi": ["ਪੰਜਾਬੀ", "pa pan"],
   "Swahili": ["Kiswahili", "sw swa"],
 };
 function langAutonym(lang) { return (LANG_META[lang] || [lang])[0]; }
@@ -1759,7 +1809,48 @@ applySiteMode();
 // Map display names to API column names (identity for most)
 const LANG_COL = Object.fromEntries(LANGS.filter(l => l !== "Globasa").map(l => [l, l]));
 
-const RTL_LANGS = new Set(["Hebrew", "Arabic", "Yiddish", "Urdu", "Persian"]);
+const RTL_LANGS = new Set(["Hebrew", "Arabic", "Yiddish", "Urdu", "Persian", "Dari", "Egyptian Arabic",
+                           "Hijazi Arabic", "Gulf Arabic", "Moroccan Arabic", "Tunisian Arabic",
+                           "Algerian Arabic"]);
+
+// National varieties shown as views of one language, like GB/US English (user
+// 2026-11-28: mutually intelligible varieties without an ISO 639-3 code of their own).
+// [short label, name, extension column with the variety's own forms, or null = the
+// language's common forms only]. The first entry is the default.
+const LANG_VIEWS = {
+  "German": [["DE", "Deutschland", null], ["AT", "Österreich", "German (Austria)"]],
+  "Portuguese": [["BR", "Brasil", "Portuguese (Brazil)"], ["PT", "Portugal", "Portuguese (Portugal)"]],
+  "French": [["FR", "France", null], ["CA", "Canada", "French (Canada)"]],
+  "Dutch": [["NL", "Nederland", null], ["BE", "België", "Dutch (Belgium)"]],
+  "Greek": [["GR", "Ελλάδα", null], ["CY", "Κύπρος", "Greek (Cyprus)"]],
+};
+const VIEW_LS_KEY = "glb_viewer_views";
+let langViews = {};
+try { langViews = JSON.parse(localStorage.getItem(VIEW_LS_KEY) || "{}") || {}; } catch (e) { langViews = {}; }
+
+function currentView(lang) {
+  const views = LANG_VIEWS[lang];
+  const i = langViews[lang] || 0;
+  return views && views[i] ? views[i] : null;
+}
+
+// A language's items in the chosen view: the variety's own forms first (marked
+// with the view's label), then the language's common forms.
+function viewedItems(pg, lang) {
+  const languages = pg.languages || {};
+  const base = languages[lang] || [];
+  const view = currentView(lang);
+  if (!view || !view[2]) return base;
+  const own = (languages[view[2]] || []).map(it => Object.assign({}, it, {variety: view[0], varietyName: view[1]}));
+  const seen = new Set(own.map(it => it.text));
+  return own.concat(base.filter(it => !seen.has(it.text)));
+}
+
+function setView(lang, i) {
+  langViews[lang] = i;
+  try { localStorage.setItem(VIEW_LS_KEY, JSON.stringify(langViews)); } catch (e) {}
+  if (currentData) renderResult(currentData);
+}
 
 // CJK language detection — maps display name to body class suffix
 const CJK_LANG_CLASS = {
@@ -1778,7 +1869,7 @@ const INDIC_LANG_CLASS = {
   "Kannada": "knda",
   "Malayalam": "mlym",
   "Gujarati": "gujr",
-  "Panjabi": "guru",
+  "Punjabi": "guru",
 };
 
 // Map display language names to TMX language codes
@@ -1905,14 +1996,14 @@ const GENDER_CONFIG = {
   "Hungarian": null,
   "Indonesian": null,
   "Malay": null,
-  "Tagalog": null,
+  "Filipino": null,
   "Bengali": null,
   "Tamil": null,
   "Telugu": null,
   "Kannada": null,
   "Malayalam": null,
   "Gujarati": null,
-  "Panjabi": null,
+  "Punjabi": null,
   "Swahili": null,
 };
 
@@ -1971,7 +2062,11 @@ function uiLabel(key) {
 }
 
 function langName(internalName) {
-  return uiLabel("lang." + internalName);
+  // Languages without an i18n row (Bavarian, Dari, ...) show their English name,
+  // never the raw key.
+  const key = "lang." + internalName;
+  const v = uiLabel(key);
+  return v === key ? internalName : v;
 }
 
 function etymLangName(globasaName) {
@@ -2110,8 +2205,7 @@ function langItem(lang, showCoverage) {
   name.className = "lang-name";
   name.textContent = langAutonym(lang);
   btn.appendChild(name);
-  const local = langName(lang);
-  btn.title = local.startsWith("lang.") ? lang : local;
+  btn.title = langName(lang);
   if (idx === 0) btn.classList.add("selected-1");
   else if (idx === 1) btn.classList.add("selected-2");
   btn.setAttribute("aria-pressed", idx >= 0 ? "true" : "false");
@@ -2579,7 +2673,26 @@ function buildTransTable(data) {
     return th;
   }
 
-  const langHeaders = langs.map(l => makeHeader(langName(l)));
+  const langHeaders = langs.map(l => {
+    const th = makeHeader(langName(l));
+    const views = LANG_VIEWS[l];
+    if (views) {
+      const sw = document.createElement("span");
+      sw.className = "view-switch";
+      views.forEach(([label, name], i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = label;
+        b.title = name;
+        if ((langViews[l] || 0) === i) b.classList.add("active");
+        b.setAttribute("aria-pressed", (langViews[l] || 0) === i ? "true" : "false");
+        b.addEventListener("click", () => setView(l, i));
+        sw.appendChild(b);
+      });
+      th.appendChild(sw);
+    }
+    return th;
+  });
   const posHeaderLabel = makeHeader(uiLabel("pos"));
   const typeHeaderLabel = makeHeader(uiLabel("type"));
 
@@ -2678,7 +2791,7 @@ function buildLangCell(pg, lang, cssClass) {
   td.className = `cell-trans ${cssClass}`;
   td.dir = RTL_LANGS.has(lang) ? "rtl" : "ltr";
 
-  const items = (pg.languages && pg.languages[lang]) || [];
+  const items = viewedItems(pg, lang);
   if (items.length === 0) {
     td.innerHTML = "<span style='color:var(--color-muted)'>—</span>";
     return td;
@@ -2689,7 +2802,7 @@ function buildLangCell(pg, lang, cssClass) {
   items.forEach(item => {
     const parts = item.text.split(/,\s*/);
     parts.forEach(p => {
-      if (p) flat.push({text: p.trim(), gender: item.gender});
+      if (p) flat.push({text: p.trim(), gender: item.gender, variety: item.variety, varietyName: item.varietyName});
     });
   });
 
@@ -2697,6 +2810,13 @@ function buildLangCell(pg, lang, cssClass) {
     const span = document.createElement("span");
     span.className = "trans-item";
     span.innerHTML = renderGenderedWord(item.text, item.gender, lang);
+    if (item.variety) {
+      const tag = document.createElement("sup");
+      tag.className = "variety-tag";
+      tag.textContent = item.variety;
+      tag.title = item.varietyName;
+      span.appendChild(tag);
+    }
     td.appendChild(span);
   });
   return td;
@@ -3661,6 +3781,7 @@ document.getElementById("searchTrans").dir = "auto";
 // Load i18n then auto-lookup if ?word= in URL
 loadI18n().then(() => {
   buildLangSelector();  // localized names + coverage arrive with i18n
+  buildScriptSelector();  // its label too (showed "ui.script" on the site)
   const params = new URLSearchParams(location.search);
   const initWord = params.get("word");
   if (initWord) {
