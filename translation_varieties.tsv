@@ -1,0 +1,179 @@
+# Language identity of Wiktionary translation items (source of truth; edit by hand).
+# Read by wiktionary_varieties.py when the dump is parsed (JSONL parser 2.py, wiktionary_extract.py,
+# Wiktionary concept index.py). User 2026-11-28: identity by mutual intelligibility, following SIL's
+# ISO 639-3 individual languages (offline: langcodes' IANA registry).
+#
+# kind  code  name  target  note
+#   name  rows: an item filed under `code` whose `lang` field is `name` (Wiktionary sub-lines such as
+#               "*: Bavarian:" under German keep the parent code but name the variety)
+#   tag   rows: an item carrying tag `name` (old-style dialect tags), whatever its code
+#   code  rows: an item filed under the Wiktionary-only code `code` (name is *)
+# target:
+#   same        the language of `code` itself (main name, equivalent names, typos)
+#   <ISO code>  an individual language of its own (SIL): the item is filed under that code
+#   view:<X>    a variety with no ISO code of its own (mutually intelligible with the language, like
+#               GB/US English): kept under the language, tagged view:<X>, shown as a variety view
+#   exclude     set aside: a misfiled item whose code and name disagree, or a dialect group that is
+#               not one language
+# A name under a code listed here that has no row is set aside and reported
+# (translation_varieties_report.tsv), never guessed.
+kind	code	name	target	note
+name	ang	Old English	same
+name	ang	Anglo-Saxon	same
+name	ar	Arabic	same
+name	ar	Arbic	same	typo
+name	ar	Arabian	same	typo
+name	ar	Tunisian Arabic	aeb
+name	ar	Algerian Arabic	arq
+name	ar	Iraqi Arabic	acm
+name	ar	Judeo-Arabic	exclude	Hebrew script; ISO jrb is a macrolanguage
+name	ar	Armenian	exclude	misfiled
+name	bg	Bulgarian	same
+name	bg	Old Church Slavonic	cu
+name	bn	Bengali	same
+name	bn	Bangla	same
+name	cmn	Chinese Mandarin	same
+name	cmn	Chinese	same
+name	cmn	Mandarin	same
+name	cmn	Simplified Chinese	same
+name	cmn	Chinese Traditional	same
+name	cmn	Chinese Cantonese	yue
+name	cmn	Min Nan Chinese	nan
+name	cmn	Eastern Min Chinese	cdo
+name	cmn	Sichuanese	exclude	Southwestern Mandarin dialect, no ISO code; 1 item
+name	cmn	Korean	exclude	misfiled
+name	cmn	Classical Nahuatl	exclude	misfiled
+name	cmn	Bangla	exclude	misfiled
+name	cmn	Amis	exclude	misfiled
+name	cs	Czech	same
+name	zh	Chinese Mandarin	cmn	Wiktionary nests Mandarin under "Chinese:"; wiktextract keeps the macrolanguage code zh
+name	zh	Chinese	cmn	plain "Chinese:" line: shared written Standard Chinese (Mandarin-based)
+name	zh	Simplified Chinese	cmn
+name	zh	Chinese Traditional	cmn
+name	zh	Classical Chinese	lzh
+name	cs	Slovak	exclude	misfiled
+name	de	German	same
+name	de	Bavarian German	bar
+name	de	Low German	nds
+name	de	Austrian German	view:Austria
+name	de	Central German	exclude	dialect group, not one language
+name	de	Finnish	exclude	misfiled
+name	de	Dutch	exclude	misfiled
+name	de	West-Frisian	exclude	misfiled
+name	el	Greek	same
+name	el	Modern Greek	same
+name	el	Cypriot Greek	view:Cyprus
+name	el	Pontic Greek	pnt
+name	el	Medieval Greek	gkm
+name	eo	Esperanto	same
+name	es	Spanish	same
+name	es	Spainish	same	typo
+name	fa	Persian	same
+name	fa	Iranian Persian	same	SIL pes, the standard the Persian column follows
+name	fa	Farsi	same
+name	fa	Persan	same
+name	fa	Persisch	same
+name	fa	Dari	prs
+name	fa	Mazanderani	mzn
+name	fa	Isfahani	exclude	dialect, no ISO code; 1 item
+name	fr	French	same
+name	fr	Frech	same	typo
+name	fr	Canadian French	view:Canada
+name	fr	French Canadian	view:Canada
+name	fr	Louisiana French	frc	SIL Cajun French
+name	fr	Louisiana Creole	lou
+name	fr	Picard French	pcd
+name	grc	Ancient Greek	same
+name	grc	Greek	same
+name	grc	Ancient	same
+name	grc	Medieval Greek	gkm
+name	grc	Cypriot Greek	exclude	ancient code, modern dialect name
+name	grc	Old High German	exclude	misfiled
+name	grc	Gujarati	exclude	misfiled
+name	grc	Finnish	exclude	misfiled
+name	gu	Gujarati	same
+name	he	Hebrew	same
+name	he	Herbew	same	typo
+name	he	Biblical Hebrew	hbo
+name	he	Malayalam	exclude	misfiled
+name	hi	Hindi	same
+name	hu	Hungarian	same
+name	hu	Magyar	same
+name	id	Indonesian	same
+name	id	Indonesia	same
+name	id	Indonedian	same	typo
+name	id	Italian	exclude	misfiled
+name	it	Italian	same
+name	it	Itallian	same	typo
+name	it	Italy	same
+name	it	Sicilian	scn
+name	it	Old Italian	exclude	no ISO code
+name	it	Norwegian	exclude	misfiled
+name	ja	Japanese	same
+name	ja	Jaoanese	same	typo
+name	ja	Japamese	same	typo
+name	kn	Kannada	same
+name	ko	Korean	same
+name	ko	Middle Korean	okm
+name	la	Latin	same
+name	la	West-Flemish	exclude	misfiled
+name	la	Romani	exclude	misfiled
+name	la	Italian	exclude	misfiled
+name	ml	Malayalam	same
+name	ms	Malay	same
+name	ms	Malaysian	same
+name	nl	Dutch	same
+name	nl	Deutch	same	typo
+name	nl	Flemish	view:Belgium
+name	nl	Indonesian	exclude	misfiled
+name	pa	Punjabi	same
+name	pa	Northern Kurdish	exclude	misfiled
+name	pl	Polish	same
+name	pl	Polski	same
+name	pl	Old Polish	exclude	no ISO code
+name	pl	Portuguese	exclude	misfiled
+name	pl	German	exclude	misfiled
+name	pt	Portuguese	same
+name	pt	Brazilian Portuguese	view:Brazil
+name	pt	European Portuguese	view:Portugal
+name	pt	Portugal	view:Portugal
+name	pt	Polish	exclude	misfiled
+name	ro	Romanian	same
+name	ro	Romania	same
+name	ru	Russian	same
+name	ru	Old Russian	orv
+name	ru	Ukrainian	exclude	misfiled
+name	sa	Sanskrit	same
+name	sv	Swedish	same
+name	sv	Svedish	same	typo
+name	sv	Norwegian Nynorsk	exclude	misfiled
+name	sv	Finnish	exclude	misfiled
+name	sw	Swahili	same
+name	sw	Kisuaheli	same
+name	ta	Tamil	same
+name	te	Telugu	same
+name	tl	Tagalog	same
+name	tr	Turkish	same
+name	tr	Vietnamsese	exclude	misfiled
+name	tt	Tatar	same
+name	uk	Ukrainian	same
+name	uk	Ukraine	same
+name	uk	Ukranian	same	typo
+name	uk	Ukraininan	same	typo
+name	ur	Urdu	same
+name	vi	Vietnamese	same
+name	yi	Yiddish	same
+tag	*	Alemannic-German	gsw
+tag	*	German-Low-German	nds
+tag	*	Rhine-Franconian	gmw-rfr	Wiktionary group code (Rhine Franconian), kept as one option
+tag	*	Egyptian-Arabic	arz
+tag	*	Hijazi-Arabic	acw
+tag	*	Moroccan-Arabic	ary
+tag	*	Gulf-Arabic	afb
+tag	*	Hokkien	nan
+tag	*	Dungan	dng
+code	nds-de	*	nds	Wiktionary: Low German (Germany)
+code	nan-hbl	*	nan	Wiktionary: Hokkien
+code	nan-tws	*	nan	Wiktionary: Teochew (Min Nan)
+code	el-cy	*	view:Cyprus	Wiktionary: Cypriot Greek
+code	el-cyp	*	view:Cyprus	Wiktionary: Cypriot Greek

@@ -30,11 +30,15 @@ import orjson
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from word_selection import concept_index as ci, plurals, sinosphere
 from word_selection.dump import open_lines, source
+import wiktionary_varieties
 from word_selection.languages import LANGS, DOSSIER_LANGS
 
 DUMP = source("en")
 LIMIT = int(sys.argv[1]) if len(sys.argv) > 1 else None   # optional line limit for testing
 OUT = ci.DIR + ("_test" if LIMIT else "")
+# WiktionaryLMDB_concepts may be a symlink (to QuickRead): build and swap at its target,
+# so the index stays on that disk and rmtree never meets a link.
+OUT = os.path.realpath(OUT)
 
 ENTRY_LANGS = {l["dump"] for l in LANGS} | set(DOSSIER_LANGS)
 TRANS_LANGS = {w for l in LANGS for w in l["wikt"]} | set(DOSSIER_LANGS)
@@ -150,12 +154,20 @@ with open_lines(DUMP, binary=True) as f:
             table, qtable = {}, {}
             for t in d["translations"]:
                 code = t.get("code") or t.get("lang_code")
-                if code not in TRANS_LANGS or not t.get("word"):
+                if not code or not t.get("word"):
+                    continue
+                # Language identity first (translation_varieties.tsv): a Bavarian sub-line
+                # under German is bar, not de; misfiled items are dropped.
+                resolved = wiktionary_varieties.resolve(code, t.get("lang", ""), t.get("tags") or [])
+                if resolved is None:
+                    continue
+                code, tags = resolved
+                if code not in TRANS_LANGS:
                     continue
                 sense = t.get("sense") or ""
                 rom = t.get("roman") or t.get("romanization") or ""
                 table.setdefault(sense, {}).setdefault(code, []).append(
-                    [t["word"], rom, "\t".join(t.get("tags") or [])])
+                    [t["word"], rom, "\t".join(tags)])
             if table:
                 k = ci.key(word, pos)
                 old = txn.get(k, db=dbs["translations"])
@@ -195,6 +207,7 @@ if os.path.exists(OUT):
     shutil.rmtree(OUT)
 os.replace(BUILDING, OUT)
 print(f"done -> {OUT}  ({time.time() - t0:.0f}s)", flush=True)
+print(f"variety report: {wiktionary_varieties.write_report()}", flush=True)
 if not LIMIT:
     print(f"sinosphere table: {sinosphere.build(DUMP)}", flush=True)
     print(f"plurals table: {plurals.build(DUMP)} forms", flush=True)

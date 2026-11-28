@@ -32,8 +32,8 @@ except ImportError:
 from wiktionary_db import (WiktionaryDB, Translation, Example, Sense,
                            encode_key, serialize_translations,
                            serialize_senses, serialize_spanish_pos)
+import wiktionary_varieties
 
-KAIKKI_EN_URL = "https://kaikki.org/dictionary/raw-wiktextract-data.jsonl.gz"
 VETTED_LMDB = "./WiktionaryLMDB_vetted"
 SENSES_LMDB = "./WiktionaryLMDB_senses"
 
@@ -72,7 +72,12 @@ def _add_entry(data, translations, senses):
             code = t.get("code") or t.get("lang_code")
             if not code:
                 continue
-            tags = t.get("tags", [])
+            # Language identity (translation_varieties.tsv): Bavarian sub-lines under
+            # German -> bar, Austrian German -> de + view:Austria, misfiled -> dropped.
+            resolved = wiktionary_varieties.resolve(code, t.get("lang", ""), t.get("tags", []))
+            if resolved is None:
+                continue
+            code, tags = resolved
             rom = t.get("romanization", "") or t.get("roman", "")
             by_sense.setdefault(t["sense"], {}).setdefault(code, set()).add(
                 Translation(t["word"], rom, "\t".join(tags) if tags else ""))
@@ -133,13 +138,16 @@ def extract(source, out_dir, keys=None, max_lines=-1, progress=True):
                 txn.put(w.encode("utf-8"), serialize_spanish_pos(ps), db=db.db_spanish_pos)
     shutil.rmtree(out_dir, ignore_errors=True)
     os.replace(tmp, out_dir)
+    wiktionary_varieties.write_report()
     return len(translations)
 
 
 if __name__ == "__main__":
     import vetted_senses
     args = [a for a in sys.argv[1:] if a != "--senses"]
-    source = args[0] if args else os.environ.get("WIKTIONARY_DUMP", KAIKKI_EN_URL)
+    from word_selection.dump import source as dump_source
+    # WIKTIONARY_DUMP, else the local copy (Warehouse2), else the kaikki URL
+    source = args[0] if args else dump_source("en")
     keys = {(s["lookup_word"], s["pos"]) for s in vetted_senses.load_vetted()
             if s["source"] == "en"}
     out_dir = VETTED_LMDB

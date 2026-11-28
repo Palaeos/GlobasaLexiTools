@@ -1,10 +1,20 @@
+# English Wiktionary dump (kaikki raw-wiktextract-data.jsonl) -> WiktionaryLMDB/
+# (translations by sense, senses with examples, Spanish PoS).
+# Translation items get their language identity from wiktionary_varieties.resolve()
+# (translation_varieties.tsv, 2026-11-28): Bavarian sub-lines filed under German go to bar,
+# Austrian German stays German with tag view:Austria, misfiled items are set aside.
+# Builds into <WiktionaryLMDB target>.building and swaps it in only when complete; writes
+# translation_varieties_report.tsv. Run: venv/bin/python "JSONL parser 2.py"
 import csv
 import json
+import os
+import shutil
 import sys
 
-from wiktionary_db import (WiktionaryDB, Translation, Example, Sense,
+from wiktionary_db import (WiktionaryDB, Translation, Example, Sense, LMDB_DIR,
                             encode_key, serialize_translations,
                             serialize_senses, serialize_spanish_pos)
+import wiktionary_varieties
 
 maxInt = sys.maxsize
 
@@ -88,12 +98,16 @@ with open(file_path, 'r', encoding='utf-8') as file:
                     lang_code_t = translation.get('code') or translation.get('lang_code')
                     if not lang_code_t:
                         continue
+                    resolved = wiktionary_varieties.resolve(
+                        lang_code_t, translation.get('lang', ''), translation.get('tags', []))
+                    if resolved is None:
+                        continue
+                    lang_code_t, tags = resolved
                     sense_key = translation['sense']
                     if sense_key not in translationDictionary[(word, PoS)]:
                         translationDictionary[(word, PoS)][sense_key] = {}
                     if lang_code_t not in translationDictionary[(word, PoS)][sense_key]:
                         translationDictionary[(word, PoS)][sense_key][lang_code_t] = set()
-                    tags = translation.get('tags', [])
                     rom = translation.get('romanization', '') or translation.get('roman', '')
                     if tags:
                         translationDictionary[(word, PoS)][sense_key][lang_code_t].add(
@@ -110,7 +124,12 @@ print(f"Writing {len(translationDictionary)} translation entries, "
       f"{len(senseDictionary)} sense entries, "
       f"{len(spanishPosDictionary)} spanish_pos entries to LMDB...")
 
-with WiktionaryDB(readonly=False) as db:
+target_dir = os.path.realpath(LMDB_DIR)       # WiktionaryLMDB may be a symlink (QuickRead)
+building_dir = target_dir + ".building"
+shutil.rmtree(building_dir, ignore_errors=True)
+os.makedirs(building_dir)
+
+with WiktionaryDB(building_dir, readonly=False) as db:
     with db.env.begin(write=True) as txn:
         for (word, pos), trans_dict in translationDictionary.items():
             key = encode_key(word, pos)
@@ -129,4 +148,7 @@ with WiktionaryDB(readonly=False) as db:
             val = serialize_spanish_pos(pos_set)
             txn.put(key, val, db=db.db_spanish_pos)
 
+shutil.rmtree(target_dir, ignore_errors=True)
+os.replace(building_dir, target_dir)
+print(f"Variety report: {wiktionary_varieties.write_report()}")
 print("Done.")
