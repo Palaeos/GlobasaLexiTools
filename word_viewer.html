@@ -532,6 +532,13 @@ a:hover { text-decoration: underline; }
   color: #1a5fb4;
 }
 
+/* Wiktionary senses marked for the English glosses */
+.eng-sense-item { font-family: var(--font-sans); margin: 0.25rem 0; line-height: 1.4; }
+.eng-sense-word { font-weight: 600; margin-inline-end: 0.6em; }
+.eng-sense-label { color: var(--color-link); text-decoration: none; }
+.eng-sense-label:hover { text-decoration: underline; }
+.eng-sense-label::after { content: " ↗"; font-size: 0.75em; }
+
 /* Footer: About note (credits, licences) */
 .site-about {
   font-family: var(--font-sans);
@@ -1511,6 +1518,9 @@ body.script-musa .sug-word {
 
         <!-- 3. Translation table -->
         <div class="trans-section" id="transSection"></div>
+
+        <!-- 3b. Wiktionary senses of the English glosses -->
+        <div id="engSensesSection"></div>
 
         <!-- 4. Constructions -->
         <div id="constructionsSection"></div>
@@ -3059,6 +3069,7 @@ function renderResult(data) {
   }
 
   // --- 4. Constructions ---
+  renderEngSenses(data);
   const consSection = document.getElementById("constructionsSection");
   consSection.innerHTML = "";
   const cons = data.constructions || [];
@@ -3492,6 +3503,54 @@ function buildGlobExample(seg, targetWord, glossary) {
     wordIdx++;
   });
   return result;
+}
+
+// ============================================================
+// Wiktionary senses marked for the English glosses (menalariExtension.tsv "Eng with
+// Senses"), each linked to its translation table: Wiktionary gives a table the id
+// "Translations-<label, spaces as _>".
+// ============================================================
+
+function wiktionaryTableUrl(eng, label) {
+  const page = encodeURIComponent(eng.replace(/ /g, "_"));
+  // wiktextract appends the table's "— see also …" note to the label; the id has no such tail.
+  const id = label.replace(/\s*[—–]\s*see also\b.*$/, "").trim().replace(/ /g, "_");
+  return `https://en.wiktionary.org/wiki/${page}#Translations-${encodeURIComponent(id)}`;
+}
+
+function renderEngSenses(data) {
+  const section = document.getElementById("engSensesSection");
+  section.innerHTML = "";
+  const entries = (data.eng_senses || []).filter(e => e.senses.length);
+  if (!entries.length) return;
+  section.appendChild(document.createElement("hr")).className = "section-rule";
+  const wrap = document.createElement("div");
+  wrap.className = "eng-senses-section";
+  const h = document.createElement("div");
+  h.className = "section-heading";
+  h.textContent = uiText("ui.wiktionary_senses", "Wiktionary senses");
+  wrap.appendChild(h);
+  entries.forEach(e => {
+    const item = document.createElement("div");
+    item.className = "eng-sense-item";
+    const word = document.createElement("span");
+    word.className = "eng-sense-word";
+    word.textContent = e.eng;
+    item.appendChild(word);
+    e.senses.forEach((label, i) => {
+      if (i) item.appendChild(document.createTextNode(" · "));
+      const a = document.createElement("a");
+      a.href = wiktionaryTableUrl(e.eng, label);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.className = "eng-sense-label";
+      a.textContent = label;
+      a.title = uiText("ui.wiktionary_table", "Translations in Wiktionary");
+      item.appendChild(a);
+    });
+    wrap.appendChild(item);
+  });
+  section.appendChild(wrap);
 }
 
 // ============================================================

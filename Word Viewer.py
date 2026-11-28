@@ -1664,6 +1664,17 @@ load_indexes()
 
 
 
+# "Eng with Senses" (menalariExtension.tsv): the English glosses with the Wiktionary
+# senses vetted for them, 'squash [plant and its fruit], pumpkin [fruit of this plant|plant]'.
+_ENG_SENSE_RE = re.compile(r"\s*([^\[\],][^\[\]]*?)\s*\[([^\]]*)\]\s*(?:,|$)")
+
+
+def parse_eng_senses(cell):
+    """[{"eng": word, "senses": [Wiktionary label, ...]}] from an 'Eng with Senses' cell."""
+    return [{"eng": m.group(1).strip(), "senses": sorted(x for x in m.group(2).split("|") if x)}
+            for m in _ENG_SENSE_RE.finditer(cell or "")]
+
+
 def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
     """Build the full translations structure for the JSON response.
 
@@ -2138,6 +2149,7 @@ def lookup(word):
         "pronunciation_voice": pronunciation_voice,
         "sound_effect": sound_effect,
         "constructions": constructions,
+        "eng_senses": parse_eng_senses((ext_entry or {}).get("Eng with Senses", "")),
         "derived_words": derived_words,
         "translations": translations,
         "examples": examples,

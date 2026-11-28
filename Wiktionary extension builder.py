@@ -230,7 +230,9 @@ for globasa_word in wordlist_order:
             relabelled.append((s, sense_label, how))
 
         lang_translations = trans_entry[sense_label]
-        eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
+        # The label of this dump (a reworded or moved table's new one), so the Word Viewer's
+        # links reach the table: Wiktionary ids it "Translations-<label>".
+        eng_sense_dict.setdefault(s['lookup_word'], set()).add(sense_label)
 
         # Use xlsx VerbType to determine which transitivity group
         vt = s.get('verb_type', '')
