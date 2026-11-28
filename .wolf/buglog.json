@@ -5646,5 +5646,121 @@
     "related_bugs": [],
     "occurrences": 1,
     "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-346",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "German column of menalariExtension.tsv showed Bavarian dialect forms (sui: Wossa, wassa)",
+    "file": "JSONL parser 2.py, wiktionary_extract.py, Wiktionary concept index.py",
+    "root_cause": "wiktextract files Wiktionary sub-lines (*: Bavarian:) under the parent lang_code and keeps the variety only in the lang field; parsers stored the code alone",
+    "fix": "wiktionary_varieties.resolve() + translation_varieties.tsv: identity by ISO 639-3 (SIL); own languages re-keyed (bar, prs, yue...), national varieties tagged view:<X>, misfiled set aside, unknown names reported",
+    "tags": [
+      "wiktionary",
+      "dialect",
+      "variety",
+      "translations",
+      "iso639-3"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-347",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Low German, Hokkien, Dungan extension columns were empty; Alemannic/Arabic dialect columns far too small",
+    "file": "wiktionary_config.xlsx",
+    "root_cause": "virtual dialect columns selected items by tag under the parent code, but the dump gives those dialects their own codes (nds, nan, dng, gsw, arz...)",
+    "fix": "dialect columns use the real ISO codes; old tags re-keyed by wiktionary_varieties (Low German 0->1325, Hokkien 0->2020, Dungan 0->940)",
+    "tags": [
+      "extension",
+      "dialect",
+      "codes"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-348",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Mandarin missing for many words (sui: no 水)",
+    "file": "translation_varieties.tsv",
+    "root_cause": "Wiktionary nests Mandarin under 'Chinese:'; wiktextract keeps code zh, the Mandarin column read only cmn",
+    "fix": "zh rows: Chinese Mandarin / Chinese / Simplified / Traditional -> cmn, Classical -> lzh (+299 words with Mandarin)",
+    "tags": [
+      "mandarin",
+      "zh",
+      "cmn",
+      "extension"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-349",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Word Viewer never showed extension Mandarin, Filipino, Punjabi, Old English, Ancient Greek",
+    "file": "Word Viewer.py",
+    "root_cause": "hand-kept EXT_LANG_COLS names (Mandarin Chinese, Tagalog, Panjabi, long Old English/Ancient Greek) matched no menalariExtension.tsv header",
+    "fix": "EXT_LANG_COLS read from the TSV header with a small LANG_DISPLAY rename map; page uses Filipino/Punjabi",
+    "tags": [
+      "word-viewer",
+      "columns",
+      "drift"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-350",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "Site showed raw 'UI.SCRIPT:' label",
+    "file": "word_viewer.html",
+    "root_cause": "script selector built before i18n loaded and never rebuilt",
+    "fix": "buildScriptSelector() again after loadI18n()",
+    "tags": [
+      "word-viewer",
+      "i18n"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-351",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "After a dump refresh 268 vetted senses missed their translation table",
+    "file": "Wiktionary extension builder.py",
+    "root_cause": "Wiktionary reworded table labels (numbering, see-also tails, case, punctuation, typo fixes); lookup is exact",
+    "fix": "normalise_label + unique-match fallback (84 recovered, menalariExtension_relabelled.tsv); remaining 184 listed in menalariExtension_unmatched.tsv for re-vetting",
+    "tags": [
+      "extension",
+      "senses",
+      "labels",
+      "dump-refresh"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
+  },
+  {
+    "id": "bug-352",
+    "timestamp": "2026-11-28T00:00:00Z",
+    "error_message": "JSONL parser 2.py failed with Read-only file system after a full parse",
+    "file": "JSONL parser 2.py",
+    "root_cause": "agent's mount namespace has QuickRead/Warehouse2 read-only even unsandboxed; write access not tested before the long job",
+    "fix": "build into <target>.building + swap (safe), extension built from WiktionaryLMDB_vetted via EXTENSION_EN_LMDB; full LMDB rebuild left to the user's terminal",
+    "tags": [
+      "lmdb",
+      "readonly",
+      "quickread",
+      "sandbox"
+    ],
+    "related_bugs": [],
+    "occurrences": 1,
+    "last_seen": "2026-11-28T00:00:00Z"
   }
 ]
