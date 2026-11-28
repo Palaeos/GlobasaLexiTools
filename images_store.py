@@ -150,6 +150,58 @@ def source_page(img):
     return img.get("url", "")
 
 
+# Licence short names as Commons' extmetadata LicenseShortName writes them
+# ("CC BY-SA 3.0 de", "CC-BY-SA-3.0", "CC0", "Public domain", "FAL", ...).
+_CC_RE = re.compile(r"^CC[ -]((?:BY|SA|NC|ND)(?:[ -](?:BY|SA|NC|ND))*)[ -](\d\.\d)(?:[ -]([a-z]{2}))?$",
+                    re.IGNORECASE)
+_PD_NAMES = {"public domain", "pd", "no restrictions", "copyrighted free use"}
+_OTHER_LICENSE_URLS = {
+    "cc0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "fal": "https://artlibre.org/licence/lal/en/",
+    "gfdl": "https://www.gnu.org/licenses/fdl-1.3.html",
+    "gfdl 1.2": "https://www.gnu.org/licenses/old-licenses/fdl-1.2.html",
+    "gpl": "https://www.gnu.org/licenses/gpl-3.0.html",
+    "ofl": "https://openfontlicense.org/",
+    "ogl v1.0": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/1/",
+    "kogl type 1": "https://www.kogl.or.kr/info/licenseType1.do",
+}
+# Not republishable outside the Wikipedia article that claims it.
+NON_FREE_LICENSES = {"fair use", "non-free"}
+_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def artist(img):
+    """Commons' Artist field as plain text (it is often HTML with links)."""
+    raw = img.get("artist") or ""
+    return " ".join(_TAG_RE.sub("", raw).split())
+
+
+def license_info(img):
+    """(label, deed URL or "", public_domain) for an image's `license`."""
+    name = " ".join((img.get("license") or "").split())
+    key = name.lower()
+    if not name:
+        return "", "", False
+    if key in _PD_NAMES:
+        return "Public domain", "", True
+    m = _CC_RE.match(name)
+    if m:
+        parts = m.group(1).lower().replace(" ", "-")
+        port = f"{m.group(3).lower()}/" if m.group(3) else ""
+        label = f"CC {parts.upper()} {m.group(2)}" + (f" {m.group(3).lower()}" if m.group(3) else "")
+        return label, f"https://creativecommons.org/licenses/{parts}/{m.group(2)}/{port}", False
+    if key == "cc0":
+        return "CC0", _OTHER_LICENSE_URLS["cc0"], True
+    return name, _OTHER_LICENSE_URLS.get(key, ""), False
+
+
+def is_publishable(img):
+    """True when an image may go on a public site: it has a licence and the
+    licence is not a fair-use claim. (Giphy hotlinks carry none.)"""
+    name = (img.get("license") or "").strip().lower()
+    return bool(name) and name not in NON_FREE_LICENSES
+
+
 def guess_kind(name):
     """`still` or `gif`, from a file title or URL."""
     base = (name or "").split("?")[0].lower()

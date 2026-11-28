@@ -1126,10 +1126,18 @@ def build_image_rows():
                 url = images_store.best_url(img)
                 if not url:
                     continue
+                # Credit line (2026-11-28): artist + licence come from the
+                # Commons metadata already stored by resolve_commons_images.py.
+                license_label, license_url, public_domain = images_store.license_info(img)
                 images.append({
                     "url": url,
                     "source_page": images_store.source_page(img),
                     "kind": img.get("kind", "still"),
+                    "artist": images_store.artist(img),
+                    "license": license_label,
+                    "license_url": license_url,
+                    "public_domain": public_domain,
+                    "publishable": images_store.is_publishable(img),
                 })
             out = {
                 "pos": sense.get("pos", "") or "",
