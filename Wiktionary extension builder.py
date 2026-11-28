@@ -183,6 +183,25 @@ def relabelled_sense(db, s):
         if len(hits) == 1:
             return hits[0], every, f"reworded label{moved}"
     return None
+# Words translated with single words where a language has them (prefer_single_word.tsv)
+with open("prefer_single_word.tsv", encoding="utf-8", newline="") as f:
+    PREFER_SINGLE_WORD = {r["Globasa"].strip() for r in csv.DictReader(
+        (line for line in f if not line.startswith("#")), delimiter="\t") if r["Globasa"].strip()}
+item_tags = {}  # (word, language index, formatted) -> Wiktionary tags, for the single-word preference
+# Tags that mark a single word as not the plain one (register, period, region): es tato
+# (colloquial), ñaño (Chile, Ecuador) do not stand in for hermano mayor. Capitalised tags name
+# places and varieties.
+MARKED_TAGS = {"colloquial", "informal", "slang", "vulgar", "familiar", "childish", "honorific",
+               "humble", "archaic", "obsolete", "dated", "historical", "rare", "literary", "poetic",
+               "dialectal", "regional", "nonstandard", "neologism", "euphemistic", "derogatory"}
+
+
+def _plain_single(word, tags):
+    marks = {t for t in tags.split("\t") if t}
+    return " " not in word.strip() and not (marks & MARKED_TAGS or any(t[:1].isupper() for t in marks))
+
+
+single_word_report = []  # (word, lang, kept or fallback, dropped) -> menalariExtension_singleword.tsv
 gender_report = []  # (word, gender, lookup word, sense, lang, kept, dropped) -> menalariExtension_gender.tsv
 built = []  # (globasa_word, eng_sense_output, items[j][group] = {formatted: (word, sense, annotated)}) or (word,)
 
@@ -279,6 +298,7 @@ for globasa_word in wordlist_order:
                 if ann:
                     formatted += f" (_{ann}_)"
                 output_items[j][group_idx].setdefault(formatted, (t.word, s, bool(ann)))
+                item_tags.setdefault((globasa_word, j, formatted), t.tags or "")
 
         # For non-English sources, include the lookup word itself as a
         # translation for the source language (e.g. Lebewesen → German),
@@ -306,6 +326,32 @@ for globasa_word in wordlist_order:
         word + " [" + "|".join(sorted(senses_set)) + "]"
         for word, senses_set in eng_sense_dict.items()
     )
+    if globasa_word in PREFER_SINGLE_WORD:
+        # Per English word of each language (older brother and older sister apart): its plain
+        # single words where it has any, else its multi-word translations, else (labelled) the
+        # marked single words.
+        for j, groups in enumerate(output_items):
+            for g, group in enumerate(groups):
+                by_lookup = defaultdict(dict)
+                for f, v in group.items():
+                    by_lookup[v[1]['lookup_word']][f] = v
+                narrowed = {}
+                for lookup, items in by_lookup.items():
+                    plain = {f: v for f, v in items.items()
+                             if _plain_single(v[0], item_tags.get((globasa_word, j, f), ""))}
+                    multi = {f: v for f, v in items.items() if " " in v[0].strip()}
+                    if plain:
+                        keep, how = plain, "single words"
+                    elif multi:
+                        keep, how = multi, "(fallback: no plain single word)"
+                    else:
+                        keep, how = items, "(fallback: only marked single words)"
+                    narrowed.update(keep)
+                    if how != "single words" or len(keep) < len(items):
+                        single_word_report.append((globasa_word, EXTENSION_LANGS[j], f"{lookup}: {how}",
+                                                   sorted(v[0] for v in keep.values()),
+                                                   sorted(v[0] for f, v in items.items() if f not in keep)))
+                groups[g] = narrowed
     built.append((globasa_word, eng_sense_output, output_items))
     if eng_sense_output:
         words_with_data += 1
@@ -380,6 +426,14 @@ with open("menalariExtension_unmatched.tsv", "w", encoding="utf-8", newline="") 
             w.writerow([reason, s['glb'], s['lookup_word'], s['pos'], s['sense'], " | ".join(labels)])
 for db in dbs.values():
     db.close()
+
+with open("menalariExtension_singleword.tsv", "w", encoding="utf-8", newline="") as f:
+    w = csv.writer(f, delimiter="\t")
+    w.writerow(["Globasa", "lang", "kept", "translations kept", "dropped"])
+    for word, lang, how, kept, dropped in single_word_report:
+        w.writerow([word, lang, how, ", ".join(kept), ", ".join(dropped)])
+print(f"  Single-word preference: {len(PREFER_SINGLE_WORD)} words, {len(single_word_report)} language cells "
+      f"narrowed or on multi-word fallback -> menalariExtension_singleword.tsv")
 
 # What the fem- / man- filter left out, for review (a language with no item of the word's
 # gender drops out for that sense).

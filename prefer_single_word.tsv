@@ -1,0 +1,11 @@
+# Globasa words translated with single words only (source of truth; edit by hand).
+# Read by "Wiktionary extension builder.py": for each listed word, a language that has a
+# plain single-word translation (no register or regional tag) for one of the word's English
+# glosses keeps only its plain single words for that gloss
+# (Wiktionary's "single-word translations" table of older brother: de Bruder... vs
+# "multi-word, compound-word or otherwise sum-of-parts translations": älterer Bruder);
+# a language with none keeps its multi-word translations (fallback: reported in
+# menalariExtension_singleword.tsv). User 2026-11-28.
+Globasa	note
+daysodar	older sibling
+lilsodar	younger sibling
