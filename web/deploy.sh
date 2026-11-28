@@ -7,6 +7,7 @@
 #
 #   web/deploy.sh            build, test, commit to gh-pages (local branch only)
 #   web/deploy.sh --push     ... and push gh-pages to origin
+#   Model folders with a Hugging Face revision in models.json (web/upload_models.py) are left out.
 #   SKIP_WASM=1              reuse web/dist/wasm
 # Tests run under web/test/capped.py (GLOBASA_MEM_GB, default 40% of RAM).
 set -euo pipefail
@@ -28,6 +29,9 @@ else
 fi
 find "$WT" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -r "$HERE/dist/." "$WT/"
+# folders hosted on Hugging Face (models.json revision set) are fetched from there, not deployed
+python3 -c "import json;[print(k) for k, v in json.load(open('$HERE/models.json')).items() if isinstance(v, dict) and v.get('revision')]" |
+  while read -r folder; do rm -rf "${WT:?}/$folder"; echo "not deployed (on Hugging Face): $folder"; done
 git -C "$WT" add -A
 VERSION="$(python3 -c "import json;print(json.load(open('$HERE/dist/pairs/index.json'))['version'])")"
 if git -C "$WT" diff --cached --quiet; then

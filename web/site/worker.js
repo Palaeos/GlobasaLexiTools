@@ -24,8 +24,21 @@ async function bytes(url) {
   return new Uint8Array(await res.arrayBuffer());
 }
 
+// models.json (web/models.json): a folder with a pinned Hugging Face revision loads from
+// huggingface.co/<repo>/resolve/<revision>/, else from the bundle's own folder.
+let models = {};
+function modelBase(folder) {
+  const m = models[folder];
+  if (m && m.repo && m.revision) return `https://huggingface.co/${m.repo}/resolve/${m.revision}/`;
+  return new URL(`${folder}/`, self.location.href).href;
+}
+
 async function init() {
   index = await (await fetch("pairs/index.json", { cache: "no-cache" })).json();
+  try {
+    const r = await fetch("models.json", { cache: "no-cache" });
+    if (r.ok) models = await r.json();
+  } catch { models = {}; }
   try {
     const name = `globasa-pairs-${index.version}`;
     for (const k of await caches.keys()) if (k.startsWith("globasa-pairs-") && k !== name) await caches.delete(k);
@@ -47,7 +60,7 @@ async function init() {
   // the LitBank mode is offered only when the bundle has the model (web/build.sh copies it if exported)
   let litbankBytes = 0;
   try {
-    const r = await fetch("coref/en/coref.json", { cache: "no-cache" });
+    const r = await fetch(new URL("coref.json", modelBase("coref/en")).href, { cache: "no-cache" });
     if (r.ok) litbankBytes = Object.values((await r.json()).models).flat().reduce((n, p) => n + p.size, 0);
   } catch { litbankBytes = 0; }
   post("ready", { modes: index.modes, excluded: index.excluded, version: index.version, litbankBytes });
@@ -61,7 +74,7 @@ const NLP = {
     const ort = await import("./ort/ort.wasm.min.mjs");
     ort.env.wasm.wasmPaths = new URL("ort/", self.location.href).href;
     ort.env.wasm.numThreads = 1;          // threads need cross-origin isolation
-    return new EnglishTagger().load(new URL("tagger/en/", self.location.href).href, ort,
+    return new EnglishTagger().load(modelBase("tagger/en"), ort,
       (url) => bytes(url));
   },
 };
@@ -78,7 +91,7 @@ async function setLitbank(on, profile) {
     litbankLoading = (async () => {
       post("status", { text: "Loading the LitBank coreference model…" });
       const ort = await import("./ort/ort.wasm.min.mjs");
-      return new LitBankCoref().load(new URL("coref/en/", self.location.href).href, ort, (url) => bytes(url),
+      return new LitBankCoref().load(modelBase("coref/en"), ort, (url) => bytes(url),
         (done, total) => post("progress", { mode: "LitBank model", done, total }),
         async (url) => {
           const r = await fetch(url, { cache: "no-cache" });

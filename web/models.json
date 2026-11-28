@@ -1,0 +1,11 @@
+{
+  "_comment": "Where the page loads its neural models from. revision = a Hugging Face commit (written by web/upload_models.py): the worker fetches https://huggingface.co/<repo>/resolve/<revision>/<file> and deploy.sh leaves the folder out of the bundle. revision null: the folder ships in the bundle (dist/<folder>).",
+  "tagger/en": {
+    "repo": "Paleos/globasa-translator-stanza-en",
+    "revision": "2c7179b7b4b2043d3e8e7979046f93d659cbee95"
+  },
+  "coref/en": {
+    "repo": "Paleos/globasa-translator-litbank-coref",
+    "revision": "743d46a0e1bf28370ee8a0a43d9ad0be5cb3bcf0"
+  }
+}

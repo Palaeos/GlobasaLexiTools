@@ -54,6 +54,6 @@ else
 fi
 cp "$HERE/src/"*.mjs "$HERE/dist/src/"
 cp "$HERE/py/runner.py" "$HERE/dist/py/"
-cp "$HERE/site/index.html" "$HERE/site/worker.js" "$HERE/dist/"
+cp "$HERE/site/index.html" "$HERE/site/worker.js" "$HERE/models.json" "$HERE/dist/"
 touch "$HERE/dist/.nojekyll"
 du -sh "$HERE/dist"
