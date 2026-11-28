@@ -29,6 +29,7 @@ from clarifiers import Clarifiers
 from wiktionary_db import WiktionaryDB
 from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
+import gender_filter
 from wiktionary_constants import (WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
     EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
@@ -126,6 +127,7 @@ with open("./" + menalari_name, newline='', encoding='utf-8') as f:
             'spa': row.get('TranslationSpa', '').strip(),
             'epo': row.get('TranslationEpo', '').strip(),
             'wordclass': row.get('WordClass', '').strip(),
+            'gender': gender_filter.word_gender(row.get('LexiliAsel', '')),
         }
 
 # ---------------------------------------------------------------------------
@@ -181,6 +183,7 @@ def relabelled_sense(db, s):
         if len(hits) == 1:
             return hits[0], every, f"reworded label{moved}"
     return None
+gender_report = []  # (word, gender, lookup word, sense, lang, kept, dropped) -> menalariExtension_gender.tsv
 built = []  # (globasa_word, eng_sense_output, items[j][group] = {formatted: (word, sense, annotated)}) or (word,)
 
 for globasa_word in wordlist_order:
@@ -255,10 +258,20 @@ for globasa_word in wordlist_order:
         if group_idx is None:
             group_idx = 0
 
+        table_split = bool(wl.get('gender')) and gender_filter.table_has_pairs(lang_translations)
         for j, lang_code in enumerate(EXTENSION_LANGS):
             resolved, found = _resolve_lang(lang_code, lang_translations)
             if not found:
                 continue
+            if wl.get('gender'):
+                # fem- / man- words: only the translations of that gender (gender_filter.py)
+                resolved, dropped = gender_filter.filter_items(
+                    resolved, wl['gender'], lang_code, lang_translations.get('eo', ()), table_split)
+                if dropped:
+                    gender_report.append((globasa_word, wl['gender'], s['lookup_word'], sense_label,
+                                          lang_code, [t.word for t in resolved], [t.word for t in dropped]))
+                if not resolved:
+                    continue
             for t in resolved:
                 formatted = format_translation_word(t, s['pos'])
                 ann_key = DIALECT_LANGS[lang_code][0] if lang_code in DIALECT_LANGS else lang_code
@@ -367,6 +380,16 @@ with open("menalariExtension_unmatched.tsv", "w", encoding="utf-8", newline="") 
             w.writerow([reason, s['glb'], s['lookup_word'], s['pos'], s['sense'], " | ".join(labels)])
 for db in dbs.values():
     db.close()
+
+# What the fem- / man- filter left out, for review (a language with no item of the word's
+# gender drops out for that sense).
+with open("menalariExtension_gender.tsv", "w", encoding="utf-8", newline="") as f:
+    w = csv.writer(f, delimiter="\t")
+    w.writerow(["Globasa", "gender", "lookup_word", "sense", "lang", "kept", "dropped"])
+    for word, gender, lookup, sense, lang, kept, dropped in gender_report:
+        w.writerow([word, gender, lookup, sense, lang, ", ".join(kept), ", ".join(dropped)])
+print(f"  Gender filter (fem-/man-): {len(gender_report)} language tables narrowed "
+      f"-> menalariExtension_gender.tsv")
 
 print(f"\nWrote menalariExtension.tsv: {words_with_data} words with translations, "
       f"{len(wordlist_order)} total rows")
