@@ -203,6 +203,32 @@ def crossvalidate(lang_translations, spa_words, epo_words):
 # The rows
 # ---------------------------------------------------------------------------
 
+# Wiktionary keeps translations at the main form; an alternative spelling or an ellipsis has
+# only "Alternative spelling of race car." (tag alt-of). 194 word-list glosses were such entries
+# with no table of their own (theatre, appetiser, racecar, wifi; 2026-11-28).
+_ALT_OF_RE = re.compile(
+    r"^(?:alternative (?:form|spelling|letter-case form|typography)|ellipsis|abbreviation|initialism|"
+    r"acronym|clipping|short form|obsolete spelling|archaic spelling|standard spelling|"
+    r"nonstandard spelling|american spelling|british spelling) of (.+?)\.?$", re.IGNORECASE)
+
+
+def alt_of_target(db, word, pos):
+    """The entry (word, pos) stands for when every one of its senses is 'Alternative form of X'
+    (or Ellipsis / Abbreviation of X, tag alt-of) for one and the same X; None otherwise, so an
+    entry with a sense of its own (Danish: the language, and an ellipsis of Danish pastry) is
+    never redirected."""
+    senses = db.get_senses(word, pos) or []
+    targets = set()
+    for sense in senses:
+        if "alt-of" not in sense.tags or not sense.glosses:
+            return None
+        m = _ALT_OF_RE.match(sense.glosses[-1].strip())
+        if not m:
+            return None
+        targets.add(m.group(1).strip())
+    return targets.pop() if len(targets) == 1 else None
+
+
 def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None, stored=False):
     """Yield the rows of the senses view, in word-list order.
 
@@ -293,10 +319,18 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None, store
                         continue
 
                     found_any = False
+                    gloss_word = eng_word
                     for pos_key in pos_keys:
+                        eng_word = gloss_word
                         trans_entry = db.get_translations(eng_word, pos_key)
                         if trans_entry is None:
-                            continue
+                            # An alt-of entry: its main form's tables, recorded under the main
+                            # form so the extension builder looks up the same tables.
+                            target = alt_of_target(db, eng_word, pos_key)
+                            trans_entry = db.get_translations(target, pos_key) if target else None
+                            if trans_entry is None:
+                                continue
+                            eng_word = target
                         found_any = True
 
                         sense_list = db.get_senses(eng_word, pos_key) or []

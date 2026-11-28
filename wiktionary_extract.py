@@ -157,4 +157,20 @@ if __name__ == "__main__":
         out_dir = SENSES_LMDB
     print(f"Extracting {len(keys)} English entries into {out_dir} from {source}")
     found = extract(source, out_dir, keys)
+    # Alt-of entries (racecar: "Alternative spelling of race car") keep no table of their own;
+    # sense_rows follows them to the main form, so the main forms join the extract (a second
+    # pass over the dump: the stream is not ordered).
+    import sense_rows
+    db = WiktionaryDB(path=out_dir, readonly=True)
+    targets = set()
+    for word, pos in keys:
+        if db.get_translations(word, pos) is None:
+            target = sense_rows.alt_of_target(db, word, pos)
+            if target and (target, pos) not in keys:
+                targets.add((target, pos))
+    db.close()
+    if targets:
+        print(f"Second pass: {len(targets)} main forms of alt-of entries (e.g. {sorted(targets)[:3]})")
+        keys |= targets
+        found = extract(source, out_dir, keys)
     print(f"Done: {found} of {len(keys)} entries found.")
