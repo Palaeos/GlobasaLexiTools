@@ -1418,16 +1418,17 @@ if _db is None:
     build_db()
     _db = WordViewerDB(LMDB_DIR, readonly=True)
 
-# Cache the full word list for derived-word reverse lookup and search index
-print("Loading word list index for reverse lookup and search...")
+# Word-list and extension indexes for derived-word reverse lookup, search and the
+# language menu: filled by load_indexes() at startup and again by /rebuild (so a
+# rebuilt menalariExtension.tsv reaches search and coverage without a restart).
 _all_entries = {}
 # _trans_index: {lang_display: {lowered_translation_term: set of globasa words}}
 _trans_index = {}
 # _tag_index: {tag_string: [list of globasa words]}
 _tag_index = {}
-# _coverage_words: {lang_display: set of globasa words with a translation};
-# reduced to percentages in _lang_coverage once indexing is done.
+# _coverage_words: {lang_display: set of globasa words with a translation} while indexing
 _coverage_words = {}
+_lang_coverage = {}   # {lang_display: % of headwords with a translation}
 
 _TRANS_COLS = {
     "TranslationEng": "English",
@@ -1462,31 +1463,6 @@ def _index_translation(text, lang, glb_word):
                     idx[key] = set()
                 idx[key].add(glb_word)
 
-wl_df = pd.read_csv(WORDLIST_CSV, dtype=str).fillna("")
-for _, row in wl_df.iterrows():
-    word = str(row.get("Word", "")).strip()
-    if word:
-        _all_entries[word] = {
-            "WordClass": str(row.get("WordClass", "")).strip(),
-            # The curator needs every word's gloss to work out which parts of
-            # speech still lack a picture.
-            "TranslationEng": str(row.get("TranslationEng", "")).strip(),
-            "Synonyms": str(row.get("Synonyms", "")).strip(),
-            "Antonyms": str(row.get("Antonyms", "")).strip(),
-            "Category": str(row.get("Category", "")).strip(),
-            "LexiliAsel": str(row.get("LexiliAsel", "")).strip(),
-        }
-        # Index tags
-        for t in str(row.get("Tags", "")).split(","):
-            t = t.strip()
-            if t:
-                if t not in _tag_index:
-                    _tag_index[t] = []
-                _tag_index[t].append(word)
-        for col, lang in _TRANS_COLS.items():
-            _index_translation(str(row.get(col, "")), lang, word)
-        # Index SearchTermsEng under English
-        _index_translation(str(row.get("SearchTermsEng", "")), "English", word)
 
 
 
@@ -1602,11 +1578,8 @@ def _extension_columns():
     return [c for c in header[2:] if c and c not in ("Spanish", "Esperanto")]
 
 
-EXT_LANG_COLS = _extension_columns()
-
 # Extension header name -> the viewer's language name (word_viewer.html LANGS, i18n "lang.<name>")
-LANG_DISPLAY = {col: col for col in EXT_LANG_COLS}
-LANG_DISPLAY.update({
+_LANG_RENAMES = {
     "Mandarin": "Mandarin Chinese",        # same name as the word list's TranslationZho
     "Rhine Franc.": "Rhine Franconian",
     "Egyptian Ar.": "Egyptian Arabic",
@@ -1617,34 +1590,78 @@ LANG_DISPLAY.update({
     "Algerian Ar.": "Algerian Arabic",
     "Spanish": "Spanish",
     "Esperanto": "Esperanto",
-})
+}
+EXT_LANG_COLS = []    # filled by load_indexes()
+LANG_DISPLAY = {}
 
-# Also index extension languages. This must run after EXT_LANG_COLS and
-# LANG_DISPLAY exist: above them it raised NameError, which a bare
-# `except Exception: pass` hid, so /suggest never matched Italian, Japanese,
-# ... (bug found 2026-11-28).
-try:
-    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", dtype=str, index_col=0).fillna("")
-    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
-    _ext_cols = [c for c in EXT_LANG_COLS if c in ext_df.columns]
-    for word, *vals in ext_df[_ext_cols].itertuples(name=None):
-        word = str(word).strip()
-        for col, val in zip(_ext_cols, vals):
-            val = str(val).strip()
-            if val and val != "False":
-                _index_translation(_strip_gender(val), LANG_DISPLAY.get(col, col), word)
-    del ext_df
-except FileNotFoundError:
-    print(f"  Warning: {os.path.basename(EXTENSION_TSV)} missing (fallback: "
-          "search covers the word-list languages only)")
 
-print(f"  Loaded {len(_all_entries)} entries, {sum(len(v) for v in _trans_index.values())} translation index terms.")
+def load_indexes():
+    """(Re)build _all_entries, _tag_index, _trans_index, EXT_LANG_COLS, LANG_DISPLAY and
+    _lang_coverage from word-list.csv and menalariExtension.tsv, in place."""
+    print("Loading word list index for reverse lookup and search...")
+    for container in (_all_entries, _trans_index, _tag_index, _coverage_words, _lang_coverage, LANG_DISPLAY):
+        container.clear()
+    wl_df = pd.read_csv(WORDLIST_CSV, dtype=str).fillna("")
+    for _, row in wl_df.iterrows():
+        word = str(row.get("Word", "")).strip()
+        if word:
+            _all_entries[word] = {
+                "WordClass": str(row.get("WordClass", "")).strip(),
+                # The curator needs every word's gloss to work out which parts of
+                # speech still lack a picture.
+                "TranslationEng": str(row.get("TranslationEng", "")).strip(),
+                "Synonyms": str(row.get("Synonyms", "")).strip(),
+                "Antonyms": str(row.get("Antonyms", "")).strip(),
+                "Category": str(row.get("Category", "")).strip(),
+                "LexiliAsel": str(row.get("LexiliAsel", "")).strip(),
+            }
+            # Index tags
+            for t in str(row.get("Tags", "")).split(","):
+                t = t.strip()
+                if t:
+                    if t not in _tag_index:
+                        _tag_index[t] = []
+                    _tag_index[t].append(word)
+            for col, lang in _TRANS_COLS.items():
+                _index_translation(str(row.get(col, "")), lang, word)
+            # Index SearchTermsEng under English
+            _index_translation(str(row.get("SearchTermsEng", "")), "English", word)
+    EXT_LANG_COLS[:] = _extension_columns()
+    LANG_DISPLAY.update({col: col for col in EXT_LANG_COLS})
+    LANG_DISPLAY.update(_LANG_RENAMES)
 
-# Share of headwords with a translation, per display language (language menu).
-_lang_coverage = {lang: round(100 * len(words) / max(len(_all_entries), 1), 1)
-                  for lang, words in _coverage_words.items()}
-_lang_coverage["Globasa"] = 100.0
-del _coverage_words
+    # Also index extension languages. This must run after EXT_LANG_COLS and
+    # LANG_DISPLAY exist: above them it raised NameError, which a bare
+    # `except Exception: pass` hid, so /suggest never matched Italian, Japanese,
+    # ... (bug found 2026-11-28).
+    try:
+        ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", dtype=str, index_col=0).fillna("")
+        ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
+        _ext_cols = [c for c in EXT_LANG_COLS if c in ext_df.columns]
+        for word, *vals in ext_df[_ext_cols].itertuples(name=None):
+            word = str(word).strip()
+            for col, val in zip(_ext_cols, vals):
+                val = str(val).strip()
+                if val and val != "False":
+                    _index_translation(_strip_gender(val), LANG_DISPLAY.get(col, col), word)
+        del ext_df
+    except FileNotFoundError:
+        print(f"  Warning: {os.path.basename(EXTENSION_TSV)} missing (fallback: "
+              "search covers the word-list languages only)")
+
+    print(f"  Loaded {len(_all_entries)} entries, {sum(len(v) for v in _trans_index.values())} translation index terms.")
+
+    # Share of headwords with a translation, per display language (language menu).
+    _lang_coverage.update({lang: round(100 * len(words) / max(len(_all_entries), 1), 1)
+                           for lang, words in _coverage_words.items()})
+    _lang_coverage["Globasa"] = 100.0
+    _coverage_words.clear()
+
+
+load_indexes()
+
+
+
 
 
 def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
@@ -2145,12 +2162,14 @@ def serve_audio(filename):
 
 @app.route("/rebuild")
 def rebuild():
-    """Admin endpoint to rebuild LMDB from source files."""
+    """Admin endpoint: rebuild the LMDB from the source files, then the search and
+    coverage indexes, so a rebuilt menalariExtension.tsv shows without a restart."""
     global _db
     _db.close()
     build_db()
     _db = WordViewerDB(LMDB_DIR, readonly=True)
-    return jsonify({"status": "rebuilt"})
+    load_indexes()
+    return jsonify({"status": "rebuilt", "entries": len(_all_entries), "languages": len(EXT_LANG_COLS)})
 
 
 # ---------------------------------------------------------------------------

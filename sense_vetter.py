@@ -44,6 +44,10 @@ a language sense for a language adjective such as Doycisali; senses such as a gi
 or a US state are proposed as not applying). The proposal is a script's guess: key A
 scores it (5 or 1) once you have read the card; a card without a proposal needs 1-5 as usual.
 
+The button "Rebuild viewer" does only what the Word Viewer needs: the Wiktionary extension,
+then the viewer's own cache (its /rebuild route when it runs at WV_URL, default
+http://127.0.0.1:5000; otherwise WordViewerLMDB/ is dropped and rebuilt at its next start).
+
 The button "Rebuild" reruns the Wiktionary extension with the page's verdicts, build_bidix.py (every
 glb-X bidix) and make in every configured GlobasaTranslation/apertium-glb-X pair. Only when the
 Le Petit Prince data exists does it then run parallel_lexsel/resolution.py (which of the book's
@@ -651,13 +655,55 @@ def run_rebuild():
                    finished=datetime.now().isoformat(timespec="seconds"))
 
 
-def start_rebuild():
+WV_URL = os.environ.get("WV_URL", "http://127.0.0.1:5000")
+WV_LMDB = "WordViewerLMDB"
+
+
+def run_viewer_rebuild():
+    """The extension, then the Word Viewer's cache; nothing else (bidixes, pairs, sheet)."""
+    global relabel_order, relabel_evidence, relabel_units_of
+    result = {"extension": "", "viewer": ""}
+    ok, out = run_step("Wiktionary extension", [sys.executable, "-u", "Wiktionary extension builder.py"])
+    result["extension"] = next((l.strip() for l in out if l.startswith("Wrote menalariExtension")), "")
+    if ok:
+        rebuild["step"] = "Word Viewer"
+        rebuild["log"].append("== Word Viewer")
+        import urllib.error
+        import urllib.request
+        # No proxy for the local viewer: through the HTTP proxy a local URL answered
+        # "Bad Gateway", which read as "not running" and dropped a live cache (2026-11-28).
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        try:
+            with opener.open(WV_URL.rstrip("/") + "/rebuild", timeout=900) as r:
+                reply = json.loads(r.read() or b"{}")
+            result["viewer"] = f"rebuilt in the running viewer ({reply.get('entries', '?')} words)"
+        except urllib.error.HTTPError as e:
+            # Something answered: never drop the cache under a running viewer.
+            ok = False
+            result["viewer"] = f"the viewer at {WV_URL} answered {e.code} {e.reason}; its cache is unchanged"
+        except (urllib.error.URLError, OSError) as e:
+            if isinstance(getattr(e, "reason", e), ConnectionRefusedError) or isinstance(e, ConnectionRefusedError):
+                import shutil
+                shutil.rmtree(WV_LMDB, ignore_errors=True)
+                result["viewer"] = (f"not running at {WV_URL}: its cache was dropped, "
+                                    f"it rebuilds at its next start")
+            else:
+                ok = False
+                result["viewer"] = f"could not reach the viewer at {WV_URL} ({getattr(e, 'reason', e)}); its cache is unchanged"
+        rebuild["log"].append(result["viewer"])
+    relabel_order, relabel_evidence, relabel_units_of = load_relabel()
+    rebuild.update(running=False, ok=ok, step="", result=result,
+                   finished=datetime.now().isoformat(timespec="seconds"))
+
+
+def start_rebuild(target=None):
+    target = target or run_rebuild
     with rebuild_lock:
         if rebuild["running"]:
             return False
         rebuild.update(running=True, ok=None, log=[], result=None, step="starting",
                        started=datetime.now().isoformat(timespec="seconds"), finished="")
-    threading.Thread(target=run_rebuild, daemon=True).start()
+    threading.Thread(target=target, daemon=True).start()
     return True
 
 
@@ -735,7 +781,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         if path == "/api/rebuild":
-            self.send_json({"started": start_rebuild(), "running": True})
+            length = int(self.headers.get("Content-Length") or 0)
+            body = json.loads(self.rfile.read(length) or b"{}") if length else {}
+            what = run_viewer_rebuild if body.get("what") == "viewer" else run_rebuild
+            self.send_json({"started": start_rebuild(what), "running": True})
             return
         if path not in ("/api/undo", "/api/verdict"):
             self.send_error(404)

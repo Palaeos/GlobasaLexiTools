@@ -89,6 +89,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
   <button id="nextWord" title="Jump past this word's other senses to the next word (W; Q goes back a word)">Next word</button>
   <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
   <button id="bulk" title="Score 4 (probably applies) on every sense currently loaded that you have not scored">Accept all loaded</button>
+  <button id="rebuildViewer" title="Only what the Word Viewer needs: the Wiktionary extension, then the viewer's cache (no bidixes, pairs or shared sheet)">Rebuild viewer</button>
   <button id="rebuild" title="Write your scores into the shared sheet, rerun the Wiktionary extension with the scores, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
   <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>W</kbd> next word <kbd>Q</kbd> previous word <kbd>U</kbd> undo last <kbd>A</kbd> accept the proposal (countries view)</span>
 </header>
@@ -175,7 +176,6 @@ function showTally(data) {
   tally.textContent = `${data.accepted} accepted · ${data.rejected} rejected · ${data.unsure} unsure` + (remaining ? ` · ${remaining} left` : "");
 }
 
-function nearestVisible(i, direction) {
 // Next / previous word (user 2026-11-28: move on without stepping through every sense):
 // the first listed card of the next word, loading more cards when it is not held yet.
 async function jumpWord(direction) {
@@ -200,6 +200,7 @@ async function jumpWord(direction) {
   }
 }
 
+function nearestVisible(i, direction) {
   for (let k = Math.max(0, i); k >= 0 && k < rows.length; k += direction) if (!isHidden(k)) return k;
   return -1;
 }
@@ -426,6 +427,7 @@ function lppHtml(l) {
 }
 function showRebuild(st, justFinished) {
   rebuildButton.disabled = st.running;
+  rebuildViewerButton.disabled = st.running;
   rebuildButton.textContent = st.running ? "Rebuilding…" : "Rebuild";
   rebuildBox.classList.toggle("failed", st.ok === false);
   if (st.running) {
@@ -442,7 +444,9 @@ function showRebuild(st, justFinished) {
   if (!r || (!st.finished && !r.lpp)) return;
   rebuildBox.hidden = false;
   let html = "";
-  if (st.finished) {
+  if (st.finished && r.viewer !== undefined) {
+    html += `Rebuilt ${esc(st.finished.replace("T", " "))}: ${esc(r.extension || "extension rebuilt")}. Word Viewer: ${esc(r.viewer || "–")}.`;
+  } else if (st.finished) {
     const bidix = Object.entries(r.bidix || {}).map(([l, n]) => `${esc(l)} ${n}`).join(", ");
     const pairs = Object.entries(r.pairs || {}).map(([p, v]) =>
       v === "built" ? `${esc(p.replace("apertium-", ""))} ✓` : `<span title="${esc(v)}">${esc(p.replace("apertium-", ""))} ✗</span>`).join(" · ");
@@ -463,6 +467,12 @@ async function pollRebuild(wasRunning = false) {
 rebuildButton.addEventListener("click", async () => {
   rebuildButton.blur();
   await fetch("/api/rebuild", { method: "POST", body: "{}" });
+  pollRebuild(true);
+});
+const rebuildViewerButton = document.getElementById("rebuildViewer");
+rebuildViewerButton.addEventListener("click", async () => {
+  rebuildViewerButton.blur();
+  await fetch("/api/rebuild", { method: "POST", body: JSON.stringify({ what: "viewer" }) });
   pollRebuild(true);
 });
 pollRebuild();
@@ -512,6 +522,8 @@ document.addEventListener("keydown", e => {
   else if (e.key === "Escape") closePeekAndMove();
   else if (key === "s" || key === "j" || e.key === "ArrowDown") { e.preventDefault(); setFocus(focus + 1); }
   else if (key === "k" || e.key === "ArrowUp") { e.preventDefault(); setFocus(focus - 1, -1); }
+  else if (key === "w") { e.preventDefault(); jumpWord(1); }
+  else if (key === "q") { e.preventDefault(); jumpWord(-1); }
   else if (key === "u") undo();
 });
 
@@ -522,13 +534,11 @@ fetch("/api/tags").then(response => response.json()).then(data => {
   tagBox.insertAdjacentHTML("beforeend", data.tags.map(t =>
     `<option value="${esc(t.tag)}">${esc(t.tag)}${t.gloss ? ` (${esc(t.gloss)})` : ""}: ${t.words}</option>`).join(""));
 });
-  else if (key === "w") { e.preventDefault(); jumpWord(1); }
-  else if (key === "q") { e.preventDefault(); jumpWord(-1); }
 q.addEventListener("change", reload);
+document.getElementById("nextWord").addEventListener("click", e => { e.currentTarget.blur(); jumpWord(1); });
 hideBox.addEventListener("change", () => {
   try { localStorage.setItem("hideVetted", hideBox.checked ? "1" : "0"); } catch (e) {}
   reload();
 });
 reload();
 </script>
-document.getElementById("nextWord").addEventListener("click", e => { e.currentTarget.blur(); jumpWord(1); });
