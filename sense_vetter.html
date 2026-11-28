@@ -80,6 +80,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
     <option value="unmarked">Words with no sense marked yet (per part of speech)</option>
     <option value="unsure">Senses marked unsure or undecided</option>
     <option value="queue">Queue: French words Le Petit Prince lacks</option>
+    <option value="relabel">Relabel: words left with no sense (Wiktionary label changed)</option>
+    <option value="countries">Countries, languages and their adjectives (A accepts the proposal)</option>
   </select>
   <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
   <input id="q" placeholder="One word" size="12" aria-label="Show one word">
@@ -87,7 +89,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
   <button id="undo" title="Undo your last judgement, even from an earlier session">Undo</button>
   <button id="bulk" title="Score 4 (probably applies) on every sense currently loaded that you have not scored">Accept all loaded</button>
   <button id="rebuild" title="Write your scores into the shared sheet, rerun the Wiktionary extension with the scores, rebuild every glb-X bidix and pair; where the Le Petit Prince data exists, also check which of the book's French words the glb-fra pair knows now (about a minute)">Rebuild</button>
-  <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last</span>
+  <span class="keys"><kbd>5</kbd> applies <kbd>4</kbd> probably <kbd>3</kbd> unsure <kbd>2</kbd> probably not <kbd>1</kbd> doesn't (<kbd>Y</kbd> = 4, <kbd>N</kbd> = 2, <kbd>M</kbd> = 3) <kbd>P</kbd> peek other senses <kbd>S</kbd> skip <kbd>K</kbd> back <kbd>U</kbd> undo last <kbd>A</kbd> accept the proposal (countries view)</span>
 </header>
 <div id="rebuild-status" hidden></div>
 <main id="list"></main>
@@ -138,7 +140,7 @@ function cardHtml(r, i) {
   return `<div class="card ${done[r.id] || ""}" id="c${i}" data-i="${i}">
     <div>
       <div><span class="word">${esc(r.word)}</span><span class="pos">${esc(r.pos)} · "${esc(r.eng)}"</span></div>
-      <div class="sense">${esc(r.label)}</div>
+      <div class="sense">${esc(r.label)}${r.proposal ? ` <span class="chip ${r.proposal === "s" ? "good" : "bad"}" title="The script's guess from the label: key A scores it (5 or 1)">proposed: ${r.proposal === "s" ? "applies" : "doesn't"}</span>` : ""}</div>
       ${r.definition && r.definition.toLowerCase() !== r.label.toLowerCase() ? `<div class="def">${esc(r.definition.slice(0, 220))}</div>` : ""}
       ${r.example ? `<div class="small">e.g. ${esc(r.example.slice(0, 140))}</div>` : ""}
       <div class="small gloss">${translations}</div>
@@ -480,6 +482,7 @@ document.addEventListener("keydown", e => {
   else if (key === "y") decide(focus, "s");
   else if (key === "n") decide(focus, "n");
   else if (key === "m" || key === "?") decide(focus, "u");
+  else if (key === "a" && rows[focus]?.proposal) decide(focus, rows[focus].proposal === "s" ? "5" : "1");
   else if (key === "p") togglePeek(focus);
   else if (e.key === "Escape") closePeekAndMove();
   else if (key === "s" || key === "j" || e.key === "ArrowDown") { e.preventDefault(); setFocus(focus + 1); }

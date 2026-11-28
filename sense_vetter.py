@@ -28,6 +28,22 @@ parallel_lexsel/vetting_queue.py writes) in the queue's order, each with its evi
 French word of Le Petit Prince it would give the glb-fra pair, how often the text needs it, and
 what the English and Chinese translations aligned to it.
 
+The view "Relabel" lists the vetted senses the Menalari extension could not find any more
+(menalariExtension_unmatched.tsv, SV_RELABEL) of words left with no sense at all: after a dump
+refresh Wiktionary had reworded or replaced their table labels. Words that still have a matched
+sense are not re-vetted. Each shows the senses its word now has for the same English word,
+with a note naming the label vetted earlier; scoring the matching one carries the decision over
+to the new label (the extension picks it up on Rebuild), and the word's other candidates leave
+the view. It needs the senses of the refreshed dump: the rebuilt WiktionaryLMDB/, or SV_LMDB.
+
+The view "Countries, languages and their adjectives" lists the senses of the words tagged dexa
+(countries) or basa (languages) and of the proper adjectives (su t) derived from them, word by
+word. Each card carries a proposal read from its label (a country sense for a country word, a
+language sense for a language word, "of / relating to" for a country adjective such as Doycili,
+a language sense for a language adjective such as Doycisali; senses such as a given name, a city
+or a US state are proposed as not applying). The proposal is a script's guess: key A
+scores it (5 or 1) once you have read the card; a card without a proposal needs 1-5 as usual.
+
 The button "Rebuild" reruns the Wiktionary extension with the page's verdicts, build_bidix.py (every
 glb-X bidix) and make in every configured GlobasaTranslation/apertium-glb-X pair. Only when the
 Le Petit Prince data exists does it then run parallel_lexsel/resolution.py (which of the book's
@@ -70,6 +86,9 @@ PORT = int(os.environ.get("SV_PORT", 8090))
 QUEUE_FILE = os.environ.get("SV_QUEUE", os.path.join("parallel_lexsel_cache", "lpp", "fra_glb",
                                                      "vetting_queue.tsv"))
 QUEUE_EVIDENCE = 3  # French words shown per queued sense
+# Vetted senses the extension builder could not find in the current dump (its report).
+RELABEL_FILE = os.environ.get("SV_RELABEL", "menalariExtension_unmatched.tsv")
+EXTENSION_FILE = "menalariExtension.tsv"
 HUMAN_TIERS = sense_ranking.HUMAN_TIERS
 OWNER = vetted_senses.OWNER  # whose column this page scores in (SV_VETTER / .senses_config.json "vetter")
 
@@ -103,8 +122,12 @@ def load_usages():
 
 
 def open_db():
-    """The full English database when this machine has it, else the extract of the word list's glosses."""
-    for path, note in ((LMDB_DIR, ""), (SENSES_LMDB, " (fallback: no full WiktionaryLMDB, extract of the word list's glosses)")):
+    """The full English database when this machine has it, else the extract of the word list's glosses.
+    SV_LMDB=path picks one explicitly (e.g. a fresh extract while the full one is not rebuilt yet)."""
+    choices = ((LMDB_DIR, ""), (SENSES_LMDB, " (fallback: no full WiktionaryLMDB, extract of the word list's glosses)"))
+    if os.environ.get("SV_LMDB"):
+        choices = ((os.environ["SV_LMDB"], " (SV_LMDB)"),)
+    for path, note in choices:
         if os.path.exists(path):
             print(f"  Wiktionary: {path}{note}")
             return WiktionaryDB(path=path, readonly=True)
@@ -216,6 +239,65 @@ def load_queue():
 queue_order, queue_evidence = load_queue()
 
 
+def words_with_senses():
+    """Globasa words (lowercase) with at least one vetted sense found in the dump: the extension's
+    'Eng with Senses' cell lists them."""
+    if not os.path.exists(EXTENSION_FILE):
+        return set()
+    with open(EXTENSION_FILE, encoding="utf-8") as f:
+        return {r["Globasa"].lower() for r in csv.DictReader(f, delimiter="\t")
+                if r["Globasa"] and (r.get("Eng with Senses") or "").strip()}
+
+
+def load_relabel():
+    """Candidate senses for each unmatched vetted sense of a word that has no sense left (user
+    2026-11-28: re-vet only words now missing a sense entirely; a word that still has a matched
+    sense keeps it). Candidates are the senses the word now has for the same English word (other
+    labels), in the report's order. Returns the candidate ids in order, each candidate's notes,
+    and {candidate id: [units]} where a unit is the candidate ids standing for one unmatched sense."""
+    order, evidence, units_of = [], collections.defaultdict(list), collections.defaultdict(list)
+    if not os.path.exists(RELABEL_FILE):
+        return order, evidence, units_of
+    has_sense = words_with_senses()
+    found = no_candidates = still_covered = 0
+    with open(RELABEL_FILE, encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            word, eng, old = row["Globasa"].lower(), row["lookup_word"], row["vetted label"]
+            if word in has_sense:
+                still_covered += 1
+                continue
+            # Every sense the word now has, through any of its glosses (user 2026-11-28: a word
+            # can get its sense through another gloss, hwese "grey" for a lost "gray"), the
+            # lost gloss's own first.
+            candidates = [sn["id"] for sn in sorted(
+                (sn for sn in senses_by_word.get(word, ()) if sn["label"] != old),
+                key=lambda sn: not any(k[0].lower() == eng.lower() for k in sn["keys"]))]
+            if not candidates:
+                no_candidates += 1
+                continue
+            found += 1
+            for key in candidates:
+                if key not in evidence:
+                    order.append(key)
+                units_of[key].append(candidates)
+                evidence[key].append({"note": (
+                    f"{row['Globasa']} has no sense left: \u201c{old}\u201d ({eng}, {row['pos']}) is gone "
+                    f"from Wiktionary. Score 5 if this sense fits the word, through this or another of its "
+                    f"glosses.")})
+    print(f"  Relabel {RELABEL_FILE}: {found} unmatched senses of words with no sense left have candidates"
+          + (f", {no_candidates} without (word or part of speech gone, or no other sense)" if no_candidates else "")
+          + f"; {still_covered} skipped (their word still has a sense)")
+    return order, evidence, units_of
+
+
+relabel_order, relabel_evidence, relabel_units_of = load_relabel()
+
+
+def relabel_done(key):
+    """Every unmatched sense this candidate stands for has found its new label (a candidate accepted)."""
+    return all(any(current_verdict(senses[k]) == "s" for k in unit) for unit in relabel_units_of[key])
+
+
 def order_key(sense):
     return sense_ranking.order_key(sense, ranks)
 
@@ -224,6 +306,78 @@ ordered = sorted(senses.values(), key=order_key)
 for group in senses_by_word.values():
     group.sort(key=order_key)
 orders_by_tag = {}
+
+# Countries (dexa), languages (basa) and the proper adjectives (su t) derived from them.
+COUNTRY_TAGS = {"dexa": "country", "basa": "language"}
+_COUNTRY_RE = re.compile(r"\b(country|nation|republic|kingdom|empire|emirate|principality|microstate|"
+                         r"sultanate|federation|island country|archipelago)\b")
+_LANGUAGE_RE = re.compile(r"\blanguages?\b")
+_RELATING_RE = re.compile(r"\b(of|from|relating|pertaining|related|characteristic)\b")
+_NOT_COUNTRY_RE = re.compile(r"\b(given name|surname|city|capital|town|river|province|county|"
+                             r"state of the united states|u\.s\. state|porcelain|bird|ware|dish)\b")
+# An ancient kingdom or a former state is not the modern country: no proposal, the vetter decides.
+_HISTORICAL_RE = re.compile(r"\b(ancient|historical|former|formerly|obsolete|archaic|biblical)\b")
+_PEOPLE_RE = re.compile(r"\b(people|person|inhabitants?|natives?|citizens?)\b")
+
+
+def load_country_words():
+    """{word (lowercase): 'country' | 'language' | 'country adjective' | 'language adjective'}.
+    An adjective takes the kind of its base, the longest one it is built on (user 2026-11-28:
+    Doycili 'pertaining to Germany' comes from Doyci, Doycisali 'pertaining to the German
+    language' from Doycisa)."""
+    kinds = {}
+    for word, entry in glosses.items():
+        tags = {t.strip() for t in (entry.get("Tags") or "").split(",")}
+        for tag, kind in COUNTRY_TAGS.items():
+            if tag in tags:
+                kinds[word] = kind
+    bases = dict(kinds)
+    for word, entry in glosses.items():
+        if (entry.get("WordClass") or "").strip() != "su t" or word in kinds:
+            continue
+        first = (entry.get("LexiliAsel") or "").split("+")[0].strip().lower()
+        base = first if first in bases else max(
+            (b for b in bases if len(b) >= 3 and word.startswith(b)), key=len, default=None)
+        if base:
+            kinds[word] = f"{bases[base]} adjective"
+    return kinds
+
+
+country_kinds = load_country_words()
+
+
+def proposal(sense):
+    """'s' / 'n' / None: the script's guess for a country, language or adjective sense."""
+    kind = country_kinds.get(sense["word"].lower())
+    label = f"{sense['label']} {sense['definition']}".lower()
+    if kind == "country":
+        if _NOT_COUNTRY_RE.search(label):
+            return "n"
+        if _HISTORICAL_RE.search(label):
+            return None
+        return "s" if _COUNTRY_RE.search(label) else None
+    if kind == "language":
+        if _LANGUAGE_RE.search(sense["label"].lower()):
+            return "s"
+        return "n" if _PEOPLE_RE.search(label) else None
+    own = sense["label"].lower()
+    if kind == "language adjective":       # Doycisali: of the German language
+        if _LANGUAGE_RE.search(own):
+            return "s"
+        return "n" if _RELATING_RE.search(own) else None
+    if kind == "country adjective":        # Doycili: of Germany, its people or culture
+        if _LANGUAGE_RE.search(own) and not re.search(r"\b(country|people|culture|nation)\b", own):
+            return "n"
+        return "s" if _RELATING_RE.search(own) else None
+    return None
+
+
+country_order = sorted(
+    (sn for word in country_kinds for sn in senses_by_word.get(word, ())),
+    key=lambda sn: (["country", "language", "country adjective", "language adjective"].index(
+                        country_kinds[sn["word"].lower()]),
+                    sn["word"].lower(), {"s": 0, None: 1, "n": 2}[proposal(sn)], order_key(sn)))
+print(f"  Countries, languages, adjectives: {len(country_kinds)} words, {len(country_order)} senses")
 
 
 def tag_order(tag):
@@ -316,7 +470,9 @@ def card(sense):
         "word_marked": word_is_marked(word, sense["gloss_pos"]), "gloss_pos": sense["gloss_pos"],
         "other_count": len(senses_by_word[word]) - 1,
         "tags": word_tags(word),
-        "queue": queue_evidence.get(sense["id"], [])[:QUEUE_EVIDENCE],
+        "proposal": proposal(sense),
+        "queue": (queue_evidence.get(sense["id"], [])[:QUEUE_EVIDENCE]
+                  + relabel_evidence.get(sense["id"], [])),
     }
 
 
@@ -370,12 +526,18 @@ def matching(scope, query, include_vetted=False, tag=""):
     query = query.strip().lower()
     if scope == "queue":
         source = [senses[key] for key in queue_order]
+    elif scope == "relabel":
+        source = [senses[key] for key in relabel_order]
+    elif scope == "countries":
+        source = country_order
     else:
         source = tag_order(tag) if tag else ordered
     for sense in source:
         if scope == "unsure":
             if not is_unsure(sense):
                 continue
+        elif scope == "relabel" and not include_vetted and relabel_done(sense["id"]):
+            continue    # its unmatched senses found their new labels
         elif is_vetted(sense) and not include_vetted:
             continue
         word = sense["word"].lower()
@@ -454,7 +616,7 @@ def run_step(name, cmd, cwd="."):
 
 
 def run_rebuild():
-    global queue_order, queue_evidence
+    global queue_order, queue_evidence, relabel_order, relabel_evidence, relabel_units_of
     result = {"extension": "", "bidix": {}, "pairs": {}, "lpp": None}
     # The owner's scores into the shared sheet first, so the other vetters see them.
     rebuild["step"] = "shared sheet"
@@ -483,6 +645,8 @@ def run_rebuild():
             if lpp_ok:
                 queue_order, queue_evidence = load_queue()
                 result["lpp"] = lpp_summary()
+    # The extension rewrote its unmatched list: senses carried over to a new label leave it.
+    relabel_order, relabel_evidence, relabel_units_of = load_relabel()
     rebuild.update(running=False, ok=ok, step="", result=result,
                    finished=datetime.now().isoformat(timespec="seconds"))
 
