@@ -1476,21 +1476,6 @@ for _, row in wl_df.iterrows():
         # Index SearchTermsEng under English
         _index_translation(str(row.get("SearchTermsEng", "")), "English", word)
 
-# Also index extension languages
-try:
-    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", dtype=str, index_col=0).fillna("")
-    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
-    for word, row in ext_df.iterrows():
-        word = str(word).strip()
-        for col in EXT_LANG_COLS:
-            val = str(row.get(col, "")).strip()
-            if val and val != "False":
-                display = LANG_DISPLAY.get(col, col)
-                _index_translation(val, display, word)
-except Exception:
-    pass
-
-print(f"  Loaded {len(_all_entries)} entries, {sum(len(v) for v in _trans_index.values())} translation index terms.")
 
 
 def find_derived_words(target_word):
@@ -1610,6 +1595,27 @@ LANG_DISPLAY.update({
     "Spanish": "Spanish",
     "Esperanto": "Esperanto",
 })
+
+# Also index extension languages. This must run after EXT_LANG_COLS and
+# LANG_DISPLAY exist: above them it raised NameError, which a bare
+# `except Exception: pass` hid, so /suggest never matched Italian, Japanese,
+# ... (bug found 2026-11-28).
+try:
+    ext_df = pd.read_csv(EXTENSION_TSV, sep="\t", dtype=str, index_col=0).fillna("")
+    ext_df = ext_df[~ext_df.index.duplicated(keep="first")]
+    _ext_cols = [c for c in EXT_LANG_COLS if c in ext_df.columns]
+    for word, *vals in ext_df[_ext_cols].itertuples(name=None):
+        word = str(word).strip()
+        for col, val in zip(_ext_cols, vals):
+            val = str(val).strip()
+            if val and val != "False":
+                _index_translation(_strip_gender(val), LANG_DISPLAY.get(col, col), word)
+    del ext_df
+except FileNotFoundError:
+    print(f"  Warning: {os.path.basename(EXTENSION_TSV)} missing (fallback: "
+          "search covers the word-list languages only)")
+
+print(f"  Loaded {len(_all_entries)} entries, {sum(len(v) for v in _trans_index.values())} translation index terms.")
 
 
 def build_translations_payload(wl_entry, ext_entry, to_exclude_glosses=None):
