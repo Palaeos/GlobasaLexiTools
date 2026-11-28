@@ -29,7 +29,7 @@ from clarifiers import Clarifiers
 from wiktionary_db import WiktionaryDB
 from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
-from wiktionary_constants import (
+from wiktionary_constants import (WIKT_POS_FALLBACKS, 
     EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
     build_annotation_map, entry_to_string, pos_groups,
@@ -166,13 +166,21 @@ def normalise_label(label):
 
 
 def relabelled_sense(db, s):
-    """(label in this dump, translations) when s's label was only reworded, else None."""
-    every = db.get_translations(s['lookup_word'], s['pos']) or {}
+    """(label in this dump, translations, how) when s's table was only reworded or moved, else None.
+
+    Wiktionary also moved language and country names from Noun to Proper noun sections
+    (Italian "language", Angola "country in Southern Africa", 2026-11-28): the same label under
+    a fallback part of speech (PoSFallbacks sheet, noun <-> name) is the same table."""
     want = normalise_label(s['sense'])
-    hits = [label for label in every if normalise_label(label) == want]
-    if len(hits) != 1:
-        return None
-    return hits[0], every
+    for pos in [s['pos']] + WIKT_POS_FALLBACKS.get(s['pos'], []):
+        every = db.get_translations(s['lookup_word'], pos) or {}
+        moved = f", moved from {s['pos']} to {pos}" if pos != s['pos'] else ""
+        if s['sense'] in every:
+            return s['sense'], every, f"same label{moved}"
+        hits = [label for label in every if normalise_label(label) == want]
+        if len(hits) == 1:
+            return hits[0], every, f"reworded label{moved}"
+    return None
 built = []  # (globasa_word, eng_sense_output, items[j][group] = {formatted: (word, sense, annotated)}) or (word,)
 
 for globasa_word in wordlist_order:
@@ -211,18 +219,15 @@ for globasa_word in wordlist_order:
             continue
 
         trans_entry = db.get_translations(s['lookup_word'], s['pos'], senses=(s['sense'],))
-        if trans_entry is None:
-            unmatched['word/part of speech not in the dump'].append(s)
-            continue
-
         sense_label = s['sense']
-        if sense_label not in trans_entry:
+        if trans_entry is None or sense_label not in trans_entry:
             found = relabelled_sense(db, s)
             if found is None:
-                unmatched['sense not in the dump'].append(s)
+                unmatched['word/part of speech not in the dump' if trans_entry is None
+                          else 'sense not in the dump'].append(s)
                 continue
-            sense_label, trans_entry = found
-            relabelled.append((s, sense_label))
+            sense_label, trans_entry, how = found
+            relabelled.append((s, sense_label, how))
 
         lang_translations = trans_entry[sense_label]
         eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
@@ -357,11 +362,13 @@ print(f"\nWrote menalariExtension.tsv: {words_with_data} words with translations
 if relabelled:
     with open("menalariExtension_relabelled.tsv", "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, delimiter="\t")
-        w.writerow(["Globasa", "lookup_word", "pos", "vetted label", "label in this dump"])
-        for s, label in relabelled:
-            w.writerow([s['glb'], s['lookup_word'], s['pos'], s['sense'], label])
-    print(f"  {len(relabelled)} vetted senses matched a reworded label "
-          f"(fallback: same text after normalisation, a unique match), see menalariExtension_relabelled.tsv")
+        w.writerow(["Globasa", "lookup_word", "pos", "vetted label", "label in this dump", "how"])
+        for s, label, how in relabelled:
+            w.writerow([s['glb'], s['lookup_word'], s['pos'], s['sense'], label, how])
+    moved = sum("moved" in how for _, _, how in relabelled)
+    print(f"  {len(relabelled)} vetted senses matched a reworded or moved table "
+          f"(fallback: same label under the PoS fallback ({moved}), or the same text after "
+          f"normalisation, a unique match), see menalariExtension_relabelled.tsv")
 for reason, lst in unmatched.items():
     print(f"  {len(lst)} vetted senses skipped: {reason}, e.g. "
           + "; ".join(f"{s['glb']} / {s['lookup_word']} [{s['sense']}]" for s in lst[:3]))
