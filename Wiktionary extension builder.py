@@ -21,6 +21,7 @@ list's own Spa/Epo clarifiers still come first.
 """
 
 import os
+import re
 import sys
 import csv
 
@@ -74,7 +75,13 @@ dbs = {}
 # The full English database ("JSONL parser 2.py") when this machine has it;
 # otherwise an extract (wiktionary_extract.py), which yields the same rows
 # when both come from the same dump.
-if os.path.exists("./WiktionaryLMDB"):
+# EXTENSION_EN_LMDB=path picks one explicitly (2026-11-28: the full database
+# lives on a disk that was read-only for the rebuild, so the extension was built
+# from a fresh extract of the same dump).
+if os.environ.get("EXTENSION_EN_LMDB"):
+    dbs['en'] = WiktionaryDB(path=os.environ["EXTENSION_EN_LMDB"], readonly=True)
+    print(f"  Opened English LMDB at {os.environ['EXTENSION_EN_LMDB']} (EXTENSION_EN_LMDB)")
+elif os.path.exists("./WiktionaryLMDB"):
     dbs['en'] = WiktionaryDB(readonly=True)
     print("  Opened English LMDB")
 elif os.path.exists(SENSES_LMDB):
@@ -134,6 +141,38 @@ words_with_data = 0
 # Decisions the dump cannot serve: a different dump than the one vetted
 # against renames or drops senses. Reported, never silently lost.
 unmatched = defaultdict(list)
+relabelled = []   # (vetted sense, label in this dump): Wiktionary reworded the table label
+
+# A vetted sense names its translation table by the label it had when it was vetted.
+# Wiktionary edits labels (typo fixes, "4. " numbering, "— see also ..." tails, case,
+# punctuation), so after a dump refresh 268 senses missed (2026-11-28). A label is
+# followed to its new wording only when exactly one table label of the same word and
+# part of speech normalises to the same text; real rewrites ("to become ready for
+# eating" -> "to prepare food for eating") stay unmatched for re-vetting.
+_LABEL_SEE_ALSO_RE = re.compile(r"\s*[—–]\s*see also\b.*$")
+_LABEL_NUMBER_RE = re.compile(r"^\(?\d+[.)]\s*")
+_LABEL_PUNCT_RE = re.compile(r"[^\w\s]")
+
+
+def normalise_label(label):
+    t = label.strip().lower().replace("(s)", "s")
+    t = _LABEL_SEE_ALSO_RE.sub("", t)
+    t = _LABEL_NUMBER_RE.sub("", t)
+    t = _LABEL_PUNCT_RE.sub(" ", t.replace("-", ""))
+    words = t.split()
+    if words and words[0] == "the":
+        words = words[1:]
+    return " ".join(words)
+
+
+def relabelled_sense(db, s):
+    """(label in this dump, translations) when s's label was only reworded, else None."""
+    every = db.get_translations(s['lookup_word'], s['pos']) or {}
+    want = normalise_label(s['sense'])
+    hits = [label for label in every if normalise_label(label) == want]
+    if len(hits) != 1:
+        return None
+    return hits[0], every
 built = []  # (globasa_word, eng_sense_output, items[j][group] = {formatted: (word, sense, annotated)}) or (word,)
 
 for globasa_word in wordlist_order:
@@ -176,11 +215,16 @@ for globasa_word in wordlist_order:
             unmatched['word/part of speech not in the dump'].append(s)
             continue
 
-        if s['sense'] not in trans_entry:
-            unmatched['sense not in the dump'].append(s)
-            continue
+        sense_label = s['sense']
+        if sense_label not in trans_entry:
+            found = relabelled_sense(db, s)
+            if found is None:
+                unmatched['sense not in the dump'].append(s)
+                continue
+            sense_label, trans_entry = found
+            relabelled.append((s, sense_label))
 
-        lang_translations = trans_entry[s['sense']]
+        lang_translations = trans_entry[sense_label]
         eng_sense_dict.setdefault(s['lookup_word'], set()).add(s['sense'])
 
         # Use xlsx VerbType to determine which transitivity group
@@ -295,11 +339,29 @@ print(f"  Shared translations: {len(report)}; clarifier guessed for {given} "
 # Cleanup
 # ---------------------------------------------------------------------------
 
+# Every skipped vetted sense, for re-vetting (sense_vetter.py): after a dump refresh
+# these are mostly table labels Wiktionary rewrote.
+with open("menalariExtension_unmatched.tsv", "w", encoding="utf-8", newline="") as f:
+    w = csv.writer(f, delimiter="\t")
+    w.writerow(["reason", "Globasa", "lookup_word", "pos", "vetted label", "labels in this dump"])
+    for reason, lst in unmatched.items():
+        for s in lst:
+            db = dbs.get(s['source'])
+            labels = list((db.get_translations(s['lookup_word'], s['pos']) or {}) if db else ())
+            w.writerow([reason, s['glb'], s['lookup_word'], s['pos'], s['sense'], " | ".join(labels)])
 for db in dbs.values():
     db.close()
 
 print(f"\nWrote menalariExtension.tsv: {words_with_data} words with translations, "
       f"{len(wordlist_order)} total rows")
+if relabelled:
+    with open("menalariExtension_relabelled.tsv", "w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(["Globasa", "lookup_word", "pos", "vetted label", "label in this dump"])
+        for s, label in relabelled:
+            w.writerow([s['glb'], s['lookup_word'], s['pos'], s['sense'], label])
+    print(f"  {len(relabelled)} vetted senses matched a reworded label "
+          f"(fallback: same text after normalisation, a unique match), see menalariExtension_relabelled.tsv")
 for reason, lst in unmatched.items():
     print(f"  {len(lst)} vetted senses skipped: {reason}, e.g. "
           + "; ".join(f"{s['glb']} / {s['lookup_word']} [{s['sense']}]" for s in lst[:3]))
