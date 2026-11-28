@@ -212,6 +212,15 @@ _ALT_OF_RE = re.compile(
     r"nonstandard spelling|american spelling|british spelling) of (.+?)\.?$", re.IGNORECASE)
 
 
+_TOP_COMMA_RE = re.compile(r",(?![^()]*\))")
+
+
+def _split_top_commas(gloss):
+    """Split a gloss on the commas outside parentheses: 'cola (_drink, tree, nut_)' is one
+    gloss with its italic note, not 'cola (_drink' + 'tree' + 'nut_)' (kola, 2026-11-28)."""
+    return _TOP_COMMA_RE.split(gloss)
+
+
 def alt_of_target(db, word, pos):
     """The entry (word, pos) stands for when every one of its senses is 'Alternative form of X'
     (or Ellipsis / Abbreviation of X, tag alt-of) for one and the same X; None otherwise, so an
@@ -297,7 +306,7 @@ def rows(db, markings, start_prefix="", word_list=WORD_LIST, vetters=None, store
                 # Split commas, extract italic annotations, expand parentheticals
                 # Each entry is (lookup_word, clarification, original_form)
                 lookup_entries = []
-                for part in eng_parsed.gloss.split(","):
+                for part in _split_top_commas(eng_parsed.gloss):
                     part = part.strip()
                     if not part:
                         continue

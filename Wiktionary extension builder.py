@@ -29,7 +29,7 @@ from clarifiers import Clarifiers
 from wiktionary_db import WiktionaryDB
 from wiktionary_extract import VETTED_LMDB, SENSES_LMDB
 import vetted_senses
-from wiktionary_constants import (WIKT_POS_FALLBACKS, 
+from wiktionary_constants import (WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
     EXTENSION_LANGS, DIALECT_LANGS, WIKTIONARY_SOURCES,
     lang_display_name, format_translation_word, _resolve_lang,
     build_annotation_map, entry_to_string, pos_groups,
@@ -241,6 +241,13 @@ for globasa_word in wordlist_order:
             # Fallback: first group matching this pos
             for (gp, gvt), gidx in group_key_to_idx.items():
                 if gp == s['pos']:
+                    group_idx = gidx
+                    break
+        if group_idx is None:
+            # A sense vetted under a fallback part of speech (such: det for an adj gloss)
+            # belongs to the group whose part of speech falls back to it.
+            for (gp, gvt), gidx in group_key_to_idx.items():
+                if s['pos'] in WIKT_POS_FALLBACKS.get(gp, []) + WIKT_POS_SINGLE_FALLBACKS.get(gp, []):
                     group_idx = gidx
                     break
         if group_idx is None:
