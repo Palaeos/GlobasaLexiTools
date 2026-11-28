@@ -57,8 +57,11 @@ def _scan_tokens(text: str) -> list[tuple[int, int, str, bool]]:
     i = 0
     while i < n:
         ch = text[i]
-        # Skip whitespace
-        if ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r':
+        # Skip whitespace. Any Unicode space, not only ASCII: a no-break space
+        # (U+00A0, in Doxo_passages.tmx) used to reach the "other" branch below,
+        # which stops on isspace() at once, appends an empty token and never
+        # advances -- an endless loop that ate 12 GB (2026-11-28).
+        if ch == ' ' or ch == '\t' or ch == '\n' or ch == '\r' or ch.isspace():
             i += 1
             continue
         # Determine if this is the start of a word or a punctuation char
