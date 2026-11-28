@@ -229,13 +229,16 @@ def log_scores(path=None):
     the restored verdict). A score of None ("clear") removes the page's score, leaving the
     TSV's. Each entry names the rows it covers in "keys" ([eng, pos, verb_type] triples); a
     sense is one label of one word, met under each of the word's English glosses that share it.
+    Keys are (vetter, source, glb, eng, pos, verb_type, sense): an entry vetted from another
+    Wiktionary's table (the vetter's pivot view) names it in "wikt" ("es"); "en" otherwise.
     """
     latest = {}
     for entry in log_entries(path):
         vetter = entry.get("vetter") or OWNER
         score = entry_score(entry)
+        src = entry.get("wikt") or "en"
         for eng, pos, vt in entry.get("keys", ()):
-            key = (vetter, entry["word"], eng, pos, vt, entry["label"])
+            key = (vetter, src, entry["word"], eng, pos, vt, entry["label"])
             if score is None:
                 latest.pop(key, None)
             else:
@@ -275,12 +278,12 @@ def load_rows(include_log=True, sync_first=True):
     rows, _ = _read_tsv()
     if include_log:
         by_key = {(r["Source"], _key(r)): r for r in rows}
-        for (vetter, *key), (score, _) in log_scores().items():
-            r = by_key.get(("en", tuple(key)))
+        for (vetter, src, *key), (score, _) in log_scores().items():
+            r = by_key.get((src, tuple(key)))
             if r is None:
                 glb, eng, pos, vt, sense = key
-                r = by_key[("en", tuple(key))] = {
-                    "Glb": glb, "Source": "en", "Eng": eng, "Prt of Sp": pos, "VerbType": vt,
+                r = by_key[(src, tuple(key))] = {
+                    "Glb": glb, "Source": src, "Eng": eng, "Prt of Sp": pos, "VerbType": vt,
                     "Wiktionary Sense": sense, "App?": "", "Tier": "", "scores": {}}
                 rows.append(r)
             r["scores"][vetter] = score
@@ -442,7 +445,7 @@ def export(eng_xlsx, multi_xlsx=None, out=None):
             if src != "en":  # no page for other editions: the sheet is the owner's record
                 r["scores"][OWNER] = mine
                 continue
-            logged = page.get((OWNER, *key))
+            logged = page.get((OWNER, "en", *key))
             current = logged[0] if logged else r["scores"].get(OWNER)
             if mine == current or (logged and logged[1] > sheet_time):
                 continue  # unchanged, or a later page score wins
@@ -451,7 +454,7 @@ def export(eng_xlsx, multi_xlsx=None, out=None):
                                 "label": sense, "score": mine, "vetter": OWNER,
                                 "when": sheet_time, "batch": f"sheet-{sheet_time}",
                                 "source": "sheet", "keys": [[eng, pos, vt]]})
-            page[(OWNER, *key)] = (mine, sheet_time)
+            page[(OWNER, "en", *key)] = (mine, sheet_time)
 
     merge(eng_xlsx, "en")
     if multi_xlsx and os.path.exists(multi_xlsx):

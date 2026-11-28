@@ -76,6 +76,9 @@ import vetted_senses
 from sense_ranking import row_id, senses_from_rows, text
 from wiktionary_db import WiktionaryDB, LMDB_DIR
 from wiktionary_extract import SENSES_LMDB
+from wiktionary_constants import (WIKTIONARY_SOURCES, WIKT_POS_FALLBACKS, WIKT_POS_SINGLE_FALLBACKS,
+                                  GLOSSPOS_TO_WIKT, extract_italic_annotation, pos_groups)
+from Lexilista_parser import _expand_gloss_context
 
 WORD_LIST = "word-list.csv"
 TMX_FILE = "Doxo_passages.tmx"
@@ -99,6 +102,23 @@ OWNER = vetted_senses.OWNER  # whose column this page scores in (SV_VETTER / .se
 LLM_AUTHORED = "Thirty Short Stories in Globasa"
 MAX_USAGES = 3
 XML_LANG = "{http://www.w3.org/XML/1998/namespace}lang"
+
+
+# Pivots (user 2026-11-28): a word's Spanish or Esperanto gloss looked up in that language's own
+# Wiktionary (WiktionaryLMDB_es / _eo, "JSONL parser non-English.py"), for distinctions the English
+# gloss cannot make: femete "they" (feminine) = es ellas, femkuzin "cousin" = es prima.
+PIVOT_WIKTS = ("es", "eo")
+PIVOT_COLUMNS = {"es": "TranslationSpa", "eo": "TranslationEpo"}
+PIVOT_NAMES = {"es": "Spanish", "eo": "Esperanto"}
+# Shown on a pivot card, and matched against the word's own glosses where it has them.
+PIVOT_SHOWN = {"es": ["en", "eo", "fr", "de", "it", "pt"], "eo": ["en", "es", "fr", "de", "it", "pt"]}
+GLOSS_COLUMNS = {"en": "TranslationEng", "eo": "TranslationEpo", "es": "TranslationSpa"}
+
+
+def sense_id(source, word, label):
+    """The id of a sense: English ones as always; a pivot sense prefixed with its Wiktionary."""
+    key = row_id(word.lower(), label)
+    return key if source == "en" else f"{source}-{key}"
 
 
 def load_glosses():
@@ -191,8 +211,8 @@ def load_base_scores():
     log). A sense listed under several glosses takes each vetter's first score."""
     base = collections.defaultdict(dict)
     for r in vetted_senses.load_rows(include_log=False):
-        if r["Source"] == "en" and r["scores"]:
-            found = base[row_id(r["Glb"].lower(), r["Wiktionary Sense"])]
+        if r["scores"] and r["Source"] in ("en",) + PIVOT_WIKTS:
+            found = base[sense_id(r["Source"], r["Glb"], r["Wiktionary Sense"])]
             for vetter, value in r["scores"].items():
                 found.setdefault(vetter, value)
     return base
@@ -422,6 +442,135 @@ if "--export" in sys.argv:
 verdicts, undo_stack = load_verdicts()
 
 
+def wikt_field(sense):
+    """{"wikt": "es"} for a log entry of a pivot sense (vetted_senses reads it as the Source)."""
+    return {"wikt": sense["wikt"]} if sense.get("wikt") else {}
+
+
+_pivot_dbs, pivot_cache = {}, {}
+_POS_PREFIX = re.compile(r"^[a-z][a-z./ -]*(?:\([^)]*\))?\s*:\s*")
+# Parts of speech tried for a pivot term: every one the English side uses, plus the usual others.
+_PIVOT_POS = list(dict.fromkeys(list(GLOSSPOS_TO_WIKT.values()) + [
+    "noun", "name", "verb", "adj", "adv", "pron", "det", "num", "prep", "conj", "intj",
+    "particle", "article", "phrase", "prefix", "suffix", "contraction"]))
+
+
+def pivot_db(wikt):
+    if wikt not in _pivot_dbs:
+        path = WIKTIONARY_SOURCES.get(wikt, {}).get("lmdb_dir", "")
+        _pivot_dbs[wikt] = WiktionaryDB(path=path, readonly=True) if path and os.path.exists(path) else None
+    return _pivot_dbs[wikt]
+
+
+def pivot_note(wikt, word):
+    if wikt not in PIVOT_WIKTS:
+        return f"Unknown pivot {wikt!r}"
+    if pivot_db(wikt) is None:
+        path = WIKTIONARY_SOURCES.get(wikt, {}).get("lmdb_dir", f"WiktionaryLMDB_{wikt}")
+        return (f"No {path}: build it with  python \"JSONL parser non-English.py\" {wikt}  "
+                f"(the {PIVOT_NAMES[wikt]} Wiktionary dump from kaikki.org)")
+    if not word.strip():
+        return f"Type one word to look up its {PIVOT_NAMES[wikt]} glosses in the {PIVOT_NAMES[wikt]} Wiktionary"
+    if word.strip().lower() not in glosses:
+        return f"{word} is not in the word list"
+    if not pivot_senses(word, wikt):
+        terms = ", ".join(t for t, _ in pivot_terms(word, wikt)) or "none"
+        return f"The {PIVOT_NAMES[wikt]} Wiktionary has no translation table for {terms}"
+    return ""
+
+
+def pivot_terms(word, wikt):
+    """[(term, segment)] of the word's gloss in that language: segments split on ';', the
+    part-of-speech prefix dropped ('pron (femenino): ellas, las' -> ellas, las), commas outside
+    parentheses, italic notes stripped, '(...)' context expanded like the English glosses."""
+    entry = glosses.get(word.strip().lower(), {})
+    found = []
+    for segment in text(entry.get(PIVOT_COLUMNS[wikt])).split(";"):
+        body = _POS_PREFIX.sub("", segment.strip())
+        for part in sense_rows._split_top_commas(body):
+            stripped, _ = extract_italic_annotation(part.strip())
+            for term in _expand_gloss_context(stripped) if stripped else ():
+                if term and (term, segment.strip()) not in found:
+                    found.append((term, segment.strip()))
+    return found
+
+
+def _gloss_words(entry, lang):
+    words = set()
+    for segment in text(entry.get(GLOSS_COLUMNS.get(lang, ""))).split(";"):
+        for part in sense_rows._split_top_commas(_POS_PREFIX.sub("", segment.strip())):
+            stripped, _ = extract_italic_annotation(part.strip())
+            words |= {w.lower() for w in _expand_gloss_context(stripped)} if stripped else set()
+    return words
+
+
+def pivot_senses(word, wikt):
+    """The pivot cards of one word: every table of the word's {wikt} glosses in that Wiktionary,
+    built once and added to the senses (so scores, undo and the tally treat them as any other)."""
+    word = word.strip()
+    entry = glosses.get(word.lower())
+    if entry is None or wikt not in PIVOT_WIKTS:
+        return []
+    cache_key = (wikt, word.lower())
+    if cache_key in pivot_cache:
+        return pivot_cache[cache_key]
+    db = pivot_db(wikt)
+    if db is None:
+        return []
+    glb = entry["Word"].strip()
+    # The word's own parts of speech (its English glosses) and their fallbacks: a table of
+    # another part of speech is still shown, labelled.
+    own_pos = set()
+    for wpos, _, _ in pos_groups(text(entry.get("TranslationEng")), text(entry.get("WordClass"))):
+        own_pos |= {wpos, *WIKT_POS_FALLBACKS.get(wpos, ()), *WIKT_POS_SINGLE_FALLBACKS.get(wpos, ())}
+    own_words = {lang: _gloss_words(entry, lang) for lang in GLOSS_COLUMNS}
+    built = []
+    for term, segment in pivot_terms(word, wikt):
+        for pos in _PIVOT_POS:
+            tables = db.get_translations(term, pos)
+            if not tables:
+                continue
+            sense_list = db.get_senses(term, pos) or []
+            for label, by_lang in tables.items():
+                if not label:
+                    continue    # an untitled table names no sense to vet
+                key = sense_id(wikt, glb, label)
+                if key in senses and senses[key] in built:
+                    if [term, pos, ""] not in senses[key]["keys"]:
+                        senses[key]["keys"].append([term, pos, ""])
+                    continue
+                translations, why = [], [("pivot", f"{PIVOT_NAMES[wikt]} Wiktionary: {term}")]
+                for lang in PIVOT_SHOWN[wikt]:
+                    terms = sorted({t.word for t in by_lang.get(lang, ())})
+                    if not terms:
+                        continue
+                    hits = own_words.get(lang, set())
+                    marked = [{"t": t, "hit": t.lower() in hits} for t in terms]
+                    hit = any(m["hit"] for m in marked)
+                    translations.append({"lang": lang.capitalize(), "terms": marked, "hit": hit})
+                    if hit:
+                        why.append(("good", f"{lang.capitalize()} matches"))
+                if pos not in own_pos:
+                    why.append(("bad", f"(fallback: {pos}, not a part of speech of {glb})"))
+                example = next((ex.text for sn in sense_list if label in sn.glosses for ex in sn.examples), "")
+                sense = senses.get(key) or {
+                    "id": key, "word": glb, "label": label, "eng": term, "pos": pos, "gloss_pos": pos,
+                    "definition": label, "example": example, "clarification": segment,
+                    "keys": [], "tier": "", "app": "", "score": 0, "why": why,
+                    "translations": translations, "wikt": wikt}
+                if [term, pos, ""] not in sense["keys"]:
+                    sense["keys"].append([term, pos, ""])
+                senses[key] = sense
+                built.append(sense)
+    pivot_cache[cache_key] = built
+    return built
+
+
+# Pivot senses scored before (this page's log): rebuilt at start, so undo and the tally know them.
+for _word, _wikt in {(v["word"], v["wikt"]) for v in verdicts.values() if v.get("wikt")}:
+    pivot_senses(_word, _wikt)
+
+
 def owner_score(sense):
     """The owner's score: this page's latest, else the sheet's (vetted_senses.tsv)."""
     logged = logged_score(verdicts, sense["id"])
@@ -472,7 +621,8 @@ def card(sense):
         "others": {v: s for v, s in all_scores(sense).items() if v != OWNER},
         "mean": vetted_senses.mean(all_scores(sense)), "undecided": decision(sense) == "",
         "word_marked": word_is_marked(word, sense["gloss_pos"]), "gloss_pos": sense["gloss_pos"],
-        "other_count": len(senses_by_word[word]) - 1,
+        "other_count": 0 if sense.get("wikt") else len(senses_by_word[word]) - 1,
+        "wikt": sense.get("wikt", ""),
         "tags": word_tags(word),
         "proposal": proposal(sense),
         "queue": (queue_evidence.get(sense["id"], [])[:QUEUE_EVIDENCE]
@@ -534,6 +684,8 @@ def matching(scope, query, include_vetted=False, tag=""):
         source = [senses[key] for key in relabel_order]
     elif scope == "countries":
         source = country_order
+    elif scope.startswith("pivot-"):
+        source = pivot_senses(query, scope[len("pivot-"):]) if query else []
     else:
         source = tag_order(tag) if tag else ordered
     for sense in source:
@@ -735,7 +887,9 @@ class Handler(BaseHTTPRequestHandler):
             offset = int(params.get("offset", ["0"])[0])
             found, view = counts(params.get("scope", ["all"])[0], params.get("q", [""])[0],
                                  params.get("vetted", ["0"])[0] == "1", params.get("tag", [""])[0])
-            self.send_tally(rows=[card(s) for s in found[offset:offset + limit]], **view)
+            scope = params.get("scope", ["all"])[0]
+            note = pivot_note(scope[len("pivot-"):], params.get("q", [""])[0]) if scope.startswith("pivot-") else ""
+            self.send_tally(rows=[card(s) for s in found[offset:offset + limit]], note=note, **view)
         elif url.path == "/api/tags":
             self.send_json({"tags": tag_list()})
         elif url.path == "/api/rebuild":
@@ -773,7 +927,8 @@ class Handler(BaseHTTPRequestHandler):
         when = datetime.now().isoformat(timespec="seconds")
         self.write_entries([
             {"id": key, "word": senses[key]["word"], "label": senses[key]["label"], "score": previous,
-             "vetter": OWNER, "when": when, "batch": action["batch"], "undo": True, "keys": senses[key]["keys"]}
+             "vetter": OWNER, "when": when, "batch": action["batch"], "undo": True, "keys": senses[key]["keys"],
+             **wikt_field(senses[key])}
             for key, previous in reversed(action["changes"]) if key in senses
         ])
         self.send_changed(request, [key for key, _ in action["changes"] if key in senses])
@@ -812,7 +967,8 @@ class Handler(BaseHTTPRequestHandler):
                 (key, logged_score(verdicts, key)) for key in keys]})
         self.write_entries([
             {"id": key, "word": senses[key]["word"], "label": senses[key]["label"], "score": score,
-             "vetter": OWNER, "when": when, "batch": batch, "keys": senses[key]["keys"]} for key in keys
+             "vetter": OWNER, "when": when, "batch": batch, "keys": senses[key]["keys"],
+             **wikt_field(senses[key])} for key in keys
         ])
         self.send_changed(request, keys)
 

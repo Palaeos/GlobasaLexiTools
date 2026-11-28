@@ -126,6 +126,21 @@ if discover_mode:
 
 print(f"\nParsing {jsonl_path} for '{native_lang_name}' entries...")
 
+def _sense_numbers(translation):
+    """The sense numbers a translation names: sense_index "1", "1-3" / "1–3", "1, 4", "2b";
+    older dumps: senseids ["1"]."""
+    numbers = []
+    raw = translation.get('sense_index') or ",".join(map(str, translation.get('senseids', ())))
+    for part in str(raw).split(','):
+        part = part.strip()
+        bounds = part.replace('–', '-').split('-')
+        if len(bounds) == 2 and bounds[0].strip().isdigit() and bounds[1].strip().isdigit():
+            numbers += [str(n) for n in range(int(bounds[0]), int(bounds[1]) + 1)]
+        elif part:
+            numbers.append(part)
+    return numbers
+
+
 translationDictionary = {}
 senseDictionary = {}
 line_count = 0
@@ -174,6 +189,15 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
                     )
 
             # --- Translations extraction ---
+            # Some editions (Spanish) key a translation by sense number ("sense_index": "1",
+            # "1-3", "1, 4") instead of a sense label: such tables are labelled with those
+            # senses' glosses, so one entry's senses keep separate tables (else all would
+            # merge under '').
+            gloss_of_sense = {}
+            for sense_data in data.get('senses', ()):
+                sid = sense_data.get('sense_index') or sense_data.get('senseid')
+                if sid and sense_data.get('glosses'):
+                    gloss_of_sense[str(sid).strip()] = sense_data['glosses'][0]
             if 'translations' in data:
                 translations = data['translations']
                 if (word, PoS) not in translationDictionary:
@@ -186,7 +210,9 @@ with open(jsonl_path, 'r', encoding='utf-8') as file:
                     if not lang_code_t:
                         continue
                     # Japanese Wiktionary often has one untitled table per entry
-                    sense_key = translation.get('sense') or ''
+                    sense_key = translation.get('sense') or "; ".join(
+                        gloss_of_sense[i] for i in _sense_numbers(translation)
+                        if i in gloss_of_sense) or ''
                     if sense_key not in translationDictionary[(word, PoS)]:
                         translationDictionary[(word, PoS)][sense_key] = {}
                     if lang_code_t not in translationDictionary[(word, PoS)][sense_key]:

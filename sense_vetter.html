@@ -37,6 +37,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
 .chip { font-size: 0.72rem; border-radius: 9px; padding: 0 0.4rem; margin-right: 0.2rem; white-space: nowrap; display: inline-block; }
 .chip.good { background: var(--green-light); color: #14501a; }
 .chip.bad { background: var(--red-light); color: #7a2020; }
+.chip.pivot { background: #e3e8f7; color: #23366e; }
+.pivot-link { font-size: 0.72rem; padding: 0 0.35rem; margin-left: 0.3rem; }
 .usage { margin-top: 0.3rem; border-left: 2px solid var(--line); padding-left: 0.4rem; }
 .usage mark { background: #fff0a8; }
 .usage .en { color: var(--muted); }
@@ -82,6 +84,8 @@ main { max-width: 1100px; margin: 0 auto; padding: 0.75rem 1rem 40vh; }
     <option value="queue">Queue: French words Le Petit Prince lacks</option>
     <option value="relabel">Relabel: words left with no sense (Wiktionary label changed)</option>
     <option value="countries">Countries, languages and their adjectives (A accepts the proposal)</option>
+    <option value="pivot-es">Pivot: one word's Spanish gloss in the Spanish Wiktionary</option>
+    <option value="pivot-eo">Pivot: one word's Esperanto gloss in the Esperanto Wiktionary</option>
   </select>
   <select id="tag" aria-label="Browse by tag"><option value="">All tags</option></select>
   <input id="q" placeholder="One word" size="12" aria-label="Show one word">
@@ -128,6 +132,14 @@ function markWord(sentence, word) {
   return esc(sentence).replace(new RegExp(`(^|[^\\p{L}-])(${pattern})(?![\\p{L}-])`, "iu"), "$1<mark>$2</mark>");
 }
 
+// Pivot (user 2026-11-28): this word's Spanish or Esperanto gloss looked up in that language's
+// own Wiktionary, for distinctions the English gloss cannot make (femete, femkuzin).
+function pivotButton(r, wikt) {
+  if (r.wikt === wikt || !(wikt === "es" ? r.gloss_es : r.gloss_eo)) return "";
+  const name = wikt === "es" ? "Spanish" : "Esperanto";
+  return `<button class="pivot-link" data-pivot="${wikt}" data-word="${esc(r.word)}" title="Vet this word's senses from the ${name} Wiktionary's tables for this gloss">pivot</button>`;
+}
+
 function cardHtml(r, i) {
   const translations = r.translations.map(c =>
     `<b>${esc(c.lang)}:</b> ` + c.terms.slice(0, 5).map(t => t.hit ? `<span class="hit">${esc(t.t)}</span>` : esc(t.t)).join(", ")
@@ -141,7 +153,7 @@ function cardHtml(r, i) {
   const usages = r.usages.map(u => `<div class="usage">${markWord(u.glb, r.word)}${u.en ? `<br><span class="en">${esc(u.en)}</span>` : ""}</div>`).join("");
   return `<div class="card ${done[r.id] || ""}" id="c${i}" data-i="${i}">
     <div>
-      <div><span class="word">${esc(r.word)}</span><span class="pos">${esc(r.pos)} · "${esc(r.eng)}"</span></div>
+      <div><span class="word">${esc(r.word)}</span><span class="pos">${esc(r.pos)} · ${r.wikt ? `${esc(r.wikt)}: ` : ""}"${esc(r.eng)}"</span></div>
       <div class="sense">${esc(r.label)}${r.proposal ? ` <span class="chip ${r.proposal === "s" ? "good" : "bad"}" title="The script's guess from the label: key A scores it (5 or 1)">proposed: ${r.proposal === "s" ? "applies" : "doesn't"}</span>` : ""}</div>
       ${r.definition && r.definition.toLowerCase() !== r.label.toLowerCase() ? `<div class="def">${esc(r.definition.slice(0, 220))}</div>` : ""}
       ${r.example ? `<div class="small">e.g. ${esc(r.example.slice(0, 140))}</div>` : ""}
@@ -152,8 +164,8 @@ function cardHtml(r, i) {
     </div>
     <div>
       <div class="gloss"><b>en:</b> ${esc(r.gloss_en)}</div>
-      <div class="gloss"><b>eo:</b> ${esc(r.gloss_eo)}</div>
-      <div class="gloss"><b>es:</b> ${esc(r.gloss_es)}</div>
+      <div class="gloss"><b>eo:</b> ${esc(r.gloss_eo)}${pivotButton(r, "eo")}</div>
+      <div class="gloss"><b>es:</b> ${esc(r.gloss_es)}${pivotButton(r, "es")}</div>
       ${r.parts ? `<div class="gloss"><b>from:</b> ${esc(r.parts)}</div>` : ""}
       ${r.tags.length ? `<div class="gloss"><b>tags:</b> ${r.tags.map(t => `<button class="tag-link" data-tag="${esc(t)}" title="Browse this tag">${esc(t)}</button>`).join("")}</div>` : ""}
       ${r.accepted.length ? `<div class="small">Already accepted: ${r.accepted.map(esc).join("; ")}</div>` : ""}
@@ -306,6 +318,7 @@ async function loadMore() {
   for (const r of fresh) if (r.verdict) done[r.id] = r.verdict;
   list.insertAdjacentHTML("beforeend", fresh.map((r, k) => cardHtml(r, start + k)).join(""));
   showTally(data);
+  viewNote = data.note || "";
   loading = false;
   showMore();
   // Endless scroll: hidden (already vetted) cards can leave the end of the list on screen, and the
@@ -324,10 +337,11 @@ new IntersectionObserver(entries => {
   if (entries.some(e => e.isIntersecting) && !allLoaded()) loadMore();
 }, { rootMargin: "0px 0px 600px 0px" }).observe(more);
 
+let viewNote = "";
 async function reload() {
   rows = []; focus = 0; done = {}; pinned = -1; list.innerHTML = "";
   await loadMore();
-  if (!rows.length) list.innerHTML = `<div class="empty">Nothing left to vet here.</div>`;
+  if (!rows.length) list.innerHTML = `<div class="empty">${esc(viewNote || "Nothing left to vet here.")}</div>`;
   setFocus(0);
 }
 
@@ -500,6 +514,13 @@ document.addEventListener("click", e => {
   if (act) { decide(+e.target.dataset.i, act); return; }
   if (e.target.dataset?.peekAct) { decideFromPeek(e.target.dataset.id, e.target.dataset.peekAct); return; }
   if (e.target.dataset?.tag) { tagBox.value = e.target.dataset.tag; reload(); return; }
+  if (e.target.dataset?.pivot) {
+    scope.value = `pivot-${e.target.dataset.pivot}`;
+    q.value = e.target.dataset.word;
+    e.target.blur();
+    reload();
+    return;
+  }
   if (e.target.dataset?.peek) {
     const i = +e.target.dataset.peek;
     if (i !== focus) setFocus(i);

@@ -232,7 +232,9 @@ for globasa_word in wordlist_order:
         lang_translations = trans_entry[sense_label]
         # The label of this dump (a reworded or moved table's new one), so the Word Viewer's
         # links reach the table: Wiktionary ids it "Translations-<label>".
-        eng_sense_dict.setdefault(s['lookup_word'], set()).add(sense_label)
+        # English tables only: a sense vetted from another Wiktionary (pivot) names its own word.
+        if s['source'] == 'en':
+            eng_sense_dict.setdefault(s['lookup_word'], set()).add(sense_label)
 
         # Use xlsx VerbType to determine which transitivity group
         vt = s.get('verb_type', '')
