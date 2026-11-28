@@ -5,6 +5,7 @@
 > Last updated: 2026-09-03
 
 ## User Preferences
+- [2026-11-28] Re-vetting after a dump refresh only for words now missing a sense entirely; a word that still has a matched vetted sense is not re-vetted.
 - [2026-11-28] English period glosses are a separate list appended to the word list (eng_periods.tsv, keyed by Word), never columns inside word-list.csv. Word-list refresh pipeline: CDN download (setup.sh block) -> extract_constructions.py -> apply_eng_variety.py -> [sense_periods.py] -> apply_eng_periods.py.
 - [2026-11-28] Public site (Palaeos/globasa-tools): dictionary + TMX + PoS viewers; never Hector's audio; exclude copyrighted source texts (Christie "Mr Quin", Paul Graham essay) from examples AND corpus. Language choice like Wikipedia: English/Spanish/Esperanto set apart from the sparse extension languages.
 
@@ -90,6 +91,8 @@
 - [2026-11-21] Soul vocabulary should be compositional and cross-cultural (generic soul head + modifiers from existing roots), not tradition-specific loans like paku for 魄.
 
 ## Key Learnings
+- [2026-11-28] Globasa: an adjective of a language is built on the language word (Doycisa -> Doycisali 'pertaining to the German language'); the country adjective is built on the country word (Doyci -> Doycili 'pertaining to Germany'). English 'German (adj): of the German language' is not Doycili. The word list has 85 country adjectives and no listed -sali forms.
+- [2026-11-28] Until WiktionaryLMDB is rebuilt from the fresh dump, run the vetter and builder on `WiktionaryLMDB_senses` (wiktionary_extract.py --senses: every word-list gloss + vetted keys, 86 MB): SV_LMDB=./WiktionaryLMDB_senses EXTENSION_EN_LMDB=./WiktionaryLMDB_senses. WiktionaryLMDB_vetted lacks unvetted words and other glosses (Relabel/Countries candidates go missing). Same translations either way; clarifiers differ slightly with more data.
 - [2026-11-28] wiktextract keeps a Wiktionary translation sub-line's variety only in `lang` ("Bavarian German" under lang_code de; Mandarin under "Chinese:" as zh). Every parser must pass items through wiktionary_varieties.resolve(); identity rules live in translation_varieties.tsv (ISO 639-3/SIL; national varieties = view:<X> tags + virtual columns de-AT, pt-BR, ... in wiktionary_config.xlsx Dialects sheet).
 - [2026-11-28] WiktionaryLMDB and WiktionaryLMDB_concepts are symlinks to /media/paleos/QuickRead (NVMe); the agent's mount namespace sees QuickRead and Warehouse2 read-only (only Warehouse2/Language/Claude rw), even with the sandbox off.
 - [2026-11-28] On the user's machine `gh` is gitsome's gh (/usr/lib/python3/dist-packages/gitsome), not GitHub CLI: no `gh auth`, `gh repo create --public`, `gh api`. Give github.com web steps (or plain git over HTTPS, which works) instead.
